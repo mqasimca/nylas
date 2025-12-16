@@ -1,0 +1,55 @@
+package domain
+
+import "time"
+
+// Message represents an email message from Nylas.
+type Message struct {
+	ID             string       `json:"id"`
+	GrantID        string       `json:"grant_id"`
+	ThreadID       string       `json:"thread_id,omitempty"`
+	Subject        string       `json:"subject"`
+	From           []EmailParticipant    `json:"from"`
+	To             []EmailParticipant    `json:"to,omitempty"`
+	Cc             []EmailParticipant    `json:"cc,omitempty"`
+	Bcc            []EmailParticipant    `json:"bcc,omitempty"`
+	ReplyTo        []EmailParticipant    `json:"reply_to,omitempty"`
+	Body           string       `json:"body"`
+	Snippet        string       `json:"snippet"`
+	Date           time.Time    `json:"date"`
+	Unread         bool         `json:"unread"`
+	Starred        bool         `json:"starred"`
+	Folders        []string     `json:"folders,omitempty"`
+	Attachments    []Attachment `json:"attachments,omitempty"`
+	Headers        []Header     `json:"headers,omitempty"`
+	CreatedAt      time.Time    `json:"created_at"`
+	Object         string       `json:"object,omitempty"`
+}
+
+// Header represents an email header.
+type Header struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// EmailParticipant represents an email participant (sender/recipient).
+type EmailParticipant struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// String returns a formatted contact string.
+func (c EmailParticipant) String() string {
+	if c.Name != "" {
+		return c.Name + " <" + c.Email + ">"
+	}
+	return c.Email
+}
+
+// OTPResult represents an extracted OTP code.
+type OTPResult struct {
+	Code      string    `json:"code"`
+	From      string    `json:"from"`
+	Subject   string    `json:"subject"`
+	Received  time.Time `json:"received"`
+	MessageID string    `json:"message_id"`
+}
