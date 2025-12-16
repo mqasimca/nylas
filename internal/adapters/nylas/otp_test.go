@@ -160,6 +160,102 @@ func TestExtractOTPRealWorldEmails(t *testing.T) {
 	}
 }
 
+func TestExtractOTPProviderSpecific(t *testing.T) {
+	tests := []struct {
+		name    string
+		subject string
+		body    string
+		want    string
+	}{
+		// Apple
+		{"Apple ID Code", "", "Your Apple ID Code is: 123456", "123456"},
+		{"Apple domain-bound code", "", "@apple.com #654321 %apple.com", "654321"},
+
+		// Facebook/Meta
+		{"Facebook FB- prefix", "", "FB-12345 is your Facebook confirmation code", "12345"},
+		{"Facebook confirmation", "", "123456 is your Facebook confirmation code", "123456"},
+
+		// Instagram
+		{"Instagram code", "", "123456 is your Instagram code", "123456"},
+		{"Instagram security code", "", "Instagram security code: 654321", "654321"},
+
+		// WhatsApp
+		{"WhatsApp hyphenated code", "", "Your WhatsApp code is 123-456", "123456"},
+		{"WhatsApp code with space", "", "WhatsApp code: 123 456", "123456"},
+
+		// Twitter/X
+		{"Twitter verification", "", "Twitter verification code: 123456", "123456"},
+		{"X.com code", "", "Your x.com code is 654321", "654321"},
+
+		// LinkedIn
+		{"LinkedIn code", "", "LinkedIn verification code: 123456", "123456"},
+		{"LinkedIn is your code", "", "654321 is your LinkedIn code", "654321"},
+
+		// Slack
+		{"Slack code", "", "Your Slack code: 123456", "123456"},
+		{"Slack verification", "", "123456 is your Slack verification code", "123456"},
+
+		// Discord
+		{"Discord code", "", "Discord verification code: 654321", "654321"},
+		{"Discord is your code", "", "123456 is your Discord code", "123456"},
+
+		// Telegram
+		{"Telegram login code", "", "Telegram login code: 12345", "12345"},
+		{"Telegram is your code", "", "654321 is your Telegram code", "654321"},
+
+		// Signal
+		{"Signal code", "", "Signal verification code: 123456", "123456"},
+
+		// Uber/Lyft/DoorDash
+		{"Uber code", "", "Your Uber code is 1234", "1234"},
+		{"Lyft code", "", "Lyft code: 5678", "5678"},
+		{"DoorDash code", "", "Your DoorDash code is 123456", "123456"},
+
+		// Airbnb
+		{"Airbnb verification", "", "Airbnb verification code: 1234", "1234"},
+		{"Airbnb is your code", "", "5678 is your Airbnb code", "5678"},
+
+		// Netflix/Spotify
+		{"Netflix code", "", "Netflix verification code: 123456", "123456"},
+		{"Spotify code", "", "Spotify code: 654321", "654321"},
+
+		// PayPal/Venmo
+		{"PayPal code", "", "PayPal security code: 123456", "123456"},
+		{"Venmo code", "", "654321 is your Venmo code", "654321"},
+
+		// Coinbase/Binance
+		{"Coinbase code", "", "Coinbase verification code: 12345678", "12345678"},
+		{"Binance code", "", "Binance code: 654321", "654321"},
+
+		// Zoom/Teams
+		{"Zoom code", "", "Zoom verification code: 123456", "123456"},
+		{"Teams code", "", "Teams code: 654321", "654321"},
+
+		// Okta/Auth0
+		{"Okta code", "", "Okta verification code: 123456", "123456"},
+		{"Auth0 code", "", "Auth0 code: 654321", "654321"},
+
+		// Jira/Atlassian
+		{"Atlassian code", "", "Atlassian verification code: 123456", "123456"},
+		{"Jira code", "", "Jira code: 654321", "654321"},
+
+		// Spaced digits
+		{"Spaced digits", "", "Your verification code: 1 2 3 4 5 6", "123456"},
+
+		// HTML patterns
+		{"Code in td tag", "", "Your OTP: <td>123456</td>", "123456"},
+		{"Code in heading", "", "Verification <h2>654321</h2>", "654321"},
+		{"Code with OTP class", "", "<div class=\"otp-code\">123456</div>", "123456"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := nylas.ExtractOTP(tt.subject, tt.body)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestExtractOTPFalsePositives(t *testing.T) {
 	tests := []struct {
 		name    string
