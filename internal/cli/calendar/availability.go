@@ -99,13 +99,23 @@ Shows busy time slots within the specified time range.`,
 				endTime = startTime.Add(24 * time.Hour)
 			}
 
-			// If no emails specified, we'll check the grant's calendar
-			if len(emails) == 0 {
-				emails = []string{"me"}
-			}
-
 			ctx, cancel := createContext()
 			defer cancel()
+
+			// If no emails specified, get the grant's email
+			if len(emails) == 0 {
+				grant, err := c.GetGrant(ctx, grantID)
+				if err != nil {
+					return common.NewUserError("Failed to get grant details: "+err.Error(),
+						"Run 'nylas auth status' to verify your authentication")
+				}
+				if grant.Email != "" {
+					emails = []string{grant.Email}
+				} else {
+					return common.NewUserError("No email found for grant",
+						"Please specify --emails flag with the email addresses to check")
+				}
+			}
 
 			spinner := common.NewSpinner("Checking availability...")
 			spinner.Start()

@@ -53,6 +53,11 @@ func (c *HTTPClient) SetCredentials(clientID, clientSecret, apiKey string) {
 	c.apiKey = apiKey
 }
 
+// SetBaseURL sets the base URL (for testing purposes).
+func (c *HTTPClient) SetBaseURL(url string) {
+	c.baseURL = url
+}
+
 // BuildAuthURL builds the OAuth authorization URL.
 func (c *HTTPClient) BuildAuthURL(provider domain.Provider, redirectURI string) string {
 	params := url.Values{}
@@ -1637,11 +1642,11 @@ type draftResponse struct {
 }
 
 type folderResponse struct {
-	ID              string   `json:"id"`
-	GrantID         string   `json:"grant_id"`
-	Name            string   `json:"name"`
-	SystemFolder    string   `json:"system_folder"`
-	ParentID        string   `json:"parent_id"`
+	ID              string `json:"id"`
+	GrantID         string `json:"grant_id"`
+	Name            string `json:"name"`
+	SystemFolder    any    `json:"system_folder"` // Can be string or bool depending on provider
+	ParentID        string `json:"parent_id"`
 	BackgroundColor string   `json:"background_color"`
 	TextColor       string   `json:"text_color"`
 	TotalCount      int      `json:"total_count"`
@@ -1823,11 +1828,23 @@ func convertFolders(folders []folderResponse) []domain.Folder {
 }
 
 func convertFolder(f folderResponse) domain.Folder {
+	// SystemFolder can be a string or bool depending on provider
+	var systemFolder string
+	switch v := f.SystemFolder.(type) {
+	case string:
+		systemFolder = v
+	case bool:
+		if v {
+			systemFolder = "true"
+		}
+		// If false, leave as empty string
+	}
+
 	return domain.Folder{
 		ID:              f.ID,
 		GrantID:         f.GrantID,
 		Name:            f.Name,
-		SystemFolder:    f.SystemFolder,
+		SystemFolder:    systemFolder,
 		ParentID:        f.ParentID,
 		BackgroundColor: f.BackgroundColor,
 		TextColor:       f.TextColor,

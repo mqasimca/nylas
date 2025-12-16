@@ -45,7 +45,7 @@ func TestNewAuthCmd(t *testing.T) {
 	})
 
 	t.Run("has_required_subcommands", func(t *testing.T) {
-		expectedCmds := []string{"config", "login", "logout", "status", "whoami", "list", "switch", "token", "revoke"}
+		expectedCmds := []string{"config", "login", "logout", "status", "whoami", "list", "switch", "token", "revoke", "add", "remove"}
 
 		cmdMap := make(map[string]bool)
 		for _, sub := range cmd.Commands() {
@@ -247,6 +247,90 @@ func TestRevokeCommand(t *testing.T) {
 	})
 }
 
+// TestRemoveCommand tests the remove subcommand.
+func TestRemoveCommand(t *testing.T) {
+	cmd := newRemoveCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		if cmd.Use != "remove <grant-id>" {
+			t.Errorf("Command Use = %q, want %q", cmd.Use, "remove <grant-id>")
+		}
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		if cmd.Short == "" {
+			t.Error("Command should have Short description")
+		}
+	})
+
+	t.Run("has_long_description", func(t *testing.T) {
+		if cmd.Long == "" {
+			t.Error("Command should have Long description")
+		}
+		// Long description should clarify it doesn't revoke on server
+		if !bytes.Contains([]byte(cmd.Long), []byte("NOT revoke")) {
+			t.Error("Long description should clarify this does NOT revoke on server")
+		}
+	})
+
+	t.Run("requires_argument", func(t *testing.T) {
+		if cmd.Args == nil {
+			t.Error("Command should have Args validator")
+		}
+	})
+}
+
+// TestAddCommand tests the add subcommand.
+func TestAddCommand(t *testing.T) {
+	cmd := newAddCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		if cmd.Use != "add <grant-id>" {
+			t.Errorf("Command Use = %q, want %q", cmd.Use, "add <grant-id>")
+		}
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		if cmd.Short == "" {
+			t.Error("Command should have Short description")
+		}
+	})
+
+	t.Run("has_email_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("email")
+		if flag == nil {
+			t.Error("Expected --email flag")
+		}
+	})
+
+	t.Run("has_email_shorthand", func(t *testing.T) {
+		flag := cmd.Flags().ShorthandLookup("e")
+		if flag == nil {
+			t.Error("Expected -e shorthand for --email")
+		}
+	})
+
+	t.Run("has_provider_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("provider")
+		if flag == nil {
+			t.Error("Expected --provider flag")
+		}
+	})
+
+	t.Run("has_default_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("default")
+		if flag == nil {
+			t.Error("Expected --default flag")
+		}
+	})
+
+	t.Run("requires_argument", func(t *testing.T) {
+		if cmd.Args == nil {
+			t.Error("Command should have Args validator")
+		}
+	})
+}
+
 // TestAuthCommandHelp tests help output for auth command.
 func TestAuthCommandHelp(t *testing.T) {
 	cmd := NewAuthCmd()
@@ -263,11 +347,43 @@ func TestAuthCommandHelp(t *testing.T) {
 		"login",
 		"logout",
 		"status",
+		"remove",
+		"add",
 	}
 
 	for _, expected := range expectedStrings {
 		if !bytes.Contains([]byte(stdout), []byte(expected)) {
 			t.Errorf("Help output should contain %q", expected)
 		}
+	}
+}
+
+// TestRemoveCommandHelp tests help output for remove command.
+func TestRemoveCommandHelp(t *testing.T) {
+	cmd := newRemoveCmd()
+	stdout, _, err := executeCommand(cmd, "--help")
+
+	if err != nil {
+		t.Fatalf("Help failed: %v", err)
+	}
+
+	// Should explain it's local only
+	if !bytes.Contains([]byte(stdout), []byte("local")) {
+		t.Error("Help should mention 'local' to clarify scope")
+	}
+}
+
+// TestAddCommandHelp tests help output for add command.
+func TestAddCommandHelp(t *testing.T) {
+	cmd := newAddCmd()
+	stdout, _, err := executeCommand(cmd, "--help")
+
+	if err != nil {
+		t.Fatalf("Help failed: %v", err)
+	}
+
+	// Should mention auto-detection
+	if !bytes.Contains([]byte(stdout), []byte("auto-detected")) {
+		t.Error("Help should mention auto-detection of email/provider")
 	}
 }

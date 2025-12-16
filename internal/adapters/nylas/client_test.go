@@ -723,3 +723,152 @@ func TestTrackingOptions(t *testing.T) {
 	assert.True(t, opts.Links)
 	assert.Equal(t, "campaign-2024", opts.Label)
 }
+
+// TestGetFoldersSystemFolderTypes tests that GetFolders correctly handles
+// system_folder field as both boolean (Google) and string (Microsoft) types.
+func TestGetFoldersSystemFolderTypes(t *testing.T) {
+	t.Run("handles_boolean_system_folder_from_google", func(t *testing.T) {
+		// Google returns system_folder as boolean
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/v3/grants/grant-123/folders", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			// Google API returns system_folder as boolean
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"id":            "folder-1",
+						"grant_id":      "grant-123",
+						"name":          "INBOX",
+						"system_folder": true,
+						"total_count":   100,
+						"unread_count":  10,
+					},
+					{
+						"id":            "folder-2",
+						"grant_id":      "grant-123",
+						"name":          "Custom Folder",
+						"system_folder": false,
+						"total_count":   50,
+						"unread_count":  5,
+					},
+				},
+			})
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		folders, err := client.GetFolders(context.Background(), "grant-123")
+		require.NoError(t, err)
+		assert.Len(t, folders, 2)
+		assert.Equal(t, "INBOX", folders[0].Name)
+		assert.Equal(t, "true", folders[0].SystemFolder) // Boolean true converted to string "true"
+		assert.Equal(t, "Custom Folder", folders[1].Name)
+		assert.Equal(t, "", folders[1].SystemFolder) // Boolean false converted to empty string
+	})
+
+	t.Run("handles_string_system_folder_from_microsoft", func(t *testing.T) {
+		// Microsoft returns system_folder as string
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			// Microsoft API returns system_folder as string
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"id":            "folder-1",
+						"grant_id":      "grant-123",
+						"name":          "Inbox",
+						"system_folder": "inbox",
+						"total_count":   100,
+						"unread_count":  10,
+					},
+					{
+						"id":            "folder-2",
+						"grant_id":      "grant-123",
+						"name":          "Sent Items",
+						"system_folder": "sent",
+						"total_count":   50,
+						"unread_count":  0,
+					},
+				},
+			})
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		folders, err := client.GetFolders(context.Background(), "grant-123")
+		require.NoError(t, err)
+		assert.Len(t, folders, 2)
+		assert.Equal(t, "Inbox", folders[0].Name)
+		assert.Equal(t, "inbox", folders[0].SystemFolder) // String preserved as-is
+		assert.Equal(t, "Sent Items", folders[1].Name)
+		assert.Equal(t, "sent", folders[1].SystemFolder)
+	})
+
+	t.Run("handles_null_system_folder", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"id":            "folder-1",
+						"grant_id":      "grant-123",
+						"name":          "Custom Folder",
+						"system_folder": nil,
+						"total_count":   25,
+						"unread_count":  3,
+					},
+				},
+			})
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		folders, err := client.GetFolders(context.Background(), "grant-123")
+		require.NoError(t, err)
+		assert.Len(t, folders, 1)
+		assert.Equal(t, "Custom Folder", folders[0].Name)
+		assert.Equal(t, "", folders[0].SystemFolder) // Null becomes empty string
+	})
+}
+
+// TestGetFolderSystemFolderTypes tests GetFolder (single folder) handles system_folder types.
+func TestGetFolderSystemFolderTypes(t *testing.T) {
+	t.Run("handles_boolean_system_folder", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": map[string]interface{}{
+					"id":            "folder-123",
+					"grant_id":      "grant-456",
+					"name":          "INBOX",
+					"system_folder": true,
+					"total_count":   100,
+					"unread_count":  10,
+				},
+			})
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		folder, err := client.GetFolder(context.Background(), "grant-456", "folder-123")
+		require.NoError(t, err)
+		assert.Equal(t, "INBOX", folder.Name)
+		assert.Equal(t, "true", folder.SystemFolder)
+	})
+}

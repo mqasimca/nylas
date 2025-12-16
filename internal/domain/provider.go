@@ -8,6 +8,7 @@ const (
 	ProviderMicrosoft Provider = "microsoft"
 	ProviderIMAP      Provider = "imap"
 	ProviderVirtual   Provider = "virtual"
+	ProviderInbox     Provider = "inbox" // Nylas Native Auth
 )
 
 // DisplayName returns the user-friendly name for the provider.
@@ -21,6 +22,8 @@ func (p Provider) DisplayName() string {
 		return "IMAP"
 	case ProviderVirtual:
 		return "Virtual"
+	case ProviderInbox:
+		return "Inbox"
 	default:
 		return string(p)
 	}
@@ -29,7 +32,7 @@ func (p Provider) DisplayName() string {
 // IsValid checks if the provider is a known type.
 func (p Provider) IsValid() bool {
 	switch p {
-	case ProviderGoogle, ProviderMicrosoft, ProviderIMAP, ProviderVirtual:
+	case ProviderGoogle, ProviderMicrosoft, ProviderIMAP, ProviderVirtual, ProviderInbox:
 		return true
 	default:
 		return false
