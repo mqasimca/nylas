@@ -79,7 +79,8 @@ func newEventsListCmd() *cobra.Command {
 			}
 
 			params := &domain.EventQueryParams{
-				Limit: limit,
+				Limit:   limit,
+				OrderBy: "start", // Sort by start time ascending
 			}
 
 			// Set time range if days specified

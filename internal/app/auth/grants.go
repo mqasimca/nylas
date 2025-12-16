@@ -36,6 +36,7 @@ func (s *GrantService) ListGrants(ctx context.Context) ([]domain.GrantStatus, er
 	for _, g := range localGrants {
 		status := "unknown"
 		var errMsg string
+		provider := g.Provider // Default to local storage
 
 		// Verify grant is still valid on Nylas
 		grant, err := s.client.GetGrant(ctx, g.ID)
@@ -44,6 +45,15 @@ func (s *GrantService) ListGrants(ctx context.Context) ([]domain.GrantStatus, er
 				status = "valid"
 			} else {
 				status = grant.GrantStatus
+			}
+			// Use provider from API (authoritative source)
+			if grant.Provider != "" {
+				provider = grant.Provider
+				// Update local storage if provider changed
+				if g.Provider != grant.Provider {
+					g.Provider = grant.Provider
+					_ = s.grantStore.SaveGrant(g)
+				}
 			}
 		} else if err == domain.ErrGrantNotFound {
 			status = "revoked"
@@ -57,7 +67,7 @@ func (s *GrantService) ListGrants(ctx context.Context) ([]domain.GrantStatus, er
 		result = append(result, domain.GrantStatus{
 			ID:        g.ID,
 			Email:     g.Email,
-			Provider:  g.Provider,
+			Provider:  provider,
 			Status:    status,
 			IsDefault: g.ID == defaultGrant,
 			Error:     errMsg,
@@ -79,14 +89,24 @@ func (s *GrantService) GetCurrentGrant(ctx context.Context) (*domain.GrantStatus
 		return nil, err
 	}
 
-	// Verify on Nylas
+	// Verify on Nylas and get current provider info
 	status := "unknown"
+	provider := info.Provider // Default to local storage
 	grant, err := s.client.GetGrant(ctx, grantID)
 	if err == nil && grant != nil {
 		if grant.IsValid() {
 			status = "valid"
 		} else {
 			status = grant.GrantStatus
+		}
+		// Use provider from API (authoritative source)
+		if grant.Provider != "" {
+			provider = grant.Provider
+			// Update local storage if provider changed
+			if info.Provider != grant.Provider {
+				info.Provider = grant.Provider
+				_ = s.grantStore.SaveGrant(*info)
+			}
 		}
 	} else if err == domain.ErrGrantNotFound {
 		status = "revoked"
@@ -95,7 +115,7 @@ func (s *GrantService) GetCurrentGrant(ctx context.Context) (*domain.GrantStatus
 	return &domain.GrantStatus{
 		ID:        info.ID,
 		Email:     info.Email,
-		Provider:  info.Provider,
+		Provider:  provider,
 		Status:    status,
 		IsDefault: true,
 	}, nil
