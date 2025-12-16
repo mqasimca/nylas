@@ -1,0 +1,143 @@
+# Planning/internal docs
+plan.md
+
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+coverage.out
+coverage.html
+*.coverprofile
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+
+# ===========================================
+# SECURITY - Credential & Secret Protection
+# ===========================================
+
+# Environment files (may contain API keys)
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Credential files
+credentials.json
+credentials.yaml
+credentials.yml
+*credentials*
+*credential*
+
+# API keys and tokens
+*.key
+*.pem
+*.p12
+*.pfx
+api_key*
+apikey*
+*api_key*
+*apikey*
+*token*
+!*_test.go
+
+# Secret files
+secrets.json
+secrets.yaml
+secrets.yml
+*secrets*
+*secret*
+!internal/ports/secrets.go
+
+# OAuth tokens
+oauth_token*
+access_token*
+refresh_token*
+*.token
+
+# Config files that might contain secrets
+config.local.*
+config.private.*
+*.private.*
+local.yaml
+local.yml
+local.json
+
+# Nylas specific
+nylas_credentials*
+.nylas/
+nylas.env
+
+# Certificate files
+*.crt
+*.cer
+*.ca-bundle
+
+# SSH keys
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+
+# GPG
+*.gpg
+*.asc
+secring.*
+
+# AWS
+.aws/
+aws_credentials
+
+# GCP
+*.json
+!package.json
+!tsconfig.json
+!*_test.json
+service_account*.json
+gcp_credentials*
+
+# Azure
+.azure/
+
+# Backup files that might contain secrets
+*.bak
+*.backup
+*.old
+*.orig
+
+# Log files (may contain sensitive data)
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test artifacts (may expose test credentials)
+test_output/
+test_results/
+
+# ===========================================
+# End Security Section
+# ===========================================

@@ -1,0 +1,134 @@
+package webhook
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
+)
+
+func newShowCmd() *cobra.Command {
+	var format string
+
+	cmd := &cobra.Command{
+		Use:   "show <webhook-id>",
+		Short: "Show webhook details",
+		Long: `Show detailed information about a specific webhook.
+
+Displays the webhook configuration including URL, trigger types,
+status, and notification settings.`,
+		Example: `  # Show webhook details
+  nylas webhook show webhook-abc123
+
+  # Show in JSON format
+  nylas webhook show webhook-abc123 --format json`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			webhookID := args[0]
+
+			c, err := getClient()
+			if err != nil {
+				return common.NewUserError("Failed to initialize client: "+err.Error(),
+					"Run 'nylas auth login' to authenticate")
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			spinner := common.NewSpinner("Fetching webhook...")
+			spinner.Start()
+
+			webhook, err := c.GetWebhook(ctx, webhookID)
+			spinner.Stop()
+
+			if err != nil {
+				return common.NewUserError("Failed to get webhook: "+err.Error(),
+					"Check that the webhook ID is correct. Run 'nylas webhook list' to see available webhooks")
+			}
+
+			switch format {
+			case "json":
+				enc := json.NewEncoder(cmd.OutOrStdout())
+				enc.SetIndent("", "  ")
+				return enc.Encode(webhook)
+			case "yaml":
+				return yaml.NewEncoder(cmd.OutOrStdout()).Encode(webhook)
+			default:
+				return displayWebhookDetails(webhook)
+			}
+		},
+	}
+
+	cmd.Flags().StringVarP(&format, "format", "f", "text", "Output format (text, json, yaml)")
+
+	return cmd
+}
+
+func displayWebhookDetails(webhook interface{}) error {
+	data, _ := json.Marshal(webhook)
+	var w map[string]interface{}
+	json.Unmarshal(data, &w)
+
+	id := getString(w, "id")
+	desc := getString(w, "description")
+	url := getString(w, "webhook_url")
+	secret := getString(w, "webhook_secret")
+	status := getString(w, "status")
+
+	statusIcon := getStatusIcon(status)
+
+	fmt.Printf("Webhook: %s\n", id)
+	fmt.Println(strings.Repeat("─", 60))
+
+	if desc != "" {
+		fmt.Printf("Description:  %s\n", desc)
+	}
+	fmt.Printf("URL:          %s\n", url)
+	fmt.Printf("Status:       %s %s\n", statusIcon, status)
+
+	if secret != "" {
+		// Mask the secret for display
+		masked := secret[:4] + strings.Repeat("*", len(secret)-8) + secret[len(secret)-4:]
+		fmt.Printf("Secret:       %s\n", masked)
+	}
+
+	// Trigger types
+	fmt.Println("\nTrigger Types:")
+	if triggers, ok := w["trigger_types"].([]interface{}); ok {
+		for _, t := range triggers {
+			fmt.Printf("  • %s\n", t)
+		}
+	}
+
+	// Notification emails
+	if emails, ok := w["notification_email_addresses"].([]interface{}); ok && len(emails) > 0 {
+		fmt.Println("\nNotification Emails:")
+		for _, e := range emails {
+			fmt.Printf("  • %s\n", e)
+		}
+	}
+
+	// Timestamps
+	fmt.Println("\nTimestamps:")
+	if created := getString(w, "created_at"); created != "" {
+		fmt.Printf("  Created:        %s\n", created)
+	}
+	if updated := getString(w, "updated_at"); updated != "" {
+		fmt.Printf("  Updated:        %s\n", updated)
+	}
+	if statusUpdated := getString(w, "status_updated_at"); statusUpdated != "" {
+		fmt.Printf("  Status Updated: %s\n", statusUpdated)
+	}
+
+	return nil
+}
+
+func getString(m map[string]interface{}, key string) string {
+	if v, ok := m[key]; ok {
+		return fmt.Sprintf("%v", v)
+	}
+	return ""
+}
