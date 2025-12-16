@@ -57,6 +57,15 @@ func createGrantService() (*authapp.GrantService, *authapp.ConfigService, error)
 	return authapp.NewGrantService(client, grantStore, configStore), configSvc, nil
 }
 
+// createGrantStore creates just the grant store for local operations.
+func createGrantStore() (ports.GrantStore, error) {
+	_, _, grantStore, err := createDependencies()
+	if err != nil {
+		return nil, err
+	}
+	return grantStore, nil
+}
+
 // createAuthService creates the auth service.
 func createAuthService() (*authapp.Service, *authapp.ConfigService, error) {
 	configStore, secretStore, grantStore, err := createDependencies()

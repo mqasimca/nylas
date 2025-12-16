@@ -20,6 +20,8 @@ Commands:
   list      List all authenticated accounts
   switch    Switch between authenticated accounts
   add       Manually add an existing grant
+  remove    Remove a grant from local config (keeps grant on server)
+  revoke    Permanently revoke a grant on server
   config    Configure API credentials`,
 	}
 
@@ -30,6 +32,7 @@ Commands:
 	cmd.AddCommand(newListCmd())
 	cmd.AddCommand(newSwitchCmd())
 	cmd.AddCommand(newAddCmd())
+	cmd.AddCommand(newRemoveCmd())
 	cmd.AddCommand(newConfigCmd())
 	cmd.AddCommand(newRevokeCmd())
 	cmd.AddCommand(newTokenCmd())
