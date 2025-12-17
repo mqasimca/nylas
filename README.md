@@ -152,6 +152,7 @@ Found 5 emails
 
 ```bash
 nylas email read <message-id>         # Read a specific email
+nylas email show <message-id>         # Alias for read
 nylas email read <id> --mark-read     # Mark as read after reading
 ```
 
@@ -267,6 +268,7 @@ Manage email folders and labels.
 
 ```bash
 nylas email folders list              # List all folders
+nylas email folders list --id         # List folders with IDs
 nylas email folders create "Folder Name"  # Create a folder
 nylas email folders delete <folder-id>    # Delete a folder
 ```
@@ -529,6 +531,7 @@ Manage contacts and contact groups.
 ```bash
 nylas contacts list [grant-id]
 nylas contacts list --limit 100
+nylas contacts list --id                      # Show contact IDs
 nylas contacts list --email "john@example.com"
 nylas contacts list --source address_book
 ```
@@ -652,6 +655,7 @@ Create and manage webhooks for real-time event notifications.
 
 ```bash
 nylas webhook list
+nylas webhook list --full-ids         # Show full webhook IDs (for copy/paste)
 nylas webhook list --format json
 nylas webhook list --format yaml
 nylas webhook list --format csv
@@ -800,6 +804,7 @@ nylas webhook triggers
 nylas webhook triggers --format json
 nylas webhook triggers --format list
 nylas webhook triggers --category message   # Filter by category
+nylas webhook triggers --category notetaker # Filter by notetaker
 ```
 
 **Example output:**
@@ -816,6 +821,7 @@ Available Webhook Trigger Types
    • grant.updated
    • grant.deleted
    • grant.expired
+   • grant.imap_sync_completed
 
 📧 Message
    Email message events
@@ -823,6 +829,10 @@ Available Webhook Trigger Types
    • message.created
    • message.updated
    • message.opened
+   • message.bounce_detected
+   • message.send_success
+   • message.send_failed
+   • message.opened.truncated
    • message.link_clicked
 
 💬 Thread
@@ -857,6 +867,11 @@ Available Webhook Trigger Types
    • folder.created
    • folder.updated
    • folder.deleted
+
+📝 Notetaker
+   Meeting notetaker events
+
+   • notetaker.media
 
 Usage:
   nylas webhook create --url <URL> --triggers message.created

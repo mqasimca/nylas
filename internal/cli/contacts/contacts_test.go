@@ -110,6 +110,12 @@ func TestListCmd(t *testing.T) {
 		assert.NotNil(t, flag)
 		assert.Equal(t, "source", flag.Name)
 	})
+
+	t.Run("has_id_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("id")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "false", flag.DefValue)
+	})
 }
 
 func TestShowCmd(t *testing.T) {
@@ -313,6 +319,7 @@ func TestContactsListHelp(t *testing.T) {
 	assert.Contains(t, stdout, "--limit")
 	assert.Contains(t, stdout, "--email")
 	assert.Contains(t, stdout, "--source")
+	assert.Contains(t, stdout, "--id")
 }
 
 func TestContactsCreateHelp(t *testing.T) {

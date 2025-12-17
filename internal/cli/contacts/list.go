@@ -14,6 +14,7 @@ func newListCmd() *cobra.Command {
 		limit  int
 		email  string
 		source string
+		showID bool
 	)
 
 	cmd := &cobra.Command{
@@ -57,7 +58,12 @@ func newListCmd() *cobra.Command {
 
 			fmt.Printf("Found %d contact(s):\n\n", len(contacts))
 
-			table := common.NewTable("NAME", "EMAIL", "PHONE", "COMPANY")
+			var table *common.Table
+			if showID {
+				table = common.NewTable("ID", "NAME", "EMAIL", "PHONE", "COMPANY")
+			} else {
+				table = common.NewTable("NAME", "EMAIL", "PHONE", "COMPANY")
+			}
 			for _, contact := range contacts {
 				name := contact.DisplayName()
 				email := contact.PrimaryEmail()
@@ -69,12 +75,22 @@ func newListCmd() *cobra.Command {
 					company = contact.JobTitle
 				}
 
-				table.AddRow(
-					cyan.Sprint(name),
-					email,
-					phone,
-					dim.Sprint(company),
-				)
+				if showID {
+					table.AddRow(
+						dim.Sprint(contact.ID),
+						cyan.Sprint(name),
+						email,
+						phone,
+						dim.Sprint(company),
+					)
+				} else {
+					table.AddRow(
+						cyan.Sprint(name),
+						email,
+						phone,
+						dim.Sprint(company),
+					)
+				}
 			}
 			table.Render()
 
@@ -85,6 +101,7 @@ func newListCmd() *cobra.Command {
 	cmd.Flags().IntVarP(&limit, "limit", "n", 50, "Maximum number of contacts to show")
 	cmd.Flags().StringVarP(&email, "email", "e", "", "Filter by email address")
 	cmd.Flags().StringVarP(&source, "source", "s", "", "Filter by source (address_book, inbox, domain)")
+	cmd.Flags().BoolVar(&showID, "id", false, "Show contact IDs")
 
 	return cmd
 }

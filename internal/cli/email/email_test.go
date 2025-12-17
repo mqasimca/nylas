@@ -90,8 +90,17 @@ func TestReadCommand(t *testing.T) {
 		assert.Equal(t, "read <message-id> [grant-id]", cmd.Use)
 	})
 
+	t.Run("has_show_alias", func(t *testing.T) {
+		assert.Contains(t, cmd.Aliases, "show")
+	})
+
 	t.Run("has_mark_read_flag", func(t *testing.T) {
 		flag := cmd.Flags().Lookup("mark-read")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_raw_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("raw")
 		assert.NotNil(t, flag)
 	})
 }
@@ -192,6 +201,25 @@ func TestFoldersCommand(t *testing.T) {
 	t.Run("has_subcommands", func(t *testing.T) {
 		subcommands := cmd.Commands()
 		assert.GreaterOrEqual(t, len(subcommands), 3) // list, create, delete
+	})
+}
+
+func TestFoldersListCommand(t *testing.T) {
+	cmd := newFoldersListCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "list [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_id_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("id")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "false", flag.DefValue)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "folders")
 	})
 }
 

@@ -13,10 +13,11 @@ func newReadCmd() *cobra.Command {
 	var rawOutput bool
 
 	cmd := &cobra.Command{
-		Use:   "read <message-id> [grant-id]",
-		Short: "Read a specific email",
-		Long:  "Read and display the full content of a specific email message.",
-		Args:  cobra.RangeArgs(1, 2),
+		Use:     "read <message-id> [grant-id]",
+		Aliases: []string{"show"},
+		Short:   "Read a specific email",
+		Long:    "Read and display the full content of a specific email message.",
+		Args:    cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			messageID := args[0]
 

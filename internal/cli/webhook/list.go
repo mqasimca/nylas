@@ -14,6 +14,7 @@ import (
 
 func newListCmd() *cobra.Command {
 	var format string
+	var fullIDs bool
 
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -24,6 +25,9 @@ func newListCmd() *cobra.Command {
 Shows webhook ID, description, URL, status, and trigger types.`,
 		Example: `  # List all webhooks
   nylas webhook list
+
+  # List with full IDs (useful for copy/paste)
+  nylas webhook list --full-ids
 
   # List in JSON format
   nylas webhook list --format json
@@ -65,12 +69,13 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 			case "csv":
 				return outputCSV(webhooks)
 			default:
-				return outputTable(webhooks)
+				return outputTable(webhooks, fullIDs)
 			}
 		},
 	}
 
 	cmd.Flags().StringVarP(&format, "format", "f", "table", "Output format (table, json, yaml, csv)")
+	cmd.Flags().BoolVar(&fullIDs, "full-ids", false, "Show full webhook IDs (useful for copy/paste)")
 
 	return cmd
 }
@@ -116,7 +121,7 @@ func outputCSV(webhooks interface{}) error {
 	return nil
 }
 
-func outputTable(webhooks interface{}) error {
+func outputTable(webhooks interface{}, fullIDs bool) error {
 	data, _ := json.Marshal(webhooks)
 	var items []map[string]interface{}
 	json.Unmarshal(data, &items)
@@ -134,8 +139,12 @@ func outputTable(webhooks interface{}) error {
 	var rows []row
 
 	for _, item := range items {
+		id := fmt.Sprintf("%v", item["id"])
+		if !fullIDs {
+			id = truncate(id, 20)
+		}
 		r := row{
-			id:     truncate(fmt.Sprintf("%v", item["id"]), 20),
+			id:     id,
 			desc:   truncate(fmt.Sprintf("%v", item["description"]), 25),
 			url:    truncate(fmt.Sprintf("%v", item["webhook_url"]), 35),
 			status: fmt.Sprintf("%v", item["status"]),

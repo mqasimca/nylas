@@ -86,6 +86,12 @@ func TestListCommand(t *testing.T) {
 		assert.Equal(t, "format", flag.Name)
 	})
 
+	t.Run("has_full_ids_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("full-ids")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "false", flag.DefValue)
+	})
+
 	t.Run("has_short_description", func(t *testing.T) {
 		assert.NotEmpty(t, cmd.Short)
 		assert.Contains(t, cmd.Short, "List")
@@ -94,6 +100,7 @@ func TestListCommand(t *testing.T) {
 	t.Run("has_examples", func(t *testing.T) {
 		assert.NotEmpty(t, cmd.Example)
 		assert.Contains(t, cmd.Example, "webhook list")
+		assert.Contains(t, cmd.Example, "--full-ids")
 	})
 }
 
@@ -467,6 +474,7 @@ func TestWebhookListHelp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, stdout, "list")
 	assert.Contains(t, stdout, "--format")
+	assert.Contains(t, stdout, "--full-ids")
 }
 
 func TestWebhookCreateHelp(t *testing.T) {

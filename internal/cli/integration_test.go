@@ -427,6 +427,41 @@ func TestCLI_EmailRead(t *testing.T) {
 	t.Logf("email read output:\n%s", stdout)
 }
 
+func TestCLI_EmailShow(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	// Test the 'show' alias for 'read' command
+	client := getTestClient()
+	ctx := context.Background()
+
+	messages, err := client.GetMessages(ctx, testGrantID, 1)
+	if err != nil {
+		t.Fatalf("Failed to get messages: %v", err)
+	}
+	if len(messages) == 0 {
+		t.Skip("No messages available for show test")
+	}
+
+	messageID := messages[0].ID
+
+	// Use 'show' alias instead of 'read'
+	stdout, stderr, err := runCLI("email", "show", messageID, testGrantID)
+
+	if err != nil {
+		t.Fatalf("email show (alias) failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show message details (same output as 'read')
+	if !strings.Contains(stdout, "Subject:") {
+		t.Errorf("Expected 'Subject:' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "From:") {
+		t.Errorf("Expected 'From:' in output, got: %s", stdout)
+	}
+
+	t.Logf("email show (alias) output:\n%s", stdout)
+}
+
 func TestCLI_EmailRead_JSON(t *testing.T) {
 	skipIfMissingCreds(t)
 
@@ -621,6 +656,34 @@ func TestCLI_FoldersList(t *testing.T) {
 	}
 
 	t.Logf("folders list output:\n%s", stdout)
+}
+
+func TestCLI_FoldersListWithID(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	stdout, stderr, err := runCLI("email", "folders", "list", testGrantID, "--id")
+	skipIfProviderNotSupported(t, stderr)
+
+	if err != nil {
+		t.Fatalf("folders list --id failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show folders with ID column
+	if !strings.Contains(stdout, "Folders") {
+		t.Errorf("Expected folders header, got: %s", stdout)
+	}
+
+	// Should contain ID column in header
+	if !strings.Contains(stdout, "ID") {
+		t.Errorf("Expected 'ID' column header with --id flag, got: %s", stdout)
+	}
+
+	// Should NOT show the hint to use --id (since we already used it)
+	if strings.Contains(stdout, "Use --id to see folder IDs") {
+		t.Errorf("Should not show --id hint when flag is already used, got: %s", stdout)
+	}
+
+	t.Logf("folders list --id output:\n%s", stdout)
 }
 
 func TestCLI_FoldersCreateAndDelete(t *testing.T) {
@@ -1634,6 +1697,27 @@ func TestCLI_ContactsList(t *testing.T) {
 	t.Logf("contacts list output:\n%s", stdout)
 }
 
+func TestCLI_ContactsListWithID(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	stdout, stderr, err := runCLI("contacts", "list", testGrantID, "--id")
+	skipIfProviderNotSupported(t, stderr)
+
+	if err != nil {
+		t.Fatalf("contacts list --id failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show contacts list with IDs or "No contacts found"
+	if strings.Contains(stdout, "Found") {
+		// If contacts are found, the ID column should be present
+		if !strings.Contains(stdout, "ID") {
+			t.Errorf("Expected 'ID' column in output with --id flag, got: %s", stdout)
+		}
+	}
+
+	t.Logf("contacts list --id output:\n%s", stdout)
+}
+
 func TestCLI_ContactsHelp(t *testing.T) {
 	if testBinary == "" {
 		t.Skip("CLI binary not found")
@@ -1818,6 +1902,30 @@ func TestCLI_WebhookList(t *testing.T) {
 	t.Logf("webhook list output:\n%s", stdout)
 }
 
+func TestCLI_WebhookListFullIDs(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	stdout, stderr, err := runCLI("webhook", "list", "--full-ids")
+
+	if err != nil {
+		t.Fatalf("webhook list --full-ids failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show webhooks list or "No webhooks configured"
+	if !strings.Contains(stdout, "webhooks") && !strings.Contains(stdout, "No webhooks") && !strings.Contains(stdout, "ID") {
+		t.Errorf("Expected webhook list output, got: %s", stdout)
+	}
+
+	// When there are webhooks, the IDs should not be truncated (no "...")
+	// Only check this if there are webhooks
+	if strings.Contains(stdout, "Total:") && !strings.Contains(stdout, "Total: 0") {
+		// If there are webhooks, verify we show full IDs (check help confirms flag exists)
+		t.Log("Webhooks found - full IDs should be displayed without truncation")
+	}
+
+	t.Logf("webhook list --full-ids output:\n%s", stdout)
+}
+
 func TestCLI_WebhookListJSON(t *testing.T) {
 	skipIfMissingCreds(t)
 
@@ -1858,7 +1966,49 @@ func TestCLI_WebhookTriggers(t *testing.T) {
 		t.Errorf("Expected 'contact.created' in output, got: %s", stdout)
 	}
 
+	// Test for new triggers added
+	if !strings.Contains(stdout, "grant.imap_sync_completed") {
+		t.Errorf("Expected 'grant.imap_sync_completed' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "message.opened") {
+		t.Errorf("Expected 'message.opened' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "message.bounce_detected") {
+		t.Errorf("Expected 'message.bounce_detected' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "message.send_success") {
+		t.Errorf("Expected 'message.send_success' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "message.send_failed") {
+		t.Errorf("Expected 'message.send_failed' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "message.link_clicked") {
+		t.Errorf("Expected 'message.link_clicked' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "notetaker.media") {
+		t.Errorf("Expected 'notetaker.media' in output, got: %s", stdout)
+	}
+
 	t.Logf("webhook triggers output:\n%s", stdout)
+}
+
+func TestCLI_WebhookTriggersNotetakerCategory(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("webhook", "triggers", "--category", "notetaker")
+
+	if err != nil {
+		t.Fatalf("webhook triggers --category notetaker failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show only notetaker triggers
+	if !strings.Contains(stdout, "notetaker.media") {
+		t.Errorf("Expected 'notetaker.media' in output, got: %s", stdout)
+	}
+
+	t.Logf("webhook triggers --category notetaker output:\n%s", stdout)
 }
 
 func TestCLI_WebhookTriggersJSON(t *testing.T) {

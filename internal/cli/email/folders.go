@@ -22,7 +22,9 @@ func newFoldersCmd() *cobra.Command {
 }
 
 func newFoldersListCmd() *cobra.Command {
-	return &cobra.Command{
+	var showID bool
+
+	cmd := &cobra.Command{
 		Use:   "list [grant-id]",
 		Short: "List all folders",
 		Args:  cobra.MaximumNArgs(1),
@@ -52,8 +54,14 @@ func newFoldersListCmd() *cobra.Command {
 
 			fmt.Println("Folders:")
 			fmt.Println()
-			fmt.Printf("%-30s %-12s %8s %8s\n", "NAME", "TYPE", "TOTAL", "UNREAD")
-			fmt.Println("------------------------------------------------------------")
+
+			if showID {
+				fmt.Printf("%-36s %-30s %-12s %8s %8s\n", "ID", "NAME", "TYPE", "TOTAL", "UNREAD")
+				fmt.Println("------------------------------------------------------------------------------------------------------")
+			} else {
+				fmt.Printf("%-30s %-12s %8s %8s\n", "NAME", "TYPE", "TOTAL", "UNREAD")
+				fmt.Println("------------------------------------------------------------")
+			}
 
 			for _, f := range folders {
 				folderType := f.SystemFolder
@@ -71,16 +79,27 @@ func newFoldersListCmd() *cobra.Command {
 					unreadStr = cyan.Sprintf("%d", f.UnreadCount)
 				}
 
-				fmt.Printf("%-30s %-12s %8d %8s\n",
-					name, folderType, f.TotalCount, unreadStr)
+				if showID {
+					fmt.Printf("%-36s %-30s %-12s %8d %8s\n",
+						dim.Sprint(f.ID), name, folderType, f.TotalCount, unreadStr)
+				} else {
+					fmt.Printf("%-30s %-12s %8d %8s\n",
+						name, folderType, f.TotalCount, unreadStr)
+				}
 			}
 
 			fmt.Println()
-			dim.Printf("Folder IDs can be used with --folder flag in email list/search\n")
+			if !showID {
+				dim.Printf("Use --id to see folder IDs for --folder flag\n")
+			}
 
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&showID, "id", false, "Show folder IDs")
+
+	return cmd
 }
 
 func newFoldersCreateCmd() *cobra.Command {

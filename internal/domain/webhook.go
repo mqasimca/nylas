@@ -52,16 +52,21 @@ type WebhookListResponse struct {
 // Common webhook trigger types.
 const (
 	// Grant triggers
-	TriggerGrantCreated = "grant.created"
-	TriggerGrantDeleted = "grant.deleted"
-	TriggerGrantExpired = "grant.expired"
-	TriggerGrantUpdated = "grant.updated"
+	TriggerGrantCreated          = "grant.created"
+	TriggerGrantDeleted          = "grant.deleted"
+	TriggerGrantExpired          = "grant.expired"
+	TriggerGrantUpdated          = "grant.updated"
+	TriggerGrantIMAPSyncComplete = "grant.imap_sync_completed"
 
 	// Message triggers
-	TriggerMessageCreated          = "message.created"
-	TriggerMessageUpdated          = "message.updated"
-	TriggerMessageOpenedTruncated  = "message.opened.truncated"
-	TriggerMessageLinkClickedMeta  = "message.link_clicked.metadata"
+	TriggerMessageCreated         = "message.created"
+	TriggerMessageUpdated         = "message.updated"
+	TriggerMessageOpened          = "message.opened"
+	TriggerMessageBounceDetected  = "message.bounce_detected"
+	TriggerMessageSendSuccess     = "message.send_success"
+	TriggerMessageSendFailed      = "message.send_failed"
+	TriggerMessageOpenedTruncated = "message.opened.truncated"
+	TriggerMessageLinkClicked     = "message.link_clicked"
 
 	// Thread triggers
 	TriggerThreadReplied = "thread.replied"
@@ -85,30 +90,49 @@ const (
 	TriggerFolderCreated = "folder.created"
 	TriggerFolderUpdated = "folder.updated"
 	TriggerFolderDeleted = "folder.deleted"
+
+	// Notetaker triggers
+	TriggerNotetakerMedia = "notetaker.media"
 )
 
 // AllTriggerTypes returns all available trigger types.
 func AllTriggerTypes() []string {
 	return []string{
+		// Grant
 		TriggerGrantCreated,
 		TriggerGrantDeleted,
 		TriggerGrantExpired,
 		TriggerGrantUpdated,
+		TriggerGrantIMAPSyncComplete,
+		// Message
 		TriggerMessageCreated,
 		TriggerMessageUpdated,
+		TriggerMessageOpened,
+		TriggerMessageBounceDetected,
+		TriggerMessageSendSuccess,
+		TriggerMessageSendFailed,
+		TriggerMessageOpenedTruncated,
+		TriggerMessageLinkClicked,
+		// Thread
 		TriggerThreadReplied,
+		// Event
 		TriggerEventCreated,
 		TriggerEventUpdated,
 		TriggerEventDeleted,
+		// Contact
 		TriggerContactCreated,
 		TriggerContactUpdated,
 		TriggerContactDeleted,
+		// Calendar
 		TriggerCalendarCreated,
 		TriggerCalendarUpdated,
 		TriggerCalendarDeleted,
+		// Folder
 		TriggerFolderCreated,
 		TriggerFolderUpdated,
 		TriggerFolderDeleted,
+		// Notetaker
+		TriggerNotetakerMedia,
 	}
 }
 
@@ -120,10 +144,17 @@ func TriggerTypeCategories() map[string][]string {
 			TriggerGrantDeleted,
 			TriggerGrantExpired,
 			TriggerGrantUpdated,
+			TriggerGrantIMAPSyncComplete,
 		},
 		"message": {
 			TriggerMessageCreated,
 			TriggerMessageUpdated,
+			TriggerMessageOpened,
+			TriggerMessageBounceDetected,
+			TriggerMessageSendSuccess,
+			TriggerMessageSendFailed,
+			TriggerMessageOpenedTruncated,
+			TriggerMessageLinkClicked,
 		},
 		"thread": {
 			TriggerThreadReplied,
@@ -147,6 +178,9 @@ func TriggerTypeCategories() map[string][]string {
 			TriggerFolderCreated,
 			TriggerFolderUpdated,
 			TriggerFolderDeleted,
+		},
+		"notetaker": {
+			TriggerNotetakerMedia,
 		},
 	}
 }

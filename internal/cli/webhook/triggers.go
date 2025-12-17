@@ -72,7 +72,7 @@ Use these values when creating or updating webhooks.`,
 	}
 
 	cmd.Flags().StringVarP(&format, "format", "f", "text", "Output format (text, json, yaml, list)")
-	cmd.Flags().StringVarP(&category, "category", "c", "", "Filter by category (grant, message, thread, event, contact, calendar, folder)")
+	cmd.Flags().StringVarP(&category, "category", "c", "", "Filter by category (grant, message, thread, event, contact, calendar, folder, notetaker)")
 
 	return cmd
 }
@@ -83,25 +83,27 @@ func displayTriggerCategories(categories map[string][]string) error {
 	fmt.Println()
 
 	// Display in a nice order
-	categoryOrder := []string{"grant", "message", "thread", "event", "contact", "calendar", "folder"}
+	categoryOrder := []string{"grant", "message", "thread", "event", "contact", "calendar", "folder", "notetaker"}
 	categoryDescriptions := map[string]string{
-		"grant":    "Authentication grant events",
-		"message":  "Email message events",
-		"thread":   "Email thread events",
-		"event":    "Calendar event events",
-		"contact":  "Contact events",
-		"calendar": "Calendar events",
-		"folder":   "Email folder events",
+		"grant":     "Authentication grant events",
+		"message":   "Email message events",
+		"thread":    "Email thread events",
+		"event":     "Calendar event events",
+		"contact":   "Contact events",
+		"calendar":  "Calendar events",
+		"folder":    "Email folder events",
+		"notetaker": "Meeting notetaker events",
 	}
 
 	categoryEmojis := map[string]string{
-		"grant":    "🔑",
-		"message":  "📧",
-		"thread":   "💬",
-		"event":    "📅",
-		"contact":  "👤",
-		"calendar": "📆",
-		"folder":   "📁",
+		"grant":     "🔑",
+		"message":   "📧",
+		"thread":    "💬",
+		"event":     "📅",
+		"contact":   "👤",
+		"calendar":  "📆",
+		"folder":    "📁",
+		"notetaker": "📝",
 	}
 
 	for _, cat := range categoryOrder {
