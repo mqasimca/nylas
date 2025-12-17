@@ -58,7 +58,10 @@ WEBHOOK MANAGEMENT:
 OTP MANAGEMENT:
   nylas otp get        Get the latest OTP code
   nylas otp watch      Watch for new OTP codes
-  nylas otp list       List configured accounts`,
+  nylas otp list       List configured accounts
+
+INTERACTIVE TUI:
+  nylas tui            Launch k9s-style terminal UI for emails`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

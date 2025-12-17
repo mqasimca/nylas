@@ -23,6 +23,7 @@ func main() {
 	rootCmd.AddCommand(calendar.NewCalendarCmd())
 	rootCmd.AddCommand(contacts.NewContactsCmd())
 	rootCmd.AddCommand(webhook.NewWebhookCmd())
+	rootCmd.AddCommand(cli.NewTUICmd())
 
 	if err := cli.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
