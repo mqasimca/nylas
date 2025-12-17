@@ -1,0 +1,135 @@
+package otp
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/atotto/clipboard"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/domain"
+)
+
+func newGetCmd() *cobra.Command {
+	var (
+		noCopy bool
+		raw    bool
+	)
+
+	cmd := &cobra.Command{
+		Use:   "get [email]",
+		Short: "Get the latest OTP code",
+		Long: `Get the latest OTP code from your email.
+
+If no email is specified, uses the default account.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			otpSvc, err := createOTPService()
+			if err != nil {
+				return err
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			var result *domain.OTPResult
+			if len(args) > 0 {
+				result, err = otpSvc.GetOTP(ctx, args[0])
+			} else {
+				result, err = otpSvc.GetOTPDefault(ctx)
+			}
+
+			if err != nil {
+				if err == domain.ErrOTPNotFound {
+					return fmt.Errorf("no OTP found in recent messages")
+				}
+				return err
+			}
+
+			// Copy to clipboard unless disabled
+			if !noCopy {
+				_ = clipboard.WriteAll(result.Code)
+			}
+
+			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
+			if jsonOutput {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "  ")
+				return enc.Encode(result)
+			}
+
+			if raw {
+				fmt.Println(result.Code)
+				return nil
+			}
+
+			// Display fancy OTP box
+			displayOTP(result, !noCopy)
+
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&noCopy, "no-copy", false, "Don't copy OTP to clipboard")
+	cmd.Flags().BoolVar(&raw, "raw", false, "Output only the OTP code")
+
+	return cmd
+}
+
+func displayOTP(result *domain.OTPResult, copied bool) {
+	cyan := color.New(color.FgCyan, color.Bold)
+	green := color.New(color.FgGreen)
+	dim := color.New(color.Faint)
+
+	// Format code with spaces between digits
+	spaced := strings.Join(strings.Split(result.Code, ""), "  ")
+
+	// Draw box
+	boxWidth := len(spaced) + 6
+	border := strings.Repeat("═", boxWidth)
+
+	cyan.Printf("╔%s╗\n", border)
+	cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
+	cyan.Printf("║   %s   ║\n", spaced)
+	cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
+	cyan.Printf("╚%s╝\n", border)
+
+	fmt.Println()
+	dim.Printf("From:        %s\n", result.From)
+	dim.Printf("Subject:     %s\n", result.Subject)
+	dim.Printf("Received:    %s\n", formatTimeAgo(result.Received))
+
+	if copied {
+		green.Println("\n✓ Copied to clipboard")
+	}
+}
+
+func formatTimeAgo(t time.Time) string {
+	d := time.Since(t)
+
+	if d < time.Minute {
+		return "just now"
+	} else if d < time.Hour {
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1 minute ago"
+		}
+		return fmt.Sprintf("%d minutes ago", m)
+	} else if d < 24*time.Hour {
+		h := int(d.Hours())
+		if h == 1 {
+			return "1 hour ago"
+		}
+		return fmt.Sprintf("%d hours ago", h)
+	}
+
+	days := int(d.Hours() / 24)
+	if days == 1 {
+		return "yesterday"
+	}
+	return fmt.Sprintf("%d days ago", days)
+}
