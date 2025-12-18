@@ -120,10 +120,6 @@ secring.*
 aws_credentials
 
 # GCP
-*.json
-!package.json
-!tsconfig.json
-!*_test.json
 service_account*.json
 gcp_credentials*
 
