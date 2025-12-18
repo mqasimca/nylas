@@ -18,12 +18,21 @@ A unified command-line tool for Nylas API authentication, email management, cale
 
 ## Installation
 
+**Homebrew (macOS/Linux):**
+```bash
+brew install mqasimca/nylas/nylas
+```
+
+**Go Install:**
 ```bash
 go install github.com/mqasimca/nylas/cmd/nylas@latest
 ```
 
-Or build from source:
+**Download Binary:**
 
+Download from [Releases](https://github.com/mqasimca/nylas/releases) and add to your PATH.
+
+**Build from Source:**
 ```bash
 make build
 ```

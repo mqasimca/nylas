@@ -6,8 +6,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "nylas",
-	Short: "Nylas CLI - Email, Authentication, and OTP management",
+	Use:     "nylas",
+	Short:   "Nylas CLI - Email, Authentication, and OTP management",
+	Version: Version,
 	Long: `nylas is a command-line tool for managing emails, Nylas API authentication,
 and retrieving OTP codes from email.
 
