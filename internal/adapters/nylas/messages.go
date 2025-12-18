@@ -231,6 +231,9 @@ func (c *HTTPClient) SendMessage(ctx context.Context, grantID string, req *domai
 	if req.SendAt > 0 {
 		payload["send_at"] = req.SendAt
 	}
+	if len(req.Metadata) > 0 {
+		payload["metadata"] = req.Metadata
+	}
 
 	body, _ := json.Marshal(payload)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))

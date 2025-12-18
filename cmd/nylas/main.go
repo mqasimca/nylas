@@ -10,6 +10,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/calendar"
 	"github.com/mqasimca/nylas/internal/cli/contacts"
 	"github.com/mqasimca/nylas/internal/cli/email"
+	"github.com/mqasimca/nylas/internal/cli/notetaker"
 	"github.com/mqasimca/nylas/internal/cli/otp"
 	"github.com/mqasimca/nylas/internal/cli/webhook"
 )
@@ -23,6 +24,7 @@ func main() {
 	rootCmd.AddCommand(calendar.NewCalendarCmd())
 	rootCmd.AddCommand(contacts.NewContactsCmd())
 	rootCmd.AddCommand(webhook.NewWebhookCmd())
+	rootCmd.AddCommand(notetaker.NewNotetakerCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
 
 	if err := cli.Execute(); err != nil {

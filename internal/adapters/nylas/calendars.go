@@ -421,6 +421,9 @@ func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string
 	if req.Reminders != nil {
 		payload["reminders"] = req.Reminders
 	}
+	if len(req.Metadata) > 0 {
+		payload["metadata"] = req.Metadata
+	}
 
 	body, _ := json.Marshal(payload)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))

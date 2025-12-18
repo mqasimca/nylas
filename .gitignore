@@ -1,6 +1,9 @@
 # Planning/internal docs
 plan.md
 
+# Local development (not committed)
+/local/
+
 # Binaries
 bin/
 *.exe

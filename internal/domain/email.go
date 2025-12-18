@@ -80,17 +80,18 @@ type Attachment struct {
 
 // SendMessageRequest represents a request to send an email.
 type SendMessageRequest struct {
-	Subject       string       `json:"subject"`
-	Body          string       `json:"body"`
-	From          []EmailParticipant    `json:"from,omitempty"`
-	To            []EmailParticipant    `json:"to"`
-	Cc            []EmailParticipant    `json:"cc,omitempty"`
-	Bcc           []EmailParticipant    `json:"bcc,omitempty"`
-	ReplyTo       []EmailParticipant    `json:"reply_to,omitempty"`
-	ReplyToMsgID  string       `json:"reply_to_message_id,omitempty"`
-	TrackingOpts  *TrackingOptions `json:"tracking_options,omitempty"`
-	Attachments   []Attachment `json:"attachments,omitempty"`
-	SendAt        int64        `json:"send_at,omitempty"` // Unix timestamp for scheduled sending
+	Subject       string              `json:"subject"`
+	Body          string              `json:"body"`
+	From          []EmailParticipant  `json:"from,omitempty"`
+	To            []EmailParticipant  `json:"to"`
+	Cc            []EmailParticipant  `json:"cc,omitempty"`
+	Bcc           []EmailParticipant  `json:"bcc,omitempty"`
+	ReplyTo       []EmailParticipant  `json:"reply_to,omitempty"`
+	ReplyToMsgID  string              `json:"reply_to_message_id,omitempty"`
+	TrackingOpts  *TrackingOptions    `json:"tracking_options,omitempty"`
+	Attachments   []Attachment        `json:"attachments,omitempty"`
+	SendAt        int64               `json:"send_at,omitempty"` // Unix timestamp for scheduled sending
+	Metadata      map[string]string   `json:"metadata,omitempty"`
 }
 
 // ScheduledMessage represents a scheduled email.
@@ -159,14 +160,15 @@ type UpdateMessageRequest struct {
 
 // CreateDraftRequest for creating a new draft.
 type CreateDraftRequest struct {
-	Subject      string       `json:"subject"`
-	Body         string       `json:"body"`
-	To           []EmailParticipant    `json:"to,omitempty"`
-	Cc           []EmailParticipant    `json:"cc,omitempty"`
-	Bcc          []EmailParticipant    `json:"bcc,omitempty"`
-	ReplyTo      []EmailParticipant    `json:"reply_to,omitempty"`
-	ReplyToMsgID string       `json:"reply_to_message_id,omitempty"`
-	Attachments  []Attachment `json:"attachments,omitempty"`
+	Subject      string              `json:"subject"`
+	Body         string              `json:"body"`
+	To           []EmailParticipant  `json:"to,omitempty"`
+	Cc           []EmailParticipant  `json:"cc,omitempty"`
+	Bcc          []EmailParticipant  `json:"bcc,omitempty"`
+	ReplyTo      []EmailParticipant  `json:"reply_to,omitempty"`
+	ReplyToMsgID string              `json:"reply_to_message_id,omitempty"`
+	Attachments  []Attachment        `json:"attachments,omitempty"`
+	Metadata     map[string]string   `json:"metadata,omitempty"`
 }
 
 // CreateFolderRequest for creating a new folder.

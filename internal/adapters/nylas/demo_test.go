@@ -3,6 +3,8 @@ package nylas
 import (
 	"context"
 	"testing"
+
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 func TestDemoClient(t *testing.T) {
@@ -251,6 +253,161 @@ func TestDemoClientContacts(t *testing.T) {
 			if len(contact.Emails) == 0 {
 				t.Errorf("Contact %s should have email", contact.GivenName)
 			}
+		}
+	})
+}
+
+func TestDemoClientNotetakers(t *testing.T) {
+	client := NewDemoClient()
+	ctx := context.Background()
+
+	t.Run("returns_demo_notetakers", func(t *testing.T) {
+		notetakers, err := client.ListNotetakers(ctx, "demo-grant", nil)
+		if err != nil {
+			t.Fatalf("ListNotetakers failed: %v", err)
+		}
+		if len(notetakers) == 0 {
+			t.Error("Expected demo notetakers, got none")
+		}
+		// Check first notetaker has expected fields
+		if notetakers[0].ID == "" {
+			t.Error("Expected notetaker to have ID")
+		}
+		if notetakers[0].State == "" {
+			t.Error("Expected notetaker to have state")
+		}
+		if notetakers[0].MeetingLink == "" {
+			t.Error("Expected notetaker to have meeting link")
+		}
+	})
+
+	t.Run("notetakers_have_different_states", func(t *testing.T) {
+		notetakers, _ := client.ListNotetakers(ctx, "demo-grant", nil)
+		states := make(map[string]bool)
+		for _, nt := range notetakers {
+			states[nt.State] = true
+		}
+
+		// Check for expected states in demo data
+		if !states["complete"] {
+			t.Error("Expected at least one complete notetaker")
+		}
+		if !states["attending"] {
+			t.Error("Expected at least one attending notetaker")
+		}
+		if !states["scheduled"] {
+			t.Error("Expected at least one scheduled notetaker")
+		}
+	})
+
+	t.Run("get_notetaker_by_id", func(t *testing.T) {
+		notetaker, err := client.GetNotetaker(ctx, "demo-grant", "notetaker-001")
+		if err != nil {
+			t.Fatalf("GetNotetaker failed: %v", err)
+		}
+		if notetaker.ID != "notetaker-001" {
+			t.Errorf("Expected notetaker ID notetaker-001, got %s", notetaker.ID)
+		}
+	})
+
+	t.Run("create_notetaker", func(t *testing.T) {
+		req := &domain.CreateNotetakerRequest{
+			MeetingLink: "https://zoom.us/j/test123",
+			JoinTime:    1234567890,
+			BotConfig: &domain.BotConfig{
+				Name: "TestBot",
+			},
+		}
+		notetaker, err := client.CreateNotetaker(ctx, "demo-grant", req)
+		if err != nil {
+			t.Fatalf("CreateNotetaker failed: %v", err)
+		}
+		if notetaker.ID == "" {
+			t.Error("Expected created notetaker to have ID")
+		}
+		if notetaker.MeetingLink != req.MeetingLink {
+			t.Errorf("Expected meeting link %s, got %s", req.MeetingLink, notetaker.MeetingLink)
+		}
+		if notetaker.State != "scheduled" {
+			t.Errorf("Expected state scheduled, got %s", notetaker.State)
+		}
+	})
+
+	t.Run("delete_notetaker", func(t *testing.T) {
+		if err := client.DeleteNotetaker(ctx, "demo-grant", "notetaker-001"); err != nil {
+			t.Errorf("DeleteNotetaker should not error: %v", err)
+		}
+	})
+
+	t.Run("get_notetaker_media", func(t *testing.T) {
+		media, err := client.GetNotetakerMedia(ctx, "demo-grant", "notetaker-001")
+		if err != nil {
+			t.Fatalf("GetNotetakerMedia failed: %v", err)
+		}
+		if media.Recording == nil {
+			t.Error("Expected media to have recording")
+		}
+		if media.Transcript == nil {
+			t.Error("Expected media to have transcript")
+		}
+		if media.Recording.URL == "" {
+			t.Error("Expected recording to have URL")
+		}
+		if media.Transcript.URL == "" {
+			t.Error("Expected transcript to have URL")
+		}
+		if media.Recording.ContentType == "" {
+			t.Error("Expected recording to have content type")
+		}
+		if media.Recording.Size == 0 {
+			t.Error("Expected recording to have size")
+		}
+	})
+}
+
+func TestDemoClientSendMessageWithTracking(t *testing.T) {
+	client := NewDemoClient()
+	ctx := context.Background()
+
+	t.Run("send_message_with_tracking", func(t *testing.T) {
+		req := &domain.SendMessageRequest{
+			Subject: "Test email with tracking",
+			Body:    "This is a test email",
+			To:      []domain.EmailParticipant{{Email: "test@example.com"}},
+			TrackingOpts: &domain.TrackingOptions{
+				Opens: true,
+				Links: true,
+				Label: "test-campaign",
+			},
+		}
+		msg, err := client.SendMessage(ctx, "demo-grant", req)
+		if err != nil {
+			t.Fatalf("SendMessage with tracking failed: %v", err)
+		}
+		if msg.ID == "" {
+			t.Error("Expected sent message to have ID")
+		}
+		if msg.Subject != req.Subject {
+			t.Errorf("Expected subject %s, got %s", req.Subject, msg.Subject)
+		}
+	})
+
+	t.Run("send_message_with_metadata", func(t *testing.T) {
+		req := &domain.SendMessageRequest{
+			Subject: "Test email with metadata",
+			Body:    "This is a test email",
+			To:      []domain.EmailParticipant{{Email: "test@example.com"}},
+			Metadata: map[string]string{
+				"campaign":    "q4-newsletter",
+				"customer_id": "cust-123",
+			},
+		}
+		msg, err := client.SendMessage(ctx, "demo-grant", req)
+		if err != nil {
+			t.Fatalf("SendMessage with metadata failed: %v", err)
+		}
+		if msg.ID == "" {
+			t.Error("Expected sent message to have ID")
 		}
 	})
 }

@@ -830,3 +830,88 @@ func (d *DemoClient) GetScheduledMessage(ctx context.Context, grantID, scheduleI
 func (d *DemoClient) CancelScheduledMessage(ctx context.Context, grantID, scheduleID string) error {
 	return nil
 }
+
+// ListNotetakers returns demo notetakers.
+func (d *DemoClient) ListNotetakers(ctx context.Context, grantID string, params *domain.NotetakerQueryParams) ([]domain.Notetaker, error) {
+	now := time.Now()
+	return []domain.Notetaker{
+		{
+			ID:           "notetaker-001",
+			State:        domain.NotetakerStateComplete,
+			MeetingLink:  "https://zoom.us/j/123456789",
+			MeetingTitle: "Q4 Planning Meeting",
+			CreatedAt:    now.Add(-2 * time.Hour),
+			UpdatedAt:    now.Add(-1 * time.Hour),
+		},
+		{
+			ID:           "notetaker-002",
+			State:        domain.NotetakerStateAttending,
+			MeetingLink:  "https://meet.google.com/abc-defg-hij",
+			MeetingTitle: "Weekly Standup",
+			CreatedAt:    now.Add(-30 * time.Minute),
+			UpdatedAt:    now.Add(-5 * time.Minute),
+		},
+		{
+			ID:           "notetaker-003",
+			State:        domain.NotetakerStateScheduled,
+			MeetingLink:  "https://teams.microsoft.com/l/meetup-join/xyz",
+			MeetingTitle: "Client Demo",
+			JoinTime:     now.Add(2 * time.Hour),
+			CreatedAt:    now.Add(-24 * time.Hour),
+			UpdatedAt:    now.Add(-24 * time.Hour),
+		},
+	}, nil
+}
+
+// GetNotetaker returns a demo notetaker.
+func (d *DemoClient) GetNotetaker(ctx context.Context, grantID, notetakerID string) (*domain.Notetaker, error) {
+	notetakers, _ := d.ListNotetakers(ctx, grantID, nil)
+	for _, nt := range notetakers {
+		if nt.ID == notetakerID {
+			return &nt, nil
+		}
+	}
+	return &notetakers[0], nil
+}
+
+// CreateNotetaker simulates creating a notetaker.
+func (d *DemoClient) CreateNotetaker(ctx context.Context, grantID string, req *domain.CreateNotetakerRequest) (*domain.Notetaker, error) {
+	now := time.Now()
+	nt := &domain.Notetaker{
+		ID:          "new-notetaker",
+		State:       domain.NotetakerStateScheduled,
+		MeetingLink: req.MeetingLink,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	if req.JoinTime > 0 {
+		nt.JoinTime = time.Unix(req.JoinTime, 0)
+	}
+	if req.BotConfig != nil {
+		nt.BotConfig = req.BotConfig
+	}
+	return nt, nil
+}
+
+// DeleteNotetaker simulates deleting a notetaker.
+func (d *DemoClient) DeleteNotetaker(ctx context.Context, grantID, notetakerID string) error {
+	return nil
+}
+
+// GetNotetakerMedia returns demo notetaker media.
+func (d *DemoClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID string) (*domain.MediaData, error) {
+	return &domain.MediaData{
+		Recording: &domain.MediaFile{
+			URL:         "https://storage.nylas.com/recordings/demo-recording.mp4",
+			ContentType: "video/mp4",
+			Size:        125829120, // 120 MB
+			ExpiresAt:   time.Now().Add(24 * time.Hour).Unix(),
+		},
+		Transcript: &domain.MediaFile{
+			URL:         "https://storage.nylas.com/transcripts/demo-transcript.json",
+			ContentType: "application/json",
+			Size:        51200, // 50 KB
+			ExpiresAt:   time.Now().Add(24 * time.Hour).Unix(),
+		},
+	}, nil
+}

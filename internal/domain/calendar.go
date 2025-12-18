@@ -151,17 +151,18 @@ type EventQueryParams struct {
 
 // CreateEventRequest for creating a new event.
 type CreateEventRequest struct {
-	Title        string        `json:"title"`
-	Description  string        `json:"description,omitempty"`
-	Location     string        `json:"location,omitempty"`
-	When         EventWhen     `json:"when"`
-	Participants []Participant `json:"participants,omitempty"`
-	Busy         bool          `json:"busy"`
-	Visibility   string        `json:"visibility,omitempty"`
-	Recurrence   []string      `json:"recurrence,omitempty"`
-	Conferencing *Conferencing `json:"conferencing,omitempty"`
-	Reminders    *Reminders    `json:"reminders,omitempty"`
-	CalendarID   string        `json:"calendar_id,omitempty"`
+	Title        string            `json:"title"`
+	Description  string            `json:"description,omitempty"`
+	Location     string            `json:"location,omitempty"`
+	When         EventWhen         `json:"when"`
+	Participants []Participant     `json:"participants,omitempty"`
+	Busy         bool              `json:"busy"`
+	Visibility   string            `json:"visibility,omitempty"`
+	Recurrence   []string          `json:"recurrence,omitempty"`
+	Conferencing *Conferencing     `json:"conferencing,omitempty"`
+	Reminders    *Reminders        `json:"reminders,omitempty"`
+	CalendarID   string            `json:"calendar_id,omitempty"`
+	Metadata     map[string]string `json:"metadata,omitempty"`
 }
 
 // UpdateEventRequest for updating an event.

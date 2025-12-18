@@ -98,6 +98,13 @@ type NylasClient interface {
 	SendWebhookTestEvent(ctx context.Context, webhookURL string) error
 	GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]interface{}, error)
 
+	// Notetaker operations
+	ListNotetakers(ctx context.Context, grantID string, params *domain.NotetakerQueryParams) ([]domain.Notetaker, error)
+	GetNotetaker(ctx context.Context, grantID, notetakerID string) (*domain.Notetaker, error)
+	CreateNotetaker(ctx context.Context, grantID string, req *domain.CreateNotetakerRequest) (*domain.Notetaker, error)
+	DeleteNotetaker(ctx context.Context, grantID, notetakerID string) error
+	GetNotetakerMedia(ctx context.Context, grantID, notetakerID string) (*domain.MediaData, error)
+
 	// Configuration
 	SetRegion(region string)
 	SetCredentials(clientID, clientSecret, apiKey string)

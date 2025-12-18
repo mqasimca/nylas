@@ -22,6 +22,10 @@ func newSendCmd() *cobra.Command {
 	var interactive bool
 	var scheduleAt string
 	var noConfirm bool
+	var trackOpens bool
+	var trackLinks bool
+	var trackLabel string
+	var metadata []string
 
 	cmd := &cobra.Command{
 		Use:   "send [grant-id]",
@@ -32,7 +36,15 @@ Supports scheduled sending with the --schedule flag. You can specify:
 - Duration: "30m", "2h", "1d" (minutes, hours, days from now)
 - Time: "14:30" or "2:30pm" (today or tomorrow if past)
 - Date/time: "2024-01-15 14:30" or "tomorrow 9am"
-- Unix timestamp: "1705320600"`,
+- Unix timestamp: "1705320600"
+
+Supports email tracking:
+- --track-opens: Track when recipients open the email
+- --track-links: Track when recipients click links
+- --track-label: Add a label to identify tracked emails
+
+Supports custom metadata:
+- --metadata key=value: Add custom key-value metadata (can be repeated)`,
 		Example: `  # Send immediately
   nylas email send --to user@example.com --subject "Hello" --body "Hi there!"
 
@@ -43,7 +55,13 @@ Supports scheduled sending with the --schedule flag. You can specify:
   nylas email send --to user@example.com --subject "Morning" --schedule "tomorrow 9am"
 
   # Send at a specific time
-  nylas email send --to user@example.com --subject "Meeting" --schedule "2024-01-15 14:30"`,
+  nylas email send --to user@example.com --subject "Meeting" --schedule "2024-01-15 14:30"
+
+  # Send with open and link tracking
+  nylas email send --to user@example.com --subject "Newsletter" --track-opens --track-links
+
+  # Send with custom metadata
+  nylas email send --to user@example.com --subject "Invoice" --metadata campaign=q4 --metadata type=invoice`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()
@@ -112,6 +130,28 @@ Supports scheduled sending with the --schedule flag. You can specify:
 				req.ReplyToMsgID = replyTo
 			}
 
+			// Add tracking options if specified
+			if trackOpens || trackLinks || trackLabel != "" {
+				req.TrackingOpts = &domain.TrackingOptions{
+					Opens: trackOpens,
+					Links: trackLinks,
+					Label: trackLabel,
+				}
+			}
+
+			// Parse metadata key=value pairs
+			if len(metadata) > 0 {
+				req.Metadata = make(map[string]string)
+				for _, m := range metadata {
+					parts := strings.SplitN(m, "=", 2)
+					if len(parts) == 2 {
+						req.Metadata[parts[0]] = parts[1]
+					} else {
+						return fmt.Errorf("invalid metadata format: %s (expected key=value)", m)
+					}
+				}
+			}
+
 			// Parse schedule time if provided
 			var scheduledTime time.Time
 			if scheduleAt != "" {
@@ -138,6 +178,19 @@ Supports scheduled sending with the --schedule flag. You can specify:
 			}
 			if !scheduledTime.IsZero() {
 				fmt.Printf("  \033[33mScheduled:\033[0m %s\n", scheduledTime.Format("Mon Jan 2, 2006 3:04 PM MST"))
+			}
+			if trackOpens || trackLinks {
+				tracking := []string{}
+				if trackOpens {
+					tracking = append(tracking, "opens")
+				}
+				if trackLinks {
+					tracking = append(tracking, "links")
+				}
+				fmt.Printf("  \033[36mTracking:\033[0m %s\n", strings.Join(tracking, ", "))
+			}
+			if len(metadata) > 0 {
+				fmt.Printf("  \033[36mMetadata:\033[0m %s\n", strings.Join(metadata, ", "))
 			}
 
 			if !noConfirm {
@@ -184,6 +237,10 @@ Supports scheduled sending with the --schedule flag. You can specify:
 	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactive mode")
 	cmd.Flags().StringVar(&scheduleAt, "schedule", "", "Schedule sending (e.g., '2h', 'tomorrow 9am', '2024-01-15 14:30')")
 	cmd.Flags().BoolVarP(&noConfirm, "yes", "y", false, "Skip confirmation prompt")
+	cmd.Flags().BoolVar(&trackOpens, "track-opens", false, "Track email opens")
+	cmd.Flags().BoolVar(&trackLinks, "track-links", false, "Track link clicks")
+	cmd.Flags().StringVar(&trackLabel, "track-label", "", "Label for tracking (used to group tracked emails)")
+	cmd.Flags().StringSliceVar(&metadata, "metadata", nil, "Custom metadata as key=value (can be repeated)")
 
 	return cmd
 }

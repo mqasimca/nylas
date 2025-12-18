@@ -643,3 +643,40 @@ func TestEmailSendHelp(t *testing.T) {
 	assert.Contains(t, stdout, "--schedule")
 	assert.Contains(t, stdout, "--yes")
 }
+
+func TestSendCommandTrackingFlags(t *testing.T) {
+	cmd := newSendCmd()
+
+	t.Run("has_track_opens_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("track-opens")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "false", flag.DefValue)
+	})
+
+	t.Run("has_track_links_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("track-links")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "false", flag.DefValue)
+	})
+
+	t.Run("has_track_label_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("track-label")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_metadata_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("metadata")
+		assert.NotNil(t, flag)
+	})
+}
+
+func TestEmailSendHelpTrackingFlags(t *testing.T) {
+	cmd := NewEmailCmd()
+	stdout, _, err := executeCommand(cmd, "send", "--help")
+
+	assert.NoError(t, err)
+	assert.Contains(t, stdout, "--track-opens")
+	assert.Contains(t, stdout, "--track-links")
+	assert.Contains(t, stdout, "--track-label")
+	assert.Contains(t, stdout, "--metadata")
+}

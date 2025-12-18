@@ -158,6 +158,9 @@ func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, re
 	if req.ReplyToMsgID != "" {
 		payload["reply_to_message_id"] = req.ReplyToMsgID
 	}
+	if len(req.Metadata) > 0 {
+		payload["metadata"] = req.Metadata
+	}
 
 	body, _ := json.Marshal(payload)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
@@ -211,6 +214,9 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 	}
 	if req.ReplyToMsgID != "" {
 		message["reply_to_message_id"] = req.ReplyToMsgID
+	}
+	if len(req.Metadata) > 0 {
+		message["metadata"] = req.Metadata
 	}
 
 	// Create multipart form

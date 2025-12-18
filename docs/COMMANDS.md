@@ -165,7 +165,21 @@ nylas email send --to "to@example.com" --subject "Meeting" --schedule "2024-12-2
 
 # Skip confirmation prompt
 nylas email send --to "to@example.com" --subject "Quick" --body "..." --yes
+
+# Send with tracking (opens and link clicks)
+nylas email send --to "to@example.com" --subject "Newsletter" --body "..." \
+  --track-opens --track-links --track-label "campaign-q4"
+
+# Send with custom metadata
+nylas email send --to "to@example.com" --subject "Order Confirmation" --body "..." \
+  --metadata "order_id=12345" --metadata "customer_id=cust_abc"
 ```
+
+**Tracking Options:**
+- `--track-opens` - Track when recipients open the email
+- `--track-links` - Track when recipients click links in the email
+- `--track-label` - Label for grouping tracked emails (for analytics)
+- `--metadata` - Custom key=value metadata pairs (can be specified multiple times)
 
 **Example output (scheduled):**
 ```bash
@@ -935,6 +949,160 @@ $ nylas webhook test send https://api.myapp.com/webhook
 
 Check your webhook endpoint logs to verify the event was received.
 ```
+
+---
+
+## Notetaker Management
+
+Manage Nylas Notetaker bots for meeting recording and transcription.
+
+### List Notetakers
+
+```bash
+nylas notetaker list [grant-id]         # List all notetakers
+nylas notetaker ls                      # Alias
+nylas notetaker list --limit 10         # Limit results
+nylas notetaker list --state scheduled  # Filter by state
+nylas notetaker list --json             # Output as JSON
+```
+
+**Example output:**
+```bash
+$ nylas notetaker list
+
+Found 3 notetaker(s):
+
+ID: notetaker_abc123
+  State:   complete
+  Title:   Q4 Planning Meeting
+  Link:    https://zoom.us/j/123456789
+  Created: 2 hours ago
+
+ID: notetaker_def456
+  State:   attending
+  Title:   Weekly Standup
+  Link:    https://meet.google.com/abc-defg-hij
+  Created: 30 minutes ago
+
+ID: notetaker_ghi789
+  State:   scheduled
+  Title:   Client Demo
+  Join:    Mon Dec 23, 2024 2:00 PM
+  Created: yesterday
+```
+
+### Show Notetaker
+
+```bash
+nylas notetaker show <notetaker-id> [grant-id]  # Show details
+nylas notetaker show <id> --json                 # Output as JSON
+```
+
+**Example output:**
+```bash
+$ nylas notetaker show notetaker_abc123
+
+Notetaker: notetaker_abc123
+State:     complete
+Title:     Q4 Planning Meeting
+Link:      https://zoom.us/j/123456789
+Provider:  zoom
+Bot Name:  Meeting Bot
+
+Media:
+  Recording: https://storage.nylas.com/recordings/abc123.mp4
+    Size: 120.5 MB
+  Transcript: https://storage.nylas.com/transcripts/abc123.json
+    Size: 50.0 KB
+
+Created: Mon Dec 16, 2024 10:00 AM PST
+Updated: Mon Dec 16, 2024 11:30 AM PST
+```
+
+### Create Notetaker
+
+```bash
+# Create notetaker to join immediately
+nylas notetaker create --meeting-link "https://zoom.us/j/123456789"
+
+# Create with scheduled join time
+nylas notetaker create --meeting-link "https://meet.google.com/abc-defg-hij" \
+  --join-time "2024-12-20 14:00"
+
+# Create with custom bot name
+nylas notetaker create --meeting-link "https://zoom.us/j/123" \
+  --bot-name "Meeting Recorder"
+
+# Join in 30 minutes
+nylas notetaker create --meeting-link "https://zoom.us/j/123" --join-time "30m"
+```
+
+**Supported meeting providers:**
+- Zoom
+- Google Meet
+- Microsoft Teams
+
+**Example output:**
+```bash
+$ nylas notetaker create --meeting-link "https://zoom.us/j/123456789" --bot-name "My Bot"
+
+✓ Notetaker created successfully!
+
+ID:    notetaker_new_123
+State: scheduled
+Link:  https://zoom.us/j/123456789
+```
+
+### Delete Notetaker
+
+```bash
+nylas notetaker delete <notetaker-id> [grant-id]  # Delete with confirmation
+nylas notetaker delete <id> --yes                  # Skip confirmation
+nylas notetaker rm <id>                            # Alias
+nylas notetaker cancel <id>                        # Alias
+```
+
+**Example output:**
+```bash
+$ nylas notetaker delete notetaker_abc123
+
+Delete notetaker notetaker_abc123?
+  Title: Q4 Planning Meeting
+  State: scheduled
+
+This action cannot be undone. Continue? [y/N]: y
+✓ Notetaker notetaker_abc123 deleted successfully
+```
+
+### Get Notetaker Media
+
+Retrieve recording and transcript URLs from a completed notetaker session.
+
+```bash
+nylas notetaker media <notetaker-id> [grant-id]  # Get media URLs
+nylas notetaker media <id> --json                 # Output as JSON
+```
+
+**Example output:**
+```bash
+$ nylas notetaker media notetaker_abc123
+
+Notetaker Media:
+
+Recording:
+  URL:  https://storage.nylas.com/recordings/abc123.mp4
+  Type: video/mp4
+  Size: 120.5 MB
+  Expires: Mon Dec 23, 2024 10:00 AM PST
+
+Transcript:
+  URL:  https://storage.nylas.com/transcripts/abc123.json
+  Type: application/json
+  Size: 50.0 KB
+  Expires: Mon Dec 23, 2024 10:00 AM PST
+```
+
+**Note:** Media URLs have an expiration time. Download them promptly after retrieval.
 
 ---
 
