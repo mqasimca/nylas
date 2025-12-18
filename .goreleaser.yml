@@ -1,0 +1,116 @@
+version: 2
+
+project_name: nylas
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/nylas
+    binary: nylas
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/mqasimca/nylas/internal/cli.Version={{.Version}}
+      - -X github.com/mqasimca/nylas/internal/cli.Commit={{.Commit}}
+      - -X github.com/mqasimca/nylas/internal/cli.BuildDate={{.Date}}
+
+archives:
+  - formats:
+      - tar.gz
+      - zip
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+      - goos: linux
+        formats:
+          - tar.gz
+      - goos: darwin
+        formats:
+          - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE*
+      - docs/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Other
+      order: 999
+
+brews:
+  - repository:
+      owner: mqasimca
+      name: nylas
+      branch: main
+    directory: Formula
+    homepage: "https://github.com/mqasimca/nylas"
+    description: "CLI for Nylas API - manage email, calendar, and contacts"
+    license: "MIT"
+    install: |
+      bin.install "nylas"
+
+      # Install shell completions
+      generate_completions_from_executable(bin/"nylas", "completion")
+    test: |
+      system "#{bin}/nylas", "--version"
+
+release:
+  github:
+    owner: mqasimca
+    name: nylas
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Nylas CLI {{ .Version }}
+
+    ### Installation
+
+    **macOS/Linux (Homebrew):**
+    ```bash
+    brew install mqasimca/nylas/nylas
+    ```
+
+    **Manual Download:**
+    Download the appropriate archive for your platform below, extract it, and move the `nylas` binary to your PATH.
+
+    **Go Install:**
+    ```bash
+    go install github.com/mqasimca/nylas/cmd/nylas@{{ .Tag }}
+    ```
+  footer: |
+    ---
+    **Full Changelog**: https://github.com/mqasimca/nylas/compare/{{ .PreviousTag }}...{{ .Tag }}
+  name_template: "v{{ .Version }}"

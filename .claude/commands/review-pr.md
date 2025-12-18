@@ -44,22 +44,48 @@ gh pr diff <pr-number>
 - [ ] Code comments for non-obvious logic
 - [ ] Examples in command help text
 
+### Security
+- [ ] No hardcoded API keys, tokens, or passwords
+- [ ] No secrets in logs or error messages
+- [ ] Input validation where user data is used
+- [ ] No command injection vulnerabilities
+
 3. Run verification:
 ```bash
 # Build
 go build ./...
 
-# Lint (if available)
+# Lint
 golangci-lint run
 
 # Tests
-go test ./...
+go test ./... -short
+
+# Security scan
+make security
 
 # Integration tests (if credentials available)
 go test -tags=integration ./internal/cli/...
 ```
 
-4. Provide feedback with:
-- Specific file:line references
-- Suggested fixes with code examples
-- Priority (must fix, should fix, nice to have)
+4. Provide feedback in this format:
+
+## Review Output
+
+### Summary
+Brief overview of the changes.
+
+### Issues Found
+| Severity | File:Line | Issue | Suggestion |
+|----------|-----------|-------|------------|
+| 🔴 Critical | path/file.go:42 | Description | How to fix |
+| 🟡 Warning | path/file.go:100 | Description | How to fix |
+| 🔵 Info | path/file.go:15 | Description | How to fix |
+
+### Security Concerns
+List any security issues found.
+
+### Verdict
+- ✅ **APPROVE** - Ready to merge
+- ⚠️ **REQUEST CHANGES** - Must fix issues first
+- ❓ **NEEDS DISCUSSION** - Questions to resolve
