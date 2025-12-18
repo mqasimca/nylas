@@ -1,5 +1,93 @@
 # Nylas CLI - Claude Code Rules
 
+## ⛔ MANDATORY REQUIREMENTS - READ FIRST
+
+### DO NOT EVER:
+1. **NEVER push to GitHub** - Only create local commits. NEVER run `git push`.
+2. **NEVER commit secrets** - No API keys, passwords, tokens, .env files, or credentials.
+3. **NEVER skip tests** - All code changes require tests to pass.
+4. **NEVER skip security scans** - All changes must pass security analysis.
+
+### ALWAYS DO (in this order):
+
+#### After ANY Code Change:
+```bash
+# 1. Run unit tests
+go test ./... -short
+
+# 2. Run linting
+golangci-lint run
+
+# 3. Run security scan
+make security
+
+# 4. Build verification
+make build
+```
+
+#### For API/Adapter Changes:
+```bash
+# Also run integration tests (if credentials available)
+go test ./... -tags=integration -v
+```
+
+#### Before ANY Commit:
+```bash
+# 1. Full check (lint + test + security + build)
+make check
+
+# 2. Verify no secrets in staged files
+git diff --cached | grep -iE "(api_key|password|secret|token|nyk_v0)" && echo "⛔ SECRETS DETECTED - DO NOT COMMIT" || echo "✓ No secrets found"
+
+# 3. Check for sensitive file types
+git diff --cached --name-only | grep -E "\.(env|pem|key|credentials)$" && echo "⛔ SENSITIVE FILE - DO NOT COMMIT" || echo "✓ No sensitive files"
+```
+
+### Test Requirements by Change Type:
+
+| Change Type | Unit Tests | Integration Tests | Security Scan | Update Docs |
+|------------|------------|-------------------|---------------|-------------|
+| New feature | ✅ Required | ✅ Required | ✅ Required | ✅ Required |
+| Bug fix | ✅ Required | ⚠️ If API-related | ✅ Required | ⚠️ If behavior changes |
+| Refactor | ✅ Required | ⚠️ If API-related | ✅ Required | ⚠️ If API changes |
+| New command | ✅ Required | ✅ Required | ✅ Required | ✅ Required |
+| Flag change | ✅ Required | ❌ Not needed | ✅ Required | ✅ Required |
+| Docs only | ❌ Not needed | ❌ Not needed | ❌ Not needed | N/A |
+
+### Documentation Updates (MANDATORY when applicable):
+
+Update these docs when code changes affect user-facing behavior:
+
+| Doc File | Update When |
+|----------|-------------|
+| `docs/COMMANDS.md` | New/changed commands, flags, or examples |
+| `plan.md` | Feature completed or API status changes |
+| `README.md` | Major new features or installation changes |
+| `docs/TUI.md` | TUI changes, new keybindings, new views |
+
+**Check if docs need updating:**
+```bash
+# If you changed CLI commands, check COMMANDS.md
+git diff --name-only | grep -E "internal/cli/" && echo "→ Review docs/COMMANDS.md"
+
+# If you added new feature, check plan.md
+git diff --name-only | grep -E "internal/(adapters|domain)/" && echo "→ Review plan.md"
+```
+
+### Writing Tests:
+
+When adding a feature or fixing a bug, you MUST:
+1. **Write unit tests** in `*_test.go` alongside the code
+2. **Use table-driven tests** for multiple scenarios
+3. **Test error cases** not just happy paths
+4. **Update mock.go** if adding new interface methods
+
+Example test file location:
+- Feature code: `internal/cli/email/send.go`
+- Test file: `internal/cli/email/send_test.go` or `internal/cli/email/email_test.go`
+
+---
+
 ## Project Overview
 
 This is a Go CLI application for the **Nylas v3 API** following **hexagonal architecture** (ports and adapters pattern). The CLI provides email, calendar, contacts, webhooks, and OTP management functionality.
@@ -55,14 +143,25 @@ CLI Commands → App Services → Adapters → Ports (interfaces)
 - Map domain errors to user-friendly CLI errors in `internal/cli/common/errors.go`
 - Always provide actionable suggestions in error messages
 
-### 3. Testing Requirements
+### 3. Testing Requirements (MANDATORY)
+- **ALWAYS run tests after ANY code change**: `go test ./... -short`
+- **ALWAYS run integration tests for API changes**: `go test ./... -tags=integration`
 - **Unit tests**: Test command structure, flags, and help output
 - **Mock implementations**: Every adapter has a `mock.go` file
 - **Integration tests**: Use build tag `//go:build integration`
 - **Table-driven tests**: Use for parameter variations
-- Run `go test ./...` before committing
+- Run `make check` before committing (lint + test + build)
 
-### 4. File Organization
+### 4. Security Requirements (MANDATORY)
+- **ALWAYS run security scan after ANY code change**
+- **Check for hardcoded credentials**: `grep -rE "nyk_v0|api_key\s*=|password\s*=|secret\s*=" --include="*.go" .`
+- **Check for credential logging**: `grep -rE "fmt\.(Print|Log).*([Aa]pi[Kk]ey|[Pp]assword|[Ss]ecret)" --include="*.go" .`
+- **Verify no secrets in git history**: `git log --all --name-only --pretty=format: | grep -E "\.(sh|json)$" | sort -u`
+- **Never commit**: API keys, passwords, tokens, .env files, credential files
+- **Always use**: Environment variables for test credentials, keyring for storage
+- **Before pushing**: Verify no sensitive files with `git diff --name-only origin/main...HEAD`
+
+### 5. File Organization
 ```
 internal/cli/{feature}/
 ├── {feature}.go      # Root command with NewXxxCmd()

@@ -4,6 +4,13 @@ plan.md
 # Local development (not committed)
 /local/
 
+# ===========================================
+# Claude Code - Local/Personal Files
+# ===========================================
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/*.local.*
+
 # Binaries
 bin/
 *.exe
