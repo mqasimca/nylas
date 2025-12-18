@@ -15,7 +15,9 @@ func newFoldersCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(newFoldersListCmd())
+	cmd.AddCommand(newFoldersShowCmd())
 	cmd.AddCommand(newFoldersCreateCmd())
+	cmd.AddCommand(newFoldersRenameCmd())
 	cmd.AddCommand(newFoldersDeleteCmd())
 
 	return cmd
@@ -102,6 +104,70 @@ func newFoldersListCmd() *cobra.Command {
 	return cmd
 }
 
+func newFoldersShowCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "show <folder-id> [grant-id]",
+		Short: "Show folder details",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			folderID := args[0]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			folder, err := client.GetFolder(ctx, grantID, folderID)
+			if err != nil {
+				return fmt.Errorf("failed to get folder: %w", err)
+			}
+
+			fmt.Println("════════════════════════════════════════════════════════════")
+			boldWhite.Printf("Folder: %s\n", folder.Name)
+			fmt.Println("════════════════════════════════════════════════════════════")
+
+			fmt.Printf("ID:           %s\n", folder.ID)
+			fmt.Printf("Name:         %s\n", folder.Name)
+
+			if folder.SystemFolder != "" {
+				fmt.Printf("System Type:  %s\n", folder.SystemFolder)
+			}
+			if folder.ParentID != "" {
+				fmt.Printf("Parent ID:    %s\n", folder.ParentID)
+			}
+
+			fmt.Printf("Total Count:  %d\n", folder.TotalCount)
+			if folder.UnreadCount > 0 {
+				cyan.Printf("Unread Count: %d\n", folder.UnreadCount)
+			} else {
+				fmt.Printf("Unread Count: %d\n", folder.UnreadCount)
+			}
+
+			if folder.BackgroundColor != "" {
+				fmt.Printf("Background:   %s\n", folder.BackgroundColor)
+			}
+			if folder.TextColor != "" {
+				fmt.Printf("Text Color:   %s\n", folder.TextColor)
+			}
+
+			return nil
+		},
+	}
+}
+
 func newFoldersCreateCmd() *cobra.Command {
 	var parentID string
 	var bgColor string
@@ -152,6 +218,69 @@ func newFoldersCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&parentID, "parent", "", "Parent folder ID")
 	cmd.Flags().StringVar(&bgColor, "bg-color", "", "Background color (hex)")
 	cmd.Flags().StringVar(&textColor, "text-color", "", "Text color (hex)")
+
+	return cmd
+}
+
+func newFoldersRenameCmd() *cobra.Command {
+	var bgColor string
+	var textColor string
+	var parentID string
+
+	cmd := &cobra.Command{
+		Use:   "rename <folder-id> <new-name> [grant-id]",
+		Short: "Rename a folder",
+		Long:  "Rename a folder and optionally update its colors.",
+		Args:  cobra.RangeArgs(2, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			folderID := args[0]
+			newName := args[1]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 2 {
+				grantID = args[2]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			req := &domain.UpdateFolderRequest{
+				Name: newName,
+			}
+
+			if cmd.Flags().Changed("bg-color") {
+				req.BackgroundColor = bgColor
+			}
+			if cmd.Flags().Changed("text-color") {
+				req.TextColor = textColor
+			}
+			if cmd.Flags().Changed("parent") {
+				req.ParentID = parentID
+			}
+
+			folder, err := client.UpdateFolder(ctx, grantID, folderID, req)
+			if err != nil {
+				return fmt.Errorf("failed to update folder: %w", err)
+			}
+
+			printSuccess("Folder renamed to '%s'", folder.Name)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&bgColor, "bg-color", "", "Background color (hex)")
+	cmd.Flags().StringVar(&textColor, "text-color", "", "Text color (hex)")
+	cmd.Flags().StringVar(&parentID, "parent", "", "Parent folder ID")
 
 	return cmd
 }

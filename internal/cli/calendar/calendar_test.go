@@ -46,7 +46,7 @@ func TestNewCalendarCmd(t *testing.T) {
 	})
 
 	t.Run("has_required_subcommands", func(t *testing.T) {
-		expectedCmds := []string{"list", "events", "availability"}
+		expectedCmds := []string{"list", "show", "create", "update", "delete", "events", "availability"}
 
 		cmdMap := make(map[string]bool)
 		for _, sub := range cmd.Commands() {
@@ -56,6 +56,120 @@ func TestNewCalendarCmd(t *testing.T) {
 		for _, expected := range expectedCmds {
 			assert.True(t, cmdMap[expected], "Missing expected subcommand: %s", expected)
 		}
+	})
+}
+
+func TestShowCmd(t *testing.T) {
+	cmd := newShowCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "show <calendar-id> [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "Show")
+	})
+
+	t.Run("requires_calendar_id_arg", func(t *testing.T) {
+		// Args validator should require 1-2 args
+		assert.NotNil(t, cmd.Args)
+	})
+}
+
+func TestCreateCmd(t *testing.T) {
+	cmd := newCreateCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "create <name> [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "Create")
+	})
+
+	t.Run("has_description_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("description")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_description_shorthand", func(t *testing.T) {
+		flag := cmd.Flags().ShorthandLookup("d")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "description", flag.Name)
+	})
+
+	t.Run("has_location_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("location")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_timezone_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("timezone")
+		assert.NotNil(t, flag)
+	})
+}
+
+func TestUpdateCmd(t *testing.T) {
+	cmd := newUpdateCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "update <calendar-id> [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "Update")
+	})
+
+	t.Run("has_name_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("name")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_description_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("description")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_location_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("location")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_timezone_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("timezone")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_color_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("color")
+		assert.NotNil(t, flag)
+	})
+}
+
+func TestDeleteCmd(t *testing.T) {
+	cmd := newDeleteCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "delete <calendar-id> [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "Delete")
+	})
+
+	t.Run("has_force_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("force")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_force_shorthand", func(t *testing.T) {
+		flag := cmd.Flags().ShorthandLookup("f")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "force", flag.Name)
 	})
 }
 
@@ -94,7 +208,7 @@ func TestEventsCmd(t *testing.T) {
 	})
 
 	t.Run("has_required_subcommands", func(t *testing.T) {
-		expectedCmds := []string{"list", "show", "create", "delete"}
+		expectedCmds := []string{"list", "show", "create", "update", "delete", "rsvp"}
 
 		cmdMap := make(map[string]bool)
 		for _, sub := range cmd.Commands() {
@@ -244,6 +358,104 @@ func TestEventsDeleteCmd(t *testing.T) {
 
 	t.Run("has_calendar_flag", func(t *testing.T) {
 		flag := cmd.Flags().Lookup("calendar")
+		assert.NotNil(t, flag)
+	})
+}
+
+func TestEventsUpdateCmd(t *testing.T) {
+	cmd := newEventsUpdateCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "update <event-id> [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "Update")
+	})
+
+	t.Run("has_title_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("title")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_title_shorthand", func(t *testing.T) {
+		flag := cmd.Flags().ShorthandLookup("t")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "title", flag.Name)
+	})
+
+	t.Run("has_description_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("description")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_location_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("location")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_start_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("start")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_end_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("end")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_all_day_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("all-day")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_participant_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("participant")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_busy_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("busy")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_visibility_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("visibility")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_calendar_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("calendar")
+		assert.NotNil(t, flag)
+	})
+}
+
+func TestEventsRSVPCmd(t *testing.T) {
+	cmd := newEventsRSVPCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "rsvp <event-id> <status> [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		assert.NotEmpty(t, cmd.Short)
+		assert.Contains(t, cmd.Short, "RSVP")
+	})
+
+	t.Run("has_long_description_with_status_options", func(t *testing.T) {
+		assert.Contains(t, cmd.Long, "yes")
+		assert.Contains(t, cmd.Long, "no")
+		assert.Contains(t, cmd.Long, "maybe")
+	})
+
+	t.Run("has_calendar_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("calendar")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_comment_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("comment")
 		assert.NotNil(t, flag)
 	})
 }
@@ -555,6 +767,19 @@ func TestCalendarEventsHelp(t *testing.T) {
 	assert.Contains(t, stdout, "list")
 	assert.Contains(t, stdout, "show")
 	assert.Contains(t, stdout, "create")
+	assert.Contains(t, stdout, "update")
+	assert.Contains(t, stdout, "delete")
+	assert.Contains(t, stdout, "rsvp")
+}
+
+func TestCalendarCRUDHelp(t *testing.T) {
+	cmd := NewCalendarCmd()
+	stdout, _, err := executeCommand(cmd, "--help")
+
+	assert.NoError(t, err)
+	assert.Contains(t, stdout, "show")
+	assert.Contains(t, stdout, "create")
+	assert.Contains(t, stdout, "update")
 	assert.Contains(t, stdout, "delete")
 }
 

@@ -45,7 +45,7 @@ func TestNewAuthCmd(t *testing.T) {
 	})
 
 	t.Run("has_required_subcommands", func(t *testing.T) {
-		expectedCmds := []string{"config", "login", "logout", "status", "whoami", "list", "switch", "token", "revoke", "add", "remove"}
+		expectedCmds := []string{"config", "login", "logout", "status", "whoami", "list", "show", "switch", "token", "revoke", "add", "remove"}
 
 		cmdMap := make(map[string]bool)
 		for _, sub := range cmd.Commands() {
@@ -56,6 +56,29 @@ func TestNewAuthCmd(t *testing.T) {
 			if !cmdMap[expected] {
 				t.Errorf("Missing expected subcommand: %s", expected)
 			}
+		}
+	})
+}
+
+// TestShowCommand tests the show subcommand.
+func TestShowCommand(t *testing.T) {
+	cmd := newShowCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		if cmd.Use != "show [grant-id]" {
+			t.Errorf("Command Use = %q, want %q", cmd.Use, "show [grant-id]")
+		}
+	})
+
+	t.Run("has_short_description", func(t *testing.T) {
+		if cmd.Short == "" {
+			t.Error("Expected short description")
+		}
+	})
+
+	t.Run("has_long_description", func(t *testing.T) {
+		if cmd.Long == "" {
+			t.Error("Expected long description")
 		}
 	})
 }

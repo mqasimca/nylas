@@ -160,6 +160,37 @@ func newListCmd() *cobra.Command {
 }
 ```
 
+## Documentation Updates (MANDATORY)
+
+**CRITICAL: Always update documentation when adding or modifying commands/features.**
+
+When you add, modify, or remove ANY command or feature:
+
+1. **docs/COMMANDS.md** - Update command reference
+   - Add new commands with syntax and examples
+   - Update existing command flags/options
+   - Add example output for new features
+
+2. **docs/plan.md** - Update feature status
+   - Mark completed items as `[x]`
+   - Update API endpoint status tables
+   - Update implementation status in header table
+
+3. **README.md** - Update if major features added
+   - Update feature list
+   - Update quick start examples if needed
+
+4. **docs/TUI.md** - Update if TUI changes
+   - New keyboard shortcuts
+   - New views or panels
+
+**Documentation files:**
+- `docs/COMMANDS.md` - Complete CLI command reference
+- `docs/plan.md` - Feature roadmap and API coverage
+- `docs/TUI.md` - TUI documentation
+- `docs/ARCHITECTURE.md` - Architecture documentation
+- `README.md` - Project overview
+
 ## Adding New Features Checklist
 
 1. **Domain** (`internal/domain/`)
@@ -173,19 +204,23 @@ func newListCmd() *cobra.Command {
 3. **Adapter** (`internal/adapters/nylas/`)
    - [ ] Implement methods in `client.go` or new file
    - [ ] Add mock methods in `mock.go`
+   - [ ] Add demo methods in `demo.go`
    - [ ] Add tests
 
 4. **CLI** (`internal/cli/{resource}/`)
    - [ ] Create package with root command
    - [ ] Add subcommands (list, show, create, etc.)
    - [ ] Add `helpers.go` with getClient(), getGrantID()
-   - [ ] Add tests in `{resource}_test.go`
+   - [ ] Add unit tests in `{resource}_test.go`
+   - [ ] Add integration tests in `integration_{resource}_test.go`
 
 5. **Registration**
    - [ ] Add to `cmd/nylas/main.go`: `rootCmd.AddCommand(resource.NewResourceCmd())`
 
-6. **Documentation**
-   - [ ] Update docs/COMMANDS.md with new commands (or docs/TUI.md for TUI changes)
+6. **Documentation** (MANDATORY)
+   - [ ] Update `docs/COMMANDS.md` with new commands, flags, and examples
+   - [ ] Update `docs/plan.md` to mark features complete and update API status
+   - [ ] Update `README.md` if adding major features
 
 ## Output Formatting
 
@@ -264,6 +299,39 @@ go test -tags=integration ./internal/cli/...
 - **Graceful degradation** - Handle missing optional features
 - **Consistent formatting** - Run `gofmt` before commit
 - **Lint clean** - Run `golangci-lint run`
+
+## File Size Limits
+
+**CRITICAL: Files must not exceed 25,000 lines.**
+
+When a file approaches this limit:
+1. **Split into focused files** - One responsibility per file
+2. **Group by feature** - e.g., `messages.go`, `drafts.go`, `attachments.go`
+3. **Keep related code together** - Tests in `*_test.go` files
+4. **Share common code** - Extract helpers to `helpers.go` or `common/`
+
+Example split for a growing `client.go`:
+```
+internal/adapters/nylas/
+├── client.go          # Core client, auth, base URL
+├── messages.go        # Message CRUD operations
+├── drafts.go          # Draft CRUD operations
+├── attachments.go     # Attachment operations
+├── threads.go         # Thread operations
+├── folders.go         # Folder operations
+├── calendars.go       # Calendar operations
+├── events.go          # Event operations
+├── contacts.go        # Contact operations
+├── webhooks.go        # Webhook operations
+├── mock.go            # Mock implementations
+├── demo.go            # Demo data for screenshots
+└── *_test.go          # Test files
+```
+
+**Before writing to any file:**
+1. Check current line count
+2. If approaching 20,000 lines, proactively split
+3. Never write to a file that would exceed 25,000 lines
 
 ## Common Files Reference
 

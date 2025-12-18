@@ -22,7 +22,9 @@ func newEventsCmd() *cobra.Command {
 	cmd.AddCommand(newEventsListCmd())
 	cmd.AddCommand(newEventsShowCmd())
 	cmd.AddCommand(newEventsCreateCmd())
+	cmd.AddCommand(newEventsUpdateCmd())
 	cmd.AddCommand(newEventsDeleteCmd())
+	cmd.AddCommand(newEventsRSVPCmd())
 
 	return cmd
 }
@@ -508,6 +510,249 @@ func newEventsDeleteCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&calendarID, "calendar", "c", "", "Calendar ID (defaults to primary)")
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Skip confirmation prompt")
+
+	return cmd
+}
+
+func newEventsUpdateCmd() *cobra.Command {
+	var (
+		calendarID   string
+		title        string
+		description  string
+		location     string
+		startTime    string
+		endTime      string
+		allDay       bool
+		participants []string
+		busy         bool
+		visibility   string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "update <event-id> [grant-id]",
+		Short: "Update an existing event",
+		Long: `Update a calendar event.
+
+Examples:
+  # Update event title
+  nylas calendar events update <event-id> --title "New Title"
+
+  # Update event time
+  nylas calendar events update <event-id> --start "2024-01-15 14:00" --end "2024-01-15 15:00"
+
+  # Update location and description
+  nylas calendar events update <event-id> --location "Conference Room A" --description "Weekly sync"`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			eventID := args[0]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			// Get calendar ID if not specified
+			if calendarID == "" {
+				calendars, err := client.GetCalendars(ctx, grantID)
+				if err != nil {
+					return fmt.Errorf("failed to get calendars: %w", err)
+				}
+				for _, cal := range calendars {
+					if cal.IsPrimary {
+						calendarID = cal.ID
+						break
+					}
+				}
+				if calendarID == "" && len(calendars) > 0 {
+					calendarID = calendars[0].ID
+				}
+			}
+
+			req := &domain.UpdateEventRequest{}
+
+			if cmd.Flags().Changed("title") {
+				req.Title = &title
+			}
+			if cmd.Flags().Changed("description") {
+				req.Description = &description
+			}
+			if cmd.Flags().Changed("location") {
+				req.Location = &location
+			}
+			if cmd.Flags().Changed("busy") {
+				req.Busy = &busy
+			}
+			if cmd.Flags().Changed("visibility") {
+				req.Visibility = &visibility
+			}
+
+			// Handle time changes
+			if cmd.Flags().Changed("start") {
+				when, err := parseEventTime(startTime, endTime, allDay)
+				if err != nil {
+					return err
+				}
+				req.When = when
+			}
+
+			// Handle participants
+			if len(participants) > 0 {
+				for _, email := range participants {
+					req.Participants = append(req.Participants, domain.Participant{
+						Email: email,
+					})
+				}
+			}
+
+			spinner := common.NewSpinner("Updating event...")
+			spinner.Start()
+
+			event, err := client.UpdateEvent(ctx, grantID, calendarID, eventID, req)
+			spinner.Stop()
+
+			if err != nil {
+				return fmt.Errorf("failed to update event: %w", err)
+			}
+
+			green := color.New(color.FgGreen)
+			fmt.Printf("%s Event updated successfully!\n\n", green.Sprint("✓"))
+			fmt.Printf("Title: %s\n", event.Title)
+			fmt.Printf("When: %s\n", formatEventTime(event.When))
+			fmt.Printf("ID: %s\n", event.ID)
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&calendarID, "calendar", "c", "", "Calendar ID (defaults to primary)")
+	cmd.Flags().StringVarP(&title, "title", "t", "", "Event title")
+	cmd.Flags().StringVarP(&description, "description", "D", "", "Event description")
+	cmd.Flags().StringVarP(&location, "location", "l", "", "Event location")
+	cmd.Flags().StringVarP(&startTime, "start", "s", "", "Start time (e.g., '2024-01-15 14:00')")
+	cmd.Flags().StringVarP(&endTime, "end", "e", "", "End time")
+	cmd.Flags().BoolVar(&allDay, "all-day", false, "Set as all-day event")
+	cmd.Flags().StringArrayVarP(&participants, "participant", "p", nil, "Set participant emails (replaces existing)")
+	cmd.Flags().BoolVar(&busy, "busy", true, "Mark time as busy")
+	cmd.Flags().StringVar(&visibility, "visibility", "", "Event visibility (public, private, default)")
+
+	return cmd
+}
+
+func newEventsRSVPCmd() *cobra.Command {
+	var (
+		calendarID string
+		comment    string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "rsvp <event-id> <status> [grant-id]",
+		Short: "RSVP to an event invitation",
+		Long: `Respond to an event invitation with your RSVP status.
+
+Status options:
+  - yes    Accept the invitation
+  - no     Decline the invitation
+  - maybe  Tentatively accept
+
+Examples:
+  # Accept an event invitation
+  nylas calendar events rsvp <event-id> yes
+
+  # Decline with a comment
+  nylas calendar events rsvp <event-id> no --comment "I have a conflict"
+
+  # Tentatively accept
+  nylas calendar events rsvp <event-id> maybe`,
+		Args: cobra.RangeArgs(2, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			eventID := args[0]
+			status := strings.ToLower(args[1])
+
+			// Validate status
+			if status != "yes" && status != "no" && status != "maybe" {
+				return common.NewUserError(
+					"invalid RSVP status",
+					"Status must be 'yes', 'no', or 'maybe'",
+				)
+			}
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 2 {
+				grantID = args[2]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			// Get calendar ID if not specified
+			if calendarID == "" {
+				calendars, err := client.GetCalendars(ctx, grantID)
+				if err != nil {
+					return fmt.Errorf("failed to get calendars: %w", err)
+				}
+				for _, cal := range calendars {
+					if cal.IsPrimary {
+						calendarID = cal.ID
+						break
+					}
+				}
+				if calendarID == "" && len(calendars) > 0 {
+					calendarID = calendars[0].ID
+				}
+			}
+
+			req := &domain.SendRSVPRequest{
+				Status:  status,
+				Comment: comment,
+			}
+
+			spinner := common.NewSpinner("Sending RSVP...")
+			spinner.Start()
+
+			err = client.SendRSVP(ctx, grantID, calendarID, eventID, req)
+			spinner.Stop()
+
+			if err != nil {
+				return fmt.Errorf("failed to send RSVP: %w", err)
+			}
+
+			green := color.New(color.FgGreen)
+			statusText := map[string]string{
+				"yes":   "accepted",
+				"no":    "declined",
+				"maybe": "tentatively accepted",
+			}
+			fmt.Printf("%s RSVP sent! You have %s the invitation.\n", green.Sprint("✓"), statusText[status])
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&calendarID, "calendar", "c", "", "Calendar ID (defaults to primary)")
+	cmd.Flags().StringVar(&comment, "comment", "", "Optional comment with your RSVP")
 
 	return cmd
 }

@@ -335,6 +335,24 @@ func (d *DemoClient) DeleteFolder(ctx context.Context, grantID, folderID string)
 	return nil
 }
 
+// ListAttachments returns demo attachments for a message.
+func (d *DemoClient) ListAttachments(ctx context.Context, grantID, messageID string) ([]domain.Attachment, error) {
+	return []domain.Attachment{
+		{
+			ID:          "attach-001",
+			Filename:    "quarterly-report.pdf",
+			ContentType: "application/pdf",
+			Size:        245760,
+		},
+		{
+			ID:          "attach-002",
+			Filename:    "presentation.pptx",
+			ContentType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+			Size:        1048576,
+		},
+	}, nil
+}
+
 // GetAttachment returns demo attachment metadata.
 func (d *DemoClient) GetAttachment(ctx context.Context, grantID, messageID, attachmentID string) (*domain.Attachment, error) {
 	return &domain.Attachment{
@@ -362,6 +380,34 @@ func (d *DemoClient) GetCalendars(ctx context.Context, grantID string) ([]domain
 // GetCalendar returns a demo calendar.
 func (d *DemoClient) GetCalendar(ctx context.Context, grantID, calendarID string) (*domain.Calendar, error) {
 	return &domain.Calendar{ID: calendarID, Name: "Demo Calendar", IsPrimary: true}, nil
+}
+
+// CreateCalendar simulates creating a calendar.
+func (d *DemoClient) CreateCalendar(ctx context.Context, grantID string, req *domain.CreateCalendarRequest) (*domain.Calendar, error) {
+	return &domain.Calendar{
+		ID:          "new-demo-calendar",
+		Name:        req.Name,
+		Description: req.Description,
+		Location:    req.Location,
+		Timezone:    req.Timezone,
+	}, nil
+}
+
+// UpdateCalendar simulates updating a calendar.
+func (d *DemoClient) UpdateCalendar(ctx context.Context, grantID, calendarID string, req *domain.UpdateCalendarRequest) (*domain.Calendar, error) {
+	cal := &domain.Calendar{ID: calendarID}
+	if req.Name != nil {
+		cal.Name = *req.Name
+	}
+	if req.Description != nil {
+		cal.Description = *req.Description
+	}
+	return cal, nil
+}
+
+// DeleteCalendar simulates deleting a calendar.
+func (d *DemoClient) DeleteCalendar(ctx context.Context, grantID, calendarID string) error {
+	return nil
 }
 
 // GetEvents returns demo events.
@@ -496,6 +542,11 @@ func (d *DemoClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 
 // DeleteEvent simulates deleting an event.
 func (d *DemoClient) DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error {
+	return nil
+}
+
+// SendRSVP simulates sending an RSVP response.
+func (d *DemoClient) SendRSVP(ctx context.Context, grantID, calendarID, eventID string, req *domain.SendRSVPRequest) error {
 	return nil
 }
 
@@ -634,6 +685,42 @@ func (d *DemoClient) GetContactGroups(ctx context.Context, grantID string) ([]do
 	}, nil
 }
 
+// GetContactGroup returns a demo contact group.
+func (d *DemoClient) GetContactGroup(ctx context.Context, grantID, groupID string) (*domain.ContactGroup, error) {
+	return &domain.ContactGroup{
+		ID:      groupID,
+		GrantID: grantID,
+		Name:    "Demo Group",
+	}, nil
+}
+
+// CreateContactGroup creates a demo contact group.
+func (d *DemoClient) CreateContactGroup(ctx context.Context, grantID string, req *domain.CreateContactGroupRequest) (*domain.ContactGroup, error) {
+	return &domain.ContactGroup{
+		ID:      "group-new",
+		GrantID: grantID,
+		Name:    req.Name,
+	}, nil
+}
+
+// UpdateContactGroup updates a demo contact group.
+func (d *DemoClient) UpdateContactGroup(ctx context.Context, grantID, groupID string, req *domain.UpdateContactGroupRequest) (*domain.ContactGroup, error) {
+	name := "Updated Group"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.ContactGroup{
+		ID:      groupID,
+		GrantID: grantID,
+		Name:    name,
+	}, nil
+}
+
+// DeleteContactGroup deletes a demo contact group.
+func (d *DemoClient) DeleteContactGroup(ctx context.Context, grantID, groupID string) error {
+	return nil
+}
+
 // ListWebhooks returns demo webhooks.
 func (d *DemoClient) ListWebhooks(ctx context.Context) ([]domain.Webhook, error) {
 	return []domain.Webhook{
@@ -711,4 +798,35 @@ func (d *DemoClient) GetWebhookMockPayload(ctx context.Context, triggerType stri
 		"id":          "demo-event-id",
 		"data":        map[string]interface{}{"object": map[string]interface{}{"id": "demo-object-id"}},
 	}, nil
+}
+
+// ListScheduledMessages returns demo scheduled messages.
+func (d *DemoClient) ListScheduledMessages(ctx context.Context, grantID string) ([]domain.ScheduledMessage, error) {
+	now := time.Now()
+	return []domain.ScheduledMessage{
+		{
+			ScheduleID: "schedule-001",
+			Status:     "scheduled",
+			CloseTime:  now.Add(1 * time.Hour).Unix(),
+		},
+		{
+			ScheduleID: "schedule-002",
+			Status:     "scheduled",
+			CloseTime:  now.Add(24 * time.Hour).Unix(),
+		},
+	}, nil
+}
+
+// GetScheduledMessage returns a demo scheduled message.
+func (d *DemoClient) GetScheduledMessage(ctx context.Context, grantID, scheduleID string) (*domain.ScheduledMessage, error) {
+	return &domain.ScheduledMessage{
+		ScheduleID: scheduleID,
+		Status:     "scheduled",
+		CloseTime:  time.Now().Add(1 * time.Hour).Unix(),
+	}, nil
+}
+
+// CancelScheduledMessage simulates canceling a scheduled message.
+func (d *DemoClient) CancelScheduledMessage(ctx context.Context, grantID, scheduleID string) error {
+	return nil
 }

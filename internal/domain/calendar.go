@@ -244,3 +244,26 @@ type AvailableSlot struct {
 	EndTime      int64                       `json:"end_time"`
 	Participants []AvailabilityParticipant   `json:"participants,omitempty"`
 }
+
+// CreateCalendarRequest for creating a new calendar.
+type CreateCalendarRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Location    string `json:"location,omitempty"`
+	Timezone    string `json:"timezone,omitempty"`
+}
+
+// UpdateCalendarRequest for updating a calendar.
+type UpdateCalendarRequest struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Location    *string `json:"location,omitempty"`
+	Timezone    *string `json:"timezone,omitempty"`
+	HexColor    *string `json:"hex_color,omitempty"`
+}
+
+// SendRSVPRequest for responding to an event invitation.
+type SendRSVPRequest struct {
+	Status  string `json:"status"` // yes, no, maybe
+	Comment string `json:"comment,omitempty"`
+}

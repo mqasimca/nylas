@@ -2,6 +2,7 @@ package nylas
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
@@ -42,9 +43,10 @@ type MockClient struct {
 	CreateFolderCalled      bool
 	UpdateFolderCalled      bool
 	DeleteFolderCalled      bool
-	GetAttachmentCalled     bool
+	ListAttachmentsCalled    bool
+	GetAttachmentCalled      bool
 	DownloadAttachmentCalled bool
-	LastGrantID             string
+	LastGrantID              string
 	LastMessageID           string
 	LastThreadID            string
 	LastDraftID             string
@@ -77,6 +79,7 @@ type MockClient struct {
 	CreateFolderFunc          func(ctx context.Context, grantID string, req *domain.CreateFolderRequest) (*domain.Folder, error)
 	UpdateFolderFunc          func(ctx context.Context, grantID, folderID string, req *domain.UpdateFolderRequest) (*domain.Folder, error)
 	DeleteFolderFunc          func(ctx context.Context, grantID, folderID string) error
+	ListAttachmentsFunc       func(ctx context.Context, grantID, messageID string) ([]domain.Attachment, error)
 	GetAttachmentFunc         func(ctx context.Context, grantID, messageID, attachmentID string) (*domain.Attachment, error)
 	DownloadAttachmentFunc    func(ctx context.Context, grantID, messageID, attachmentID string) (io.ReadCloser, error)
 }
@@ -248,6 +251,31 @@ func (m *MockClient) DeleteMessage(ctx context.Context, grantID, messageID strin
 	return nil
 }
 
+// ListScheduledMessages retrieves scheduled messages.
+func (m *MockClient) ListScheduledMessages(ctx context.Context, grantID string) ([]domain.ScheduledMessage, error) {
+	m.LastGrantID = grantID
+	return []domain.ScheduledMessage{
+		{ScheduleID: "schedule-1", Status: "pending", CloseTime: 1700000000},
+		{ScheduleID: "schedule-2", Status: "scheduled", CloseTime: 1700100000},
+	}, nil
+}
+
+// GetScheduledMessage retrieves a specific scheduled message.
+func (m *MockClient) GetScheduledMessage(ctx context.Context, grantID, scheduleID string) (*domain.ScheduledMessage, error) {
+	m.LastGrantID = grantID
+	return &domain.ScheduledMessage{
+		ScheduleID: scheduleID,
+		Status:     "pending",
+		CloseTime:  1700000000,
+	}, nil
+}
+
+// CancelScheduledMessage cancels a scheduled message.
+func (m *MockClient) CancelScheduledMessage(ctx context.Context, grantID, scheduleID string) error {
+	m.LastGrantID = grantID
+	return nil
+}
+
 // GetThreads retrieves threads.
 func (m *MockClient) GetThreads(ctx context.Context, grantID string, params *domain.ThreadQueryParams) ([]domain.Thread, error) {
 	m.GetThreadsCalled = true
@@ -338,12 +366,25 @@ func (m *MockClient) CreateDraft(ctx context.Context, grantID string, req *domai
 	if m.CreateDraftFunc != nil {
 		return m.CreateDraftFunc(ctx, grantID, req)
 	}
+
+	// Convert request attachments to response attachments (with generated IDs)
+	var attachments []domain.Attachment
+	for i, a := range req.Attachments {
+		attachments = append(attachments, domain.Attachment{
+			ID:          fmt.Sprintf("attach-%d", i+1),
+			Filename:    a.Filename,
+			ContentType: a.ContentType,
+			Size:        a.Size,
+		})
+	}
+
 	return &domain.Draft{
-		ID:      "new-draft-id",
-		GrantID: grantID,
-		Subject: req.Subject,
-		Body:    req.Body,
-		To:      req.To,
+		ID:          "new-draft-id",
+		GrantID:     grantID,
+		Subject:     req.Subject,
+		Body:        req.Body,
+		To:          req.To,
+		Attachments: attachments,
 	}, nil
 }
 
@@ -355,12 +396,25 @@ func (m *MockClient) UpdateDraft(ctx context.Context, grantID, draftID string, r
 	if m.UpdateDraftFunc != nil {
 		return m.UpdateDraftFunc(ctx, grantID, draftID, req)
 	}
+
+	// Convert request attachments to response attachments
+	var attachments []domain.Attachment
+	for i, a := range req.Attachments {
+		attachments = append(attachments, domain.Attachment{
+			ID:          fmt.Sprintf("attach-%d", i+1),
+			Filename:    a.Filename,
+			ContentType: a.ContentType,
+			Size:        a.Size,
+		})
+	}
+
 	return &domain.Draft{
-		ID:      draftID,
-		GrantID: grantID,
-		Subject: req.Subject,
-		Body:    req.Body,
-		To:      req.To,
+		ID:          draftID,
+		GrantID:     grantID,
+		Subject:     req.Subject,
+		Body:        req.Body,
+		To:          req.To,
+		Attachments: attachments,
 	}, nil
 }
 
@@ -459,6 +513,32 @@ func (m *MockClient) DeleteFolder(ctx context.Context, grantID, folderID string)
 	return nil
 }
 
+// ListAttachments retrieves all attachments for a message.
+func (m *MockClient) ListAttachments(ctx context.Context, grantID, messageID string) ([]domain.Attachment, error) {
+	m.ListAttachmentsCalled = true
+	m.LastGrantID = grantID
+	m.LastMessageID = messageID
+	if m.ListAttachmentsFunc != nil {
+		return m.ListAttachmentsFunc(ctx, grantID, messageID)
+	}
+	return []domain.Attachment{
+		{
+			ID:          "attach-1",
+			GrantID:     grantID,
+			Filename:    "test.pdf",
+			ContentType: "application/pdf",
+			Size:        1024,
+		},
+		{
+			ID:          "attach-2",
+			GrantID:     grantID,
+			Filename:    "image.png",
+			ContentType: "image/png",
+			Size:        2048,
+		},
+	}, nil
+}
+
 // GetAttachment retrieves attachment metadata.
 func (m *MockClient) GetAttachment(ctx context.Context, grantID, messageID, attachmentID string) (*domain.Attachment, error) {
 	m.GetAttachmentCalled = true
@@ -503,6 +583,43 @@ func (m *MockClient) GetCalendar(ctx context.Context, grantID, calendarID string
 	}, nil
 }
 
+// CreateCalendar creates a new calendar.
+func (m *MockClient) CreateCalendar(ctx context.Context, grantID string, req *domain.CreateCalendarRequest) (*domain.Calendar, error) {
+	return &domain.Calendar{
+		ID:          "new-calendar-id",
+		Name:        req.Name,
+		Description: req.Description,
+		Location:    req.Location,
+		Timezone:    req.Timezone,
+	}, nil
+}
+
+// UpdateCalendar updates an existing calendar.
+func (m *MockClient) UpdateCalendar(ctx context.Context, grantID, calendarID string, req *domain.UpdateCalendarRequest) (*domain.Calendar, error) {
+	cal := &domain.Calendar{ID: calendarID}
+	if req.Name != nil {
+		cal.Name = *req.Name
+	}
+	if req.Description != nil {
+		cal.Description = *req.Description
+	}
+	if req.Location != nil {
+		cal.Location = *req.Location
+	}
+	if req.Timezone != nil {
+		cal.Timezone = *req.Timezone
+	}
+	if req.HexColor != nil {
+		cal.HexColor = *req.HexColor
+	}
+	return cal, nil
+}
+
+// DeleteCalendar deletes a calendar.
+func (m *MockClient) DeleteCalendar(ctx context.Context, grantID, calendarID string) error {
+	return nil
+}
+
 // GetEvents retrieves events.
 func (m *MockClient) GetEvents(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error) {
 	return []domain.Event{}, nil
@@ -545,6 +662,11 @@ func (m *MockClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 
 // DeleteEvent deletes an event.
 func (m *MockClient) DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error {
+	return nil
+}
+
+// SendRSVP sends an RSVP response to an event invitation.
+func (m *MockClient) SendRSVP(ctx context.Context, grantID, calendarID, eventID string, req *domain.SendRSVPRequest) error {
 	return nil
 }
 
@@ -656,6 +778,42 @@ func (m *MockClient) GetContactGroups(ctx context.Context, grantID string) ([]do
 	return []domain.ContactGroup{
 		{ID: "group-1", Name: "Contacts"},
 	}, nil
+}
+
+// GetContactGroup retrieves a single contact group.
+func (m *MockClient) GetContactGroup(ctx context.Context, grantID, groupID string) (*domain.ContactGroup, error) {
+	return &domain.ContactGroup{
+		ID:      groupID,
+		GrantID: grantID,
+		Name:    "Test Group",
+	}, nil
+}
+
+// CreateContactGroup creates a new contact group.
+func (m *MockClient) CreateContactGroup(ctx context.Context, grantID string, req *domain.CreateContactGroupRequest) (*domain.ContactGroup, error) {
+	return &domain.ContactGroup{
+		ID:      "new-group-id",
+		GrantID: grantID,
+		Name:    req.Name,
+	}, nil
+}
+
+// UpdateContactGroup updates an existing contact group.
+func (m *MockClient) UpdateContactGroup(ctx context.Context, grantID, groupID string, req *domain.UpdateContactGroupRequest) (*domain.ContactGroup, error) {
+	name := "Updated Group"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.ContactGroup{
+		ID:      groupID,
+		GrantID: grantID,
+		Name:    name,
+	}, nil
+}
+
+// DeleteContactGroup deletes a contact group.
+func (m *MockClient) DeleteContactGroup(ctx context.Context, grantID, groupID string) error {
+	return nil
 }
 
 // ListWebhooks lists all webhooks.

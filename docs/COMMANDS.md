@@ -17,6 +17,7 @@ nylas auth logout     # Revoke current authentication
 nylas auth status     # Show authentication status
 nylas auth whoami     # Show current user info
 nylas auth list       # List all accounts
+nylas auth show       # Show detailed grant information
 nylas auth switch     # Switch between accounts
 nylas auth add        # Manually add an existing grant
 nylas auth token      # Show/copy API key
@@ -47,6 +48,30 @@ Authenticated Accounts
 
   2. work@company.com (microsoft)
      Grant ID: xyz789ghi012
+```
+
+**Example: Show grant details**
+```bash
+$ nylas auth show abc123def456
+
+════════════════════════════════════════════════════════════
+Grant Details
+════════════════════════════════════════════════════════════
+
+Grant ID:    abc123def456
+Email:       user@gmail.com
+Provider:    Google
+Status:      ✓ valid
+
+Created:     Dec 15, 2024 10:00 AM
+Updated:     Dec 16, 2024 2:30 PM
+
+Scopes:
+  • https://www.googleapis.com/auth/gmail.readonly
+  • https://www.googleapis.com/auth/calendar
+  • https://www.googleapis.com/auth/contacts.readonly
+
+★ This is the default grant
 ```
 
 ---
@@ -164,6 +189,10 @@ nylas email search "query" --limit 50 # Search with custom limit
 nylas email search "query" --from "sender@example.com"
 nylas email search "query" --after "2024-01-01"
 nylas email search "query" --before "2024-12-31"
+nylas email search "query" --unread   # Only unread messages
+nylas email search "query" --starred  # Only starred messages
+nylas email search "query" --in INBOX # Search in specific folder
+nylas email search "query" --has-attachment  # Only with attachments
 ```
 
 **Example output:**
@@ -238,10 +267,30 @@ Found 6 folders
 View and manage email conversations.
 
 ```bash
+# List threads
 nylas email threads list              # List threads
 nylas email threads list --unread     # List unread threads
+nylas email threads list --starred    # List starred threads
 nylas email threads list --limit 20   # Limit results
-nylas email threads read <thread-id>  # Read a thread
+
+# Show thread details
+nylas email threads show <thread-id>  # Show a thread
+
+# Search threads
+nylas email threads search --subject "project"  # Search by subject
+nylas email threads search --from "boss@company.com"  # Search by sender
+nylas email threads search --unread --limit 10  # Search unread threads
+nylas email threads search --after "2024-01-01" --before "2024-12-31"
+
+# Mark threads
+nylas email threads mark <thread-id> --read      # Mark as read
+nylas email threads mark <thread-id> --unread    # Mark as unread
+nylas email threads mark <thread-id> --star      # Star thread
+nylas email threads mark <thread-id> --unstar    # Unstar thread
+
+# Delete threads
+nylas email threads delete <thread-id>           # Delete thread
+nylas email threads delete <thread-id> --force   # Skip confirmation
 ```
 
 **Example output:**
@@ -560,6 +609,26 @@ Email: john@example.com
 ID: contact_new_123
 ```
 
+### Update Contact
+
+```bash
+nylas contacts update <contact-id> [grant-id]
+nylas contacts update <contact-id> --given-name "John" --surname "Smith"
+nylas contacts update <contact-id> --company "Acme Inc" --job-title "Engineer"
+nylas contacts update <contact-id> --email "new@example.com" --phone "+1-555-0123"
+nylas contacts update <contact-id> --birthday "1990-05-15" --notes "Updated notes"
+```
+
+**Example output:**
+```bash
+$ nylas contacts update contact_abc123 --given-name "John" --surname "Smith"
+
+✓ Contact updated successfully!
+
+Name: John Smith
+ID: contact_abc123
+```
+
 ### Delete Contact
 
 ```bash
@@ -569,13 +638,29 @@ nylas contacts delete <contact-id> --force   # Skip confirmation
 
 ### Contact Groups
 
+Manage contact groups with full CRUD operations.
+
 ```bash
-nylas contacts groups [grant-id]
+# List groups
+nylas contacts groups list [grant-id]
+
+# Show group details
+nylas contacts groups show <group-id> [grant-id]
+
+# Create group
+nylas contacts groups create "VIP Clients" [grant-id]
+
+# Update group
+nylas contacts groups update <group-id> --name "Premium Clients"
+
+# Delete group
+nylas contacts groups delete <group-id> [grant-id]
+nylas contacts groups delete <group-id> --force   # Skip confirmation
 ```
 
 **Example output:**
 ```bash
-$ nylas contacts groups
+$ nylas contacts groups list
 
 Found 4 contact group(s):
 
@@ -584,6 +669,16 @@ Family              group_abc123          /Family
 Work                group_def456          /Work
 Friends             group_ghi789          /Friends
 VIP                 group_jkl012          /VIP
+```
+
+**Example: Create a contact group**
+```bash
+$ nylas contacts groups create "VIP Clients"
+
+✓ Contact group created successfully!
+
+Name: VIP Clients
+ID: group_new_123
 ```
 
 ---

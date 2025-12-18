@@ -3,7 +3,10 @@ package email
 import (
 	"bufio"
 	"fmt"
+	"io"
+	"mime"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -104,10 +107,12 @@ func newDraftsCreateCmd() *cobra.Command {
 	var subject string
 	var body string
 	var replyTo string
+	var attachFiles []string
 
 	cmd := &cobra.Command{
 		Use:   "create [grant-id]",
 		Short: "Create a new draft",
+		Long:  "Create a new draft email with optional attachments.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()
@@ -121,7 +126,7 @@ func newDraftsCreateCmd() *cobra.Command {
 			}
 
 			// Interactive mode if nothing provided
-			if len(to) == 0 && subject == "" && body == "" {
+			if len(to) == 0 && subject == "" && body == "" && len(attachFiles) == 0 {
 				reader := bufio.NewReader(os.Stdin)
 
 				fmt.Print("To (comma-separated, optional): ")
@@ -159,12 +164,25 @@ func newDraftsCreateCmd() *cobra.Command {
 				req.Cc = parseContacts(cc)
 			}
 
+			// Load attachments from files
+			if len(attachFiles) > 0 {
+				attachments, err := loadAttachmentsFromFiles(attachFiles)
+				if err != nil {
+					return fmt.Errorf("failed to load attachments: %w", err)
+				}
+				req.Attachments = attachments
+				fmt.Printf("Attaching %d file(s)...\n", len(attachments))
+			}
+
 			draft, err := client.CreateDraft(ctx, grantID, req)
 			if err != nil {
 				return fmt.Errorf("failed to create draft: %w", err)
 			}
 
 			printSuccess("Draft created! ID: %s", draft.ID)
+			if len(draft.Attachments) > 0 {
+				fmt.Printf("  Attachments: %d\n", len(draft.Attachments))
+			}
 			return nil
 		},
 	}
@@ -174,8 +192,81 @@ func newDraftsCreateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&subject, "subject", "s", "", "Email subject")
 	cmd.Flags().StringVarP(&body, "body", "b", "", "Email body")
 	cmd.Flags().StringVar(&replyTo, "reply-to", "", "Message ID to reply to")
+	cmd.Flags().StringSliceVarP(&attachFiles, "attach", "a", nil, "File paths to attach")
 
 	return cmd
+}
+
+// loadAttachmentsFromFiles reads files and creates attachment objects.
+func loadAttachmentsFromFiles(filePaths []string) ([]domain.Attachment, error) {
+	attachments := make([]domain.Attachment, 0, len(filePaths))
+
+	for _, path := range filePaths {
+		file, err := os.Open(path)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open file %s: %w", path, err)
+		}
+
+		content, err := io.ReadAll(file)
+		file.Close()
+		if err != nil {
+			return nil, fmt.Errorf("cannot read file %s: %w", path, err)
+		}
+
+		filename := filepath.Base(path)
+		contentType := detectContentType(filename, content)
+
+		attachments = append(attachments, domain.Attachment{
+			Filename:    filename,
+			ContentType: contentType,
+			Content:     content,
+			Size:        int64(len(content)),
+		})
+	}
+
+	return attachments, nil
+}
+
+// detectContentType tries to determine the MIME type from filename extension or content.
+func detectContentType(filename string, content []byte) string {
+	// Try extension first
+	ext := filepath.Ext(filename)
+	if ext != "" {
+		mimeType := mime.TypeByExtension(ext)
+		if mimeType != "" {
+			return mimeType
+		}
+	}
+
+	// Fall back to content sniffing (basic)
+	// http.DetectContentType only looks at first 512 bytes
+	if len(content) > 0 {
+		// Check for common file signatures
+		if len(content) >= 4 {
+			switch {
+			case content[0] == 0x25 && content[1] == 0x50 && content[2] == 0x44 && content[3] == 0x46:
+				return "application/pdf"
+			case content[0] == 0x50 && content[1] == 0x4B && content[2] == 0x03 && content[3] == 0x04:
+				// ZIP-based formats (docx, xlsx, pptx, etc.)
+				if strings.HasSuffix(strings.ToLower(filename), ".docx") {
+					return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+				} else if strings.HasSuffix(strings.ToLower(filename), ".xlsx") {
+					return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+				} else if strings.HasSuffix(strings.ToLower(filename), ".pptx") {
+					return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+				}
+				return "application/zip"
+			case content[0] == 0x89 && content[1] == 0x50 && content[2] == 0x4E && content[3] == 0x47:
+				return "image/png"
+			case content[0] == 0xFF && content[1] == 0xD8 && content[2] == 0xFF:
+				return "image/jpeg"
+			case content[0] == 0x47 && content[1] == 0x49 && content[2] == 0x46:
+				return "image/gif"
+			}
+		}
+	}
+
+	return "application/octet-stream"
 }
 
 func newDraftsShowCmd() *cobra.Command {
@@ -221,6 +312,14 @@ func newDraftsShowCmd() *cobra.Command {
 				fmt.Printf("Cc:      %s\n", formatContacts(draft.Cc))
 			}
 			fmt.Printf("Updated: %s\n", draft.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
+
+			// Show attachments if any
+			if len(draft.Attachments) > 0 {
+				fmt.Printf("\nAttachments (%d):\n", len(draft.Attachments))
+				for i, a := range draft.Attachments {
+					fmt.Printf("  %d. %s (%s, %s)\n", i+1, a.Filename, a.ContentType, formatSize(a.Size))
+				}
+			}
 
 			if draft.Body != "" {
 				fmt.Println("\nBody:")

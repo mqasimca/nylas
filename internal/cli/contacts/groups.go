@@ -2,16 +2,35 @@ package contacts
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
 
 func newGroupsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "groups [grant-id]",
+		Use:     "groups",
 		Aliases: []string{"group"},
+		Short:   "Manage contact groups",
+		Long:    "List, create, update, and delete contact groups.",
+	}
+
+	cmd.AddCommand(newGroupsListCmd())
+	cmd.AddCommand(newGroupsShowCmd())
+	cmd.AddCommand(newGroupsCreateCmd())
+	cmd.AddCommand(newGroupsUpdateCmd())
+	cmd.AddCommand(newGroupsDeleteCmd())
+
+	return cmd
+}
+
+func newGroupsListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:     "list [grant-id]",
+		Aliases: []string{"ls"},
 		Short:   "List contact groups",
 		Long:    "List all contact groups for the specified grant or default account.",
 		Args:    cobra.MaximumNArgs(1),
@@ -57,6 +76,212 @@ func newGroupsCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newGroupsShowCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "show <group-id> [grant-id]",
+		Short: "Show contact group details",
+		Args:  cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID := args[0]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			group, err := client.GetContactGroup(ctx, grantID, groupID)
+			if err != nil {
+				return fmt.Errorf("failed to get contact group: %w", err)
+			}
+
+			boldWhite := color.New(color.Bold, color.FgWhite)
+			dim := color.New(color.Faint)
+
+			fmt.Println("════════════════════════════════════════════════════════════")
+			boldWhite.Printf("Contact Group: %s\n", group.Name)
+			fmt.Println("════════════════════════════════════════════════════════════")
+
+			fmt.Printf("ID:   %s\n", dim.Sprint(group.ID))
+			fmt.Printf("Name: %s\n", group.Name)
+			if group.Path != "" {
+				fmt.Printf("Path: %s\n", group.Path)
+			}
+
+			return nil
+		},
+	}
+}
+
+func newGroupsCreateCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "create <name> [grant-id]",
+		Short: "Create a new contact group",
+		Long: `Create a new contact group.
+
+Examples:
+  nylas contacts groups create "VIP Clients"
+  nylas contacts groups create "Team Members" <grant-id>`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			req := &domain.CreateContactGroupRequest{
+				Name: name,
+			}
+
+			group, err := client.CreateContactGroup(ctx, grantID, req)
+			if err != nil {
+				return fmt.Errorf("failed to create contact group: %w", err)
+			}
+
+			green := color.New(color.FgGreen)
+			fmt.Printf("%s Created contact group '%s' (ID: %s)\n", green.Sprint("✓"), group.Name, group.ID)
+
+			return nil
+		},
+	}
+}
+
+func newGroupsUpdateCmd() *cobra.Command {
+	var name string
+
+	cmd := &cobra.Command{
+		Use:   "update <group-id> [grant-id]",
+		Short: "Update a contact group",
+		Long: `Update an existing contact group.
+
+Examples:
+  nylas contacts groups update <group-id> --name "New Name"`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID := args[0]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			req := &domain.UpdateContactGroupRequest{}
+
+			if cmd.Flags().Changed("name") {
+				req.Name = &name
+			}
+
+			group, err := client.UpdateContactGroup(ctx, grantID, groupID, req)
+			if err != nil {
+				return fmt.Errorf("failed to update contact group: %w", err)
+			}
+
+			green := color.New(color.FgGreen)
+			fmt.Printf("%s Updated contact group '%s'\n", green.Sprint("✓"), group.Name)
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&name, "name", "n", "", "New group name")
+
+	return cmd
+}
+
+func newGroupsDeleteCmd() *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:     "delete <group-id> [grant-id]",
+		Aliases: []string{"rm", "remove"},
+		Short:   "Delete a contact group",
+		Args:    cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID := args[0]
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			if !force {
+				fmt.Printf("Are you sure you want to delete contact group %s? [y/N] ", groupID)
+				var confirm string
+				fmt.Scanln(&confirm)
+				if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "yes" {
+					fmt.Println("Cancelled.")
+					return nil
+				}
+			}
+
+			err = client.DeleteContactGroup(ctx, grantID, groupID)
+			if err != nil {
+				return fmt.Errorf("failed to delete contact group: %w", err)
+			}
+
+			green := color.New(color.FgGreen)
+			fmt.Printf("%s Contact group deleted\n", green.Sprint("✓"))
+
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Skip confirmation")
 
 	return cmd
 }

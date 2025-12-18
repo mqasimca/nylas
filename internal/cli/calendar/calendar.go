@@ -27,6 +27,10 @@ View calendars, list events, create new events, and more.`,
 	}
 
 	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newShowCmd())
+	cmd.AddCommand(newCreateCmd())
+	cmd.AddCommand(newUpdateCmd())
+	cmd.AddCommand(newDeleteCmd())
 	cmd.AddCommand(newEventsCmd())
 	cmd.AddCommand(newAvailabilityCmd())
 

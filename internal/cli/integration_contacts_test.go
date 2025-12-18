@@ -102,11 +102,11 @@ func TestCLI_ContactsCreateHelp(t *testing.T) {
 func TestCLI_ContactsGroupsList(t *testing.T) {
 	skipIfMissingCreds(t)
 
-	stdout, stderr, err := runCLI("contacts", "groups", testGrantID)
+	stdout, stderr, err := runCLI("contacts", "groups", "list", testGrantID)
 	skipIfProviderNotSupported(t, stderr)
 
 	if err != nil {
-		t.Fatalf("contacts groups failed: %v\nstderr: %s", err, stderr)
+		t.Fatalf("contacts groups list failed: %v\nstderr: %s", err, stderr)
 	}
 
 	// Should show groups list or "No contact groups found"
@@ -114,7 +114,7 @@ func TestCLI_ContactsGroupsList(t *testing.T) {
 		t.Errorf("Expected groups list output, got: %s", stdout)
 	}
 
-	t.Logf("contacts groups output:\n%s", stdout)
+	t.Logf("contacts groups list output:\n%s", stdout)
 }
 
 func TestCLI_ContactsLifecycle(t *testing.T) {
@@ -192,4 +192,143 @@ func TestCLI_ContactsLifecycle(t *testing.T) {
 
 		t.Logf("contacts delete output: %s", stdout)
 	})
+}
+
+// =============================================================================
+// CONTACT UPDATE COMMAND TESTS
+// =============================================================================
+
+func TestCLI_ContactsUpdateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "update", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts update --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show update flags
+	if !strings.Contains(stdout, "--given-name") {
+		t.Errorf("Expected --given-name flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--surname") {
+		t.Errorf("Expected --surname flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--company") {
+		t.Errorf("Expected --company flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--email") {
+		t.Errorf("Expected --email flag in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts update --help output:\n%s", stdout)
+}
+
+// =============================================================================
+// CONTACT GROUPS CRUD COMMAND TESTS
+// =============================================================================
+
+func TestCLI_ContactsGroupsHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "groups", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts groups --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show groups subcommands
+	if !strings.Contains(stdout, "list") {
+		t.Errorf("Expected 'list' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "show") {
+		t.Errorf("Expected 'show' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "create") {
+		t.Errorf("Expected 'create' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "update") {
+		t.Errorf("Expected 'update' in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "delete") {
+		t.Errorf("Expected 'delete' in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts groups --help output:\n%s", stdout)
+}
+
+func TestCLI_ContactsGroupsListHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "groups", "list", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts groups list --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	if !strings.Contains(stdout, "List") || !strings.Contains(stdout, "contact groups") {
+		t.Errorf("Expected list description in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts groups list --help output:\n%s", stdout)
+}
+
+func TestCLI_ContactsGroupsCreateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "groups", "create", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts groups create --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	if !strings.Contains(stdout, "<name>") {
+		t.Errorf("Expected '<name>' in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts groups create --help output:\n%s", stdout)
+}
+
+func TestCLI_ContactsGroupsUpdateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "groups", "update", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts groups update --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	if !strings.Contains(stdout, "--name") {
+		t.Errorf("Expected '--name' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts groups update --help output:\n%s", stdout)
+}
+
+func TestCLI_ContactsGroupsDeleteHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "groups", "delete", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts groups delete --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	if !strings.Contains(stdout, "--force") {
+		t.Errorf("Expected '--force' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts groups delete --help output:\n%s", stdout)
 }

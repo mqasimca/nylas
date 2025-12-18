@@ -9,19 +9,43 @@ import (
 )
 
 func newSearchCmd() *cobra.Command {
-	var limit int
-	var from string
-	var to string
-	var subject string
-	var after string
-	var before string
-	var hasAttachment bool
+	var (
+		limit         int
+		from          string
+		to            string
+		subject       string
+		after         string
+		before        string
+		hasAttachment bool
+		unread        bool
+		starred       bool
+		inFolder      string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "search <query> [grant-id]",
 		Short: "Search emails",
-		Long:  "Search for emails matching a query string or filters.",
-		Args:  cobra.RangeArgs(1, 2),
+		Long: `Search for emails matching a query string or filters.
+
+Examples:
+  # Search by subject
+  nylas email search "project update"
+
+  # Search with filters
+  nylas email search "meeting" --from "boss@company.com" --unread
+
+  # Search by sender (use * for any subject)
+  nylas email search "*" --from "support@example.com"
+
+  # Search in a specific folder
+  nylas email search "invoice" --in INBOX
+
+  # Search with date filters
+  nylas email search "invoice" --after 2024-01-01 --before 2024-12-31
+
+  # Search for messages with attachments
+  nylas email search "*" --has-attachment --from "hr@company.com"`,
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := args[0]
 
@@ -47,11 +71,11 @@ func newSearchCmd() *cobra.Command {
 				Limit: limit,
 			}
 
-			// Use query as subject search since Nylas v3 doesn't support full-text 'q'
+			// Use query as subject search unless it's a wildcard
 			// If --subject flag is also provided, it takes precedence
 			if subject != "" {
 				params.Subject = subject
-			} else {
+			} else if query != "*" && query != "" {
 				params.Subject = query
 			}
 
@@ -61,8 +85,17 @@ func newSearchCmd() *cobra.Command {
 			if to != "" {
 				params.To = to
 			}
+			if inFolder != "" {
+				params.In = []string{inFolder}
+			}
 			if cmd.Flags().Changed("has-attachment") {
 				params.HasAttachment = &hasAttachment
+			}
+			if cmd.Flags().Changed("unread") {
+				params.Unread = &unread
+			}
+			if cmd.Flags().Changed("starred") {
+				params.Starred = &starred
 			}
 
 			// Parse date filters
@@ -107,6 +140,9 @@ func newSearchCmd() *cobra.Command {
 	cmd.Flags().StringVar(&after, "after", "", "Messages after date (YYYY-MM-DD)")
 	cmd.Flags().StringVar(&before, "before", "", "Messages before date (YYYY-MM-DD)")
 	cmd.Flags().BoolVar(&hasAttachment, "has-attachment", false, "Only messages with attachments")
+	cmd.Flags().BoolVar(&unread, "unread", false, "Only unread messages")
+	cmd.Flags().BoolVar(&starred, "starred", false, "Only starred messages")
+	cmd.Flags().StringVar(&inFolder, "in", "", "Filter by folder (e.g., INBOX, SENT)")
 
 	return cmd
 }

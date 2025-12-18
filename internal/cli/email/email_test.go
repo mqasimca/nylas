@@ -165,6 +165,25 @@ func TestSearchCommand(t *testing.T) {
 		flag := cmd.Flags().Lookup("before")
 		assert.NotNil(t, flag)
 	})
+
+	t.Run("has_unread_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("unread")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_starred_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("starred")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_in_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("in")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_long_description_with_examples", func(t *testing.T) {
+		assert.Contains(t, cmd.Long, "Examples")
+	})
 }
 
 func TestMarkCommand(t *testing.T) {
@@ -230,15 +249,60 @@ func TestThreadsCommand(t *testing.T) {
 		assert.Equal(t, "threads", cmd.Use)
 	})
 
-	t.Run("has_list_subcommand", func(t *testing.T) {
-		found := false
+	t.Run("has_required_subcommands", func(t *testing.T) {
+		expectedCmds := []string{"list", "show", "mark", "delete", "search"}
+
+		cmdMap := make(map[string]bool)
 		for _, sub := range cmd.Commands() {
-			if sub.Name() == "list" {
-				found = true
-				break
-			}
+			cmdMap[sub.Name()] = true
 		}
-		assert.True(t, found)
+
+		for _, expected := range expectedCmds {
+			assert.True(t, cmdMap[expected], "Missing expected subcommand: %s", expected)
+		}
+	})
+}
+
+func TestThreadsSearchCommand(t *testing.T) {
+	cmd := newThreadsSearchCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "search [grant-id]", cmd.Use)
+	})
+
+	t.Run("has_limit_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("limit")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "20", flag.DefValue)
+	})
+
+	t.Run("has_from_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("from")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_to_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("to")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_unread_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("unread")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_starred_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("starred")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_in_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("in")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_long_description_with_examples", func(t *testing.T) {
+		assert.Contains(t, cmd.Long, "Examples")
 	})
 }
 

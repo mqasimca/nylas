@@ -181,3 +181,13 @@ type ContactGroupListResponse struct {
 	Data       []ContactGroup `json:"data"`
 	Pagination Pagination     `json:"pagination,omitempty"`
 }
+
+// CreateContactGroupRequest for creating a new contact group.
+type CreateContactGroupRequest struct {
+	Name string `json:"name"`
+}
+
+// UpdateContactGroupRequest for updating a contact group.
+type UpdateContactGroupRequest struct {
+	Name *string `json:"name,omitempty"`
+}

@@ -22,6 +22,8 @@ func NewEmailCmd() *cobra.Command {
 	cmd.AddCommand(newFoldersCmd())
 	cmd.AddCommand(newThreadsCmd())
 	cmd.AddCommand(newDraftsCmd())
+	cmd.AddCommand(newAttachmentsCmd())
+	cmd.AddCommand(newScheduledCmd())
 
 	return cmd
 }

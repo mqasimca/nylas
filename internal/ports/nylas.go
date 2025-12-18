@@ -25,6 +25,11 @@ type NylasClient interface {
 	UpdateMessage(ctx context.Context, grantID, messageID string, req *domain.UpdateMessageRequest) (*domain.Message, error)
 	DeleteMessage(ctx context.Context, grantID, messageID string) error
 
+	// Scheduled message operations
+	ListScheduledMessages(ctx context.Context, grantID string) ([]domain.ScheduledMessage, error)
+	GetScheduledMessage(ctx context.Context, grantID, scheduleID string) (*domain.ScheduledMessage, error)
+	CancelScheduledMessage(ctx context.Context, grantID, scheduleID string) error
+
 	// Thread operations
 	GetThreads(ctx context.Context, grantID string, params *domain.ThreadQueryParams) ([]domain.Thread, error)
 	GetThread(ctx context.Context, grantID, threadID string) (*domain.Thread, error)
@@ -47,12 +52,16 @@ type NylasClient interface {
 	DeleteFolder(ctx context.Context, grantID, folderID string) error
 
 	// Attachment operations
+	ListAttachments(ctx context.Context, grantID, messageID string) ([]domain.Attachment, error)
 	GetAttachment(ctx context.Context, grantID, messageID, attachmentID string) (*domain.Attachment, error)
 	DownloadAttachment(ctx context.Context, grantID, messageID, attachmentID string) (io.ReadCloser, error)
 
 	// Calendar operations
 	GetCalendars(ctx context.Context, grantID string) ([]domain.Calendar, error)
 	GetCalendar(ctx context.Context, grantID, calendarID string) (*domain.Calendar, error)
+	CreateCalendar(ctx context.Context, grantID string, req *domain.CreateCalendarRequest) (*domain.Calendar, error)
+	UpdateCalendar(ctx context.Context, grantID, calendarID string, req *domain.UpdateCalendarRequest) (*domain.Calendar, error)
+	DeleteCalendar(ctx context.Context, grantID, calendarID string) error
 
 	// Event operations
 	GetEvents(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error)
@@ -61,6 +70,7 @@ type NylasClient interface {
 	CreateEvent(ctx context.Context, grantID, calendarID string, req *domain.CreateEventRequest) (*domain.Event, error)
 	UpdateEvent(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error)
 	DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error
+	SendRSVP(ctx context.Context, grantID, calendarID, eventID string, req *domain.SendRSVPRequest) error
 
 	// Availability operations
 	GetFreeBusy(ctx context.Context, grantID string, req *domain.FreeBusyRequest) (*domain.FreeBusyResponse, error)
@@ -74,6 +84,10 @@ type NylasClient interface {
 	UpdateContact(ctx context.Context, grantID, contactID string, req *domain.UpdateContactRequest) (*domain.Contact, error)
 	DeleteContact(ctx context.Context, grantID, contactID string) error
 	GetContactGroups(ctx context.Context, grantID string) ([]domain.ContactGroup, error)
+	GetContactGroup(ctx context.Context, grantID, groupID string) (*domain.ContactGroup, error)
+	CreateContactGroup(ctx context.Context, grantID string, req *domain.CreateContactGroupRequest) (*domain.ContactGroup, error)
+	UpdateContactGroup(ctx context.Context, grantID, groupID string, req *domain.UpdateContactGroupRequest) (*domain.ContactGroup, error)
+	DeleteContactGroup(ctx context.Context, grantID, groupID string) error
 
 	// Webhook operations (admin-level, uses API key)
 	ListWebhooks(ctx context.Context) ([]domain.Webhook, error)

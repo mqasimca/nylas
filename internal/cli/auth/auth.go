@@ -18,6 +18,7 @@ Commands:
   status    Show current authentication status
   whoami    Show current user info
   list      List all authenticated accounts
+  show      Show detailed grant information
   switch    Switch between authenticated accounts
   add       Manually add an existing grant
   remove    Remove a grant from local config (keeps grant on server)
@@ -30,6 +31,7 @@ Commands:
 	cmd.AddCommand(newStatusCmd())
 	cmd.AddCommand(newWhoamiCmd())
 	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newShowCmd())
 	cmd.AddCommand(newSwitchCmd())
 	cmd.AddCommand(newAddCmd())
 	cmd.AddCommand(newRemoveCmd())

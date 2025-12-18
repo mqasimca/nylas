@@ -211,6 +211,74 @@ func TestCLI_AuthHelp(t *testing.T) {
 	if !strings.Contains(stdout, "status") {
 		t.Errorf("Expected 'status' in auth help, got: %s", stdout)
 	}
+	if !strings.Contains(stdout, "show") {
+		t.Errorf("Expected 'show' in auth help, got: %s", stdout)
+	}
 
 	t.Logf("auth help output:\n%s", stdout)
+}
+
+// =============================================================================
+// AUTH SHOW COMMAND TESTS (Phase 3)
+// =============================================================================
+
+func TestCLI_AuthShowHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("auth", "show", "--help")
+
+	if err != nil {
+		t.Fatalf("auth show --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show help for show command
+	if !strings.Contains(stdout, "grant") {
+		t.Errorf("Expected 'grant' in show help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "detailed") || !strings.Contains(stdout, "information") {
+		t.Errorf("Expected detailed information description in help, got: %s", stdout)
+	}
+
+	t.Logf("auth show help output:\n%s", stdout)
+}
+
+func TestCLI_AuthShow(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	stdout, stderr, err := runCLI("auth", "show", testGrantID)
+
+	if err != nil {
+		t.Fatalf("auth show failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show grant details
+	if !strings.Contains(stdout, "Grant ID:") {
+		t.Errorf("Expected 'Grant ID:' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Email:") {
+		t.Errorf("Expected 'Email:' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Provider:") {
+		t.Errorf("Expected 'Provider:' in output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "Status:") {
+		t.Errorf("Expected 'Status:' in output, got: %s", stdout)
+	}
+
+	t.Logf("auth show output:\n%s", stdout)
+}
+
+func TestCLI_AuthShow_InvalidGrant(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	_, stderr, err := runCLI("auth", "show", "invalid-grant-id-12345")
+
+	if err == nil {
+		t.Error("Expected error for invalid grant ID, but command succeeded")
+	}
+
+	// Should show error message
+	t.Logf("auth show invalid grant error: %s", stderr)
 }

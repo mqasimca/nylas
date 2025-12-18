@@ -29,6 +29,7 @@ View contacts, create new contacts, update and delete contacts.`,
 	cmd.AddCommand(newListCmd())
 	cmd.AddCommand(newShowCmd())
 	cmd.AddCommand(newCreateCmd())
+	cmd.AddCommand(newUpdateCmd())
 	cmd.AddCommand(newDeleteCmd())
 	cmd.AddCommand(newGroupsCmd())
 
