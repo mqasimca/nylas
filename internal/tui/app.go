@@ -313,6 +313,8 @@ func (a *App) onCommand(cmd string) {
 		a.navigateTo("contacts")
 	case "w", "webhooks", "wh":
 		a.navigateTo("webhooks")
+	case "ws", "webhook-server", "whs", "server":
+		a.navigateTo("webhook-server")
 	case "g", "grants", "gr":
 		a.navigateTo("grants")
 	case "d", "dashboard", "dash", "home":
@@ -449,6 +451,8 @@ func (a *App) createView(name string) ResourceView {
 		return NewContactsView(a)
 	case "webhooks":
 		return NewWebhooksView(a)
+	case "webhook-server":
+		return NewWebhookServerView(a)
 	case "grants":
 		return NewGrantsView(a)
 	default:

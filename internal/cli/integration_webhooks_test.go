@@ -3,8 +3,11 @@
 package cli
 
 import (
+	"bufio"
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -284,6 +287,54 @@ func TestCLI_WebhookTestPayloadList(t *testing.T) {
 	t.Logf("webhook test payload (no args) output:\n%s", stdout)
 }
 
+// =============================================================================
+// WEBHOOK SERVER TESTS
+// =============================================================================
+
+func TestCLI_WebhookServerHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("webhook", "server", "--help")
+
+	if err != nil {
+		t.Fatalf("webhook server --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show server options
+	if !strings.Contains(stdout, "--port") {
+		t.Errorf("Expected --port flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--tunnel") {
+		t.Errorf("Expected --tunnel flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "cloudflared") {
+		t.Errorf("Expected cloudflared mentioned in help, got: %s", stdout)
+	}
+
+	t.Logf("webhook server --help output:\n%s", stdout)
+}
+
+func TestCLI_WebhookServerSubcommandExists(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	// Verify server is listed in webhook subcommands
+	stdout, stderr, err := runCLI("webhook", "--help")
+
+	if err != nil {
+		t.Fatalf("webhook --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	if !strings.Contains(stdout, "server") {
+		t.Errorf("Expected 'server' subcommand in webhook help, got: %s", stdout)
+	}
+
+	t.Logf("webhook --help output:\n%s", stdout)
+}
+
 func TestCLI_WebhookLifecycle(t *testing.T) {
 	skipIfMissingCreds(t)
 
@@ -291,20 +342,88 @@ func TestCLI_WebhookLifecycle(t *testing.T) {
 		t.Skip("NYLAS_TEST_DELETE not set to 'true'")
 	}
 
-	webhookURL := fmt.Sprintf("https://example.com/webhook/%d", time.Now().Unix())
-	webhookDesc := fmt.Sprintf("CLI Test Webhook %d", time.Now().Unix())
+	// Start webhook server with cloudflared tunnel
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	// Start the webhook server in the background
+	serverCmd := exec.CommandContext(ctx, testBinary, "webhook", "server", "--tunnel", "cloudflared", "--port", "3099")
+	serverCmd.Env = os.Environ()
+
+	stdout, err := serverCmd.StdoutPipe()
+	if err != nil {
+		t.Fatalf("Failed to get stdout pipe: %v", err)
+	}
+
+	if err := serverCmd.Start(); err != nil {
+		t.Fatalf("Failed to start webhook server: %v", err)
+	}
+
+	// Ensure cleanup
+	defer func() {
+		cancel()
+		_ = serverCmd.Wait()
+	}()
+
+	// Wait for tunnel URL to appear in output
+	var webhookURL string
+	scanner := bufio.NewScanner(stdout)
+	timeout := time.After(60 * time.Second)
+
+	for webhookURL == "" {
+		select {
+		case <-timeout:
+			t.Fatal("Timeout waiting for cloudflared tunnel URL")
+		default:
+			if scanner.Scan() {
+				line := scanner.Text()
+				t.Logf("Server output: %s", line)
+				// Look for Public URL line
+				if strings.Contains(line, "Public URL:") {
+					parts := strings.Split(line, "Public URL:")
+					if len(parts) > 1 {
+						webhookURL = strings.TrimSpace(parts[1])
+						t.Logf("Found webhook URL: %s", webhookURL)
+					}
+				}
+			}
+		}
+	}
+
+	if webhookURL == "" {
+		t.Fatal("Failed to get webhook URL from server output")
+	}
+
+	// Give the tunnel a moment to stabilize
+	time.Sleep(5 * time.Second)
+
+	webhookDesc := fmt.Sprintf("CLI Test Webhook %d", time.Now().Unix())
 	var webhookID string
 
-	// Create webhook
+	// Create webhook with retry (cloudflare tunnels may need time to become reachable)
 	t.Run("create", func(t *testing.T) {
-		stdout, stderr, err := runCLI("webhook", "create",
-			"--url", webhookURL,
-			"--triggers", "message.created",
-			"--description", webhookDesc)
+		var stdout, stderr string
+		var err error
+
+		// Retry up to 3 times with increasing delays
+		for attempt := 1; attempt <= 3; attempt++ {
+			stdout, stderr, err = runCLI("webhook", "create",
+				"--url", webhookURL,
+				"--triggers", "message.created",
+				"--description", webhookDesc)
+
+			if err == nil && strings.Contains(stdout, "created") {
+				break
+			}
+
+			if attempt < 3 {
+				t.Logf("Attempt %d failed, retrying in %d seconds...", attempt, attempt*5)
+				time.Sleep(time.Duration(attempt*5) * time.Second)
+			}
+		}
 
 		if err != nil {
-			t.Fatalf("webhook create failed: %v\nstderr: %s", err, stderr)
+			t.Fatalf("webhook create failed after 3 attempts: %v\nstderr: %s", err, stderr)
 		}
 
 		if !strings.Contains(stdout, "created") {

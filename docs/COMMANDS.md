@@ -2,7 +2,7 @@
 
 Complete reference for all Nylas CLI commands.
 
-> **Quick Links:** [README](../README.md) | [TUI](TUI.md) | [Architecture](ARCHITECTURE.md) | [Development](DEVELOPMENT.md) | [Security](SECURITY.md)
+> **Quick Links:** [README](../README.md) | [TUI](TUI.md) | [Architecture](ARCHITECTURE.md) | [Development](DEVELOPMENT.md) | [Security](SECURITY.md) | [Webhooks](WEBHOOKS.md)
 
 ---
 

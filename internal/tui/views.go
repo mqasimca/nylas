@@ -116,6 +116,7 @@ func (v *DashboardView) Load() {
 		{":e", "Events", "Calendar events"},
 		{":c", "Contacts", "Contacts"},
 		{":w", "Webhooks", "Webhooks"},
+		{":ws", "Server", "Webhook server (local)"},
 		{":g", "Grants", "Connected accounts"},
 	}
 
@@ -1129,6 +1130,7 @@ func NewHelpView(styles *Styles) *tview.TextView {
 	fmt.Fprintf(help, "  [%s]:e[-]        Events/Calendar\n", info)
 	fmt.Fprintf(help, "  [%s]:c[-]        Contacts\n", info)
 	fmt.Fprintf(help, "  [%s]:w[-]        Webhooks\n", info)
+	fmt.Fprintf(help, "  [%s]:ws[-]       Webhook Server\n", info)
 	fmt.Fprintf(help, "  [%s]:g[-]        Grants\n", info)
 	fmt.Fprintf(help, "  [%s]:d[-]        Dashboard\n", info)
 	fmt.Fprintf(help, "\n")

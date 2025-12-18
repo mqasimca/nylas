@@ -2,7 +2,7 @@
 
 Guide for setting up the development environment, running tests, and building the CLI.
 
-> **Quick Links:** [README](../README.md) | [Commands](COMMANDS.md) | [TUI](TUI.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md)
+> **Quick Links:** [README](../README.md) | [Commands](COMMANDS.md) | [TUI](TUI.md) | [Architecture](ARCHITECTURE.md) | [Security](SECURITY.md) | [Webhooks](WEBHOOKS.md)
 
 ---
 

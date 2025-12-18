@@ -36,6 +36,7 @@ Note: Webhook management requires an API key (admin-level access).`,
 	cmd.AddCommand(newDeleteCmd())
 	cmd.AddCommand(newTestCmd())
 	cmd.AddCommand(newTriggersCmd())
+	cmd.AddCommand(newServerCmd())
 
 	return cmd
 }
