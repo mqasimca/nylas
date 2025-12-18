@@ -135,15 +135,16 @@ func (v *DashboardView) Load() {
 }
 
 // ============================================================================
-// Messages View
+// Messages View (Thread-based)
 // ============================================================================
 
-// MessagesView displays email messages.
+// MessagesView displays email threads (conversations).
 type MessagesView struct {
 	*BaseTableView
-	messages       []domain.Message
+	threads        []domain.Thread
 	showingDetail  bool
-	currentMessage *domain.Message
+	currentThread  *domain.Thread
+	currentMessage *domain.Message // For reply functionality
 }
 
 // NewMessagesView creates a new messages view.
@@ -165,13 +166,14 @@ func NewMessagesView(app *App) *MessagesView {
 		{Title: "", Width: 3},
 		{Title: "FROM", Width: 25},
 		{Title: "SUBJECT", Expand: true},
+		{Title: "#", Width: 3},
 		{Title: "DATE", Width: 12},
 	})
 
-	// Set up double-click to open message
+	// Set up double-click to open thread
 	v.table.SetOnDoubleClick(func(meta *RowMeta) {
-		if msg, ok := meta.Data.(*domain.Message); ok {
-			v.showDetail(msg)
+		if thread, ok := meta.Data.(*domain.Thread); ok {
+			v.showDetail(thread)
 		}
 	})
 
@@ -180,17 +182,17 @@ func NewMessagesView(app *App) *MessagesView {
 
 func (v *MessagesView) Load() {
 	ctx := context.Background()
-	// Default to INBOX folder to show only inbox messages
-	params := &domain.MessageQueryParams{
+	// Default to INBOX folder to show only inbox threads
+	params := &domain.ThreadQueryParams{
 		Limit: 50,
 		In:    []string{"INBOX"},
 	}
-	msgs, err := v.app.config.Client.GetMessagesWithParams(ctx, v.app.config.GrantID, params)
+	threads, err := v.app.config.Client.GetThreads(ctx, v.app.config.GrantID, params)
 	if err != nil {
-		v.app.Flash(FlashError, "Failed to load messages: %v", err)
+		v.app.Flash(FlashError, "Failed to load threads: %v", err)
 		return
 	}
-	v.messages = msgs
+	v.threads = threads
 	v.render()
 }
 
@@ -202,42 +204,47 @@ func (v *MessagesView) render() {
 	var data [][]string
 	var meta []RowMeta
 
-	for _, msg := range v.messages {
+	for _, thread := range v.threads {
 		// Apply filter
 		if v.filter != "" {
-			subject := strings.ToLower(msg.Subject)
-			from := ""
-			if len(msg.From) > 0 {
-				from = strings.ToLower(msg.From[0].Email)
+			subject := strings.ToLower(thread.Subject)
+			participants := ""
+			if len(thread.Participants) > 0 {
+				participants = strings.ToLower(thread.Participants[0].Email)
 			}
 			if !strings.Contains(subject, strings.ToLower(v.filter)) &&
-				!strings.Contains(from, strings.ToLower(v.filter)) {
+				!strings.Contains(participants, strings.ToLower(v.filter)) {
 				continue
 			}
 		}
 
+		// Get the primary participant (first one, typically the sender)
 		from := ""
-		if len(msg.From) > 0 {
-			from = msg.From[0].Name
+		if len(thread.Participants) > 0 {
+			from = thread.Participants[0].Name
 			if from == "" {
-				from = msg.From[0].Email
+				from = thread.Participants[0].Email
 			}
 		}
 
-		date := formatDate(msg.Date)
+		date := formatDate(thread.LatestMessageRecvDate)
+		msgCount := fmt.Sprintf("%d", len(thread.MessageIDs))
 
 		data = append(data, []string{
 			"", // Status column
 			from,
-			msg.Subject,
+			thread.Subject,
+			msgCount,
 			date,
 		})
 
+		// Create a copy of thread for the closure
+		t := thread
 		meta = append(meta, RowMeta{
-			ID:      msg.ID,
-			Data:    &msg,
-			Unread:  msg.Unread,
-			Starred: msg.Starred,
+			ID:      thread.ID,
+			Data:    &t,
+			Unread:  thread.Unread,
+			Starred: thread.Starred,
 		})
 	}
 
@@ -256,10 +263,10 @@ func (v *MessagesView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 		return event
 
 	case tcell.KeyEnter:
-		// View message detail
+		// View thread detail
 		if meta := v.table.SelectedMeta(); meta != nil {
-			if msg, ok := meta.Data.(*domain.Message); ok {
-				v.showDetail(msg)
+			if thread, ok := meta.Data.(*domain.Thread); ok {
+				v.showDetail(thread)
 			}
 		}
 		return nil
@@ -272,26 +279,14 @@ func (v *MessagesView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 'R':
 			// Reply to selected or current message
-			var msg *domain.Message
 			if v.showingDetail && v.currentMessage != nil {
-				msg = v.currentMessage
-			} else if meta := v.table.SelectedMeta(); meta != nil {
-				msg, _ = meta.Data.(*domain.Message)
-			}
-			if msg != nil {
-				v.showCompose(ComposeModeReply, msg)
+				v.showCompose(ComposeModeReply, v.currentMessage)
 			}
 			return nil
 		case 'A':
 			// Reply All to selected or current message
-			var msg *domain.Message
 			if v.showingDetail && v.currentMessage != nil {
-				msg = v.currentMessage
-			} else if meta := v.table.SelectedMeta(); meta != nil {
-				msg, _ = meta.Data.(*domain.Message)
-			}
-			if msg != nil {
-				v.showCompose(ComposeModeReplyAll, msg)
+				v.showCompose(ComposeModeReplyAll, v.currentMessage)
 			}
 			return nil
 		case 's':
@@ -312,22 +307,22 @@ func (v *MessagesView) toggleStar() {
 		return
 	}
 
-	msg, ok := meta.Data.(*domain.Message)
+	thread, ok := meta.Data.(*domain.Thread)
 	if !ok {
 		return
 	}
 
 	go func() {
 		ctx := context.Background()
-		newStarred := !msg.Starred
-		_, err := v.app.config.Client.UpdateMessage(ctx, v.app.config.GrantID, msg.ID, &domain.UpdateMessageRequest{
+		newStarred := !thread.Starred
+		_, err := v.app.config.Client.UpdateThread(ctx, v.app.config.GrantID, thread.ID, &domain.UpdateMessageRequest{
 			Starred: &newStarred,
 		})
 		if err != nil {
 			v.app.Flash(FlashError, "Failed to update: %v", err)
 			return
 		}
-		v.app.Flash(FlashInfo, "Message starred")
+		v.app.Flash(FlashInfo, "Thread starred")
 		v.app.QueueUpdateDraw(func() {
 			v.Load()
 		})
@@ -340,7 +335,7 @@ func (v *MessagesView) markUnread() {
 		return
 	}
 
-	msg, ok := meta.Data.(*domain.Message)
+	thread, ok := meta.Data.(*domain.Thread)
 	if !ok {
 		return
 	}
@@ -348,7 +343,7 @@ func (v *MessagesView) markUnread() {
 	go func() {
 		ctx := context.Background()
 		unread := true
-		_, err := v.app.config.Client.UpdateMessage(ctx, v.app.config.GrantID, msg.ID, &domain.UpdateMessageRequest{
+		_, err := v.app.config.Client.UpdateThread(ctx, v.app.config.GrantID, thread.ID, &domain.UpdateMessageRequest{
 			Unread: &unread,
 		})
 		if err != nil {
@@ -362,13 +357,14 @@ func (v *MessagesView) markUnread() {
 	}()
 }
 
-func (v *MessagesView) showDetail(msg *domain.Message) {
-	v.currentMessage = msg
+func (v *MessagesView) showDetail(thread *domain.Thread) {
+	v.currentThread = thread
 
 	detail := tview.NewTextView()
 	detail.SetDynamicColors(true)
 	detail.SetBackgroundColor(v.app.styles.BgColor)
 	detail.SetBorderPadding(1, 1, 2, 2)
+	detail.SetScrollable(true)
 
 	// k9s style colors
 	title := colorToHex(v.app.styles.TitleFg)
@@ -377,53 +373,69 @@ func (v *MessagesView) showDetail(msg *domain.Message) {
 	muted := colorToHex(v.app.styles.BorderColor)
 	hint := colorToHex(v.app.styles.InfoColor)
 
-	from := ""
-	if len(msg.From) > 0 {
-		from = msg.From[0].String()
-	}
-
-	var tos []string
-	for _, t := range msg.To {
-		tos = append(tos, t.String())
+	// Format participants
+	var participants []string
+	for _, p := range thread.Participants {
+		participants = append(participants, p.String())
 	}
 
 	// Show loading state first
-	fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
-	fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(tos, ", "))
-	fmt.Fprintf(detail, "[%s]Subject:[-] [%s::b]%s[-::-]\n", key, title, msg.Subject)
-	fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+	fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
+	fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
+	fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
 	fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
-	fmt.Fprintf(detail, "[%s]Loading full message...[-]\n\n", muted)
+	fmt.Fprintf(detail, "[%s]Loading messages...[-]\n\n", muted)
 
-	// Fetch full message body asynchronously
+	// Fetch all messages in the thread asynchronously
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		fullMsg, err := v.app.config.Client.GetMessage(ctx, v.app.config.GrantID, msg.ID)
+		// Fetch each message in the thread
+		var messages []*domain.Message
+		for _, msgID := range thread.MessageIDs {
+			msg, err := v.app.config.Client.GetMessage(ctx, v.app.config.GrantID, msgID)
+			if err == nil {
+				messages = append(messages, msg)
+			}
+		}
 
 		v.app.QueueUpdateDraw(func() {
 			detail.Clear()
 
-			fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
-			fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(tos, ", "))
-			fmt.Fprintf(detail, "[%s]Subject:[-] [%s::b]%s[-::-]\n", key, title, msg.Subject)
-			fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
-			fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
+			fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
+			fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
+			fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
 
-			if err != nil {
-				// Fallback to snippet if full message fetch fails
-				fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, msg.Snippet)
+			if len(messages) == 0 {
+				fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
+				fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, thread.Snippet)
 			} else {
-				// Use full body, strip HTML for terminal display
-				body := fullMsg.Body
-				if body == "" {
-					body = fullMsg.Snippet
+				// Display all messages in chronological order
+				for i, msg := range messages {
+					fmt.Fprintf(detail, "[%s]════════════════════════════════════════[-]\n", muted)
+
+					from := ""
+					if len(msg.From) > 0 {
+						from = msg.From[0].String()
+					}
+
+					fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
+					fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+
+					// Use full body, strip HTML for terminal display
+					body := msg.Body
+					if body == "" {
+						body = msg.Snippet
+					}
+					body = stripHTMLForTUI(body)
+					fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
+
+					// Store the last message for reply
+					if i == len(messages)-1 {
+						v.currentMessage = msg
+					}
 				}
-				body = stripHTMLForTUI(body)
-				fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
-				// Update currentMessage with full details
-				v.currentMessage = fullMsg
 			}
 
 			fmt.Fprintf(detail, "[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-][%s]Esc[-][%s::d]=back[-::-]", hint, muted, hint, muted, hint, muted)
@@ -441,10 +453,14 @@ func (v *MessagesView) showDetail(msg *domain.Message) {
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'R':
-				v.showCompose(ComposeModeReply, msg)
+				if v.currentMessage != nil {
+					v.showCompose(ComposeModeReply, v.currentMessage)
+				}
 				return nil
 			case 'A':
-				v.showCompose(ComposeModeReplyAll, msg)
+				if v.currentMessage != nil {
+					v.showCompose(ComposeModeReplyAll, v.currentMessage)
+				}
 				return nil
 			}
 		}
@@ -452,13 +468,14 @@ func (v *MessagesView) showDetail(msg *domain.Message) {
 	})
 
 	// Push detail onto the page stack
-	v.app.PushDetail("message-detail", detail)
+	v.app.PushDetail("thread-detail", detail)
 	v.showingDetail = true
 }
 
 func (v *MessagesView) closeDetail() {
 	v.app.PopDetail()
 	v.showingDetail = false
+	v.currentThread = nil
 	v.currentMessage = nil
 	v.app.SetFocus(v.table)
 }

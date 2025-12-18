@@ -208,18 +208,42 @@ func (c *ComposeView) prefillForReply() {
 	}
 	c.subjectInput.SetText(subject)
 
-	// Set body with quoted original message
+	// Set body with quoted original message (Gmail-style format)
 	var body strings.Builder
 	body.WriteString("\n\n")
-	body.WriteString("------- Original Message -------\n")
-	body.WriteString(fmt.Sprintf("From: %s\n", formatParticipants(msg.From)))
-	body.WriteString(fmt.Sprintf("Date: %s\n", msg.Date.Format("Mon, Jan 2, 2006 3:04 PM")))
-	body.WriteString(fmt.Sprintf("Subject: %s\n", msg.Subject))
-	body.WriteString("\n")
-	body.WriteString(msg.Snippet)
-	body.WriteString("\n")
 
-	c.bodyInput.SetText(body.String(), true)
+	// Gmail-style attribution line
+	if len(msg.From) > 0 {
+		from := msg.From[0]
+		if from.Name != "" {
+			body.WriteString(fmt.Sprintf("On %s %s <%s> wrote:\n",
+				msg.Date.Format("Mon, Jan 2, 2006 at 3:04 PM"),
+				from.Name,
+				from.Email))
+		} else {
+			body.WriteString(fmt.Sprintf("On %s %s wrote:\n",
+				msg.Date.Format("Mon, Jan 2, 2006 at 3:04 PM"),
+				from.Email))
+		}
+	}
+
+	// Quote the original message body with > prefix on each line
+	originalBody := msg.Body
+	if originalBody == "" {
+		originalBody = msg.Snippet
+	}
+	// Strip HTML if present
+	originalBody = stripHTMLForQuote(originalBody)
+
+	// Add > prefix to each line
+	lines := strings.Split(originalBody, "\n")
+	for _, line := range lines {
+		body.WriteString("> ")
+		body.WriteString(line)
+		body.WriteString("\n")
+	}
+
+	c.bodyInput.SetText(body.String(), false) // cursor at beginning for top-posting
 }
 
 func formatParticipants(participants []domain.EmailParticipant) string {
@@ -408,6 +432,11 @@ func parseRecipients(input string) []domain.EmailParticipant {
 	}
 
 	return recipients
+}
+
+// stripHTMLForQuote removes HTML tags for quoting in replies.
+func stripHTMLForQuote(s string) string {
+	return stripHTMLForTUI(s)
 }
 
 // convertToHTML converts plain text to HTML for proper email rendering.
