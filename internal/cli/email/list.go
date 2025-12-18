@@ -17,12 +17,16 @@ func newListCmd() *cobra.Command {
 	var folder string
 	var showID bool
 	var all bool
+	var allFolders bool
 	var maxItems int
 
 	cmd := &cobra.Command{
 		Use:   "list [grant-id]",
 		Short: "List recent emails",
 		Long: `List recent emails from your inbox. Use grant-id or the default account.
+
+By default, only shows messages from INBOX. Use --folder to specify a different
+folder, or --all-folders to show messages from all folders.
 
 Use --all to fetch all messages (paginated automatically).
 Use --max to limit total messages when using --all.`,
@@ -54,8 +58,12 @@ Use --max to limit total messages when using --all.`,
 			if from != "" {
 				params.From = from
 			}
+
+			// Default to INBOX unless --all-folders is set or specific folder is provided
 			if folder != "" {
 				params.In = []string{folder}
+			} else if !allFolders {
+				params.In = []string{"INBOX"}
 			}
 
 			var messages []domain.Message
@@ -114,7 +122,8 @@ Use --max to limit total messages when using --all.`,
 	cmd.Flags().BoolVarP(&unread, "unread", "u", false, "Only show unread messages")
 	cmd.Flags().BoolVarP(&starred, "starred", "s", false, "Only show starred messages")
 	cmd.Flags().StringVarP(&from, "from", "f", "", "Filter by sender email")
-	cmd.Flags().StringVar(&folder, "folder", "", "Filter by folder ID")
+	cmd.Flags().StringVar(&folder, "folder", "", "Filter by folder (e.g., INBOX, SENT, TRASH, or folder ID)")
+	cmd.Flags().BoolVar(&allFolders, "all-folders", false, "Show messages from all folders (default: INBOX only)")
 	cmd.Flags().BoolVar(&showID, "id", false, "Show message IDs")
 	cmd.Flags().BoolVarP(&all, "all", "a", false, "Fetch all messages (paginated)")
 	cmd.Flags().IntVar(&maxItems, "max", 0, "Maximum messages to fetch with --all (0=unlimited)")

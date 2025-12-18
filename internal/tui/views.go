@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"html"
 	"strings"
 	"time"
 
@@ -179,7 +180,12 @@ func NewMessagesView(app *App) *MessagesView {
 
 func (v *MessagesView) Load() {
 	ctx := context.Background()
-	msgs, err := v.app.config.Client.GetMessages(ctx, v.app.config.GrantID, 50)
+	// Default to INBOX folder to show only inbox messages
+	params := &domain.MessageQueryParams{
+		Limit: 50,
+		In:    []string{"INBOX"},
+	}
+	msgs, err := v.app.config.Client.GetMessagesWithParams(ctx, v.app.config.GrantID, params)
 	if err != nil {
 		v.app.Flash(FlashError, "Failed to load messages: %v", err)
 		return
@@ -381,12 +387,49 @@ func (v *MessagesView) showDetail(msg *domain.Message) {
 		tos = append(tos, t.String())
 	}
 
+	// Show loading state first
 	fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
 	fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(tos, ", "))
 	fmt.Fprintf(detail, "[%s]Subject:[-] [%s::b]%s[-::-]\n", key, title, msg.Subject)
 	fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
 	fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
-	fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, msg.Snippet)
+	fmt.Fprintf(detail, "[%s]Loading full message...[-]\n\n", muted)
+
+	// Fetch full message body asynchronously
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		fullMsg, err := v.app.config.Client.GetMessage(ctx, v.app.config.GrantID, msg.ID)
+
+		v.app.QueueUpdateDraw(func() {
+			detail.Clear()
+
+			fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
+			fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(tos, ", "))
+			fmt.Fprintf(detail, "[%s]Subject:[-] [%s::b]%s[-::-]\n", key, title, msg.Subject)
+			fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+			fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
+
+			if err != nil {
+				// Fallback to snippet if full message fetch fails
+				fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, msg.Snippet)
+			} else {
+				// Use full body, strip HTML for terminal display
+				body := fullMsg.Body
+				if body == "" {
+					body = fullMsg.Snippet
+				}
+				body = stripHTMLForTUI(body)
+				fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
+				// Update currentMessage with full details
+				v.currentMessage = fullMsg
+			}
+
+			fmt.Fprintf(detail, "[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-][%s]Esc[-][%s::d]=back[-::-]", hint, muted, hint, muted, hint, muted)
+		})
+	}()
+
 	fmt.Fprintf(detail, "[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-][%s]Esc[-][%s::d]=back[-::-]", hint, muted, hint, muted, hint, muted)
 
 	// Handle key events for reply actions in detail view
@@ -1170,4 +1213,87 @@ func formatEventTime(when domain.EventWhen) string {
 		return when.Date
 	}
 	return ""
+}
+
+// stripHTMLForTUI removes HTML tags from a string for terminal display.
+func stripHTMLForTUI(s string) string {
+	// Remove style and script tags and their contents
+	s = removeTagWithContent(s, "style")
+	s = removeTagWithContent(s, "script")
+	s = removeTagWithContent(s, "head")
+
+	// Replace block-level elements with newlines before stripping tags
+	blockTags := []string{"br", "p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6"}
+	for _, tag := range blockTags {
+		s = strings.ReplaceAll(s, "<"+tag+">", "\n")
+		s = strings.ReplaceAll(s, "<"+tag+"/>", "\n")
+		s = strings.ReplaceAll(s, "<"+tag+" />", "\n")
+		s = strings.ReplaceAll(s, "</"+tag+">", "\n")
+		s = strings.ReplaceAll(s, "<"+strings.ToUpper(tag)+">", "\n")
+		s = strings.ReplaceAll(s, "</"+strings.ToUpper(tag)+">", "\n")
+	}
+
+	// Strip remaining HTML tags
+	var result strings.Builder
+	inTag := false
+	for _, r := range s {
+		switch {
+		case r == '<':
+			inTag = true
+		case r == '>':
+			inTag = false
+		case !inTag:
+			result.WriteRune(r)
+		}
+	}
+
+	// Decode HTML entities
+	text := html.UnescapeString(result.String())
+
+	// Clean up whitespace
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\r", "\n")
+
+	// Collapse multiple spaces
+	for strings.Contains(text, "  ") {
+		text = strings.ReplaceAll(text, "  ", " ")
+	}
+
+	// Collapse multiple newlines
+	for strings.Contains(text, "\n\n\n") {
+		text = strings.ReplaceAll(text, "\n\n\n", "\n\n")
+	}
+
+	// Trim spaces from each line
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimSpace(line)
+	}
+	text = strings.Join(lines, "\n")
+
+	return strings.TrimSpace(text)
+}
+
+// removeTagWithContent removes an HTML tag and all its content.
+func removeTagWithContent(s, tag string) string {
+	result := s
+	for {
+		lower := strings.ToLower(result)
+		startIdx := strings.Index(lower, "<"+tag)
+		if startIdx == -1 {
+			break
+		}
+		endTag := "</" + tag + ">"
+		endIdx := strings.Index(lower[startIdx:], endTag)
+		if endIdx == -1 {
+			closeIdx := strings.Index(result[startIdx:], ">")
+			if closeIdx == -1 {
+				break
+			}
+			result = result[:startIdx] + result[startIdx+closeIdx+1:]
+		} else {
+			result = result[:startIdx] + result[startIdx+endIdx+len(endTag):]
+		}
+	}
+	return result
 }
