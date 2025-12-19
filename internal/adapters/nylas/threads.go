@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // threadResponse represents an API thread response.
@@ -201,19 +202,17 @@ func (c *HTTPClient) DeleteThread(ctx context.Context, grantID, threadID string)
 
 // convertThreads converts API thread responses to domain models.
 func convertThreads(threads []threadResponse) []domain.Thread {
-	result := make([]domain.Thread, len(threads))
-	for i, t := range threads {
-		result[i] = convertThread(t)
-	}
-	return result
+	return util.Map(threads, convertThread)
 }
 
 // convertThread converts an API thread response to domain model.
 func convertThread(t threadResponse) domain.Thread {
-	participants := make([]domain.EmailParticipant, len(t.Participants))
-	for j, p := range t.Participants {
-		participants[j] = domain.EmailParticipant{Name: p.Name, Email: p.Email}
-	}
+	participants := util.Map(t.Participants, func(p struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	}) domain.EmailParticipant {
+		return domain.EmailParticipant{Name: p.Name, Email: p.Email}
+	})
 
 	return domain.Thread{
 		ID:                    t.ID,

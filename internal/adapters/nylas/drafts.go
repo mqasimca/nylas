@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // maxJSONAttachmentSize is the maximum total request size for JSON-encoded attachments.
@@ -21,11 +22,11 @@ const maxJSONAttachmentSize = 3 * 1024 * 1024 // 3MB
 
 // draftResponse represents an API draft response.
 type draftResponse struct {
-	ID        string `json:"id"`
-	GrantID   string `json:"grant_id"`
-	Subject   string `json:"subject"`
-	Body      string `json:"body"`
-	From      []struct {
+	ID      string `json:"id"`
+	GrantID string `json:"grant_id"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+	From    []struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
 	} `json:"from"`
@@ -502,11 +503,7 @@ func (c *HTTPClient) SendDraft(ctx context.Context, grantID, draftID string) (*d
 
 // convertDrafts converts API draft responses to domain models.
 func convertDrafts(drafts []draftResponse) []domain.Draft {
-	result := make([]domain.Draft, len(drafts))
-	for i, d := range drafts {
-		result[i] = convertDraft(d)
-	}
-	return result
+	return util.Map(drafts, convertDraft)
 }
 
 // convertDraft converts an API draft response to domain model.

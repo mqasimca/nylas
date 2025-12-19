@@ -11,16 +11,17 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // notetakerResponse represents an API notetaker response.
 type notetakerResponse struct {
-	ID          string `json:"id"`
-	State       string `json:"state"`
-	MeetingLink string `json:"meeting_link"`
-	JoinTime    int64  `json:"join_time"`
+	ID           string `json:"id"`
+	State        string `json:"state"`
+	MeetingLink  string `json:"meeting_link"`
+	JoinTime     int64  `json:"join_time"`
 	MeetingTitle string `json:"meeting_title"`
-	MediaData   *struct {
+	MediaData    *struct {
 		Recording *struct {
 			URL         string `json:"url"`
 			ContentType string `json:"content_type"`
@@ -271,11 +272,7 @@ func (c *HTTPClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID
 
 // convertNotetakers converts API notetaker responses to domain models.
 func convertNotetakers(notetakers []notetakerResponse) []domain.Notetaker {
-	result := make([]domain.Notetaker, len(notetakers))
-	for i, n := range notetakers {
-		result[i] = convertNotetaker(n)
-	}
-	return result
+	return util.Map(notetakers, convertNotetaker)
 }
 
 // convertNotetaker converts an API notetaker response to domain model.

@@ -11,15 +11,16 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // messageResponse represents an API message response.
 type messageResponse struct {
-	ID        string `json:"id"`
-	GrantID   string `json:"grant_id"`
-	ThreadID  string `json:"thread_id"`
-	Subject   string `json:"subject"`
-	From      []struct {
+	ID       string `json:"id"`
+	GrantID  string `json:"grant_id"`
+	ThreadID string `json:"thread_id"`
+	Subject  string `json:"subject"`
+	From     []struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
 	} `json:"from"`
@@ -446,38 +447,26 @@ func (c *HTTPClient) CancelScheduledMessage(ctx context.Context, grantID, schedu
 
 // convertMessages converts API message responses to domain models.
 func convertMessages(msgs []messageResponse) []domain.Message {
-	result := make([]domain.Message, len(msgs))
-	for i, m := range msgs {
-		result[i] = convertMessage(m)
-	}
-	return result
+	return util.Map(msgs, convertMessage)
 }
 
 // convertMessage converts an API message response to domain model.
 func convertMessage(m messageResponse) domain.Message {
-	from := make([]domain.EmailParticipant, len(m.From))
-	for j, f := range m.From {
-		from[j] = domain.EmailParticipant{Name: f.Name, Email: f.Email}
+	convertParticipant := func(p struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	}) domain.EmailParticipant {
+		return domain.EmailParticipant{Name: p.Name, Email: p.Email}
 	}
-	to := make([]domain.EmailParticipant, len(m.To))
-	for j, t := range m.To {
-		to[j] = domain.EmailParticipant{Name: t.Name, Email: t.Email}
-	}
-	cc := make([]domain.EmailParticipant, len(m.Cc))
-	for j, c := range m.Cc {
-		cc[j] = domain.EmailParticipant{Name: c.Name, Email: c.Email}
-	}
-	bcc := make([]domain.EmailParticipant, len(m.Bcc))
-	for j, b := range m.Bcc {
-		bcc[j] = domain.EmailParticipant{Name: b.Name, Email: b.Email}
-	}
-	replyTo := make([]domain.EmailParticipant, len(m.ReplyTo))
-	for j, r := range m.ReplyTo {
-		replyTo[j] = domain.EmailParticipant{Name: r.Name, Email: r.Email}
-	}
-	attachments := make([]domain.Attachment, len(m.Attachments))
-	for j, a := range m.Attachments {
-		attachments[j] = domain.Attachment{
+	convertAttachment := func(a struct {
+		ID          string `json:"id"`
+		Filename    string `json:"filename"`
+		ContentType string `json:"content_type"`
+		Size        int64  `json:"size"`
+		ContentID   string `json:"content_id"`
+		IsInline    bool   `json:"is_inline"`
+	}) domain.Attachment {
+		return domain.Attachment{
 			ID:          a.ID,
 			Filename:    a.Filename,
 			ContentType: a.ContentType,
@@ -486,6 +475,13 @@ func convertMessage(m messageResponse) domain.Message {
 			IsInline:    a.IsInline,
 		}
 	}
+
+	from := util.Map(m.From, convertParticipant)
+	to := util.Map(m.To, convertParticipant)
+	cc := util.Map(m.Cc, convertParticipant)
+	bcc := util.Map(m.Bcc, convertParticipant)
+	replyTo := util.Map(m.ReplyTo, convertParticipant)
+	attachments := util.Map(m.Attachments, convertAttachment)
 
 	return domain.Message{
 		ID:          m.ID,

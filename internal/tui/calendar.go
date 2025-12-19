@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -77,8 +77,16 @@ func (c *CalendarView) SetEvents(events []domain.Event) {
 
 	// Sort events by time within each day
 	for key := range c.eventsByDate {
-		sort.Slice(c.eventsByDate[key], func(i, j int) bool {
-			return c.eventsByDate[key][i].When.StartDateTime().Before(c.eventsByDate[key][j].When.StartDateTime())
+		slices.SortFunc(c.eventsByDate[key], func(a, b domain.Event) int {
+			aTime := a.When.StartDateTime()
+			bTime := b.When.StartDateTime()
+			if aTime.Before(bTime) {
+				return -1
+			}
+			if aTime.After(bTime) {
+				return 1
+			}
+			return 0
 		})
 	}
 }
@@ -719,8 +727,14 @@ func (c *CalendarView) drawAgendaView(screen tcell.Screen, x, y, width, height i
 		}
 	}
 
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].date.Before(items[j].date)
+	slices.SortFunc(items, func(a, b agendaItem) int {
+		if a.date.Before(b.date) {
+			return -1
+		}
+		if a.date.After(b.date) {
+			return 1
+		}
+		return 0
 	})
 
 	if len(items) == 0 {

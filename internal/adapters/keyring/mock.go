@@ -81,7 +81,7 @@ func (m *MockSecretStore) SetAvailable(available bool) {
 func (m *MockSecretStore) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.secrets = make(map[string]string)
+	clear(m.secrets)
 }
 
 // GetAll returns all stored secrets.
