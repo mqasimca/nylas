@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -36,7 +37,11 @@ func (s *CallbackServer) Start() error {
 	mux.HandleFunc("/callback", s.handleCallback)
 
 	s.server = &http.Server{
-		Handler: mux,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	var err error

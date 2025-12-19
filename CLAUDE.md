@@ -15,11 +15,17 @@ Quick reference for AI assistants working on this codebase.
 ### ALWAYS DO (every code change):
 
 ```bash
-# 1. Write/update tests for your changes
-# 2. Run the full verification suite:
+# 1. Check Go docs for modern patterns (REQUIRED for Go code)
+#    See: .claude/rules/go-best-practices.md
+#    - Check go.dev/ref/spec for latest features
+#    - Use WebSearch to verify best practices
+#    - Apply modern Go idioms (slices, maps, clear, min/max, generics)
+
+# 2. Write/update tests for your changes
+# 3. Run the full verification suite:
 make check   # Runs: lint → test → security → build
 
-# 3. Before committing, verify no secrets:
+# 4. Before committing, verify no secrets:
 git diff --cached | grep -iE "(api_key|password|secret|token|nyk_v0)" || echo "✓ Clean"
 ```
 
@@ -96,11 +102,15 @@ Examples:
 | Command | What It Does |
 |---------|--------------|
 | `/clear` | Reset context (use between unrelated tasks) |
+| `/project:go-modernize` | Check Go docs & apply modern patterns |
 | `/project:add-feature` | Structured feature workflow |
 | `/project:fix-bug` | Bug fix workflow |
 | `/project:review-pr` | Code review checklist |
 | `/project:security-scan` | Security audit |
 | `/project:smart-commit` | Generate commit message |
+
+**IMPORTANT:** For all Go code changes, `/project:go-modernize` is automatically applied.
+Claude will check go.dev/ref/spec and apply modern Go idioms before writing code.
 
 ### Keyboard Shortcuts
 | Key | Action |
@@ -127,9 +137,95 @@ This runs in isolated context (doesn't remember writing the code).
 
 ---
 
+## Go Modernization Rules
+
+**CRITICAL: Before writing ANY Go code, you MUST:**
+
+### 1. Check Current Go Version
+```bash
+go version          # Check installed version
+grep "^go " go.mod  # Check project version
+```
+
+### 2. Research Official Documentation
+Use WebSearch to verify:
+- **Go Spec**: https://go.dev/ref/spec - Language features
+- **Pkg Docs**: https://pkg.go.dev/std - Standard library
+- **Release Notes**: https://go.dev/doc/devel/release - Version features
+
+### 3. Apply Modern Go Patterns (Go 1.21+)
+
+| Instead of... | Use... | Since |
+|---------------|--------|-------|
+| `io/ioutil` | `os` package directly | Go 1.16+ |
+| `interface{}` | `any` | Go 1.18+ |
+| Manual slice ops | `slices` package | Go 1.21+ |
+| Manual map ops | `maps` package | Go 1.21+ |
+| Recreate to clear | `clear()` built-in | Go 1.21+ |
+| Custom min/max | `min()`, `max()` built-ins | Go 1.21+ |
+| Manual comparison | `cmp.Compare()` | Go 1.21+ |
+| `sort.Slice` | `slices.SortFunc` | Go 1.21+ |
+
+### 4. Examples
+
+```go
+// ✅ CORRECT (Modern Go 1.21+)
+import (
+    "os"
+    "slices"
+    "cmp"
+)
+
+// File operations
+data, err := os.ReadFile("file.txt")
+
+// Slice operations
+found := slices.Contains(items, "target")
+
+// Sorting
+slices.SortFunc(users, func(a, b User) int {
+    return cmp.Compare(a.Name, b.Name)
+})
+
+// Clearing
+clear(myMap)
+
+// Min/Max
+smallest := min(a, b, c)
+
+// ❌ WRONG (Deprecated/Verbose)
+import "io/ioutil"
+
+// Don't use deprecated packages
+data, err := ioutil.ReadFile("file.txt")
+
+// Don't write manual helpers
+func Contains(items []string, target string) bool {
+    for _, item := range items {
+        if item == target {
+            return true
+        }
+    }
+    return false
+}
+```
+
+### 5. Quality Checks (REQUIRED)
+After any code changes:
+```bash
+go fmt ./...        # Format code
+go vet ./...        # Vet code
+golangci-lint run   # Lint (if available)
+go test ./...       # Run tests
+```
+
+**See `.claude/rules/go-best-practices.md` for complete rules.**
+
+---
+
 ## Project Overview
 
-- **Language**: Go
+- **Language**: Go 1.24.0 (use modern features!)
 - **Architecture**: Hexagonal (ports and adapters)
 - **CLI Framework**: Cobra
 - **API**: Nylas v3 ONLY (never use v1/v2)

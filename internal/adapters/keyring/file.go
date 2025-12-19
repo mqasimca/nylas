@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -253,8 +254,15 @@ func getMachineID() string {
 		// Try to read MachineGuid from registry path
 		programData := os.Getenv("PROGRAMDATA")
 		if programData != "" {
-			if data, err := os.ReadFile(filepath.Join(programData, "Microsoft", "Crypto", "RSA", "MachineKeys", ".GUID")); err == nil {
-				return string(data)
+			// Construct and clean the path to prevent traversal
+			guidPath := filepath.Join(programData, "Microsoft", "Crypto", "RSA", "MachineKeys", ".GUID")
+			cleanPath := filepath.Clean(guidPath)
+
+			// Validate the path starts with the expected base (security check)
+			if strings.HasPrefix(cleanPath, filepath.Clean(programData)) {
+				if data, err := os.ReadFile(cleanPath); err == nil {
+					return string(data)
+				}
 			}
 		}
 		// Fallback: use system drive serial

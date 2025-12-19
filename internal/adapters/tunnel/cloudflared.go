@@ -53,6 +53,14 @@ func (t *CloudflaredTunnel) Start(ctx context.Context) (string, error) {
 	tunnelCtx, cancel := context.WithCancel(ctx)
 	t.cancel = cancel
 
+	// Validate localURL to prevent command injection
+	if !strings.HasPrefix(t.localURL, "http://localhost:") &&
+		!strings.HasPrefix(t.localURL, "http://127.0.0.1:") &&
+		!strings.HasPrefix(t.localURL, "https://localhost:") &&
+		!strings.HasPrefix(t.localURL, "https://127.0.0.1:") {
+		return "", fmt.Errorf("invalid local URL: must be http(s)://localhost:PORT or http(s)://127.0.0.1:PORT")
+	}
+
 	// Start cloudflared tunnel
 	t.cmd = exec.CommandContext(tunnelCtx, "cloudflared", "tunnel", "--url", t.localURL)
 

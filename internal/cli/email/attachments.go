@@ -175,9 +175,17 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 				outputPath = safeFilename
 			}
 
+			// Clean the output path to resolve . and ..
+			outputPath = filepath.Clean(outputPath)
+
 			// If outputPath is a directory, append sanitized filename
 			if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
 				outputPath = filepath.Join(outputPath, safeFilename)
+			}
+
+			// Validate the final path is not a directory
+			if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
+				return fmt.Errorf("output path is a directory: %s", outputPath)
 			}
 
 			// Download the attachment

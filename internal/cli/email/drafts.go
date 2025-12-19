@@ -202,7 +202,19 @@ func loadAttachmentsFromFiles(filePaths []string) ([]domain.Attachment, error) {
 	attachments := make([]domain.Attachment, 0, len(filePaths))
 
 	for _, path := range filePaths {
-		file, err := os.Open(path)
+		// Clean the path to resolve . and .. and validate it
+		cleanPath := filepath.Clean(path)
+
+		// Ensure the path exists and is a regular file
+		info, err := os.Stat(cleanPath)
+		if err != nil {
+			return nil, fmt.Errorf("cannot access file %s: %w", path, err)
+		}
+		if info.IsDir() {
+			return nil, fmt.Errorf("path is a directory, not a file: %s", path)
+		}
+
+		file, err := os.Open(cleanPath)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open file %s: %w", path, err)
 		}

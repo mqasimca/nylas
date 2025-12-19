@@ -332,13 +332,14 @@ func TestCLI_EmailSend(t *testing.T) {
 		"--to", email,
 		"--subject", "CLI Integration Test",
 		"--body", "This is a test email from the CLI integration tests.",
+		"--yes",
 		testGrantID)
 
 	if err != nil {
 		t.Fatalf("email send failed: %v\nstderr: %s", err, stderr)
 	}
 
-	if !strings.Contains(stdout, "sent") && !strings.Contains(stdout, "Message") {
+	if !strings.Contains(stdout, "sent") && !strings.Contains(stdout, "Message") && !strings.Contains(stdout, "✓") {
 		t.Errorf("Expected send confirmation in output, got: %s", stdout)
 	}
 
