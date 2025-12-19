@@ -387,7 +387,7 @@ func Confirm(prompt string, defaultYes bool) bool {
 	fmt.Print(prompt + suffix)
 
 	var response string
-	fmt.Scanln(&response)
+	_, _ = fmt.Scanln(&response) // Ignore error - empty string treated as default
 
 	response = strings.ToLower(strings.TrimSpace(response))
 

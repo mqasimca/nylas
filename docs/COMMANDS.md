@@ -1106,6 +1106,231 @@ Transcript:
 
 ---
 
+## Inbound Email Management
+
+Manage Nylas Inbound email inboxes for receiving emails at managed addresses without OAuth flows.
+
+### What is Nylas Inbound?
+
+Nylas Inbound enables your application to receive emails at dedicated managed addresses (e.g., `support@yourapp.nylas.email`) and process them via webhooks. It's designed for:
+
+- Capturing messages sent to specific addresses (intake@, leads@, tickets@)
+- Triggering automated workflows from incoming mail
+- Real-time message delivery to workers, LLMs, or downstream systems
+
+### List Inbound Inboxes
+
+```bash
+nylas inbound list                    # List all inbound inboxes
+nylas inbox list                      # Alias
+nylas inbound list --json             # Output as JSON
+```
+
+**Example output:**
+```bash
+$ nylas inbound list
+
+Inbound Inboxes (3)
+
+1. support@yourapp.nylas.email  30 days ago  active
+   ID: inbox_abc123
+
+2. sales@yourapp.nylas.email  14 days ago  active
+   ID: inbox_def456
+
+3. info@yourapp.nylas.email  7 days ago  active
+   ID: inbox_ghi789
+
+Use 'nylas inbound messages <inbox-id>' to view messages
+```
+
+### Show Inbox Details
+
+```bash
+nylas inbound show <inbox-id>         # Show inbox details
+nylas inbound show <inbox-id> --json  # Output as JSON
+
+# Use environment variable for inbox ID
+export NYLAS_INBOUND_GRANT_ID=inbox_abc123
+nylas inbound show
+```
+
+**Example output:**
+```bash
+$ nylas inbound show inbox_abc123
+
+────────────────────────────────────────────────────────────
+Inbox: support@yourapp.nylas.email
+────────────────────────────────────────────────────────────
+ID:          inbox_abc123
+Email:       support@yourapp.nylas.email
+Status:      active
+Created:     Dec 1, 2024 10:00 AM (30 days ago)
+Updated:     Dec 16, 2024 2:30 PM (1 hour ago)
+```
+
+### Create Inbound Inbox
+
+```bash
+# Create a new inbound inbox
+nylas inbound create <email-prefix>
+
+# Examples
+nylas inbound create support          # Creates: support@yourapp.nylas.email
+nylas inbound create leads            # Creates: leads@yourapp.nylas.email
+nylas inbound create tickets --json   # Output as JSON
+```
+
+**Example output:**
+```bash
+$ nylas inbound create support
+
+Inbound inbox created successfully!
+
+────────────────────────────────────────────────────────────
+Inbox: support@yourapp.nylas.email
+────────────────────────────────────────────────────────────
+ID:          inbox_new_123
+Email:       support@yourapp.nylas.email
+Status:      active
+Created:     Dec 16, 2024 3:00 PM (just now)
+
+Next steps:
+  1. Set up a webhook: nylas webhooks create --url <your-url> --triggers message.created
+  2. View messages: nylas inbound messages inbox_new_123
+  3. Monitor in real-time: nylas inbound monitor inbox_new_123
+```
+
+### View Inbound Messages
+
+```bash
+nylas inbound messages <inbox-id>           # List messages
+nylas inbound messages <inbox-id> --limit 5 # Limit results
+nylas inbound messages <inbox-id> --unread  # Show only unread
+nylas inbound messages <inbox-id> --json    # Output as JSON
+
+# Use environment variable
+export NYLAS_INBOUND_GRANT_ID=inbox_abc123
+nylas inbound messages
+```
+
+**Example output:**
+```bash
+$ nylas inbound messages inbox_abc123
+
+Messages (5 total, 2 unread)
+
+● ★ John Smith           New Lead: Enterprise Plan Inquiry      10 minutes ago
+      ID: msg_001
+
+●   Sarah Johnson        Support Request: Integration Help      1 hour ago
+      ID: msg_002
+
+  ★ Mike Chen            Partnership Opportunity                 3 hours ago
+      ID: msg_003
+
+    Lisa Park            Billing Question                        yesterday
+      ID: msg_004
+
+    Alex Rivera          Feature Request: Dark Mode              2 days ago
+      ID: msg_005
+
+Use 'nylas email read <inbox-id> <message-id>' to view full message
+```
+
+### Monitor Inbound Messages (Real-time)
+
+Monitor for new incoming emails in real-time using webhooks.
+
+```bash
+nylas inbound monitor <inbox-id>              # Start monitoring
+nylas inbound monitor <inbox-id> --tunnel cloudflared  # With public tunnel
+nylas inbound monitor <inbox-id> --port 8080  # Custom port
+nylas inbound monitor <inbox-id> --json       # Output events as JSON
+nylas inbound monitor <inbox-id> --quiet      # Only show events
+
+# Use environment variable
+export NYLAS_INBOUND_GRANT_ID=inbox_abc123
+nylas inbound monitor --tunnel cloudflared
+```
+
+**Example output:**
+```bash
+$ nylas inbound monitor inbox_abc123 --tunnel cloudflared
+
+╔══════════════════════════════════════════════════════════════╗
+║            Nylas Inbound Monitor                             ║
+╚══════════════════════════════════════════════════════════════╝
+
+Monitoring: support@yourapp.nylas.email
+
+Monitor started successfully!
+
+  Local URL:    http://localhost:3000/webhook
+  Public URL:   https://abc123.trycloudflare.com/webhook
+
+  Tunnel:       cloudflared (connected)
+
+To receive events, register this webhook URL with Nylas:
+  nylas webhooks create --url https://abc123.trycloudflare.com/webhook --triggers message.created
+
+Press Ctrl+C to stop
+
+─────────────────────────────────────────────────────────────────
+Incoming Messages:
+
+[14:32:15] NEW MESSAGE [verified]
+  Subject: New Lead: Enterprise Plan Inquiry
+  From: John Smith <john@bigcorp.com>
+  Preview: Hi, I'm interested in learning more about your enterprise plan...
+  ID: msg_new_001
+
+[14:35:42] NEW MESSAGE [verified]
+  Subject: Support Request
+  From: Sarah <sarah@startup.io>
+  Preview: We're having trouble connecting our calendar integration...
+  ID: msg_new_002
+```
+
+### Delete Inbound Inbox
+
+```bash
+nylas inbound delete <inbox-id>        # Delete with confirmation
+nylas inbound delete <inbox-id> --yes  # Skip confirmation
+nylas inbound delete <inbox-id> -f     # Force delete (alias for --yes)
+```
+
+**Example output:**
+```bash
+$ nylas inbound delete inbox_abc123
+
+You are about to delete the inbound inbox:
+  Email: support@yourapp.nylas.email
+  ID:    inbox_abc123
+
+This action cannot be undone. All messages in this inbox will be deleted.
+
+Type 'delete' to confirm: delete
+Inbox support@yourapp.nylas.email deleted successfully!
+```
+
+### Environment Variables
+
+You can use environment variables to avoid passing the inbox ID repeatedly:
+
+```bash
+# Set the inbound grant ID
+export NYLAS_INBOUND_GRANT_ID=inbox_abc123
+
+# Now commands will use this ID by default
+nylas inbound show
+nylas inbound messages
+nylas inbound messages --unread
+nylas inbound monitor --tunnel cloudflared
+```
+
+---
+
 ## OTP Management
 
 Extract one-time passwords from emails automatically.

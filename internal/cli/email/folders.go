@@ -313,7 +313,7 @@ func newFoldersDeleteCmd() *cobra.Command {
 			if !force {
 				fmt.Printf("Delete folder %s? [y/N]: ", folderID)
 				var confirm string
-				fmt.Scanln(&confirm)
+				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
 				if confirm != "y" && confirm != "Y" && confirm != "yes" {
 					fmt.Println("Cancelled.")
 					return nil

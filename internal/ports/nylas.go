@@ -105,6 +105,13 @@ type NylasClient interface {
 	DeleteNotetaker(ctx context.Context, grantID, notetakerID string) error
 	GetNotetakerMedia(ctx context.Context, grantID, notetakerID string) (*domain.MediaData, error)
 
+	// Inbound operations (managed email inboxes without OAuth)
+	ListInboundInboxes(ctx context.Context) ([]domain.InboundInbox, error)
+	GetInboundInbox(ctx context.Context, grantID string) (*domain.InboundInbox, error)
+	CreateInboundInbox(ctx context.Context, email string) (*domain.InboundInbox, error)
+	DeleteInboundInbox(ctx context.Context, grantID string) error
+	GetInboundMessages(ctx context.Context, grantID string, params *domain.MessageQueryParams) ([]domain.InboundMessage, error)
+
 	// Configuration
 	SetRegion(region string)
 	SetCredentials(clientID, clientSecret, apiKey string)

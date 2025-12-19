@@ -24,7 +24,7 @@ func newDeleteCmd() *cobra.Command {
 			if !force {
 				fmt.Printf("Are you sure you want to delete contact %s? [y/N] ", contactID)
 				var confirm string
-				fmt.Scanln(&confirm)
+				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
 				if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "yes" {
 					fmt.Println("Cancelled.")
 					return nil

@@ -121,10 +121,10 @@ func (t *CloudflaredTunnel) Start(ctx context.Context) (string, error) {
 	case err := <-t.errChan:
 		return "", err
 	case <-time.After(30 * time.Second):
-		t.Stop()
+		_ = t.Stop() // Ignore error - we're returning a timeout error anyway
 		return "", fmt.Errorf("timeout waiting for cloudflared tunnel URL")
 	case <-ctx.Done():
-		t.Stop()
+		_ = t.Stop() // Ignore error - we're returning context error anyway
 		return "", ctx.Err()
 	}
 }
@@ -149,8 +149,8 @@ func (t *CloudflaredTunnel) Stop() error {
 		case <-done:
 			// Process exited
 		case <-time.After(2 * time.Second):
-			// Force kill
-			t.cmd.Process.Kill()
+			// Force kill - ignore error as process may already be dead
+			_ = t.cmd.Process.Kill()
 		}
 	}
 

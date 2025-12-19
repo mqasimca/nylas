@@ -317,6 +317,8 @@ func (a *App) onCommand(cmd string) {
 		a.navigateTo("webhook-server")
 	case "g", "grants", "gr":
 		a.navigateTo("grants")
+	case "i", "in", "inbound", "inbox":
+		a.navigateTo("inbound")
 	case "d", "dashboard", "dash", "home":
 		a.navigateTo("dashboard")
 
@@ -455,6 +457,8 @@ func (a *App) createView(name string) ResourceView {
 		return NewWebhookServerView(a)
 	case "grants":
 		return NewGrantsView(a)
+	case "inbound":
+		return NewInboundView(a)
 	default:
 		return NewDashboardView(a)
 	}

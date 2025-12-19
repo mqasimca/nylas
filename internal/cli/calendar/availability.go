@@ -307,7 +307,7 @@ func displayFreeBusy(result *domain.FreeBusyResponse, startTime, endTime time.Ti
 }
 
 func displayAvailableSlots(result *domain.AvailabilityResponse, durationMins int) error {
-	if len(result.Data) == 0 {
+	if len(result.Data.TimeSlots) == 0 {
 		fmt.Println("No available time slots found.")
 		fmt.Println("\nTry expanding the search range or reducing the meeting duration.")
 		return nil
@@ -319,7 +319,7 @@ func displayAvailableSlots(result *domain.AvailabilityResponse, durationMins int
 
 	// Group by day
 	currentDay := ""
-	for i, slot := range result.Data {
+	for i, slot := range result.Data.TimeSlots {
 		start := time.Unix(slot.StartTime, 0)
 		end := time.Unix(slot.EndTime, 0)
 
@@ -337,7 +337,7 @@ func displayAvailableSlots(result *domain.AvailabilityResponse, durationMins int
 			end.Format("3:04 PM"))
 	}
 
-	fmt.Printf("\nFound %d available slots\n", len(result.Data))
+	fmt.Printf("\nFound %d available slots\n", len(result.Data.TimeSlots))
 	return nil
 }
 

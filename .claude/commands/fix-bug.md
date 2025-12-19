@@ -31,11 +31,13 @@ Bug description: $ARGUMENTS
 
 5. **Verify the fix**
    - Run the specific test: `go test ./path/to/package -run TestName -v`
-   - Run full test suite: `go test ./... -short`
+   - Run full unit test suite: `go test ./... -short`
+   - Run integration tests (if API-related): `go test ./... -tags=integration`
    - Manual testing if needed: `./bin/nylas <command>`
 
 6. **Check for side effects**
-   - Run all tests: `make test`
+   - Run all unit tests: `make test`
+   - Run integration tests: `go test ./... -tags=integration`
    - Build succeeds: `make build`
    - Lint passes: `make lint` (if available)
 

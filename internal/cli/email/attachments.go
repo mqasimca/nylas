@@ -163,14 +163,21 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 				return fmt.Errorf("failed to get attachment metadata: %w", err)
 			}
 
-			// Determine output path
-			if outputPath == "" {
-				outputPath = attachment.Filename
+			// Sanitize filename to prevent path traversal attacks
+			// filepath.Base strips directory components like "../" or "../../"
+			safeFilename := filepath.Base(attachment.Filename)
+			if safeFilename == "" || safeFilename == "." || safeFilename == ".." {
+				safeFilename = "attachment"
 			}
 
-			// If outputPath is a directory, append filename
+			// Determine output path
+			if outputPath == "" {
+				outputPath = safeFilename
+			}
+
+			// If outputPath is a directory, append sanitized filename
 			if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
-				outputPath = filepath.Join(outputPath, attachment.Filename)
+				outputPath = filepath.Join(outputPath, safeFilename)
 			}
 
 			// Download the attachment

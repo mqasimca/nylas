@@ -94,7 +94,7 @@ func (s *Server) Start(ctx context.Context) error {
 		localURL := fmt.Sprintf("http://localhost:%d", s.config.Port)
 		publicURL, err := s.tunnel.Start(ctx)
 		if err != nil {
-			s.Stop()
+			_ = s.Stop() // Ignore stop error - we're returning tunnel start error
 			return fmt.Errorf("failed to start tunnel: %w", err)
 		}
 
@@ -189,7 +189,7 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 			if challenge != "" {
 				w.Header().Set("Content-Type", "text/plain")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(challenge))
+				_, _ = w.Write([]byte(challenge)) // Ignore write error - response already sent
 				return
 			}
 		}
@@ -279,7 +279,7 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	// Respond with 200 OK
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"received"}`))
+	_, _ = w.Write([]byte(`{"status":"received"}`)) // Ignore write error - response already sent
 }
 
 // handleHealth handles health check requests.
@@ -300,7 +300,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response) // Ignore encode error - best effort response
 }
 
 // handleRoot handles root requests with server info.
@@ -347,7 +347,7 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 	)
 
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
+	_, _ = w.Write([]byte(html)) // Ignore write error - best effort response
 }
 
 // verifySignature verifies the webhook signature using HMAC-SHA256.

@@ -55,7 +55,7 @@ This permanently removes the webhook and stops all event notifications.`,
 
 				fmt.Print("Are you sure you want to delete this webhook? [y/N] ")
 				var confirm string
-				fmt.Scanln(&confirm)
+				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
 
 				if confirm != "y" && confirm != "Y" && confirm != "yes" && confirm != "Yes" {
 					fmt.Println("Cancelled.")

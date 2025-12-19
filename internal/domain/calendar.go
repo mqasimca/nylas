@@ -236,14 +236,20 @@ type AvailabilityParticipant struct {
 
 // AvailabilityResponse contains available time slots.
 type AvailabilityResponse struct {
-	Data []AvailableSlot `json:"data"`
+	Data AvailabilityData `json:"data"`
+}
+
+// AvailabilityData contains the time slots data from availability API.
+type AvailabilityData struct {
+	TimeSlots []AvailableSlot `json:"time_slots"`
+	Order     []string        `json:"order,omitempty"` // For round-robin scheduling
 }
 
 // AvailableSlot represents an available meeting slot.
 type AvailableSlot struct {
-	StartTime    int64                       `json:"start_time"`
-	EndTime      int64                       `json:"end_time"`
-	Participants []AvailabilityParticipant   `json:"participants,omitempty"`
+	StartTime int64    `json:"start_time"`
+	EndTime   int64    `json:"end_time"`
+	Emails    []string `json:"emails,omitempty"`
 }
 
 // CreateCalendarRequest for creating a new calendar.
