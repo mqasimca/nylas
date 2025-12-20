@@ -2,27 +2,28 @@ package domain
 
 // Contact represents a contact from Nylas.
 type Contact struct {
-	ID           string              `json:"id"`
-	GrantID      string              `json:"grant_id"`
-	Object       string              `json:"object,omitempty"`
-	GivenName    string              `json:"given_name,omitempty"`
-	MiddleName   string              `json:"middle_name,omitempty"`
-	Surname      string              `json:"surname,omitempty"`
-	Suffix       string              `json:"suffix,omitempty"`
-	Nickname     string              `json:"nickname,omitempty"`
-	Birthday     string              `json:"birthday,omitempty"`
-	CompanyName  string              `json:"company_name,omitempty"`
-	JobTitle     string              `json:"job_title,omitempty"`
-	ManagerName  string              `json:"manager_name,omitempty"`
-	Notes        string              `json:"notes,omitempty"`
-	PictureURL   string              `json:"picture_url,omitempty"`
-	Emails       []ContactEmail      `json:"emails,omitempty"`
-	PhoneNumbers []ContactPhone      `json:"phone_numbers,omitempty"`
-	WebPages     []ContactWebPage    `json:"web_pages,omitempty"`
-	IMAddresses  []ContactIM         `json:"im_addresses,omitempty"`
-	PhysicalAddresses []ContactAddress `json:"physical_addresses,omitempty"`
-	Groups       []ContactGroupInfo  `json:"groups,omitempty"`
-	Source       string              `json:"source,omitempty"`
+	ID                string             `json:"id"`
+	GrantID           string             `json:"grant_id"`
+	Object            string             `json:"object,omitempty"`
+	GivenName         string             `json:"given_name,omitempty"`
+	MiddleName        string             `json:"middle_name,omitempty"`
+	Surname           string             `json:"surname,omitempty"`
+	Suffix            string             `json:"suffix,omitempty"`
+	Nickname          string             `json:"nickname,omitempty"`
+	Birthday          string             `json:"birthday,omitempty"`
+	CompanyName       string             `json:"company_name,omitempty"`
+	JobTitle          string             `json:"job_title,omitempty"`
+	ManagerName       string             `json:"manager_name,omitempty"`
+	Notes             string             `json:"notes,omitempty"`
+	PictureURL        string             `json:"picture_url,omitempty"`
+	Picture           string             `json:"picture,omitempty"` // Base64-encoded image data (when profile_picture=true)
+	Emails            []ContactEmail     `json:"emails,omitempty"`
+	PhoneNumbers      []ContactPhone     `json:"phone_numbers,omitempty"`
+	WebPages          []ContactWebPage   `json:"web_pages,omitempty"`
+	IMAddresses       []ContactIM        `json:"im_addresses,omitempty"`
+	PhysicalAddresses []ContactAddress   `json:"physical_addresses,omitempty"`
+	Groups            []ContactGroupInfo `json:"groups,omitempty"`
+	Source            string             `json:"source,omitempty"`
 }
 
 // DisplayName returns a formatted display name for the contact.
@@ -121,53 +122,54 @@ type ContactGroup struct {
 
 // ContactQueryParams for filtering contacts.
 type ContactQueryParams struct {
-	Limit     int    `json:"limit,omitempty"`
-	PageToken string `json:"page_token,omitempty"`
-	Email     string `json:"email,omitempty"`
-	PhoneNumber string `json:"phone_number,omitempty"`
-	Source    string `json:"source,omitempty"` // address_book, inbox, domain
-	Group     string `json:"group,omitempty"`
-	Recurse   bool   `json:"recurse,omitempty"`
+	Limit          int    `json:"limit,omitempty"`
+	PageToken      string `json:"page_token,omitempty"`
+	Email          string `json:"email,omitempty"`
+	PhoneNumber    string `json:"phone_number,omitempty"`
+	Source         string `json:"source,omitempty"` // address_book, inbox, domain
+	Group          string `json:"group,omitempty"`
+	Recurse        bool   `json:"recurse,omitempty"`
+	ProfilePicture bool   `json:"profile_picture,omitempty"` // Include Base64-encoded profile picture
 }
 
 // CreateContactRequest for creating a new contact.
 type CreateContactRequest struct {
-	GivenName    string              `json:"given_name,omitempty"`
-	MiddleName   string              `json:"middle_name,omitempty"`
-	Surname      string              `json:"surname,omitempty"`
-	Suffix       string              `json:"suffix,omitempty"`
-	Nickname     string              `json:"nickname,omitempty"`
-	Birthday     string              `json:"birthday,omitempty"`
-	CompanyName  string              `json:"company_name,omitempty"`
-	JobTitle     string              `json:"job_title,omitempty"`
-	ManagerName  string              `json:"manager_name,omitempty"`
-	Notes        string              `json:"notes,omitempty"`
-	Emails       []ContactEmail      `json:"emails,omitempty"`
-	PhoneNumbers []ContactPhone      `json:"phone_numbers,omitempty"`
-	WebPages     []ContactWebPage    `json:"web_pages,omitempty"`
-	IMAddresses  []ContactIM         `json:"im_addresses,omitempty"`
-	PhysicalAddresses []ContactAddress `json:"physical_addresses,omitempty"`
-	Groups       []ContactGroupInfo  `json:"groups,omitempty"`
+	GivenName         string             `json:"given_name,omitempty"`
+	MiddleName        string             `json:"middle_name,omitempty"`
+	Surname           string             `json:"surname,omitempty"`
+	Suffix            string             `json:"suffix,omitempty"`
+	Nickname          string             `json:"nickname,omitempty"`
+	Birthday          string             `json:"birthday,omitempty"`
+	CompanyName       string             `json:"company_name,omitempty"`
+	JobTitle          string             `json:"job_title,omitempty"`
+	ManagerName       string             `json:"manager_name,omitempty"`
+	Notes             string             `json:"notes,omitempty"`
+	Emails            []ContactEmail     `json:"emails,omitempty"`
+	PhoneNumbers      []ContactPhone     `json:"phone_numbers,omitempty"`
+	WebPages          []ContactWebPage   `json:"web_pages,omitempty"`
+	IMAddresses       []ContactIM        `json:"im_addresses,omitempty"`
+	PhysicalAddresses []ContactAddress   `json:"physical_addresses,omitempty"`
+	Groups            []ContactGroupInfo `json:"groups,omitempty"`
 }
 
 // UpdateContactRequest for updating a contact.
 type UpdateContactRequest struct {
-	GivenName    *string             `json:"given_name,omitempty"`
-	MiddleName   *string             `json:"middle_name,omitempty"`
-	Surname      *string             `json:"surname,omitempty"`
-	Suffix       *string             `json:"suffix,omitempty"`
-	Nickname     *string             `json:"nickname,omitempty"`
-	Birthday     *string             `json:"birthday,omitempty"`
-	CompanyName  *string             `json:"company_name,omitempty"`
-	JobTitle     *string             `json:"job_title,omitempty"`
-	ManagerName  *string             `json:"manager_name,omitempty"`
-	Notes        *string             `json:"notes,omitempty"`
-	Emails       []ContactEmail      `json:"emails,omitempty"`
-	PhoneNumbers []ContactPhone      `json:"phone_numbers,omitempty"`
-	WebPages     []ContactWebPage    `json:"web_pages,omitempty"`
-	IMAddresses  []ContactIM         `json:"im_addresses,omitempty"`
-	PhysicalAddresses []ContactAddress `json:"physical_addresses,omitempty"`
-	Groups       []ContactGroupInfo  `json:"groups,omitempty"`
+	GivenName         *string            `json:"given_name,omitempty"`
+	MiddleName        *string            `json:"middle_name,omitempty"`
+	Surname           *string            `json:"surname,omitempty"`
+	Suffix            *string            `json:"suffix,omitempty"`
+	Nickname          *string            `json:"nickname,omitempty"`
+	Birthday          *string            `json:"birthday,omitempty"`
+	CompanyName       *string            `json:"company_name,omitempty"`
+	JobTitle          *string            `json:"job_title,omitempty"`
+	ManagerName       *string            `json:"manager_name,omitempty"`
+	Notes             *string            `json:"notes,omitempty"`
+	Emails            []ContactEmail     `json:"emails,omitempty"`
+	PhoneNumbers      []ContactPhone     `json:"phone_numbers,omitempty"`
+	WebPages          []ContactWebPage   `json:"web_pages,omitempty"`
+	IMAddresses       []ContactIM        `json:"im_addresses,omitempty"`
+	PhysicalAddresses []ContactAddress   `json:"physical_addresses,omitempty"`
+	Groups            []ContactGroupInfo `json:"groups,omitempty"`
 }
 
 // ContactListResponse represents a paginated contact list response.

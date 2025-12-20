@@ -79,9 +79,10 @@ func createLongTestContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 60*time.Second)
 }
 
-// rateLimitDelay adds a small delay between API calls to avoid rate limiting.
-// Nylas API has rate limits, so we add a brief pause between tests.
-const rateLimitDelay = 500 * time.Millisecond
+// rateLimitDelay adds a delay between API calls to avoid rate limiting.
+// Nylas API has rate limits, so we add a pause between tests.
+// Increased to 2 seconds to provide better protection against rate limiting.
+const rateLimitDelay = 2 * time.Second
 
 // waitForRateLimit pauses execution to avoid hitting API rate limits.
 func waitForRateLimit() {
@@ -120,6 +121,32 @@ func skipIfNoMessages(t *testing.T, messages []domain.Message) {
 	}
 }
 
+// skipIfTrialAccountLimitation skips the test if error indicates trial account limitation.
+func skipIfTrialAccountLimitation(t *testing.T, err error) {
+	t.Helper()
+	if err == nil {
+		return
+	}
+	errMsg := err.Error()
+	if strings.Contains(errMsg, "trial account") ||
+		strings.Contains(errMsg, "Please upgrade your account") {
+		t.Skipf("Feature not available on trial account: %v", err)
+	}
+}
+
+// skipIfRateLimited skips the test if error indicates rate limiting.
+func skipIfRateLimited(t *testing.T, err error) {
+	t.Helper()
+	if err == nil {
+		return
+	}
+	errMsg := err.Error()
+	if strings.Contains(errMsg, "Too many requests") ||
+		strings.Contains(errMsg, "rate limit") {
+		t.Skipf("Rate limited by API: %v", err)
+	}
+}
+
 // =============================================================================
 // Grant Tests
 // =============================================================================
@@ -155,14 +182,15 @@ func TestIntegration_ListGrants_ValidatesProvider(t *testing.T) {
 	require.NotEmpty(t, grants)
 
 	validProviders := map[string]bool{
-		"google":    true,
-		"microsoft": true,
-		"imap":      true,
-		"yahoo":     true,
-		"icloud":    true,
-		"ews":       true,
-		"inbox":     true, // Nylas Native Auth
-		"virtual":   true,
+		"google":           true,
+		"microsoft":        true,
+		"imap":             true,
+		"yahoo":            true,
+		"icloud":           true,
+		"ews":              true,
+		"inbox":            true, // Nylas Native Auth
+		"virtual":          true,
+		"virtual-calendar": true, // Virtual calendar provider
 	}
 
 	for _, g := range grants {
@@ -1514,6 +1542,7 @@ func TestIntegration_MessageFieldsValidation(t *testing.T) {
 	defer cancel()
 
 	messages, err := client.GetMessages(ctx, grantID, 10)
+	skipIfRateLimited(t, err)
 	require.NoError(t, err)
 	skipIfNoMessages(t, messages)
 
@@ -1973,6 +2002,7 @@ func TestIntegration_SendMessageWithTracking(t *testing.T) {
 	}
 
 	msg, err := client.SendMessage(ctx, grantID, req)
+	skipIfTrialAccountLimitation(t, err)
 	require.NoError(t, err)
 	require.NotEmpty(t, msg.ID)
 
@@ -2001,9 +2031,9 @@ func TestIntegration_SendMessageWithMetadata(t *testing.T) {
 		Body:    "<html><body><p>Test email with custom metadata</p></body></html>",
 		To:      []domain.EmailParticipant{{Email: testEmail, Name: "Test Recipient"}},
 		Metadata: map[string]string{
-			"campaign_id":  "test-campaign-001",
-			"customer_id":  "cust-12345",
-			"test_run":     "integration",
+			"campaign_id": "test-campaign-001",
+			"customer_id": "cust-12345",
+			"test_run":    "integration",
 		},
 	}
 

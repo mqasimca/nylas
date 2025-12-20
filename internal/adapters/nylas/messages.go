@@ -54,8 +54,9 @@ type messageResponse struct {
 		ContentID   string `json:"content_id"`
 		IsInline    bool   `json:"is_inline"`
 	} `json:"attachments"`
-	CreatedAt int64  `json:"created_at"`
-	Object    string `json:"object"`
+	Metadata  map[string]string `json:"metadata"`
+	CreatedAt int64             `json:"created_at"`
+	Object    string            `json:"object"`
 }
 
 // GetMessages retrieves recent messages for a grant (simple version).
@@ -130,6 +131,9 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 	if params.Fields != "" {
 		q.Set("fields", params.Fields)
 	}
+	if params.MetadataPair != "" {
+		q.Set("metadata_pair", params.MetadataPair)
+	}
 
 	queryURL += "?" + q.Encode()
 
@@ -139,7 +143,7 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -177,7 +181,7 @@ func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -244,7 +248,7 @@ func (c *HTTPClient) SendMessage(ctx context.Context, grantID string, req *domai
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -288,7 +292,7 @@ func (c *HTTPClient) UpdateMessage(ctx context.Context, grantID, messageID strin
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -319,7 +323,7 @@ func (c *HTTPClient) DeleteMessage(ctx context.Context, grantID, messageID strin
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -342,7 +346,7 @@ func (c *HTTPClient) ListScheduledMessages(ctx context.Context, grantID string) 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -388,7 +392,7 @@ func (c *HTTPClient) GetScheduledMessage(ctx context.Context, grantID, scheduleI
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -432,7 +436,7 @@ func (c *HTTPClient) CancelScheduledMessage(ctx context.Context, grantID, schedu
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -500,9 +504,94 @@ func convertMessage(m messageResponse) domain.Message {
 		Starred:     m.Starred,
 		Folders:     m.Folders,
 		Attachments: attachments,
+		Metadata:    m.Metadata,
 		CreatedAt:   time.Unix(m.CreatedAt, 0),
 		Object:      m.Object,
 	}
+}
+
+// SmartCompose generates an AI-powered email draft based on a prompt.
+// Uses Nylas Smart Compose API (requires Plus package).
+func (c *HTTPClient) SmartCompose(ctx context.Context, grantID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
+	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/smart-compose", c.baseURL, grantID)
+
+	payload := map[string]interface{}{
+		"prompt": req.Prompt,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	c.setAuthHeader(httpReq)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+
+	resp, err := c.doRequest(ctx, httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.parseError(resp)
+	}
+
+	var result struct {
+		Data domain.SmartComposeSuggestion `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result.Data, nil
+}
+
+// SmartComposeReply generates an AI-powered reply to a specific message.
+// Uses Nylas Smart Compose API (requires Plus package).
+func (c *HTTPClient) SmartComposeReply(ctx context.Context, grantID, messageID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
+	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s/smart-compose", c.baseURL, grantID, messageID)
+
+	payload := map[string]interface{}{
+		"prompt": req.Prompt,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	c.setAuthHeader(httpReq)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+
+	resp, err := c.doRequest(ctx, httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.parseError(resp)
+	}
+
+	var result struct {
+		Data domain.SmartComposeSuggestion `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	return &result.Data, nil
 }
 
 // convertContactsToAPI converts domain contacts to API format.

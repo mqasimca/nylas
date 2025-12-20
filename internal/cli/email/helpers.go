@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"os"
 	"strings"
 	"time"
 
@@ -17,12 +16,11 @@ import (
 )
 
 var (
-	boldWhite  = color.New(color.FgWhite, color.Bold)
-	cyan       = color.New(color.FgCyan)
-	green      = color.New(color.FgGreen)
-	yellow     = color.New(color.FgYellow)
-	red        = color.New(color.FgRed)
-	dim        = color.New(color.Faint)
+	boldWhite = color.New(color.FgWhite, color.Bold)
+	cyan      = color.New(color.FgCyan)
+	green     = color.New(color.FgGreen)
+	yellow    = color.New(color.FgYellow)
+	dim       = color.New(color.Faint)
 )
 
 // getClient creates and configures a Nylas client.
@@ -341,11 +339,6 @@ func removeTagWithContent(s, tag string) string {
 		}
 	}
 	return result
-}
-
-// printError prints an error message in red.
-func printError(format string, args ...interface{}) {
-	red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
 }
 
 // printSuccess prints a success message in green.

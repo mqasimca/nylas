@@ -23,7 +23,10 @@ Commands:
   add       Manually add an existing grant
   remove    Remove a grant from local config (keeps grant on server)
   revoke    Permanently revoke a grant on server
-  config    Configure API credentials`,
+  config    Configure API credentials
+  providers List available authentication providers
+  detect    Detect provider from email address
+  scopes    Show OAuth scopes for a grant`,
 	}
 
 	cmd.AddCommand(newLoginCmd())
@@ -38,6 +41,9 @@ Commands:
 	cmd.AddCommand(newConfigCmd())
 	cmd.AddCommand(newRevokeCmd())
 	cmd.AddCommand(newTokenCmd())
+	cmd.AddCommand(newProvidersCmd())
+	cmd.AddCommand(newDetectCmd())
+	cmd.AddCommand(newScopesCmd())
 
 	return cmd
 }

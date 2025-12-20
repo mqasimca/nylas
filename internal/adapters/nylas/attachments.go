@@ -31,7 +31,7 @@ func (c *HTTPClient) GetAttachment(ctx context.Context, grantID, messageID, atta
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -72,7 +72,7 @@ func (c *HTTPClient) DownloadAttachment(ctx context.Context, grantID, messageID,
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}

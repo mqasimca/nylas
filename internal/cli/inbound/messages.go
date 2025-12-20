@@ -115,7 +115,7 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 	}
 
 	fmt.Println()
-	dim.Println("Use 'nylas email read <inbox-id> <message-id>' to view full message")
+	dim.Println("Use 'nylas email read <message-id> [inbox-id]' to view full message")
 
 	return nil
 }

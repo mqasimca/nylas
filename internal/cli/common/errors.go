@@ -27,14 +27,14 @@ func (e *CLIError) Unwrap() error {
 
 // ErrorCode constants for common errors.
 const (
-	ErrCodeNotConfigured   = "E001"
-	ErrCodeAuthFailed      = "E002"
-	ErrCodeNetworkError    = "E003"
-	ErrCodeNotFound        = "E004"
+	ErrCodeNotConfigured    = "E001"
+	ErrCodeAuthFailed       = "E002"
+	ErrCodeNetworkError     = "E003"
+	ErrCodeNotFound         = "E004"
 	ErrCodePermissionDenied = "E005"
-	ErrCodeInvalidInput    = "E006"
-	ErrCodeRateLimited     = "E007"
-	ErrCodeServerError     = "E008"
+	ErrCodeInvalidInput     = "E006"
+	ErrCodeRateLimited      = "E007"
+	ErrCodeServerError      = "E008"
 )
 
 // WrapError wraps an error with CLI-friendly context.

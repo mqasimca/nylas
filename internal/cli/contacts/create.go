@@ -11,13 +11,13 @@ import (
 
 func newCreateCmd() *cobra.Command {
 	var (
-		firstName   string
-		lastName    string
-		email       string
-		phone       string
-		company     string
-		jobTitle    string
-		notes       string
+		firstName string
+		lastName  string
+		email     string
+		phone     string
+		company   string
+		jobTitle  string
+		notes     string
 	)
 
 	cmd := &cobra.Command{

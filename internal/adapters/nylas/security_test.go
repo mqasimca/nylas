@@ -113,10 +113,20 @@ func TestOTPExtractionSecurity(t *testing.T) {
 
 // TestHTTPClientSecurity tests HTTP client security.
 func TestHTTPClientSecurity(t *testing.T) {
-	t.Run("client_has_timeout", func(t *testing.T) {
+	t.Run("client_uses_per_request_timeouts", func(t *testing.T) {
 		client := NewHTTPClient()
-		if client.httpClient.Timeout == 0 {
-			t.Error("HTTP client should have a timeout configured")
+		// HTTP client should NOT have a global timeout (we use per-request context timeouts)
+		// This allows better control and prevents blocking other requests
+		if client.httpClient.Timeout != 0 {
+			t.Error("HTTP client should not have global timeout (uses per-request context timeouts)")
+		}
+		// Verify rate limiter is configured
+		if client.rateLimiter == nil {
+			t.Error("Rate limiter should be configured")
+		}
+		// Verify request timeout is configured
+		if client.requestTimeout == 0 {
+			t.Error("Request timeout should be configured")
 		}
 	})
 

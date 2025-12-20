@@ -23,7 +23,7 @@ func (c *HTTPClient) ListInboundInboxes(ctx context.Context) ([]domain.InboundIn
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -35,10 +35,10 @@ func (c *HTTPClient) ListInboundInboxes(ctx context.Context) ([]domain.InboundIn
 
 	var result struct {
 		Data []struct {
-			ID          string         `json:"id"`
-			Email       string         `json:"email"`
-			Provider    string         `json:"provider"`
-			GrantStatus string         `json:"grant_status"`
+			ID          string          `json:"id"`
+			Email       string          `json:"email"`
+			Provider    string          `json:"provider"`
+			GrantStatus string          `json:"grant_status"`
 			CreatedAt   domain.UnixTime `json:"created_at"`
 			UpdatedAt   domain.UnixTime `json:"updated_at"`
 		} `json:"data"`
@@ -74,7 +74,7 @@ func (c *HTTPClient) GetInboundInbox(ctx context.Context, grantID string) (*doma
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -89,10 +89,10 @@ func (c *HTTPClient) GetInboundInbox(ctx context.Context, grantID string) (*doma
 
 	var result struct {
 		Data struct {
-			ID          string         `json:"id"`
-			Email       string         `json:"email"`
-			Provider    string         `json:"provider"`
-			GrantStatus string         `json:"grant_status"`
+			ID          string          `json:"id"`
+			Email       string          `json:"email"`
+			Provider    string          `json:"provider"`
+			GrantStatus string          `json:"grant_status"`
 			CreatedAt   domain.UnixTime `json:"created_at"`
 			UpdatedAt   domain.UnixTime `json:"updated_at"`
 		} `json:"data"`
@@ -140,7 +140,7 @@ func (c *HTTPClient) CreateInboundInbox(ctx context.Context, email string) (*dom
 	req.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -152,10 +152,10 @@ func (c *HTTPClient) CreateInboundInbox(ctx context.Context, email string) (*dom
 
 	var result struct {
 		Data struct {
-			ID          string         `json:"id"`
-			Email       string         `json:"email"`
-			Provider    string         `json:"provider"`
-			GrantStatus string         `json:"grant_status"`
+			ID          string          `json:"id"`
+			Email       string          `json:"email"`
+			Provider    string          `json:"provider"`
+			GrantStatus string          `json:"grant_status"`
 			CreatedAt   domain.UnixTime `json:"created_at"`
 			UpdatedAt   domain.UnixTime `json:"updated_at"`
 		} `json:"data"`
@@ -231,7 +231,7 @@ func (c *HTTPClient) GetInboundMessages(ctx context.Context, grantID string, par
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}

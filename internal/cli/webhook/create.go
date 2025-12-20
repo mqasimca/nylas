@@ -143,8 +143,8 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 	cmd.Flags().StringSliceVarP(&notifyEmails, "notify", "n", nil, "Notification email addresses")
 	cmd.Flags().StringVarP(&format, "format", "f", "text", "Output format (text, json)")
 
-	cmd.MarkFlagRequired("url")
-	cmd.MarkFlagRequired("triggers")
+	_ = cmd.MarkFlagRequired("url")
+	_ = cmd.MarkFlagRequired("triggers")
 
 	return cmd
 }

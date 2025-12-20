@@ -112,7 +112,7 @@ record the meeting, and generate a transcript when complete.`,
 	cmd.Flags().StringVar(&botName, "bot-name", "", "Custom name for the notetaker bot")
 	cmd.Flags().BoolVar(&outputJSON, "json", false, "Output as JSON")
 
-	cmd.MarkFlagRequired("meeting-link")
+	_ = cmd.MarkFlagRequired("meeting-link") // Hardcoded flag name, won't fail
 
 	return cmd
 }

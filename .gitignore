@@ -13,6 +13,8 @@ CLAUDE.local.md
 
 # Binaries
 bin/
+/nylas
+*.test
 *.exe
 *.exe~
 *.dll

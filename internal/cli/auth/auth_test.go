@@ -97,6 +97,7 @@ func TestConfigCommand(t *testing.T) {
 		flag := cmd.Flags().Lookup("region")
 		if flag == nil {
 			t.Error("Expected --region flag")
+			return
 		}
 		if flag.DefValue != "us" {
 			t.Errorf("--region default = %q, want %q", flag.DefValue, "us")
@@ -139,6 +140,7 @@ func TestLoginCommand(t *testing.T) {
 		flag := cmd.Flags().Lookup("provider")
 		if flag == nil {
 			t.Error("Expected --provider flag")
+			return
 		}
 		if flag.DefValue != "google" {
 			t.Errorf("--provider default = %q, want %q", flag.DefValue, "google")

@@ -47,7 +47,7 @@ func TestHTTPClient_ListAttachments(t *testing.T) {
 				},
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response) // Test helper, encode error not actionable
 		}))
 		defer server.Close()
 
@@ -84,7 +84,7 @@ func TestHTTPClient_ListAttachments(t *testing.T) {
 				},
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response) // Test helper, encode error not actionable
 		}))
 		defer server.Close()
 
@@ -117,7 +117,7 @@ func TestHTTPClient_GetAttachment(t *testing.T) {
 				},
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response) // Test helper, encode error not actionable
 		}))
 		defer server.Close()
 
@@ -138,7 +138,7 @@ func TestHTTPClient_GetAttachment(t *testing.T) {
 	t.Run("returns error for non-existent attachment", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{ // Test helper, encode error not actionable
 				"error": map[string]string{
 					"message": "attachment not found",
 					"type":    "not_found",
@@ -170,7 +170,7 @@ func TestHTTPClient_DownloadAttachment(t *testing.T) {
 
 			w.Header().Set("Content-Type", "application/pdf")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(expectedContent))
+			_, _ = w.Write([]byte(expectedContent))
 		}))
 		defer server.Close()
 

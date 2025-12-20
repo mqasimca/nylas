@@ -4,35 +4,35 @@ import "time"
 
 // Notetaker represents a Nylas Notetaker bot instance.
 type Notetaker struct {
-	ID            string       `json:"id"`
-	State         string       `json:"state"` // scheduled, connecting, waiting_for_entry, attending, media_processing, complete, cancelled, failed
-	MeetingLink   string       `json:"meeting_link,omitempty"`
-	JoinTime      time.Time    `json:"join_time,omitempty"`
-	MeetingTitle  string       `json:"meeting_title,omitempty"`
-	MediaData     *MediaData   `json:"media_data,omitempty"`
-	BotConfig     *BotConfig   `json:"bot_config,omitempty"`
-	MeetingInfo   *MeetingInfo `json:"meeting_info,omitempty"`
-	CreatedAt     time.Time    `json:"created_at,omitempty"`
-	UpdatedAt     time.Time    `json:"updated_at,omitempty"`
-	Object        string       `json:"object,omitempty"`
+	ID           string       `json:"id"`
+	State        string       `json:"state"` // scheduled, connecting, waiting_for_entry, attending, media_processing, complete, cancelled, failed
+	MeetingLink  string       `json:"meeting_link,omitempty"`
+	JoinTime     time.Time    `json:"join_time,omitempty"`
+	MeetingTitle string       `json:"meeting_title,omitempty"`
+	MediaData    *MediaData   `json:"media_data,omitempty"`
+	BotConfig    *BotConfig   `json:"bot_config,omitempty"`
+	MeetingInfo  *MeetingInfo `json:"meeting_info,omitempty"`
+	CreatedAt    time.Time    `json:"created_at,omitempty"`
+	UpdatedAt    time.Time    `json:"updated_at,omitempty"`
+	Object       string       `json:"object,omitempty"`
 }
 
 // NotetakerState constants for notetaker states.
 const (
-	NotetakerStateScheduled         = "scheduled"
-	NotetakerStateConnecting        = "connecting"
-	NotetakerStateWaitingForEntry   = "waiting_for_entry"
-	NotetakerStateAttending         = "attending"
-	NotetakerStateMediaProcessing   = "media_processing"
-	NotetakerStateComplete          = "complete"
-	NotetakerStateCancelled         = "cancelled"
-	NotetakerStateFailed            = "failed"
+	NotetakerStateScheduled       = "scheduled"
+	NotetakerStateConnecting      = "connecting"
+	NotetakerStateWaitingForEntry = "waiting_for_entry"
+	NotetakerStateAttending       = "attending"
+	NotetakerStateMediaProcessing = "media_processing"
+	NotetakerStateComplete        = "complete"
+	NotetakerStateCancelled       = "cancelled"
+	NotetakerStateFailed          = "failed"
 )
 
 // MediaData represents the media output from a notetaker session.
 type MediaData struct {
-	Recording   *MediaFile `json:"recording,omitempty"`
-	Transcript  *MediaFile `json:"transcript,omitempty"`
+	Recording  *MediaFile `json:"recording,omitempty"`
+	Transcript *MediaFile `json:"transcript,omitempty"`
 }
 
 // MediaFile represents a media file from a notetaker session.

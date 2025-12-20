@@ -34,7 +34,7 @@ func (s *GrantService) ListGrants(ctx context.Context) ([]domain.GrantStatus, er
 
 	var result []domain.GrantStatus
 	for _, g := range localGrants {
-		status := "unknown"
+		var status string
 		var errMsg string
 		provider := g.Provider // Default to local storage
 

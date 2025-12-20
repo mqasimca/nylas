@@ -84,9 +84,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	// Start HTTP server in goroutine
 	go func() {
-		if err := s.server.Serve(s.listener); err != http.ErrServerClosed {
-			// Log error but don't crash
-		}
+		_ = s.server.Serve(s.listener) // Error handled on shutdown, ErrServerClosed expected
 	}()
 
 	// Start tunnel if configured

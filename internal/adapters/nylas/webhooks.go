@@ -35,7 +35,7 @@ func (c *HTTPClient) ListWebhooks(ctx context.Context) ([]domain.Webhook, error)
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -70,7 +70,7 @@ func (c *HTTPClient) GetWebhook(ctx context.Context, webhookID string) (*domain.
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -106,7 +106,7 @@ func (c *HTTPClient) CreateWebhook(ctx context.Context, req *domain.CreateWebhoo
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -139,7 +139,7 @@ func (c *HTTPClient) UpdateWebhook(ctx context.Context, webhookID string, req *d
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -170,7 +170,7 @@ func (c *HTTPClient) DeleteWebhook(ctx context.Context, webhookID string) error 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -197,7 +197,7 @@ func (c *HTTPClient) SendWebhookTestEvent(ctx context.Context, webhookURL string
 	req.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -224,7 +224,7 @@ func (c *HTTPClient) GetWebhookMockPayload(ctx context.Context, triggerType stri
 	req.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}

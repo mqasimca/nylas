@@ -62,7 +62,7 @@ Supports custom metadata:
 
   # Send with custom metadata
   nylas email send --to user@example.com --subject "Invoice" --metadata campaign=q4 --metadata type=invoice`,
-		Args:  cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()
 			if err != nil {

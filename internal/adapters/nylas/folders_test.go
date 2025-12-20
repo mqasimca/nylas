@@ -42,7 +42,8 @@ func TestHTTPClient_GetFolders(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -79,7 +80,8 @@ func TestHTTPClient_GetFolder(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -105,7 +107,7 @@ func TestHTTPClient_CreateFolder(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 
 		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		assert.Equal(t, "New Folder", body["name"])
 
 		response := map[string]interface{}{
@@ -117,7 +119,8 @@ func TestHTTPClient_CreateFolder(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -142,7 +145,7 @@ func TestHTTPClient_UpdateFolder(t *testing.T) {
 		assert.Equal(t, "PUT", r.Method)
 
 		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		assert.Equal(t, "Renamed Folder", body["name"])
 
 		response := map[string]interface{}{
@@ -153,7 +156,8 @@ func TestHTTPClient_UpdateFolder(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -175,7 +179,7 @@ func TestHTTPClient_UpdateFolder(t *testing.T) {
 func TestHTTPClient_UpdateFolder_WithColors(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		assert.Equal(t, "Colorful", body["name"])
 		assert.Equal(t, "#00FF00", body["background_color"])
 		assert.Equal(t, "#000000", body["text_color"])
@@ -189,7 +193,8 @@ func TestHTTPClient_UpdateFolder_WithColors(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -232,11 +237,12 @@ func TestHTTPClient_DeleteFolder(t *testing.T) {
 func TestHTTPClient_DeleteFolder_NotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": map[string]string{
-				"message": "Folder not found",
-			},
-		})
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			map[string]interface{}{
+				"error": map[string]string{
+					"message": "Folder not found",
+				},
+			})
 	}))
 	defer server.Close()
 

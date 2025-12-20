@@ -76,7 +76,7 @@ func (c *HTTPClient) ListNotetakers(ctx context.Context, grantID string, params 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -106,7 +106,7 @@ func (c *HTTPClient) GetNotetaker(ctx context.Context, grantID, notetakerID stri
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -162,7 +162,7 @@ func (c *HTTPClient) CreateNotetaker(ctx context.Context, grantID string, req *d
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -193,7 +193,7 @@ func (c *HTTPClient) DeleteNotetaker(ctx context.Context, grantID, notetakerID s
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -216,7 +216,7 @@ func (c *HTTPClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}

@@ -158,12 +158,12 @@ Shows busy time slots within the specified time range.`,
 
 func newFindSlotsCmd() *cobra.Command {
 	var (
-		participants  []string
-		start         string
-		end           string
-		durationMins  int
-		intervalMins  int
-		format        string
+		participants []string
+		start        string
+		end          string
+		durationMins int
+		intervalMins int
+		format       string
 	)
 
 	cmd := &cobra.Command{
@@ -266,7 +266,7 @@ This searches for time slots when all participants are free.`,
 	cmd.Flags().IntVarP(&intervalMins, "interval", "i", 15, "Search interval in minutes")
 	cmd.Flags().StringVarP(&format, "format", "f", "text", "Output format (text, json, yaml)")
 
-	cmd.MarkFlagRequired("participants")
+	_ = cmd.MarkFlagRequired("participants")
 
 	return cmd
 }

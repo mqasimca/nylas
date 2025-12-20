@@ -33,6 +33,8 @@ View calendars, list events, create new events, and more.`,
 	cmd.AddCommand(newDeleteCmd())
 	cmd.AddCommand(newEventsCmd())
 	cmd.AddCommand(newAvailabilityCmd())
+	cmd.AddCommand(newVirtualCmd())
+	cmd.AddCommand(newRecurringCmd())
 
 	return cmd
 }
@@ -71,12 +73,6 @@ func getClient() (ports.NylasClient, error) {
 func getGrantID(args []string) (string, error) {
 	if len(args) > 0 {
 		return args[0], nil
-	}
-
-	configStore := config.NewDefaultFileStore()
-	cfg, _ := configStore.Load()
-	if cfg == nil {
-		cfg = &domain.Config{Region: "us"}
 	}
 
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())

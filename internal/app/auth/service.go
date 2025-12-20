@@ -40,7 +40,7 @@ func (s *Service) Login(ctx context.Context, provider domain.Provider) (*domain.
 	if err := s.server.Start(); err != nil {
 		return nil, err
 	}
-	defer s.server.Stop()
+	defer func() { _ = s.server.Stop() }()
 
 	// Build auth URL and open browser
 	authURL := s.client.BuildAuthURL(provider, s.server.GetRedirectURI())

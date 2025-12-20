@@ -70,7 +70,7 @@ status, and notification settings.`,
 func displayWebhookDetails(webhook interface{}) error {
 	data, _ := json.Marshal(webhook)
 	var w map[string]interface{}
-	json.Unmarshal(data, &w)
+	_ = json.Unmarshal(data, &w)
 
 	id := getString(w, "id")
 	desc := getString(w, "description")

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/mqasimca/nylas/internal/cli"
+	"github.com/mqasimca/nylas/internal/cli/admin"
 	"github.com/mqasimca/nylas/internal/cli/auth"
 	"github.com/mqasimca/nylas/internal/cli/calendar"
 	"github.com/mqasimca/nylas/internal/cli/contacts"
@@ -13,6 +14,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/inbound"
 	"github.com/mqasimca/nylas/internal/cli/notetaker"
 	"github.com/mqasimca/nylas/internal/cli/otp"
+	"github.com/mqasimca/nylas/internal/cli/scheduler"
 	"github.com/mqasimca/nylas/internal/cli/webhook"
 )
 
@@ -24,6 +26,8 @@ func main() {
 	rootCmd.AddCommand(email.NewEmailCmd())
 	rootCmd.AddCommand(calendar.NewCalendarCmd())
 	rootCmd.AddCommand(contacts.NewContactsCmd())
+	rootCmd.AddCommand(scheduler.NewSchedulerCmd())
+	rootCmd.AddCommand(admin.NewAdminCmd())
 	rootCmd.AddCommand(webhook.NewWebhookCmd())
 	rootCmd.AddCommand(notetaker.NewNotetakerCmd())
 	rootCmd.AddCommand(inbound.NewInboundCmd())

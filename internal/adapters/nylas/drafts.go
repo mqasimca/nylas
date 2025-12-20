@@ -3,7 +3,6 @@ package nylas
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,10 +14,6 @@ import (
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/util"
 )
-
-// maxJSONAttachmentSize is the maximum total request size for JSON-encoded attachments.
-// Nylas recommends multipart for anything larger than 3MB.
-const maxJSONAttachmentSize = 3 * 1024 * 1024 // 3MB
 
 // draftResponse represents an API draft response.
 type draftResponse struct {
@@ -72,7 +67,7 @@ func (c *HTTPClient) GetDrafts(ctx context.Context, grantID string, limit int) (
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -102,7 +97,7 @@ func (c *HTTPClient) GetDraft(ctx context.Context, grantID, draftID string) (*do
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -171,7 +166,7 @@ func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, re
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -232,7 +227,7 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 
 	// Add each attachment as a file
 	for i, att := range req.Attachments {
-		if att.Content == nil || len(att.Content) == 0 {
+		if len(att.Content) == 0 {
 			continue // Skip attachments without content
 		}
 
@@ -265,7 +260,7 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -358,7 +353,7 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -382,15 +377,6 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 
 	draft := convertDraft(result.Data)
 	return &draft, nil
-}
-
-// attachmentToBase64 converts an attachment to base64-encoded format for JSON requests.
-func attachmentToBase64(att domain.Attachment) map[string]interface{} {
-	return map[string]interface{}{
-		"filename":     att.Filename,
-		"content_type": att.ContentType,
-		"content":      base64.StdEncoding.EncodeToString(att.Content),
-	}
 }
 
 // UpdateDraft updates an existing draft.
@@ -426,7 +412,7 @@ func (c *HTTPClient) UpdateDraft(ctx context.Context, grantID, draftID string, r
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -457,7 +443,7 @@ func (c *HTTPClient) DeleteDraft(ctx context.Context, grantID, draftID string) e
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -480,7 +466,7 @@ func (c *HTTPClient) SendDraft(ctx context.Context, grantID, draftID string) (*d
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}

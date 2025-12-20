@@ -23,16 +23,16 @@ const (
 // ComposeView provides an email compose form.
 type ComposeView struct {
 	*tview.Flex
-	app         *App
-	form        *tview.Form
-	bodyInput   *tview.TextArea
-	toInput     *tview.InputField
-	ccInput     *tview.InputField
+	app          *App
+	form         *tview.Form
+	bodyInput    *tview.TextArea
+	toInput      *tview.InputField
+	ccInput      *tview.InputField
 	subjectInput *tview.InputField
-	mode        ComposeMode
-	replyToMsg  *domain.Message
-	onSent      func()
-	onCancel    func()
+	mode         ComposeMode
+	replyToMsg   *domain.Message
+	onSent       func()
+	onCancel     func()
 }
 
 // NewComposeView creates a new compose email view.

@@ -425,8 +425,8 @@ Examples:
 	cmd.Flags().StringArrayVarP(&participants, "participant", "p", nil, "Add participant email (can be used multiple times)")
 	cmd.Flags().BoolVar(&busy, "busy", true, "Mark time as busy")
 
-	cmd.MarkFlagRequired("title")
-	cmd.MarkFlagRequired("start")
+	_ = cmd.MarkFlagRequired("title")
+	_ = cmd.MarkFlagRequired("start")
 
 	return cmd
 }

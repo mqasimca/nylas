@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -18,40 +19,40 @@ type MockClient struct {
 	APIKey       string
 
 	// Call tracking
-	ExchangeCodeCalled      bool
-	ListGrantsCalled        bool
-	GetGrantCalled          bool
-	RevokeGrantCalled       bool
-	GetMessagesCalled       bool
+	ExchangeCodeCalled          bool
+	ListGrantsCalled            bool
+	GetGrantCalled              bool
+	RevokeGrantCalled           bool
+	GetMessagesCalled           bool
 	GetMessagesWithParamsCalled bool
-	GetMessageCalled        bool
-	SendMessageCalled       bool
-	UpdateMessageCalled     bool
-	DeleteMessageCalled     bool
-	GetThreadsCalled        bool
-	GetThreadCalled         bool
-	UpdateThreadCalled      bool
-	DeleteThreadCalled      bool
-	GetDraftsCalled         bool
-	GetDraftCalled          bool
-	CreateDraftCalled       bool
-	UpdateDraftCalled       bool
-	DeleteDraftCalled       bool
-	SendDraftCalled         bool
-	GetFoldersCalled        bool
-	GetFolderCalled         bool
-	CreateFolderCalled      bool
-	UpdateFolderCalled      bool
-	DeleteFolderCalled      bool
-	ListAttachmentsCalled    bool
-	GetAttachmentCalled      bool
-	DownloadAttachmentCalled bool
-	LastGrantID              string
-	LastMessageID           string
-	LastThreadID            string
-	LastDraftID             string
-	LastFolderID            string
-	LastAttachmentID        string
+	GetMessageCalled            bool
+	SendMessageCalled           bool
+	UpdateMessageCalled         bool
+	DeleteMessageCalled         bool
+	GetThreadsCalled            bool
+	GetThreadCalled             bool
+	UpdateThreadCalled          bool
+	DeleteThreadCalled          bool
+	GetDraftsCalled             bool
+	GetDraftCalled              bool
+	CreateDraftCalled           bool
+	UpdateDraftCalled           bool
+	DeleteDraftCalled           bool
+	SendDraftCalled             bool
+	GetFoldersCalled            bool
+	GetFolderCalled             bool
+	CreateFolderCalled          bool
+	UpdateFolderCalled          bool
+	DeleteFolderCalled          bool
+	ListAttachmentsCalled       bool
+	GetAttachmentCalled         bool
+	DownloadAttachmentCalled    bool
+	LastGrantID                 string
+	LastMessageID               string
+	LastThreadID                string
+	LastDraftID                 string
+	LastFolderID                string
+	LastAttachmentID            string
 
 	// Custom functions
 	ExchangeCodeFunc          func(ctx context.Context, code, redirectURI string) (*domain.Grant, error)
@@ -274,6 +275,23 @@ func (m *MockClient) GetScheduledMessage(ctx context.Context, grantID, scheduleI
 func (m *MockClient) CancelScheduledMessage(ctx context.Context, grantID, scheduleID string) error {
 	m.LastGrantID = grantID
 	return nil
+}
+
+// SmartCompose generates an AI-powered email draft.
+func (m *MockClient) SmartCompose(ctx context.Context, grantID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
+	m.LastGrantID = grantID
+	return &domain.SmartComposeSuggestion{
+		Suggestion: "Thank you for your email. I appreciate you reaching out and will respond to your inquiry shortly.",
+	}, nil
+}
+
+// SmartComposeReply generates an AI-powered reply to a message.
+func (m *MockClient) SmartComposeReply(ctx context.Context, grantID, messageID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
+	m.LastGrantID = grantID
+	m.LastMessageID = messageID
+	return &domain.SmartComposeSuggestion{
+		Suggestion: "Thank you for your message. I've reviewed your request and will follow up with the details shortly.",
+	}, nil
 }
 
 // GetThreads retrieves threads.
@@ -681,8 +699,8 @@ func (m *MockClient) GetFreeBusy(ctx context.Context, grantID string, req *domai
 			Email: email,
 			TimeSlots: []domain.TimeSlot{
 				{
-					StartTime: now + 3600,  // 1 hour from start
-					EndTime:   now + 7200,  // 2 hours from start
+					StartTime: now + 3600, // 1 hour from start
+					EndTime:   now + 7200, // 2 hours from start
 					Status:    "busy",
 				},
 			},
@@ -745,6 +763,20 @@ func (m *MockClient) GetContact(ctx context.Context, grantID, contactID string) 
 		Surname:   "Doe",
 		Emails:    []domain.ContactEmail{{Email: "john@example.com", Type: "work"}},
 	}, nil
+}
+
+// GetContactWithPicture retrieves a single contact with optional profile picture.
+func (m *MockClient) GetContactWithPicture(ctx context.Context, grantID, contactID string, includePicture bool) (*domain.Contact, error) {
+	contact := &domain.Contact{
+		ID:        contactID,
+		GivenName: "John",
+		Surname:   "Doe",
+		Emails:    []domain.ContactEmail{{Email: "john@example.com", Type: "work"}},
+	}
+	if includePicture {
+		contact.Picture = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+	}
+	return contact, nil
 }
 
 // CreateContact creates a new contact.
@@ -1020,4 +1052,382 @@ func (m *MockClient) GetInboundMessages(ctx context.Context, grantID string, par
 			Unread:  false,
 		},
 	}, nil
+}
+
+// Scheduler Mock Implementations
+
+func (m *MockClient) ListSchedulerConfigurations(ctx context.Context) ([]domain.SchedulerConfiguration, error) {
+	return []domain.SchedulerConfiguration{
+		{ID: "config-1", Name: "30 Minute Meeting", Slug: "30min"},
+		{ID: "config-2", Name: "1 Hour Meeting", Slug: "1hour"},
+	}, nil
+}
+
+func (m *MockClient) GetSchedulerConfiguration(ctx context.Context, configID string) (*domain.SchedulerConfiguration, error) {
+	return &domain.SchedulerConfiguration{
+		ID:   configID,
+		Name: "30 Minute Meeting",
+		Slug: "30min",
+	}, nil
+}
+
+func (m *MockClient) CreateSchedulerConfiguration(ctx context.Context, req *domain.CreateSchedulerConfigurationRequest) (*domain.SchedulerConfiguration, error) {
+	return &domain.SchedulerConfiguration{
+		ID:   "new-config",
+		Name: req.Name,
+		Slug: req.Slug,
+	}, nil
+}
+
+func (m *MockClient) UpdateSchedulerConfiguration(ctx context.Context, configID string, req *domain.UpdateSchedulerConfigurationRequest) (*domain.SchedulerConfiguration, error) {
+	name := "Updated Configuration"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.SchedulerConfiguration{
+		ID:   configID,
+		Name: name,
+	}, nil
+}
+
+func (m *MockClient) DeleteSchedulerConfiguration(ctx context.Context, configID string) error {
+	return nil
+}
+
+func (m *MockClient) CreateSchedulerSession(ctx context.Context, req *domain.CreateSchedulerSessionRequest) (*domain.SchedulerSession, error) {
+	return &domain.SchedulerSession{
+		SessionID:       "session-123",
+		ConfigurationID: req.ConfigurationID,
+		BookingURL:      fmt.Sprintf("https://schedule.nylas.com/%s", req.Slug),
+	}, nil
+}
+
+func (m *MockClient) GetSchedulerSession(ctx context.Context, sessionID string) (*domain.SchedulerSession, error) {
+	return &domain.SchedulerSession{
+		SessionID:       sessionID,
+		ConfigurationID: "config-1",
+		BookingURL:      "https://schedule.nylas.com/session-123",
+	}, nil
+}
+
+func (m *MockClient) ListBookings(ctx context.Context, configID string) ([]domain.Booking, error) {
+	return []domain.Booking{
+		{
+			BookingID: "booking-1",
+			Title:     "Meeting with John",
+			Status:    "confirmed",
+		},
+	}, nil
+}
+
+func (m *MockClient) GetBooking(ctx context.Context, bookingID string) (*domain.Booking, error) {
+	return &domain.Booking{
+		BookingID: bookingID,
+		Title:     "Meeting with John",
+		Status:    "confirmed",
+	}, nil
+}
+
+func (m *MockClient) ConfirmBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error) {
+	return &domain.Booking{
+		BookingID: bookingID,
+		Status:    "confirmed",
+	}, nil
+}
+
+func (m *MockClient) RescheduleBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error) {
+	return &domain.Booking{
+		BookingID: bookingID,
+		Status:    "confirmed",
+	}, nil
+}
+
+func (m *MockClient) CancelBooking(ctx context.Context, bookingID string, reason string) error {
+	return nil
+}
+
+func (m *MockClient) ListSchedulerPages(ctx context.Context) ([]domain.SchedulerPage, error) {
+	return []domain.SchedulerPage{
+		{ID: "page-1", Name: "Booking Page", Slug: "book-me"},
+	}, nil
+}
+
+func (m *MockClient) GetSchedulerPage(ctx context.Context, pageID string) (*domain.SchedulerPage, error) {
+	return &domain.SchedulerPage{
+		ID:   pageID,
+		Name: "Booking Page",
+		Slug: "book-me",
+	}, nil
+}
+
+func (m *MockClient) CreateSchedulerPage(ctx context.Context, req *domain.CreateSchedulerPageRequest) (*domain.SchedulerPage, error) {
+	return &domain.SchedulerPage{
+		ID:   "new-page",
+		Name: req.Name,
+		Slug: req.Slug,
+	}, nil
+}
+
+func (m *MockClient) UpdateSchedulerPage(ctx context.Context, pageID string, req *domain.UpdateSchedulerPageRequest) (*domain.SchedulerPage, error) {
+	name := "Updated Page"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.SchedulerPage{
+		ID:   pageID,
+		Name: name,
+	}, nil
+}
+
+func (m *MockClient) DeleteSchedulerPage(ctx context.Context, pageID string) error {
+	return nil
+}
+
+// Admin Mock Implementations
+
+func (m *MockClient) ListApplications(ctx context.Context) ([]domain.Application, error) {
+	return []domain.Application{
+		{ID: "app-1", ApplicationID: "app-id-1", Region: "us"},
+	}, nil
+}
+
+func (m *MockClient) GetApplication(ctx context.Context, appID string) (*domain.Application, error) {
+	return &domain.Application{
+		ID:            appID,
+		ApplicationID: appID,
+		Region:        "us",
+	}, nil
+}
+
+func (m *MockClient) CreateApplication(ctx context.Context, req *domain.CreateApplicationRequest) (*domain.Application, error) {
+	return &domain.Application{
+		ID:            "new-app",
+		ApplicationID: "new-app-id",
+		Region:        req.Region,
+	}, nil
+}
+
+func (m *MockClient) UpdateApplication(ctx context.Context, appID string, req *domain.UpdateApplicationRequest) (*domain.Application, error) {
+	return &domain.Application{
+		ID:            appID,
+		ApplicationID: appID,
+		Region:        "us",
+	}, nil
+}
+
+func (m *MockClient) DeleteApplication(ctx context.Context, appID string) error {
+	return nil
+}
+
+func (m *MockClient) ListConnectors(ctx context.Context) ([]domain.Connector, error) {
+	return []domain.Connector{
+		{ID: "conn-1", Name: "Google Connector", Provider: "google"},
+		{ID: "conn-2", Name: "Microsoft Connector", Provider: "microsoft"},
+	}, nil
+}
+
+func (m *MockClient) GetConnector(ctx context.Context, connectorID string) (*domain.Connector, error) {
+	return &domain.Connector{
+		ID:       connectorID,
+		Name:     "Google Connector",
+		Provider: "google",
+	}, nil
+}
+
+func (m *MockClient) CreateConnector(ctx context.Context, req *domain.CreateConnectorRequest) (*domain.Connector, error) {
+	return &domain.Connector{
+		ID:       "new-conn",
+		Name:     req.Name,
+		Provider: req.Provider,
+	}, nil
+}
+
+func (m *MockClient) UpdateConnector(ctx context.Context, connectorID string, req *domain.UpdateConnectorRequest) (*domain.Connector, error) {
+	name := "Updated Connector"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.Connector{
+		ID:       connectorID,
+		Name:     name,
+		Provider: "google",
+	}, nil
+}
+
+func (m *MockClient) DeleteConnector(ctx context.Context, connectorID string) error {
+	return nil
+}
+
+func (m *MockClient) ListCredentials(ctx context.Context, connectorID string) ([]domain.ConnectorCredential, error) {
+	return []domain.ConnectorCredential{
+		{ID: "cred-1", Name: "OAuth Credential", CredentialType: "oauth"},
+	}, nil
+}
+
+func (m *MockClient) GetCredential(ctx context.Context, credentialID string) (*domain.ConnectorCredential, error) {
+	return &domain.ConnectorCredential{
+		ID:             credentialID,
+		Name:           "OAuth Credential",
+		CredentialType: "oauth",
+	}, nil
+}
+
+func (m *MockClient) CreateCredential(ctx context.Context, connectorID string, req *domain.CreateCredentialRequest) (*domain.ConnectorCredential, error) {
+	return &domain.ConnectorCredential{
+		ID:             "new-cred",
+		Name:           req.Name,
+		CredentialType: req.CredentialType,
+	}, nil
+}
+
+func (m *MockClient) UpdateCredential(ctx context.Context, credentialID string, req *domain.UpdateCredentialRequest) (*domain.ConnectorCredential, error) {
+	name := "Updated Credential"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.ConnectorCredential{
+		ID:             credentialID,
+		Name:           name,
+		CredentialType: "oauth",
+	}, nil
+}
+
+func (m *MockClient) DeleteCredential(ctx context.Context, credentialID string) error {
+	return nil
+}
+
+func (m *MockClient) ListAllGrants(ctx context.Context, params *domain.GrantsQueryParams) ([]domain.Grant, error) {
+	return []domain.Grant{
+		{
+			ID:          "grant-1",
+			Provider:    "google",
+			Email:       "user1@example.com",
+			GrantStatus: "valid",
+		},
+		{
+			ID:          "grant-2",
+			Provider:    "microsoft",
+			Email:       "user2@example.com",
+			GrantStatus: "valid",
+		},
+	}, nil
+}
+
+func (m *MockClient) GetGrantStats(ctx context.Context) (*domain.GrantStats, error) {
+	return &domain.GrantStats{
+		Total:      10,
+		Valid:      8,
+		Invalid:    2,
+		ByProvider: map[string]int{"google": 6, "microsoft": 4},
+		ByStatus:   map[string]int{"valid": 8, "invalid": 2},
+	}, nil
+}
+
+// Virtual Calendar operations
+
+func (m *MockClient) CreateVirtualCalendarGrant(ctx context.Context, email string) (*domain.VirtualCalendarGrant, error) {
+	return &domain.VirtualCalendarGrant{
+		ID:          "vcal-grant-1",
+		Provider:    "virtual-calendar",
+		Email:       email,
+		GrantStatus: "valid",
+		CreatedAt:   1704067200,
+		UpdatedAt:   1704067200,
+	}, nil
+}
+
+func (m *MockClient) ListVirtualCalendarGrants(ctx context.Context) ([]domain.VirtualCalendarGrant, error) {
+	return []domain.VirtualCalendarGrant{
+		{
+			ID:          "vcal-grant-1",
+			Provider:    "virtual-calendar",
+			Email:       "room-a@example.com",
+			GrantStatus: "valid",
+			CreatedAt:   1704067200,
+			UpdatedAt:   1704067200,
+		},
+		{
+			ID:          "vcal-grant-2",
+			Provider:    "virtual-calendar",
+			Email:       "room-b@example.com",
+			GrantStatus: "valid",
+			CreatedAt:   1704153600,
+			UpdatedAt:   1704153600,
+		},
+	}, nil
+}
+
+func (m *MockClient) GetVirtualCalendarGrant(ctx context.Context, grantID string) (*domain.VirtualCalendarGrant, error) {
+	return &domain.VirtualCalendarGrant{
+		ID:          grantID,
+		Provider:    "virtual-calendar",
+		Email:       "room-a@example.com",
+		GrantStatus: "valid",
+		CreatedAt:   1704067200,
+		UpdatedAt:   1704067200,
+	}, nil
+}
+
+func (m *MockClient) DeleteVirtualCalendarGrant(ctx context.Context, grantID string) error {
+	return nil
+}
+
+// Recurring Event operations
+
+func (m *MockClient) GetRecurringEventInstances(ctx context.Context, grantID, calendarID, masterEventID string, params *domain.EventQueryParams) ([]domain.Event, error) {
+	now := time.Now()
+	return []domain.Event{
+		{
+			ID:            "event-instance-1",
+			GrantID:       grantID,
+			CalendarID:    calendarID,
+			Title:         "Weekly Team Meeting (Instance 1)",
+			MasterEventID: masterEventID,
+			When: domain.EventWhen{
+				StartTime: now.Unix(),
+				EndTime:   now.Add(1 * time.Hour).Unix(),
+				Object:    "timespan",
+			},
+			Recurrence: []string{"RRULE:FREQ=WEEKLY;BYDAY=MO"},
+			Status:     "confirmed",
+		},
+		{
+			ID:            "event-instance-2",
+			GrantID:       grantID,
+			CalendarID:    calendarID,
+			Title:         "Weekly Team Meeting (Instance 2)",
+			MasterEventID: masterEventID,
+			When: domain.EventWhen{
+				StartTime: now.Add(7 * 24 * time.Hour).Unix(),
+				EndTime:   now.Add(7*24*time.Hour + 1*time.Hour).Unix(),
+				Object:    "timespan",
+			},
+			Recurrence: []string{"RRULE:FREQ=WEEKLY;BYDAY=MO"},
+			Status:     "confirmed",
+		},
+	}, nil
+}
+
+func (m *MockClient) UpdateRecurringEventInstance(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error) {
+	now := time.Now()
+	event := &domain.Event{
+		ID:         eventID,
+		GrantID:    grantID,
+		CalendarID: calendarID,
+		Title:      "Updated Recurring Event Instance",
+		When: domain.EventWhen{
+			StartTime: now.Unix(),
+			EndTime:   now.Add(1 * time.Hour).Unix(),
+			Object:    "timespan",
+		},
+		Status: "confirmed",
+	}
+	if req.Title != nil {
+		event.Title = *req.Title
+	}
+	return event, nil
+}
+
+func (m *MockClient) DeleteRecurringEventInstance(ctx context.Context, grantID, calendarID, eventID string) error {
+	return nil
 }

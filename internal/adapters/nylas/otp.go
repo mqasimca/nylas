@@ -201,8 +201,7 @@ var otpPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)(?:one.?time|otp|password|verification).{0,50}?(\d{4,8})`),
 }
 
-// Year patterns to exclude
-var yearPattern = regexp.MustCompile(`(?i)(?:copyright|©|\d{4}\s*-\s*\d{4}|year|date|january|february|march|april|may|june|july|august|september|october|november|december)\s*[\s:]*(\d{4})`)
+// standaloneYearPattern excludes years from OTP matching
 var standaloneYearPattern = regexp.MustCompile(`\b(19\d{2}|20[0-2]\d)\b`)
 
 // strongOTPSubjectPattern matches subjects that strongly indicate an OTP email

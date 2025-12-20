@@ -7,20 +7,19 @@ import (
 
 // Column defines a table column.
 type Column struct {
-	Title    string
-	Width    int  // Fixed width, 0 for auto
-	Expand   bool // Expand to fill space
+	Title  string
+	Width  int  // Fixed width, 0 for auto
+	Expand bool // Expand to fill space
 }
 
 // Table wraps tview.Table with k9s-style functionality.
 type Table struct {
 	*tview.Table
-	styles       *Styles
-	columns      []Column
-	data         [][]string
-	rowMeta      []RowMeta
-	selectedRow  int
-	onSelect     func(*RowMeta)
+	styles        *Styles
+	columns       []Column
+	data          [][]string
+	rowMeta       []RowMeta
+	onSelect      func(*RowMeta)
 	onDoubleClick func(*RowMeta)
 }
 

@@ -48,7 +48,7 @@ func (c *HTTPClient) ExchangeCode(ctx context.Context, code, redirectURI string)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -87,7 +87,7 @@ func (c *HTTPClient) ListGrants(ctx context.Context) ([]domain.Grant, error) {
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -115,7 +115,7 @@ func (c *HTTPClient) GetGrant(ctx context.Context, grantID string) (*domain.Gran
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -146,7 +146,7 @@ func (c *HTTPClient) RevokeGrant(ctx context.Context, grantID string) error {
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}

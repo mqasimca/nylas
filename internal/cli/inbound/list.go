@@ -70,7 +70,7 @@ func runList(jsonOutput bool) error {
 	}
 
 	fmt.Println()
-	dim.Println("Use 'nylas inbound messages <inbox-id>' to view messages")
+	dim.Println("Use 'nylas inbound messages [inbox-id]' to view messages")
 
 	return nil
 }

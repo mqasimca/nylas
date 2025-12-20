@@ -40,14 +40,14 @@ type App struct {
 	content *PageStack
 
 	// State
-	config       Config
-	styles       *Styles
-	running      bool
-	mx           sync.RWMutex
-	cmdActive    bool
-	filterMode   bool
-	lastKey      rune      // For vim-style 'gg' command
-	lastKeyTime  time.Time // Timeout for key sequences
+	config      Config
+	styles      *Styles
+	running     bool
+	mx          sync.RWMutex
+	cmdActive   bool
+	filterMode  bool
+	lastKey     rune      // For vim-style 'gg' command
+	lastKeyTime time.Time // Timeout for key sequences
 
 	// View registry
 	views map[string]ResourceView
@@ -522,12 +522,10 @@ func (a *App) statusTicker() {
 			return
 		}
 
-		select {
-		case <-ticker.C:
-			a.QueueUpdateDraw(func() {
-				a.status.Update()
-			})
-		}
+		<-ticker.C
+		a.QueueUpdateDraw(func() {
+			a.status.Update()
+		})
 	}
 }
 

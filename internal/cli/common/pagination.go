@@ -24,11 +24,11 @@ type PageFetcher[T any] func(ctx context.Context, cursor string) (PageResult[T],
 
 // PaginationConfig configures pagination behavior.
 type PaginationConfig struct {
-	PageSize    int        // Items per page
-	MaxItems    int        // Maximum total items (0 = unlimited)
-	MaxPages    int        // Maximum pages to fetch (0 = unlimited)
+	PageSize     int       // Items per page
+	MaxItems     int       // Maximum total items (0 = unlimited)
+	MaxPages     int       // Maximum pages to fetch (0 = unlimited)
 	ShowProgress bool      // Show progress indicator
-	Writer      io.Writer  // Output writer for progress
+	Writer       io.Writer // Output writer for progress
 }
 
 // DefaultPaginationConfig returns default pagination settings.

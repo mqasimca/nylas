@@ -244,11 +244,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 	now := time.Now()
 	return []domain.Thread{
 		{
-			ID:       "thread-001",
-			Subject:  "Q4 Planning Meeting - Action Items",
-			Unread:   true,
-			Starred:  true,
-			Snippet:  "Hi team, here are the action items from today's planning meeting...",
+			ID:                    "thread-001",
+			Subject:               "Q4 Planning Meeting - Action Items",
+			Unread:                true,
+			Starred:               true,
+			Snippet:               "Hi team, here are the action items from today's planning meeting...",
 			LatestMessageRecvDate: now.Add(-15 * time.Minute),
 			EarliestMessageDate:   now.Add(-2 * time.Hour),
 			MessageIDs:            []string{"msg-001"},
@@ -259,11 +259,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			HasAttachments: true,
 		},
 		{
-			ID:       "thread-002",
-			Subject:  "[GitHub] Pull request #247: Add dark mode support",
-			Unread:   true,
-			Starred:  false,
-			Snippet:  "alex-dev requested your review on: Add dark mode support for the dashboard...",
+			ID:                    "thread-002",
+			Subject:               "[GitHub] Pull request #247: Add dark mode support",
+			Unread:                true,
+			Starred:               false,
+			Snippet:               "alex-dev requested your review on: Add dark mode support for the dashboard...",
 			LatestMessageRecvDate: now.Add(-2 * time.Hour),
 			EarliestMessageDate:   now.Add(-3 * time.Hour),
 			MessageIDs:            []string{"msg-002", "msg-002b"},
@@ -272,11 +272,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			},
 		},
 		{
-			ID:       "thread-003",
-			Subject:  "Your AWS bill for December 2024",
-			Unread:   false,
-			Starred:  false,
-			Snippet:  "Your AWS charges for December 2024 are $127.43. View your detailed bill...",
+			ID:                    "thread-003",
+			Subject:               "Your AWS bill for December 2024",
+			Unread:                false,
+			Starred:               false,
+			Snippet:               "Your AWS charges for December 2024 are $127.43. View your detailed bill...",
 			LatestMessageRecvDate: now.Add(-5 * time.Hour),
 			EarliestMessageDate:   now.Add(-5 * time.Hour),
 			MessageIDs:            []string{"msg-003"},
@@ -285,11 +285,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			},
 		},
 		{
-			ID:       "thread-004",
-			Subject:  "Re: Lunch tomorrow?",
-			Unread:   false,
-			Starred:  true,
-			Snippet:  "Sounds great! How about that new Italian place on 5th? I heard they have...",
+			ID:                    "thread-004",
+			Subject:               "Re: Lunch tomorrow?",
+			Unread:                false,
+			Starred:               true,
+			Snippet:               "Sounds great! How about that new Italian place on 5th? I heard they have...",
 			LatestMessageRecvDate: now.Add(-1 * 24 * time.Hour),
 			EarliestMessageDate:   now.Add(-2 * 24 * time.Hour),
 			MessageIDs:            []string{"msg-004", "msg-004b", "msg-004c"},
@@ -299,11 +299,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			},
 		},
 		{
-			ID:       "thread-005",
-			Subject:  "Weekly Newsletter: Top Tech Stories",
-			Unread:   false,
-			Starred:  false,
-			Snippet:  "This week's top stories: AI breakthroughs, startup funding rounds, and more...",
+			ID:                    "thread-005",
+			Subject:               "Weekly Newsletter: Top Tech Stories",
+			Unread:                false,
+			Starred:               false,
+			Snippet:               "This week's top stories: AI breakthroughs, startup funding rounds, and more...",
 			LatestMessageRecvDate: now.Add(-1*24*time.Hour - 3*time.Hour),
 			EarliestMessageDate:   now.Add(-1*24*time.Hour - 3*time.Hour),
 			MessageIDs:            []string{"msg-005"},
@@ -312,11 +312,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			},
 		},
 		{
-			ID:       "thread-006",
-			Subject:  "Your package has been delivered",
-			Unread:   false,
-			Starred:  false,
-			Snippet:  "Your package was delivered. It was handed directly to a resident...",
+			ID:                    "thread-006",
+			Subject:               "Your package has been delivered",
+			Unread:                false,
+			Starred:               false,
+			Snippet:               "Your package was delivered. It was handed directly to a resident...",
 			LatestMessageRecvDate: now.Add(-2 * 24 * time.Hour),
 			EarliestMessageDate:   now.Add(-3 * 24 * time.Hour),
 			MessageIDs:            []string{"msg-006", "msg-006b"},
@@ -325,11 +325,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			},
 		},
 		{
-			ID:       "thread-007",
-			Subject:  "Invitation: Team Standup @ Daily 9:00 AM",
-			Unread:   false,
-			Starred:  false,
-			Snippet:  "You've been invited to a recurring event: Team Standup...",
+			ID:                    "thread-007",
+			Subject:               "Invitation: Team Standup @ Daily 9:00 AM",
+			Unread:                false,
+			Starred:               false,
+			Snippet:               "You've been invited to a recurring event: Team Standup...",
 			LatestMessageRecvDate: now.Add(-3 * 24 * time.Hour),
 			EarliestMessageDate:   now.Add(-3 * 24 * time.Hour),
 			MessageIDs:            []string{"msg-007"},
@@ -338,11 +338,11 @@ func (d *DemoClient) getDemoThreads() []domain.Thread {
 			},
 		},
 		{
-			ID:       "thread-008",
-			Subject:  "Your Spotify Wrapped 2024 is here!",
-			Unread:   false,
-			Starred:  false,
-			Snippet:  "See your year in music. You listened to 47,832 minutes of music this year...",
+			ID:                    "thread-008",
+			Subject:               "Your Spotify Wrapped 2024 is here!",
+			Unread:                false,
+			Starred:               false,
+			Snippet:               "See your year in music. You listened to 47,832 minutes of music this year...",
 			LatestMessageRecvDate: now.Add(-5 * 24 * time.Hour),
 			EarliestMessageDate:   now.Add(-5 * 24 * time.Hour),
 			MessageIDs:            []string{"msg-008"},
@@ -711,54 +711,54 @@ func (d *DemoClient) GetContactsWithCursor(ctx context.Context, grantID string, 
 func (d *DemoClient) getDemoContacts() []domain.Contact {
 	return []domain.Contact{
 		{
-			ID:        "contact-001",
-			GivenName: "Sarah",
-			Surname:   "Chen",
-			Emails:    []domain.ContactEmail{{Email: "sarah.chen@company.com", Type: "work"}},
+			ID:           "contact-001",
+			GivenName:    "Sarah",
+			Surname:      "Chen",
+			Emails:       []domain.ContactEmail{{Email: "sarah.chen@company.com", Type: "work"}},
 			PhoneNumbers: []domain.ContactPhone{{Number: "+1-555-0101", Type: "mobile"}},
 			CompanyName:  "Acme Corp",
 			JobTitle:     "Engineering Manager",
 		},
 		{
-			ID:        "contact-002",
-			GivenName: "Mike",
-			Surname:   "Johnson",
-			Emails:    []domain.ContactEmail{{Email: "mike.j@gmail.com", Type: "personal"}},
+			ID:           "contact-002",
+			GivenName:    "Mike",
+			Surname:      "Johnson",
+			Emails:       []domain.ContactEmail{{Email: "mike.j@gmail.com", Type: "personal"}},
 			PhoneNumbers: []domain.ContactPhone{{Number: "+1-555-0102", Type: "mobile"}},
 		},
 		{
-			ID:        "contact-003",
-			GivenName: "Emily",
-			Surname:   "Williams",
-			Emails:    []domain.ContactEmail{{Email: "emily.w@startup.io", Type: "work"}},
+			ID:           "contact-003",
+			GivenName:    "Emily",
+			Surname:      "Williams",
+			Emails:       []domain.ContactEmail{{Email: "emily.w@startup.io", Type: "work"}},
 			PhoneNumbers: []domain.ContactPhone{{Number: "+1-555-0103", Type: "work"}},
 			CompanyName:  "TechStart Inc",
 			JobTitle:     "CEO",
 		},
 		{
-			ID:        "contact-004",
-			GivenName: "Alex",
-			Surname:   "Kumar",
-			Emails:    []domain.ContactEmail{{Email: "alex.kumar@dev.com", Type: "work"}},
-			CompanyName:  "DevOps Solutions",
-			JobTitle:     "Senior Developer",
+			ID:          "contact-004",
+			GivenName:   "Alex",
+			Surname:     "Kumar",
+			Emails:      []domain.ContactEmail{{Email: "alex.kumar@dev.com", Type: "work"}},
+			CompanyName: "DevOps Solutions",
+			JobTitle:    "Senior Developer",
 		},
 		{
-			ID:        "contact-005",
-			GivenName: "Jessica",
-			Surname:   "Martinez",
-			Emails:    []domain.ContactEmail{{Email: "jess.m@design.co", Type: "work"}},
+			ID:           "contact-005",
+			GivenName:    "Jessica",
+			Surname:      "Martinez",
+			Emails:       []domain.ContactEmail{{Email: "jess.m@design.co", Type: "work"}},
 			PhoneNumbers: []domain.ContactPhone{{Number: "+1-555-0105", Type: "mobile"}},
 			CompanyName:  "Creative Design Co",
 			JobTitle:     "Lead Designer",
 		},
 		{
-			ID:        "contact-006",
-			GivenName: "David",
-			Surname:   "Brown",
-			Emails:    []domain.ContactEmail{{Email: "david.b@consulting.com", Type: "work"}},
-			CompanyName:  "Brown Consulting",
-			JobTitle:     "Consultant",
+			ID:          "contact-006",
+			GivenName:   "David",
+			Surname:     "Brown",
+			Emails:      []domain.ContactEmail{{Email: "david.b@consulting.com", Type: "work"}},
+			CompanyName: "Brown Consulting",
+			JobTitle:    "Consultant",
 		},
 	}
 }
@@ -772,6 +772,19 @@ func (d *DemoClient) GetContact(ctx context.Context, grantID, contactID string) 
 		}
 	}
 	return &contacts[0], nil
+}
+
+// GetContactWithPicture returns a demo contact with optional profile picture.
+func (d *DemoClient) GetContactWithPicture(ctx context.Context, grantID, contactID string, includePicture bool) (*domain.Contact, error) {
+	contact, err := d.GetContact(ctx, grantID, contactID)
+	if err != nil {
+		return nil, err
+	}
+	if includePicture {
+		// Demo base64-encoded 1x1 pixel image
+		contact.Picture = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+	}
+	return contact, nil
 }
 
 // CreateContact simulates creating a contact.
@@ -950,6 +963,43 @@ func (d *DemoClient) GetScheduledMessage(ctx context.Context, grantID, scheduleI
 // CancelScheduledMessage simulates canceling a scheduled message.
 func (d *DemoClient) CancelScheduledMessage(ctx context.Context, grantID, scheduleID string) error {
 	return nil
+}
+
+// SmartCompose generates an AI-powered email draft based on a prompt.
+func (d *DemoClient) SmartCompose(ctx context.Context, grantID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
+	// Generate realistic demo response based on prompt
+	suggestion := "Dear Colleague,\n\nThank you for reaching out. "
+	if req != nil && req.Prompt != "" {
+		suggestion += "I understand you'd like to " + req.Prompt + ". "
+	}
+	suggestion += "I've reviewed your request and wanted to follow up with some thoughts.\n\n"
+	suggestion += "Based on our previous discussions, I believe we can move forward with this initiative. "
+	suggestion += "I'll coordinate with the team and get back to you with a detailed plan by the end of the week.\n\n"
+	suggestion += "Please let me know if you have any questions or need clarification on any points.\n\n"
+	suggestion += "Best regards"
+
+	return &domain.SmartComposeSuggestion{
+		Suggestion: suggestion,
+	}, nil
+}
+
+// SmartComposeReply generates an AI-powered reply to a specific message.
+func (d *DemoClient) SmartComposeReply(ctx context.Context, grantID, messageID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
+	// Generate realistic demo reply based on prompt
+	suggestion := "Hi there,\n\nThank you for your message. "
+	if req != nil && req.Prompt != "" {
+		suggestion += req.Prompt + "\n\n"
+	}
+	suggestion += "I've taken a look at what you sent and wanted to respond quickly. "
+	suggestion += "Your points are well-taken, and I agree with your assessment.\n\n"
+	suggestion += "I'll review the details more thoroughly and provide a comprehensive response shortly. "
+	suggestion += "In the meantime, please don't hesitate to reach out if you have any urgent concerns.\n\n"
+	suggestion += "Thanks again for bringing this to my attention.\n\n"
+	suggestion += "Best"
+
+	return &domain.SmartComposeSuggestion{
+		Suggestion: suggestion,
+	}, nil
 }
 
 // ListNotetakers returns demo notetakers.
@@ -1163,4 +1213,411 @@ func (d *DemoClient) GetInboundMessages(ctx context.Context, grantID string, par
 			ThreadID: "inbound-thread-005",
 		},
 	}, nil
+}
+
+// Scheduler Demo Implementations
+
+func (d *DemoClient) ListSchedulerConfigurations(ctx context.Context) ([]domain.SchedulerConfiguration, error) {
+	return []domain.SchedulerConfiguration{
+		{ID: "config-demo-1", Name: "30 Minute Meeting", Slug: "30min-demo"},
+		{ID: "config-demo-2", Name: "1 Hour Meeting", Slug: "1hour-demo"},
+	}, nil
+}
+
+func (d *DemoClient) GetSchedulerConfiguration(ctx context.Context, configID string) (*domain.SchedulerConfiguration, error) {
+	return &domain.SchedulerConfiguration{
+		ID:   configID,
+		Name: "30 Minute Meeting",
+		Slug: "30min-demo",
+	}, nil
+}
+
+func (d *DemoClient) CreateSchedulerConfiguration(ctx context.Context, req *domain.CreateSchedulerConfigurationRequest) (*domain.SchedulerConfiguration, error) {
+	return &domain.SchedulerConfiguration{
+		ID:   "config-demo-new",
+		Name: req.Name,
+		Slug: req.Slug,
+	}, nil
+}
+
+func (d *DemoClient) UpdateSchedulerConfiguration(ctx context.Context, configID string, req *domain.UpdateSchedulerConfigurationRequest) (*domain.SchedulerConfiguration, error) {
+	name := "Updated Configuration"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.SchedulerConfiguration{
+		ID:   configID,
+		Name: name,
+	}, nil
+}
+
+func (d *DemoClient) DeleteSchedulerConfiguration(ctx context.Context, configID string) error {
+	return nil
+}
+
+func (d *DemoClient) CreateSchedulerSession(ctx context.Context, req *domain.CreateSchedulerSessionRequest) (*domain.SchedulerSession, error) {
+	return &domain.SchedulerSession{
+		SessionID:       "session-demo-123",
+		ConfigurationID: req.ConfigurationID,
+		BookingURL:      "https://schedule.nylas.com/demo-session",
+	}, nil
+}
+
+func (d *DemoClient) GetSchedulerSession(ctx context.Context, sessionID string) (*domain.SchedulerSession, error) {
+	return &domain.SchedulerSession{
+		SessionID:       sessionID,
+		ConfigurationID: "config-demo-1",
+		BookingURL:      "https://schedule.nylas.com/demo-session",
+	}, nil
+}
+
+func (d *DemoClient) ListBookings(ctx context.Context, configID string) ([]domain.Booking, error) {
+	return []domain.Booking{
+		{
+			BookingID: "booking-demo-1",
+			Title:     "Demo Meeting",
+			Status:    "confirmed",
+		},
+	}, nil
+}
+
+func (d *DemoClient) GetBooking(ctx context.Context, bookingID string) (*domain.Booking, error) {
+	return &domain.Booking{
+		BookingID: bookingID,
+		Title:     "Demo Meeting",
+		Status:    "confirmed",
+	}, nil
+}
+
+func (d *DemoClient) ConfirmBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error) {
+	return &domain.Booking{
+		BookingID: bookingID,
+		Status:    req.Status,
+	}, nil
+}
+
+func (d *DemoClient) RescheduleBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error) {
+	return &domain.Booking{
+		BookingID: bookingID,
+		Status:    "confirmed",
+	}, nil
+}
+
+func (d *DemoClient) CancelBooking(ctx context.Context, bookingID string, reason string) error {
+	return nil
+}
+
+func (d *DemoClient) ListSchedulerPages(ctx context.Context) ([]domain.SchedulerPage, error) {
+	return []domain.SchedulerPage{
+		{ID: "page-demo-1", Name: "Demo Booking Page", Slug: "book-demo"},
+	}, nil
+}
+
+func (d *DemoClient) GetSchedulerPage(ctx context.Context, pageID string) (*domain.SchedulerPage, error) {
+	return &domain.SchedulerPage{
+		ID:   pageID,
+		Name: "Demo Booking Page",
+		Slug: "book-demo",
+	}, nil
+}
+
+func (d *DemoClient) CreateSchedulerPage(ctx context.Context, req *domain.CreateSchedulerPageRequest) (*domain.SchedulerPage, error) {
+	return &domain.SchedulerPage{
+		ID:   "page-demo-new",
+		Name: req.Name,
+		Slug: req.Slug,
+	}, nil
+}
+
+func (d *DemoClient) UpdateSchedulerPage(ctx context.Context, pageID string, req *domain.UpdateSchedulerPageRequest) (*domain.SchedulerPage, error) {
+	name := "Updated Page"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.SchedulerPage{
+		ID:   pageID,
+		Name: name,
+	}, nil
+}
+
+func (d *DemoClient) DeleteSchedulerPage(ctx context.Context, pageID string) error {
+	return nil
+}
+
+// Admin Demo Implementations
+
+func (d *DemoClient) ListApplications(ctx context.Context) ([]domain.Application, error) {
+	return []domain.Application{
+		{ID: "app-demo-1", ApplicationID: "app-id-demo-1", Region: "us"},
+	}, nil
+}
+
+func (d *DemoClient) GetApplication(ctx context.Context, appID string) (*domain.Application, error) {
+	return &domain.Application{
+		ID:            appID,
+		ApplicationID: appID,
+		Region:        "us",
+	}, nil
+}
+
+func (d *DemoClient) CreateApplication(ctx context.Context, req *domain.CreateApplicationRequest) (*domain.Application, error) {
+	return &domain.Application{
+		ID:            "app-demo-new",
+		ApplicationID: "app-id-demo-new",
+		Region:        req.Region,
+	}, nil
+}
+
+func (d *DemoClient) UpdateApplication(ctx context.Context, appID string, req *domain.UpdateApplicationRequest) (*domain.Application, error) {
+	return &domain.Application{
+		ID:            appID,
+		ApplicationID: appID,
+		Region:        "us",
+	}, nil
+}
+
+func (d *DemoClient) DeleteApplication(ctx context.Context, appID string) error {
+	return nil
+}
+
+func (d *DemoClient) ListConnectors(ctx context.Context) ([]domain.Connector, error) {
+	return []domain.Connector{
+		{ID: "conn-demo-1", Name: "Google Demo Connector", Provider: "google"},
+		{ID: "conn-demo-2", Name: "Microsoft Demo Connector", Provider: "microsoft"},
+	}, nil
+}
+
+func (d *DemoClient) GetConnector(ctx context.Context, connectorID string) (*domain.Connector, error) {
+	return &domain.Connector{
+		ID:       connectorID,
+		Name:     "Google Demo Connector",
+		Provider: "google",
+	}, nil
+}
+
+func (d *DemoClient) CreateConnector(ctx context.Context, req *domain.CreateConnectorRequest) (*domain.Connector, error) {
+	return &domain.Connector{
+		ID:       "conn-demo-new",
+		Name:     req.Name,
+		Provider: req.Provider,
+	}, nil
+}
+
+func (d *DemoClient) UpdateConnector(ctx context.Context, connectorID string, req *domain.UpdateConnectorRequest) (*domain.Connector, error) {
+	name := "Updated Connector"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.Connector{
+		ID:       connectorID,
+		Name:     name,
+		Provider: "google",
+	}, nil
+}
+
+func (d *DemoClient) DeleteConnector(ctx context.Context, connectorID string) error {
+	return nil
+}
+
+func (d *DemoClient) ListCredentials(ctx context.Context, connectorID string) ([]domain.ConnectorCredential, error) {
+	return []domain.ConnectorCredential{
+		{ID: "cred-demo-1", Name: "OAuth Demo Credential", CredentialType: "oauth"},
+	}, nil
+}
+
+func (d *DemoClient) GetCredential(ctx context.Context, credentialID string) (*domain.ConnectorCredential, error) {
+	return &domain.ConnectorCredential{
+		ID:             credentialID,
+		Name:           "OAuth Demo Credential",
+		CredentialType: "oauth",
+	}, nil
+}
+
+func (d *DemoClient) CreateCredential(ctx context.Context, connectorID string, req *domain.CreateCredentialRequest) (*domain.ConnectorCredential, error) {
+	return &domain.ConnectorCredential{
+		ID:             "cred-demo-new",
+		Name:           req.Name,
+		CredentialType: req.CredentialType,
+	}, nil
+}
+
+func (d *DemoClient) UpdateCredential(ctx context.Context, credentialID string, req *domain.UpdateCredentialRequest) (*domain.ConnectorCredential, error) {
+	name := "Updated Credential"
+	if req.Name != nil {
+		name = *req.Name
+	}
+	return &domain.ConnectorCredential{
+		ID:             credentialID,
+		Name:           name,
+		CredentialType: "oauth",
+	}, nil
+}
+
+func (d *DemoClient) DeleteCredential(ctx context.Context, credentialID string) error {
+	return nil
+}
+
+func (d *DemoClient) ListAllGrants(ctx context.Context, params *domain.GrantsQueryParams) ([]domain.Grant, error) {
+	return []domain.Grant{
+		{
+			ID:          "grant-demo-1",
+			Provider:    "google",
+			Email:       "demo1@example.com",
+			GrantStatus: "valid",
+		},
+		{
+			ID:          "grant-demo-2",
+			Provider:    "microsoft",
+			Email:       "demo2@example.com",
+			GrantStatus: "valid",
+		},
+	}, nil
+}
+
+func (d *DemoClient) GetGrantStats(ctx context.Context) (*domain.GrantStats, error) {
+	return &domain.GrantStats{
+		Total:      10,
+		Valid:      8,
+		Invalid:    2,
+		ByProvider: map[string]int{"google": 6, "microsoft": 4},
+		ByStatus:   map[string]int{"valid": 8, "invalid": 2},
+	}, nil
+}
+
+// Virtual Calendar Demo Implementations
+
+func (d *DemoClient) CreateVirtualCalendarGrant(ctx context.Context, email string) (*domain.VirtualCalendarGrant, error) {
+	return &domain.VirtualCalendarGrant{
+		ID:          "vcal-demo-1",
+		Provider:    "virtual-calendar",
+		Email:       email,
+		GrantStatus: "valid",
+		CreatedAt:   1704067200,
+		UpdatedAt:   1704067200,
+	}, nil
+}
+
+func (d *DemoClient) ListVirtualCalendarGrants(ctx context.Context) ([]domain.VirtualCalendarGrant, error) {
+	return []domain.VirtualCalendarGrant{
+		{
+			ID:          "vcal-demo-1",
+			Provider:    "virtual-calendar",
+			Email:       "conference-room-a@demo.com",
+			GrantStatus: "valid",
+			CreatedAt:   1704067200,
+			UpdatedAt:   1704067200,
+		},
+		{
+			ID:          "vcal-demo-2",
+			Provider:    "virtual-calendar",
+			Email:       "conference-room-b@demo.com",
+			GrantStatus: "valid",
+			CreatedAt:   1704153600,
+			UpdatedAt:   1704153600,
+		},
+		{
+			ID:          "vcal-demo-3",
+			Provider:    "virtual-calendar",
+			Email:       "resource-projector@demo.com",
+			GrantStatus: "valid",
+			CreatedAt:   1704240000,
+			UpdatedAt:   1704240000,
+		},
+	}, nil
+}
+
+func (d *DemoClient) GetVirtualCalendarGrant(ctx context.Context, grantID string) (*domain.VirtualCalendarGrant, error) {
+	return &domain.VirtualCalendarGrant{
+		ID:          grantID,
+		Provider:    "virtual-calendar",
+		Email:       "conference-room-a@demo.com",
+		GrantStatus: "valid",
+		CreatedAt:   1704067200,
+		UpdatedAt:   1704067200,
+	}, nil
+}
+
+func (d *DemoClient) DeleteVirtualCalendarGrant(ctx context.Context, grantID string) error {
+	return nil
+}
+
+// Recurring Event Demo Implementations
+
+func (d *DemoClient) GetRecurringEventInstances(ctx context.Context, grantID, calendarID, masterEventID string, params *domain.EventQueryParams) ([]domain.Event, error) {
+	now := time.Now()
+	return []domain.Event{
+		{
+			ID:            "event-demo-instance-1",
+			GrantID:       grantID,
+			CalendarID:    calendarID,
+			Title:         "Weekly Demo Team Meeting",
+			Description:   "Recurring team sync - Instance 1",
+			MasterEventID: masterEventID,
+			When: domain.EventWhen{
+				StartTime: now.Unix(),
+				EndTime:   now.Add(1 * time.Hour).Unix(),
+				Object:    "timespan",
+			},
+			Recurrence: []string{"RRULE:FREQ=WEEKLY;BYDAY=MO"},
+			Status:     "confirmed",
+			Busy:       true,
+		},
+		{
+			ID:            "event-demo-instance-2",
+			GrantID:       grantID,
+			CalendarID:    calendarID,
+			Title:         "Weekly Demo Team Meeting",
+			Description:   "Recurring team sync - Instance 2",
+			MasterEventID: masterEventID,
+			When: domain.EventWhen{
+				StartTime: now.Add(7 * 24 * time.Hour).Unix(),
+				EndTime:   now.Add(7*24*time.Hour + 1*time.Hour).Unix(),
+				Object:    "timespan",
+			},
+			Recurrence: []string{"RRULE:FREQ=WEEKLY;BYDAY=MO"},
+			Status:     "confirmed",
+			Busy:       true,
+		},
+		{
+			ID:            "event-demo-instance-3",
+			GrantID:       grantID,
+			CalendarID:    calendarID,
+			Title:         "Weekly Demo Team Meeting",
+			Description:   "Recurring team sync - Instance 3",
+			MasterEventID: masterEventID,
+			When: domain.EventWhen{
+				StartTime: now.Add(14 * 24 * time.Hour).Unix(),
+				EndTime:   now.Add(14*24*time.Hour + 1*time.Hour).Unix(),
+				Object:    "timespan",
+			},
+			Recurrence: []string{"RRULE:FREQ=WEEKLY;BYDAY=MO"},
+			Status:     "confirmed",
+			Busy:       true,
+		},
+	}, nil
+}
+
+func (d *DemoClient) UpdateRecurringEventInstance(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error) {
+	now := time.Now()
+	title := "Updated Demo Recurring Event Instance"
+	if req.Title != nil {
+		title = *req.Title
+	}
+	return &domain.Event{
+		ID:         eventID,
+		GrantID:    grantID,
+		CalendarID: calendarID,
+		Title:      title,
+		When: domain.EventWhen{
+			StartTime: now.Unix(),
+			EndTime:   now.Add(1 * time.Hour).Unix(),
+			Object:    "timespan",
+		},
+		Status: "confirmed",
+		Busy:   true,
+	}, nil
+}
+
+func (d *DemoClient) DeleteRecurringEventInstance(ctx context.Context, grantID, calendarID, eventID string) error {
+	return nil
 }

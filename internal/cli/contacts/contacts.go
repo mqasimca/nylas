@@ -32,6 +32,9 @@ View contacts, create new contacts, update and delete contacts.`,
 	cmd.AddCommand(newUpdateCmd())
 	cmd.AddCommand(newDeleteCmd())
 	cmd.AddCommand(newGroupsCmd())
+	cmd.AddCommand(newSearchCmd())
+	cmd.AddCommand(newPhotoCmd())
+	cmd.AddCommand(newSyncCmd())
 
 	return cmd
 }
@@ -70,12 +73,6 @@ func getClient() (ports.NylasClient, error) {
 func getGrantID(args []string) (string, error) {
 	if len(args) > 0 {
 		return args[0], nil
-	}
-
-	configStore := config.NewDefaultFileStore()
-	cfg, _ := configStore.Load()
-	if cfg == nil {
-		cfg = &domain.Config{Region: "us"}
 	}
 
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())

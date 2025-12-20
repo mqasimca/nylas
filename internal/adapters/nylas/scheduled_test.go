@@ -38,7 +38,8 @@ func TestHTTPClient_ListScheduledMessages(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -74,7 +75,8 @@ func TestHTTPClient_GetScheduledMessage(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -102,7 +104,8 @@ func TestHTTPClient_CancelScheduledMessage(t *testing.T) {
 				"message": "Scheduled message cancelled",
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -119,11 +122,12 @@ func TestHTTPClient_CancelScheduledMessage(t *testing.T) {
 func TestHTTPClient_CancelScheduledMessage_NotFound(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": map[string]string{
-				"message": "Schedule not found",
-			},
-		})
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			map[string]interface{}{
+				"error": map[string]string{
+					"message": "Schedule not found",
+				},
+			})
 	}))
 	defer server.Close()
 
@@ -189,7 +193,8 @@ func TestHTTPClient_ListScheduledMessages_Empty(t *testing.T) {
 			"data": []interface{}{},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 

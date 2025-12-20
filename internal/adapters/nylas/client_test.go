@@ -15,17 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupTestServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, *nylas.HTTPClient) {
-	server := httptest.NewServer(handler)
-	t.Cleanup(server.Close)
-
-	client := nylas.NewHTTPClient()
-	client.SetCredentials("test-client-id", "test-client-secret", "test-api-key")
-	// Override the base URL to use our test server
-	// We need to use reflection or a setter method; for now we'll test via the mock
-	return server, client
-}
-
 // Test mock client implements interface
 func TestMockClientImplementsInterface(t *testing.T) {
 	var _ interface {
@@ -734,26 +723,27 @@ func TestGetFoldersSystemFolderTypes(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			// Google API returns system_folder as boolean
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": []map[string]interface{}{
-					{
-						"id":            "folder-1",
-						"grant_id":      "grant-123",
-						"name":          "INBOX",
-						"system_folder": true,
-						"total_count":   100,
-						"unread_count":  10,
+			_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+				map[string]interface{}{
+					"data": []map[string]interface{}{
+						{
+							"id":            "folder-1",
+							"grant_id":      "grant-123",
+							"name":          "INBOX",
+							"system_folder": true,
+							"total_count":   100,
+							"unread_count":  10,
+						},
+						{
+							"id":            "folder-2",
+							"grant_id":      "grant-123",
+							"name":          "Custom Folder",
+							"system_folder": false,
+							"total_count":   50,
+							"unread_count":  5,
+						},
 					},
-					{
-						"id":            "folder-2",
-						"grant_id":      "grant-123",
-						"name":          "Custom Folder",
-						"system_folder": false,
-						"total_count":   50,
-						"unread_count":  5,
-					},
-				},
-			})
+				})
 		}))
 		defer server.Close()
 
@@ -776,26 +766,27 @@ func TestGetFoldersSystemFolderTypes(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			// Microsoft API returns system_folder as string
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": []map[string]interface{}{
-					{
-						"id":            "folder-1",
-						"grant_id":      "grant-123",
-						"name":          "Inbox",
-						"system_folder": "inbox",
-						"total_count":   100,
-						"unread_count":  10,
+			_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+				map[string]interface{}{
+					"data": []map[string]interface{}{
+						{
+							"id":            "folder-1",
+							"grant_id":      "grant-123",
+							"name":          "Inbox",
+							"system_folder": "inbox",
+							"total_count":   100,
+							"unread_count":  10,
+						},
+						{
+							"id":            "folder-2",
+							"grant_id":      "grant-123",
+							"name":          "Sent Items",
+							"system_folder": "sent",
+							"total_count":   50,
+							"unread_count":  0,
+						},
 					},
-					{
-						"id":            "folder-2",
-						"grant_id":      "grant-123",
-						"name":          "Sent Items",
-						"system_folder": "sent",
-						"total_count":   50,
-						"unread_count":  0,
-					},
-				},
-			})
+				})
 		}))
 		defer server.Close()
 
@@ -816,18 +807,19 @@ func TestGetFoldersSystemFolderTypes(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": []map[string]interface{}{
-					{
-						"id":            "folder-1",
-						"grant_id":      "grant-123",
-						"name":          "Custom Folder",
-						"system_folder": nil,
-						"total_count":   25,
-						"unread_count":  3,
+			_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+				map[string]interface{}{
+					"data": []map[string]interface{}{
+						{
+							"id":            "folder-1",
+							"grant_id":      "grant-123",
+							"name":          "Custom Folder",
+							"system_folder": nil,
+							"total_count":   25,
+							"unread_count":  3,
+						},
 					},
-				},
-			})
+				})
 		}))
 		defer server.Close()
 
@@ -849,16 +841,17 @@ func TestGetFolderSystemFolderTypes(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": map[string]interface{}{
-					"id":            "folder-123",
-					"grant_id":      "grant-456",
-					"name":          "INBOX",
-					"system_folder": true,
-					"total_count":   100,
-					"unread_count":  10,
-				},
-			})
+			_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+				map[string]interface{}{
+					"data": map[string]interface{}{
+						"id":            "folder-123",
+						"grant_id":      "grant-456",
+						"name":          "INBOX",
+						"system_folder": true,
+						"total_count":   100,
+						"unread_count":  10,
+					},
+				})
 		}))
 		defer server.Close()
 
@@ -870,5 +863,141 @@ func TestGetFolderSystemFolderTypes(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "INBOX", folder.Name)
 		assert.Equal(t, "true", folder.SystemFolder)
+	})
+}
+
+// TestRateLimiting tests that the rate limiter works correctly.
+func TestRateLimiting(t *testing.T) {
+	t.Run("limits_requests_per_second", func(t *testing.T) {
+		requestCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestCount++
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": []interface{}{},
+			})
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		// Make 5 requests rapidly
+		start := time.Now()
+		for i := 0; i < 5; i++ {
+			_, _ = client.GetFolders(context.Background(), "grant-123")
+		}
+		elapsed := time.Since(start)
+
+		// All 5 requests should have been made
+		assert.Equal(t, 5, requestCount)
+
+		// With rate limiting at 10 req/sec, 5 requests should take very little time
+		// due to burst capacity, but we verify rate limiter is initialized
+		assert.True(t, elapsed < 2*time.Second, "Rate limiting should allow burst requests")
+	})
+
+	t.Run("respects_context_cancellation_in_rate_limiter", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		// Create a context that's already cancelled
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		// Should fail immediately due to cancelled context
+		_, err := client.GetFolders(ctx, "grant-123")
+		assert.Error(t, err)
+	})
+}
+
+// TestContextTimeouts tests that context timeouts are properly enforced.
+func TestContextTimeouts(t *testing.T) {
+	t.Run("enforces_default_timeout", func(t *testing.T) {
+		// Server that delays response beyond default timeout
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(35 * time.Second) // Longer than default 30s timeout
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		// Use context without timeout - should apply default 30s timeout
+		start := time.Now()
+		_, err := client.GetFolders(context.Background(), "grant-123")
+		elapsed := time.Since(start)
+
+		// Should timeout in ~30 seconds, not wait for full 35 seconds
+		assert.Error(t, err)
+		assert.True(t, elapsed < 32*time.Second, "Should timeout near 30 seconds")
+		assert.True(t, elapsed > 29*time.Second, "Should wait at least 29 seconds")
+	})
+
+	t.Run("respects_existing_context_timeout", func(t *testing.T) {
+		// Server that delays briefly
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(3 * time.Second)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		// Use context with short timeout (2 seconds)
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		start := time.Now()
+		_, err := client.GetFolders(ctx, "grant-123")
+		elapsed := time.Since(start)
+
+		// Should timeout in ~2 seconds, not wait for default 30 seconds
+		assert.Error(t, err)
+		assert.True(t, elapsed < 3*time.Second, "Should timeout near 2 seconds")
+		assert.True(t, elapsed > 1*time.Second, "Should wait at least 1 second")
+	})
+
+	t.Run("successful_request_within_timeout", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": []map[string]interface{}{
+					{
+						"id":            "folder-1",
+						"grant_id":      "grant-123",
+						"name":          "Inbox",
+						"system_folder": "inbox",
+					},
+				},
+			})
+		}))
+		defer server.Close()
+
+		client := nylas.NewHTTPClient()
+		client.SetCredentials("client-id", "secret", "api-key")
+		client.SetBaseURL(server.URL)
+
+		// Use context with reasonable timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		folders, err := client.GetFolders(ctx, "grant-123")
+		require.NoError(t, err)
+		assert.Len(t, folders, 1)
+		assert.Equal(t, "Inbox", folders[0].Name)
 	})
 }

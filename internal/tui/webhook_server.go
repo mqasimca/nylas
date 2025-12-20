@@ -14,20 +14,20 @@ import (
 
 // WebhookServerView displays webhook server status and events.
 type WebhookServerView struct {
-	app            *App
-	layout         *tview.Flex
-	statusPanel    *tview.TextView
-	eventsPanel    *tview.TextView
-	name           string
-	title          string
-	server         *webhookserver.Server
-	serverRunning  bool
-	events         []*ports.WebhookEvent
-	maxEvents      int
-	tunnelEnabled  bool
-	publicURL      string
-	port           int
-	cancelFunc     context.CancelFunc
+	app           *App
+	layout        *tview.Flex
+	statusPanel   *tview.TextView
+	eventsPanel   *tview.TextView
+	name          string
+	title         string
+	server        *webhookserver.Server
+	serverRunning bool
+	events        []*ports.WebhookEvent
+	maxEvents     int
+	tunnelEnabled bool
+	publicURL     string
+	port          int
+	cancelFunc    context.CancelFunc
 }
 
 // NewWebhookServerView creates a new webhook server view.

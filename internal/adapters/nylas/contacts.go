@@ -28,6 +28,7 @@ type contactResponse struct {
 	ManagerName       string                    `json:"manager_name"`
 	Notes             string                    `json:"notes"`
 	PictureURL        string                    `json:"picture_url"`
+	Picture           string                    `json:"picture"`
 	Emails            []domain.ContactEmail     `json:"emails"`
 	PhoneNumbers      []domain.ContactPhone     `json:"phone_numbers"`
 	WebPages          []domain.ContactWebPage   `json:"web_pages"`
@@ -82,6 +83,9 @@ func (c *HTTPClient) GetContactsWithCursor(ctx context.Context, grantID string, 
 		if params.Recurse {
 			queryParams.Set("recurse", "true")
 		}
+		if params.ProfilePicture {
+			queryParams.Set("profile_picture", "true")
+		}
 	}
 
 	if len(queryParams) > 0 {
@@ -94,7 +98,7 @@ func (c *HTTPClient) GetContactsWithCursor(ctx context.Context, grantID string, 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -128,7 +132,16 @@ func (c *HTTPClient) GetContactsWithCursor(ctx context.Context, grantID string, 
 
 // GetContact retrieves a single contact by ID.
 func (c *HTTPClient) GetContact(ctx context.Context, grantID, contactID string) (*domain.Contact, error) {
+	return c.GetContactWithPicture(ctx, grantID, contactID, false)
+}
+
+// GetContactWithPicture retrieves a single contact by ID with optional profile picture.
+func (c *HTTPClient) GetContactWithPicture(ctx context.Context, grantID, contactID string, includePicture bool) (*domain.Contact, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/%s", c.baseURL, grantID, contactID)
+
+	if includePicture {
+		queryURL += "?profile_picture=true"
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
 	if err != nil {
@@ -136,7 +149,7 @@ func (c *HTTPClient) GetContact(ctx context.Context, grantID, contactID string) 
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -172,7 +185,7 @@ func (c *HTTPClient) CreateContact(ctx context.Context, grantID string, req *dom
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -205,7 +218,7 @@ func (c *HTTPClient) UpdateContact(ctx context.Context, grantID, contactID strin
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -236,7 +249,7 @@ func (c *HTTPClient) DeleteContact(ctx context.Context, grantID, contactID strin
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -259,7 +272,7 @@ func (c *HTTPClient) GetContactGroups(ctx context.Context, grantID string) ([]do
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -300,7 +313,7 @@ func (c *HTTPClient) GetContactGroup(ctx context.Context, grantID, groupID strin
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -342,7 +355,7 @@ func (c *HTTPClient) CreateContactGroup(ctx context.Context, grantID string, req
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -381,7 +394,7 @@ func (c *HTTPClient) UpdateContactGroup(ctx context.Context, grantID, groupID st
 	httpReq.Header.Set("Content-Type", "application/json")
 	c.setAuthHeader(httpReq)
 
-	resp, err := c.httpClient.Do(httpReq)
+	resp, err := c.doRequest(ctx, httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -418,7 +431,7 @@ func (c *HTTPClient) DeleteContactGroup(ctx context.Context, grantID, groupID st
 	}
 	c.setAuthHeader(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
@@ -448,6 +461,7 @@ func convertContact(c contactResponse) domain.Contact {
 		ManagerName:       c.ManagerName,
 		Notes:             c.Notes,
 		PictureURL:        c.PictureURL,
+		Picture:           c.Picture,
 		Emails:            c.Emails,
 		PhoneNumbers:      c.PhoneNumbers,
 		WebPages:          c.WebPages,

@@ -19,35 +19,35 @@ type Calendar struct {
 
 // Event represents a calendar event from Nylas.
 type Event struct {
-	ID             string          `json:"id"`
-	GrantID        string          `json:"grant_id"`
-	CalendarID     string          `json:"calendar_id"`
-	Title          string          `json:"title"`
-	Description    string          `json:"description,omitempty"`
-	Location       string          `json:"location,omitempty"`
-	When           EventWhen       `json:"when"`
-	Participants   []Participant   `json:"participants,omitempty"`
-	Organizer      *Participant    `json:"organizer,omitempty"`
-	Status         string          `json:"status,omitempty"` // confirmed, cancelled, tentative
-	Busy           bool            `json:"busy"`
-	ReadOnly       bool            `json:"read_only"`
-	Visibility     string          `json:"visibility,omitempty"` // public, private
-	Recurrence     []string        `json:"recurrence,omitempty"`
-	Conferencing   *Conferencing   `json:"conferencing,omitempty"`
-	Reminders      *Reminders      `json:"reminders,omitempty"`
-	MasterEventID  string          `json:"master_event_id,omitempty"`
-	ICalUID        string          `json:"ical_uid,omitempty"`
-	HtmlLink       string          `json:"html_link,omitempty"`
-	CreatedAt      time.Time       `json:"created_at,omitempty"`
-	UpdatedAt      time.Time       `json:"updated_at,omitempty"`
-	Object         string          `json:"object,omitempty"`
+	ID            string        `json:"id"`
+	GrantID       string        `json:"grant_id"`
+	CalendarID    string        `json:"calendar_id"`
+	Title         string        `json:"title"`
+	Description   string        `json:"description,omitempty"`
+	Location      string        `json:"location,omitempty"`
+	When          EventWhen     `json:"when"`
+	Participants  []Participant `json:"participants,omitempty"`
+	Organizer     *Participant  `json:"organizer,omitempty"`
+	Status        string        `json:"status,omitempty"` // confirmed, cancelled, tentative
+	Busy          bool          `json:"busy"`
+	ReadOnly      bool          `json:"read_only"`
+	Visibility    string        `json:"visibility,omitempty"` // public, private
+	Recurrence    []string      `json:"recurrence,omitempty"`
+	Conferencing  *Conferencing `json:"conferencing,omitempty"`
+	Reminders     *Reminders    `json:"reminders,omitempty"`
+	MasterEventID string        `json:"master_event_id,omitempty"`
+	ICalUID       string        `json:"ical_uid,omitempty"`
+	HtmlLink      string        `json:"html_link,omitempty"`
+	CreatedAt     time.Time     `json:"created_at,omitempty"`
+	UpdatedAt     time.Time     `json:"updated_at,omitempty"`
+	Object        string        `json:"object,omitempty"`
 }
 
 // EventWhen represents when an event occurs.
 type EventWhen struct {
 	// For timespan events
-	StartTime int64  `json:"start_time,omitempty"`
-	EndTime   int64  `json:"end_time,omitempty"`
+	StartTime     int64  `json:"start_time,omitempty"`
+	EndTime       int64  `json:"end_time,omitempty"`
 	StartTimezone string `json:"start_timezone,omitempty"`
 	EndTimezone   string `json:"end_timezone,omitempty"`
 
@@ -109,16 +109,16 @@ type Participant struct {
 
 // Conferencing represents video conferencing details.
 type Conferencing struct {
-	Provider string            `json:"provider,omitempty"` // Google Meet, Zoom, etc.
+	Provider string               `json:"provider,omitempty"` // Google Meet, Zoom, etc.
 	Details  *ConferencingDetails `json:"details,omitempty"`
 }
 
 // ConferencingDetails contains conferencing URLs and info.
 type ConferencingDetails struct {
-	URL      string   `json:"url,omitempty"`
-	MeetingCode string `json:"meeting_code,omitempty"`
-	Password string   `json:"password,omitempty"`
-	Phone    []string `json:"phone,omitempty"`
+	URL         string   `json:"url,omitempty"`
+	MeetingCode string   `json:"meeting_code,omitempty"`
+	Password    string   `json:"password,omitempty"`
+	Phone       []string `json:"phone,omitempty"`
 }
 
 // Reminders represents event reminders.
@@ -135,18 +135,18 @@ type Reminder struct {
 
 // EventQueryParams for filtering events.
 type EventQueryParams struct {
-	Limit       int    `json:"limit,omitempty"`
-	PageToken   string `json:"page_token,omitempty"`
-	CalendarID  string `json:"calendar_id,omitempty"`
-	Title       string `json:"title,omitempty"`
-	Location    string `json:"location,omitempty"`
-	ShowCancelled bool `json:"show_cancelled,omitempty"`
-	Start       int64  `json:"start,omitempty"` // Unix timestamp
-	End         int64  `json:"end,omitempty"`   // Unix timestamp
-	MetadataPair string `json:"metadata_pair,omitempty"`
-	Busy        *bool  `json:"busy,omitempty"`
-	OrderBy     string `json:"order_by,omitempty"` // start, end
-	ExpandRecurring bool `json:"expand_recurring,omitempty"`
+	Limit           int    `json:"limit,omitempty"`
+	PageToken       string `json:"page_token,omitempty"`
+	CalendarID      string `json:"calendar_id,omitempty"`
+	Title           string `json:"title,omitempty"`
+	Location        string `json:"location,omitempty"`
+	ShowCancelled   bool   `json:"show_cancelled,omitempty"`
+	Start           int64  `json:"start,omitempty"` // Unix timestamp
+	End             int64  `json:"end,omitempty"`   // Unix timestamp
+	MetadataPair    string `json:"metadata_pair,omitempty"`
+	Busy            *bool  `json:"busy,omitempty"`
+	OrderBy         string `json:"order_by,omitempty"` // start, end
+	ExpandRecurring bool   `json:"expand_recurring,omitempty"`
 }
 
 // CreateEventRequest for creating a new event.
@@ -205,9 +205,9 @@ type FreeBusyResponse struct {
 
 // FreeBusyCalendar represents a calendar's availability.
 type FreeBusyCalendar struct {
-	Email      string       `json:"email"`
-	TimeSlots  []TimeSlot   `json:"time_slots,omitempty"`
-	Object     string       `json:"object,omitempty"`
+	Email     string     `json:"email"`
+	TimeSlots []TimeSlot `json:"time_slots,omitempty"`
+	Object    string     `json:"object,omitempty"`
 }
 
 // TimeSlot represents a busy time slot.
@@ -220,12 +220,12 @@ type TimeSlot struct {
 
 // AvailabilityRequest for finding available meeting times.
 type AvailabilityRequest struct {
-	StartTime      int64                  `json:"start_time"`
-	EndTime        int64                  `json:"end_time"`
-	DurationMinutes int                   `json:"duration_minutes"`
-	Participants   []AvailabilityParticipant `json:"participants"`
-	IntervalMinutes int                   `json:"interval_minutes,omitempty"`
-	RoundTo        int                    `json:"round_to,omitempty"`
+	StartTime       int64                     `json:"start_time"`
+	EndTime         int64                     `json:"end_time"`
+	DurationMinutes int                       `json:"duration_minutes"`
+	Participants    []AvailabilityParticipant `json:"participants"`
+	IntervalMinutes int                       `json:"interval_minutes,omitempty"`
+	RoundTo         int                       `json:"round_to,omitempty"`
 }
 
 // AvailabilityParticipant represents a participant in availability check.
@@ -273,4 +273,40 @@ type UpdateCalendarRequest struct {
 type SendRSVPRequest struct {
 	Status  string `json:"status"` // yes, no, maybe
 	Comment string `json:"comment,omitempty"`
+}
+
+// VirtualCalendarGrant represents a virtual calendar account/grant.
+type VirtualCalendarGrant struct {
+	ID          string `json:"id"`
+	Provider    string `json:"provider"` // Always "virtual-calendar"
+	Email       string `json:"email"`    // Custom identifier
+	GrantStatus string `json:"grant_status"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
+
+// CreateVirtualCalendarGrantRequest for creating a virtual calendar grant.
+type CreateVirtualCalendarGrantRequest struct {
+	Provider string                       `json:"provider"` // Must be "virtual-calendar"
+	Settings VirtualCalendarGrantSettings `json:"settings"`
+	Scope    []string                     `json:"scope"` // ["calendar"]
+}
+
+// VirtualCalendarGrantSettings for virtual calendar grant creation.
+type VirtualCalendarGrantSettings struct {
+	Email string `json:"email"` // Custom identifier (not required to be email format)
+}
+
+// RecurringEventInfo provides information about a recurring event series.
+type RecurringEventInfo struct {
+	MasterEventID     string   `json:"master_event_id"`
+	RecurrenceRule    []string `json:"recurrence"`
+	OriginalStartTime *int64   `json:"original_start_time,omitempty"` // For modified instances
+	ExpandRecurring   bool     `json:"expand_recurring,omitempty"`
+}
+
+// UpdateRecurringEventRequest for updating recurring event instances.
+type UpdateRecurringEventRequest struct {
+	UpdateEventRequest
+	MasterEventID string `json:"master_event_id,omitempty"` // For instance updates
 }

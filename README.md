@@ -9,6 +9,8 @@ A unified command-line tool for Nylas API authentication, email management, cale
 - **Calendar Management**: View calendars, list/create/delete events, check availability
 - **Contacts Management**: List, view, create, and delete contacts and contact groups
 - **Webhook Management**: Create, update, delete, and test webhooks for event notifications
+- **Scheduler Management**: Create and manage meeting configurations, booking pages, sessions, and bookings
+- **Admin Operations**: Manage applications, connectors, credentials, and grants across your organization
 - **Draft Management**: Create, edit, and send drafts
 - **Folder Management**: Create, rename, and delete folders/labels
 - **Thread Management**: View and manage email conversations
@@ -72,6 +74,15 @@ nylas webhook list
 
 # Get the latest OTP code
 nylas otp get
+
+# List scheduler configurations
+nylas scheduler configurations list
+
+# List all grants (admin)
+nylas admin grants list
+
+# List applications (admin)
+nylas admin applications list
 ```
 
 ---
@@ -85,6 +96,8 @@ nylas otp get
 | `nylas calendar` | Calendar and event management |
 | `nylas contacts` | Contact management |
 | `nylas webhook` | Webhook configuration |
+| `nylas scheduler` | Scheduler configurations, bookings, and pages |
+| `nylas admin` | Administration (applications, connectors, credentials, grants) |
 | `nylas otp` | OTP code extraction |
 | `nylas tui` | Interactive terminal interface |
 | `nylas doctor` | Diagnostic checks |

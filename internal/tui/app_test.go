@@ -307,7 +307,7 @@ func TestFormatDate(t *testing.T) {
 		time     time.Time
 		contains string
 	}{
-		{"today", now, "PM"}, // Should show time like "3:04 PM"
+		{"today", now, "PM"},                        // Should show time like "3:04 PM"
 		{"yesterday", now.Add(-24 * time.Hour), ""}, // Should show date
 		{"last year", now.AddDate(-1, 0, 0), ""},    // Should include year
 	}
@@ -456,13 +456,13 @@ func TestMessagesViewKeys(t *testing.T) {
 		key  tcell.Key
 		rune rune
 	}{
-		{tcell.KeyRune, 'n'},  // New compose
-		{tcell.KeyRune, 'R'},  // Reply
-		{tcell.KeyRune, 'A'},  // Reply all
-		{tcell.KeyRune, 's'},  // Star
-		{tcell.KeyRune, 'u'},  // Unread
-		{tcell.KeyEnter, 0},   // Open
-		{tcell.KeyEscape, 0},  // Back
+		{tcell.KeyRune, 'n'}, // New compose
+		{tcell.KeyRune, 'R'}, // Reply
+		{tcell.KeyRune, 'A'}, // Reply all
+		{tcell.KeyRune, 's'}, // Star
+		{tcell.KeyRune, 'u'}, // Unread
+		{tcell.KeyEnter, 0},  // Open
+		{tcell.KeyEscape, 0}, // Back
 	}
 
 	for _, k := range keys {
@@ -481,14 +481,14 @@ func TestEventsViewKeys(t *testing.T) {
 		key  tcell.Key
 		rune rune
 	}{
-		{tcell.KeyRune, 'm'},  // Month view
-		{tcell.KeyRune, 'w'},  // Week view
-		{tcell.KeyRune, 'a'},  // Agenda view
-		{tcell.KeyRune, 't'},  // Today
-		{tcell.KeyRune, 'c'},  // Cycle calendar
-		{tcell.KeyRune, 'C'},  // Calendar list
-		{tcell.KeyTab, 0},     // Switch panel
-		{tcell.KeyEnter, 0},   // View day
+		{tcell.KeyRune, 'm'}, // Month view
+		{tcell.KeyRune, 'w'}, // Week view
+		{tcell.KeyRune, 'a'}, // Agenda view
+		{tcell.KeyRune, 't'}, // Today
+		{tcell.KeyRune, 'c'}, // Cycle calendar
+		{tcell.KeyRune, 'C'}, // Calendar list
+		{tcell.KeyTab, 0},    // Switch panel
+		{tcell.KeyEnter, 0},  // View day
 	}
 
 	for _, k := range keys {
@@ -505,8 +505,8 @@ func TestViewsEscapeKeyHandling(t *testing.T) {
 	escapeEvent := tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone)
 
 	testCases := []struct {
-		name     string
-		view     ResourceView
+		name string
+		view ResourceView
 	}{
 		{"MessagesView", NewMessagesView(app)},
 		{"EventsView", NewEventsView(app)},

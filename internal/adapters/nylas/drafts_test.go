@@ -22,7 +22,7 @@ func TestHTTPClient_CreateDraft_WithoutAttachments(t *testing.T) {
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
 		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 
 		assert.Equal(t, "Test Subject", body["subject"])
 		assert.Equal(t, "Test Body", body["body"])
@@ -39,7 +39,8 @@ func TestHTTPClient_CreateDraft_WithoutAttachments(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -98,7 +99,8 @@ func TestHTTPClient_CreateDraft_WithAttachments(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -155,7 +157,8 @@ func TestHTTPClient_CreateDraft_MultipleAttachments(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 
@@ -279,7 +282,8 @@ func TestHTTPClient_CreateDraftWithAttachmentFromReader(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode( // Test helper, encode error not actionable
+			response)
 	}))
 	defer server.Close()
 

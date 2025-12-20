@@ -77,10 +77,10 @@ type Styles struct {
 	MenuDescFg   tcell.Color
 
 	// Prompt
-	PromptBg      tcell.Color
-	PromptFg      tcell.Color
-	PromptBorder  tcell.Color
-	SuggestColor  tcell.Color
+	PromptBg     tcell.Color
+	PromptFg     tcell.Color
+	PromptBorder tcell.Color
+	SuggestColor tcell.Color
 
 	// Title
 	TitleFg        tcell.Color
@@ -389,7 +389,7 @@ func AppleIIStyles() *Styles {
 // VintageStyles returns the vintage neon green theme.
 // Based on cool-retro-term Vintage: #00ff3e
 func VintageStyles() *Styles {
-	neonGreen := tcell.NewRGBColor(0, 255, 62)       // #00ff3e - bright neon green
+	neonGreen := tcell.NewRGBColor(0, 255, 62) // #00ff3e - bright neon green
 	neonGreenBright := tcell.NewRGBColor(100, 255, 130)
 	neonGreenDim := tcell.NewRGBColor(0, 180, 40)
 	neonGreenDark := tcell.NewRGBColor(0, 100, 25)
@@ -560,10 +560,10 @@ func FuturisticStyles() *Styles {
 
 // MatrixStyles returns the Matrix-inspired green rain theme.
 func MatrixStyles() *Styles {
-	matrixGreen := tcell.NewRGBColor(0, 255, 0)       // Pure green
-	matrixBright := tcell.NewRGBColor(150, 255, 150)  // Bright green
-	matrixDim := tcell.NewRGBColor(0, 150, 0)         // Dim green
-	matrixDark := tcell.NewRGBColor(0, 80, 0)         // Dark green
+	matrixGreen := tcell.NewRGBColor(0, 255, 0)      // Pure green
+	matrixBright := tcell.NewRGBColor(150, 255, 150) // Bright green
+	matrixDim := tcell.NewRGBColor(0, 150, 0)        // Dim green
+	matrixDark := tcell.NewRGBColor(0, 80, 0)        // Dark green
 
 	return &Styles{
 		BgColor:     tcell.ColorBlack,
@@ -618,14 +618,14 @@ func MatrixStyles() *Styles {
 // Blue background with cyan text - the iconic DOS look.
 func NortonStyles() *Styles {
 	// Classic DOS/CGA 16-color palette
-	dosBlue := tcell.NewRGBColor(0, 0, 170)       // #0000AA - DOS blue background
-	dosCyan := tcell.NewRGBColor(0, 170, 170)     // #00AAAA - Cyan text
-	dosLightCyan := tcell.NewRGBColor(85, 255, 255) // #55FFFF - Light cyan
-	dosYellow := tcell.NewRGBColor(255, 255, 85)  // #FFFF55 - Yellow highlight
-	dosWhite := tcell.NewRGBColor(255, 255, 255)  // #FFFFFF - Bright white
+	dosBlue := tcell.NewRGBColor(0, 0, 170)          // #0000AA - DOS blue background
+	dosCyan := tcell.NewRGBColor(0, 170, 170)        // #00AAAA - Cyan text
+	dosLightCyan := tcell.NewRGBColor(85, 255, 255)  // #55FFFF - Light cyan
+	dosYellow := tcell.NewRGBColor(255, 255, 85)     // #FFFF55 - Yellow highlight
+	dosWhite := tcell.NewRGBColor(255, 255, 255)     // #FFFFFF - Bright white
 	dosLightGray := tcell.NewRGBColor(170, 170, 170) // #AAAAAA - Light gray
-	dosRed := tcell.NewRGBColor(255, 85, 85)      // #FF5555 - Light red
-	dosGreen := tcell.NewRGBColor(85, 255, 85)    // #55FF55 - Light green
+	dosRed := tcell.NewRGBColor(255, 85, 85)         // #FF5555 - Light red
+	dosGreen := tcell.NewRGBColor(85, 255, 85)       // #55FF55 - Light green
 
 	return &Styles{
 		BgColor:     dosBlue,

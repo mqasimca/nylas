@@ -112,6 +112,7 @@ func TestWatchCommand(t *testing.T) {
 		flag := cmd.Flags().Lookup("interval")
 		if flag == nil {
 			t.Error("Expected --interval flag")
+			return
 		}
 		if flag.DefValue != "10" {
 			t.Errorf("--interval default = %q, want %q", flag.DefValue, "10")
@@ -164,6 +165,7 @@ func TestMessagesCommand(t *testing.T) {
 		flag := cmd.Flags().Lookup("limit")
 		if flag == nil {
 			t.Error("Expected --limit flag")
+			return
 		}
 		if flag.DefValue != "10" {
 			t.Errorf("--limit default = %q, want %q", flag.DefValue, "10")

@@ -153,6 +153,7 @@ func TestTUICommand(t *testing.T) {
 		flag := tuiCmd.Flags().Lookup("theme")
 		if flag == nil {
 			t.Error("Expected --theme flag on tui command")
+			return
 		}
 		if flag.DefValue != "k9s" {
 			t.Errorf("Expected default theme 'k9s', got %q", flag.DefValue)
@@ -165,6 +166,7 @@ func TestTUICommand(t *testing.T) {
 		flag := tuiCmd.Flags().Lookup("refresh")
 		if flag == nil {
 			t.Error("Expected --refresh flag on tui command")
+			return
 		}
 		if flag.DefValue != "3" {
 			t.Errorf("Expected default refresh '3', got %q", flag.DefValue)
@@ -276,6 +278,7 @@ func TestTUIDemoFlag(t *testing.T) {
 		flag := tuiCmd.Flags().Lookup("demo")
 		if flag == nil {
 			t.Error("Expected --demo flag on tui command")
+			return
 		}
 		if flag.DefValue != "false" {
 			t.Errorf("Expected default demo 'false', got %q", flag.DefValue)

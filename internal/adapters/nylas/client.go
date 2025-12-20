@@ -2,6 +2,7 @@
 package nylas
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,27 +10,45 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"golang.org/x/time/rate"
 )
 
 const (
 	baseURLUS = "https://api.us.nylas.com"
 	baseURLEU = "https://api.eu.nylas.com"
+
+	// defaultRequestTimeout is the default timeout for individual API requests
+	defaultRequestTimeout = 30 * time.Second
+
+	// defaultRateLimit is the default rate limit (requests per second)
+	// Set to 10 requests per second to avoid API quota exhaustion
+	defaultRateLimit = 10
 )
 
 // HTTPClient implements the NylasClient interface.
 type HTTPClient struct {
-	httpClient   *http.Client
-	baseURL      string
-	clientID     string
-	clientSecret string
-	apiKey       string
+	httpClient     *http.Client
+	baseURL        string
+	clientID       string
+	clientSecret   string
+	apiKey         string
+	rateLimiter    *rate.Limiter
+	requestTimeout time.Duration
 }
 
-// NewHTTPClient creates a new Nylas HTTP client.
+// NewHTTPClient creates a new Nylas HTTP client with rate limiting.
+// Rate limiting prevents API quota exhaustion and temporary account suspension.
+// Default: 10 requests/second with burst capacity of 20 requests.
 func NewHTTPClient() *HTTPClient {
 	return &HTTPClient{
-		httpClient: &http.Client{Timeout: 30 * time.Second},
-		baseURL:    baseURLUS,
+		httpClient: &http.Client{
+			// Remove global timeout since we use per-request context timeouts
+			Timeout: 0,
+		},
+		baseURL: baseURLUS,
+		// Create token bucket rate limiter: 10 requests/second, burst of 20
+		rateLimiter:    rate.NewLimiter(rate.Limit(defaultRateLimit), defaultRateLimit*2),
+		requestTimeout: defaultRequestTimeout,
 	}
 }
 
@@ -76,4 +95,41 @@ func (c *HTTPClient) parseError(resp *http.Response) error {
 	}
 
 	return fmt.Errorf("%w: status %d", domain.ErrAPIError, resp.StatusCode)
+}
+
+// ensureContext ensures a context has a timeout.
+// If the context already has a deadline, it's returned as-is.
+// Otherwise, a new context with the default timeout is created.
+func (c *HTTPClient) ensureContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	if _, hasDeadline := ctx.Deadline(); hasDeadline {
+		// Context already has timeout, use as-is
+		return ctx, func() {}
+	}
+	// Add default timeout
+	return context.WithTimeout(ctx, c.requestTimeout)
+}
+
+// doRequest executes an HTTP request with rate limiting and timeout.
+// This method applies rate limiting before making the request and ensures
+// the context has a timeout to prevent hanging requests.
+func (c *HTTPClient) doRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
+	// Apply rate limiting - wait for permission to proceed
+	if err := c.rateLimiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("rate limiter: %w", err)
+	}
+
+	// Ensure context has timeout
+	ctxWithTimeout, cancel := c.ensureContext(ctx)
+	defer cancel()
+
+	// Update request context
+	req = req.WithContext(ctxWithTimeout)
+
+	// Execute request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+	}
+
+	return resp, nil
 }

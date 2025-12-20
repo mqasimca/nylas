@@ -83,32 +83,113 @@ Key conventions:
 - Comment exported identifiers
 - Handle errors explicitly
 
-### Rule 6: Error Handling
+### Rule 6: Error Handling (CRITICAL)
 
-**REQUIRED error handling patterns:**
+**MANDATORY: Every function that returns an error MUST have it handled or explicitly ignored.**
+
+#### Always Handle or Explicitly Ignore Errors
 
 ```go
-✅ Use fmt.Errorf with %w for error wrapping (Go 1.13+)
+// ❌ WRONG - Silently ignoring errors (will fail linting)
+json.NewEncoder(w).Encode(response)
+cmd.MarkFlagRequired("field")
+fmt.Scanln(&input)
+w.Write([]byte("data"))
+
+// ✅ CORRECT - Explicitly ignoring with _ =
+_ = json.NewEncoder(w).Encode(response)  // Test helper, error not actionable
+_ = cmd.MarkFlagRequired("field")        // Hardcoded field name, won't fail
+_, _ = fmt.Scanln(&input)                // User input, validation happens later
+_, _ = w.Write([]byte("data"))           // Test response, error not relevant
+
+// ✅ CORRECT - Proper error handling
+if err := json.NewEncoder(w).Encode(response); err != nil {
+    return fmt.Errorf("encode response: %w", err)
+}
+```
+
+#### When to Use `_ =` vs Proper Handling
+
+**Use `_ =` (explicit ignore) when:**
+- In test code where error is not relevant
+- Error cannot occur (e.g., hardcoded values)
+- Error is not actionable (e.g., best-effort operations)
+- Always add a comment explaining why
+
+**Use proper handling when:**
+- In production code
+- Error affects program behavior
+- Error indicates a bug or invalid state
+- User needs to know about the failure
+
+#### Error Wrapping and Checking
+
+```go
+// ✅ Use fmt.Errorf with %w for error wrapping (Go 1.13+)
 if err != nil {
     return fmt.Errorf("operation failed: %w", err)
 }
 
-✅ Use errors.Is for error checking
+// ✅ Use errors.Is for error checking
 if errors.Is(err, os.ErrNotExist) {
-    // handle
+    // handle specific error
 }
 
-✅ Use errors.As for error type assertion
+// ✅ Use errors.As for error type assertion
 var pathErr *fs.PathError
 if errors.As(err, &pathErr) {
-    // handle path error
+    // handle path error with details
+    fmt.Printf("Path error: %s\n", pathErr.Path)
+}
+```
+
+#### Deferred Function Error Handling
+
+```go
+// ❌ WRONG - Error ignored in defer
+defer file.Close()
+
+// ✅ CORRECT - Document why ignored
+defer file.Close()  // Read-only file, close error not actionable
+
+// ✅ CORRECT - Capture in named return
+func processFile(path string) (err error) {
+    f, err := os.Open(path)
+    if err != nil {
+        return err
+    }
+    defer func() {
+        if closeErr := f.Close(); closeErr != nil && err == nil {
+            err = closeErr
+        }
+    }()
+    // ... process file
 }
 
-❌ DON'T ignore errors without documentation
-defer file.Close()  // Bad: Error ignored
+// ✅ CORRECT - Wrap in anonymous function for complex cleanup
+defer func() { _ = server.Stop() }()
+```
 
-✅ DO document why errors are ignored
-_ = file.Close()  // Okay: Read-only file, close error not actionable
+#### Nil Checks in Tests
+
+**ALWAYS check for nil before dereferencing in tests:**
+
+```go
+// ❌ WRONG - Can panic if nil
+flag := cmd.Flags().Lookup("name")
+if flag.DefValue != "expected" {  // Panic if flag is nil!
+    t.Error("wrong default")
+}
+
+// ✅ CORRECT - Check nil first
+flag := cmd.Flags().Lookup("name")
+if flag == nil {
+    t.Error("flag not found")
+    return  // Early return prevents nil dereference
+}
+if flag.DefValue != "expected" {
+    t.Errorf("wrong default: got %q, want %q", flag.DefValue, "expected")
+}
 ```
 
 ---
@@ -138,12 +219,16 @@ When making code changes, follow this exact sequence:
    ↓
 7. Run: go fmt ./...
    ↓
-8. Run: go vet ./...
+8. Run: golangci-lint run --timeout=5m
    ↓
-9. Run: golangci-lint run (if available)
+9. Fix ALL linting issues in code you wrote
    ↓
 10. Run: go test ./...
+   ↓
+11. Verify: make build
 ```
+
+**CRITICAL: Do not skip step 8-9. Linting is MANDATORY.**
 
 ---
 
@@ -364,20 +449,31 @@ After making code changes, you MUST run:
 # 1. Format code (REQUIRED)
 go fmt ./...
 
-# 2. Vet code (REQUIRED)
-go vet ./...
+# 2. Lint code (REQUIRED - not optional!)
+golangci-lint run --timeout=5m
 
-# 3. Lint code (if available)
-golangci-lint run
+# 3. Fix ALL linting issues in your code (REQUIRED)
+#    - errcheck: Add _ = or proper error handling
+#    - unused: Remove unused code
+#    - staticcheck: Fix nil checks, deprecated usage
+#    See .claude/rules/linting.md for common fixes
 
 # 4. Run tests (REQUIRED)
-go test ./...
+go test ./... -short
 
-# 5. Update dependencies
+# 5. Build verification (REQUIRED)
+go build -o ./bin/nylas ./cmd/nylas
+
+# 6. Update dependencies (if you added/removed packages)
 go mod tidy
 ```
 
-**If ANY of these fail, fix the issues before proceeding.**
+**CRITICAL: If linting shows errors in code you wrote, fix them immediately.**
+**Do NOT:**
+- ❌ Skip linting
+- ❌ Proceed with failing lint
+- ❌ Ask user if you should fix linting errors (just fix them)
+- ❌ Leave linting fixes for later
 
 ---
 

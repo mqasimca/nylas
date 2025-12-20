@@ -19,6 +19,7 @@ func newListCmd() *cobra.Command {
 	var all bool
 	var allFolders bool
 	var maxItems int
+	var metadataPair string
 
 	cmd := &cobra.Command{
 		Use:   "list [grant-id]",
@@ -57,6 +58,9 @@ Use --max to limit total messages when using --all.`,
 			}
 			if from != "" {
 				params.From = from
+			}
+			if metadataPair != "" {
+				params.MetadataPair = metadataPair
 			}
 
 			// Default to INBOX unless --all-folders is set or specific folder is provided
@@ -127,6 +131,7 @@ Use --max to limit total messages when using --all.`,
 	cmd.Flags().BoolVar(&showID, "id", false, "Show message IDs")
 	cmd.Flags().BoolVarP(&all, "all", "a", false, "Fetch all messages (paginated)")
 	cmd.Flags().IntVar(&maxItems, "max", 0, "Maximum messages to fetch with --all (0=unlimited)")
+	cmd.Flags().StringVar(&metadataPair, "metadata", "", "Filter by metadata (format: key:value, only key1-key5 supported)")
 
 	return cmd
 }

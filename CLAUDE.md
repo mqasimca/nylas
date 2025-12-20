@@ -7,7 +7,8 @@ Quick reference for AI assistants working on this codebase.
 ## ⛔ CRITICAL RULES - MUST FOLLOW
 
 ### NEVER DO:
-- **NEVER run `git push`** - Only local commits allowed
+- **NEVER run `git commit`** - User will commit changes manually
+- **NEVER run `git push`** - User will push changes manually
 - **NEVER commit secrets** - No API keys, tokens, passwords, .env files
 - **NEVER skip tests** - All changes require passing tests
 - **NEVER skip security scans** - Run `make security` before commits
@@ -22,12 +23,26 @@ Quick reference for AI assistants working on this codebase.
 #    - Apply modern Go idioms (slices, maps, clear, min/max, generics)
 
 # 2. Write/update tests for your changes
-# 3. Run the full verification suite:
+
+# 3. Format code
+go fmt ./...
+
+# 4. Lint and fix ALL issues in your code (MANDATORY)
+#    See: .claude/rules/linting.md for common fixes
+golangci-lint run --timeout=5m
+#    Fix errcheck, unused, staticcheck issues in files you modified
+
+# 5. Run tests
+go test ./... -short
+
+# 6. Run the full verification suite:
 make check   # Runs: lint → test → security → build
 
-# 4. Before committing, verify no secrets:
+# 7. Before committing, verify no secrets:
 git diff --cached | grep -iE "(api_key|password|secret|token|nyk_v0)" || echo "✓ Clean"
 ```
+
+**⚠️ CRITICAL: Never skip linting (step 4). Fix ALL linting errors in code you wrote.**
 
 ### Test & Doc Requirements:
 | Change | Unit Test | Integration Test | Update Docs |
@@ -37,21 +52,50 @@ git diff --cached | grep -iE "(api_key|password|secret|token|nyk_v0)" || echo "�
 | New command | ✅ REQUIRED | ✅ REQUIRED | ✅ REQUIRED |
 | Flag change | ✅ REQUIRED | ❌ Not needed | ✅ REQUIRED |
 
+### Test Coverage Goals:
+
+| Package Type | Minimum Coverage | Target Coverage |
+|--------------|------------------|-----------------|
+| Core Adapters | 70% | 85%+ |
+| Business Logic | 60% | 80%+ |
+| CLI Commands | 50% | 70%+ |
+| Utilities | 90% | 100% |
+
+**How to check coverage:**
+```bash
+# Generate coverage report
+go test ./... -short -coverprofile=coverage.out
+
+# View coverage by package
+go tool cover -func=coverage.out
+
+# View detailed HTML report
+go tool cover -html=coverage.out
+```
+
+**IMPORTANT**: New packages MUST have at least 70% test coverage before merging.
+
 ### Docs to Update (if applicable):
 - `docs/COMMANDS.md` → New/changed commands or flags
 - `plan.md` → Feature completed or API changes
 - `README.md` → Major new features
 
-### Commit Workflow:
+### Workflow:
 ```bash
 # 1. Make changes
 # 2. Write tests in *_test.go
-# 3. Run: make check
-# 4. Verify no secrets in diff
-# 5. git add <files>
-# 6. git commit -m "message"
-# ⛔ DO NOT run git push
+# 3. Format: go fmt ./...
+# 4. Lint: golangci-lint run --timeout=5m
+# 5. Fix ALL linting errors in your code (MANDATORY)
+# 6. Test: go test ./... -short
+# 7. Verify: make check
+# 8. Verify no secrets in diff
+# ⛔ DO NOT run git add, git commit, or git push
+# → User will handle all git operations manually
 ```
+
+**Quality Gate:** Code → Format → Lint → Fix → Test → Done
+                                          ↑___|  (Loop until clean)
 
 ### Do Not Touch (without explicit permission):
 | Path | Reason |
@@ -94,9 +138,12 @@ Examples:
 1. Explore  →  "Read internal/cli/email/ and explain how send works"
 2. Plan     →  "Think hard about how to add retry logic"
 3. Code     →  "Implement the retry logic"
-4. Test     →  "Run tests and fix any failures"
-5. Commit   →  "Commit the changes"
+4. Lint     →  "Run golangci-lint and fix all issues"  ← NEW MANDATORY STEP
+5. Test     →  "Run tests and fix any failures"
+6. Commit   →  "Commit the changes"  ← NEVER auto-commit
 ```
+
+**See `.claude/workflows/code-quality-checklist.md` for detailed linting guide.**
 
 ### Useful Commands
 | Command | What It Does |
@@ -111,6 +158,11 @@ Examples:
 
 **IMPORTANT:** For all Go code changes, `/project:go-modernize` is automatically applied.
 Claude will check go.dev/ref/spec and apply modern Go idioms before writing code.
+
+**CRITICAL:** All skills (`add-feature`, `fix-bug`, etc.) now enforce linting:
+- Linting runs automatically after code changes
+- ALL linting errors in new/modified code MUST be fixed
+- See `.claude/rules/linting.md` for common fixes
 
 ### Keyboard Shortcuts
 | Key | Action |
@@ -244,6 +296,89 @@ internal/
   cli/<feature>/           # CLI commands per feature
 ```
 
+## Quick File Lookup
+
+**When user asks about a feature, immediately know where to look:**
+
+### By Feature / Command
+
+| Feature | CLI Commands | Adapter | Domain Model | Tests |
+|---------|-------------|---------|--------------|-------|
+| **Email** | `internal/cli/email/` | `internal/adapters/nylas/messages.go`<br>`internal/adapters/nylas/drafts.go`<br>`internal/adapters/nylas/threads.go`<br>`internal/adapters/nylas/attachments.go` | `internal/domain/message.go`<br>`internal/domain/email.go` | `internal/cli/integration_email_test.go`<br>`internal/cli/integration_drafts_test.go`<br>`internal/cli/integration_threads_test.go` |
+| **Calendar** | `internal/cli/calendar/` | `internal/adapters/nylas/calendars.go` | `internal/domain/calendar.go` | `internal/cli/integration_calendar_test.go` |
+| **Contacts** | `internal/cli/contacts/` | `internal/adapters/nylas/contacts.go` | `internal/domain/contact.go` | `internal/cli/integration_contacts_test.go` |
+| **Auth** | `internal/cli/auth/` | `internal/adapters/nylas/auth.go` | `internal/domain/grant.go`<br>`internal/domain/provider.go` | `internal/cli/integration_auth_test.go` |
+| **Webhooks** | `internal/cli/webhook/` | `internal/adapters/nylas/webhooks.go` | `internal/domain/webhook.go` | `internal/cli/integration_webhooks_test.go` |
+| **Folders** | N/A (utility) | `internal/adapters/nylas/folders.go` | N/A | `internal/cli/integration_folders_test.go` |
+| **Inbound** | `internal/cli/inbound/` | `internal/adapters/nylas/inbound.go` | `internal/domain/inbound.go` | `internal/cli/integration_inbound_test.go` |
+| **Notetaker** | `internal/cli/notetaker/` | `internal/adapters/nylas/notetakers.go` | `internal/domain/notetaker.go` | N/A |
+| **OTP** | `internal/cli/otp/` | `internal/adapters/nylas/otp.go` | N/A | `internal/adapters/nylas/otp_test.go` |
+
+### Core Files (Architecture Layers)
+
+| Layer | File | Purpose |
+|-------|------|---------|
+| **Entry Point** | `cmd/nylas/main.go` | CLI entry point - register all commands here |
+| **Root Command** | `internal/cli/root.go` | Root cobra command configuration |
+| **Port Interface** | `internal/ports/nylas.go` | Interface contract - all adapter methods defined here |
+| **HTTP Client** | `internal/adapters/nylas/client.go` | Base HTTP client, auth, request/response handling |
+| **Mock Client** | `internal/adapters/nylas/mock.go` | Mock implementation for testing |
+| **Demo Client** | `internal/adapters/nylas/demo.go` | Demo data for TUI mode |
+| **Common Utils** | `internal/cli/common/` | Shared CLI utilities |
+| **Errors** | `internal/domain/errors.go` | Domain-level error types |
+| **Config** | `internal/domain/config.go` | Configuration models |
+
+### CLI Package Pattern
+
+Every CLI feature follows this pattern:
+```
+internal/cli/<feature>/
+  ├── <feature>.go       # Main command definition
+  ├── list.go            # List subcommand
+  ├── show.go            # Show/Get subcommand
+  ├── create.go          # Create subcommand
+  ├── update.go          # Update subcommand
+  ├── delete.go          # Delete subcommand
+  └── helpers.go         # Shared helpers (getClient, getGrantID, etc.)
+```
+
+### Test Files
+
+| Type | Pattern | Location |
+|------|---------|----------|
+| Unit tests | `*_test.go` | Alongside source files |
+| Integration tests | `integration_*_test.go` | `internal/cli/` or `internal/adapters/nylas/` |
+| Adapter tests | `*_test.go` | `internal/adapters/nylas/` |
+| Domain tests | `domain_test.go` | `internal/domain/` |
+
+### Utility Commands
+
+| Command | File | Purpose |
+|---------|------|---------|
+| `nylas doctor` | `internal/cli/doctor.go` | System diagnostics |
+| `nylas version` | `internal/cli/version.go` | Version information |
+| `nylas tui` | `internal/cli/tui.go` | Interactive TUI mode |
+
+### Quick Navigation Examples
+
+**User asks:** "Fix the email send command"
+**Look in:** `internal/cli/email/send.go`
+
+**User asks:** "Update the Calendar domain model"
+**Look in:** `internal/domain/calendar.go`
+
+**User asks:** "Add a new contact method to the API client"
+**Look in:**
+1. `internal/ports/nylas.go` (add interface method)
+2. `internal/adapters/nylas/contacts.go` (implement method)
+3. `internal/adapters/nylas/mock.go` (mock implementation)
+
+**User asks:** "Where is authentication handled?"
+**Look in:** `internal/cli/auth/` and `internal/adapters/nylas/auth.go`
+
+**User asks:** "How do I test email functionality?"
+**Look in:** `internal/cli/integration_email_test.go`
+
 ## Adding a New Feature (Step-by-Step)
 
 Example: Adding "widgets" feature
@@ -366,15 +501,87 @@ if err != nil {
 
 ## Testing
 
+### Unit Tests
+
 ```bash
-# Unit tests
+# Run all unit tests
 go test ./... -short
 
-# Integration tests (requires credentials)
-NYLAS_API_KEY="..." NYLAS_GRANT_ID="..." go test ./... -tags=integration
-
-# Specific package
+# Run tests for specific package
 go test ./internal/cli/widget/... -v
+
+# Run with coverage
+go test ./... -short -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
+
+### Integration Tests
+
+Integration tests require valid Nylas API credentials:
+
+```bash
+# Set environment variables
+export NYLAS_API_KEY="your-api-key"
+export NYLAS_GRANT_ID="your-grant-id"
+
+# Run all integration tests
+go test ./... -tags=integration
+
+# Run specific integration test
+go test ./internal/cli/... -tags=integration -run TestNotetaker
+
+# Run integration tests with verbose output
+go test ./internal/cli/... -tags=integration -v
+```
+
+**Integration Test Checklist:**
+- [ ] Tests tagged with `//go:build integration` and `// +build integration`
+- [ ] Tests skip when credentials missing: `if testing.Short() { t.Skip() }`
+- [ ] Tests clean up resources after execution
+- [ ] Tests handle API rate limits gracefully
+- [ ] Tests don't assume test account state
+
+## Pre-Commit Hook (Recommended)
+
+To automatically run checks before each commit, create `.git/hooks/pre-commit`:
+
+```bash
+#!/bin/bash
+# Nylas CLI pre-commit hook
+
+echo "Running pre-commit checks..."
+
+# 1. Format code
+echo "→ Formatting code..."
+go fmt ./...
+
+# 2. Run linter
+echo "→ Running linter..."
+if ! golangci-lint run --timeout=5m; then
+    echo "❌ Linting failed. Fix errors before committing."
+    exit 1
+fi
+
+# 3. Run tests
+echo "→ Running tests..."
+if ! go test ./... -short; then
+    echo "❌ Tests failed. Fix tests before committing."
+    exit 1
+fi
+
+# 4. Security check
+echo "→ Running security scan..."
+if ! make security; then
+    echo "❌ Security scan failed. Check for secrets."
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
+```
+
+Make it executable:
+```bash
+chmod +x .git/hooks/pre-commit
 ```
 
 ## Quick Commands

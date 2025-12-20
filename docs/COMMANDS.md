@@ -22,6 +22,9 @@ nylas auth switch     # Switch between accounts
 nylas auth add        # Manually add an existing grant
 nylas auth token      # Show/copy API key
 nylas auth revoke     # Revoke specific grant
+nylas auth providers  # List available authentication providers
+nylas auth detect     # Detect provider from email address
+nylas auth scopes     # Show OAuth scopes for a grant
 ```
 
 **Example: Check authentication status**
@@ -74,6 +77,64 @@ Scopes:
 ★ This is the default grant
 ```
 
+**Example: List available providers**
+```bash
+$ nylas auth providers
+
+Available Authentication Providers:
+
+  google
+    Name:       Google Workspace
+    ID:         connector-abc123
+    Scopes:     5 configured
+
+  microsoft
+    Name:       Microsoft 365
+    ID:         connector-def456
+    Scopes:     4 configured
+```
+
+**Example: Detect provider from email**
+```bash
+$ nylas auth detect user@gmail.com
+
+Email:    user@gmail.com
+Domain:   gmail.com
+Provider: google
+
+To authenticate:
+  nylas auth login --provider google
+
+$ nylas auth detect user@company.com
+
+Email:    user@company.com
+Domain:   company.com
+Provider: imap
+
+Note: Use IMAP for generic email providers. Configure IMAP/SMTP settings during authentication.
+
+To authenticate:
+  nylas auth login --provider imap
+```
+
+**Example: Show OAuth scopes for a grant**
+```bash
+$ nylas auth scopes abc123def456
+
+Grant ID:  abc123def456
+Email:     user@gmail.com
+Provider:  google
+Status:    valid
+
+OAuth Scopes (3):
+  1. https://www.googleapis.com/auth/gmail.readonly
+     → Read-only access to Gmail
+  2. https://www.googleapis.com/auth/calendar
+     → Calendar access
+  3. https://www.googleapis.com/auth/contacts.readonly
+     → Read-only access to contacts
+```
+
 ---
 
 ## Email Operations
@@ -88,6 +149,7 @@ nylas email list --limit 20           # Specify number of emails
 nylas email list --unread             # Show only unread
 nylas email list --starred            # Show only starred
 nylas email list --from "sender@example.com"  # Filter by sender
+nylas email list --metadata key1:value  # Filter by metadata (key1-key5 only)
 ```
 
 **Example output:**
@@ -242,6 +304,121 @@ nylas email mark unstarred <message-id> # Unstar a message
 ```bash
 nylas email delete <message-id>       # Delete an email
 nylas email delete <message-id> -f    # Delete without confirmation
+```
+
+### Smart Compose (AI Email Generation)
+
+Generate AI-powered email drafts using Nylas Smart Compose (requires Plus package):
+
+```bash
+# Generate a new email draft from scratch
+nylas email smart-compose --prompt "Draft a thank you email for yesterday's meeting"
+
+# Generate a reply to a specific message
+nylas email smart-compose --message-id <msg-id> --prompt "Reply accepting the invitation"
+
+# Output as JSON
+nylas email smart-compose --prompt "Write a follow-up email" --json
+```
+
+**Features:**
+- AI-powered email composition based on natural language prompts
+- Context-aware replies to existing messages
+- Max prompt length: 1000 tokens
+- Requires Nylas Plus package subscription
+
+**Note:** Smart Compose leverages AI to draft professional emails quickly. Always review and edit the generated content before sending.
+
+### Email Tracking
+
+Track email opens, link clicks, and replies via webhooks:
+
+```bash
+# View tracking information and setup guide
+nylas email tracking-info
+
+# Send an email with tracking enabled
+nylas email send --to user@example.com \\
+  --subject "Meeting Invite" \\
+  --body "Let's schedule a meeting" \\
+  --track-opens \\
+  --track-links
+```
+
+**Tracking Features:**
+- **Opens:** Track when recipients open your emails
+- **Clicks:** Track when recipients click links in your emails
+- **Replies:** Track when recipients reply to your messages
+
+**Data Delivery:**
+Tracking data is delivered via webhooks. Set up webhooks to receive notifications:
+
+```bash
+# Create webhook for tracking events
+nylas webhook create --url https://your-server.com/webhooks \\
+  --triggers message.opened,message.link_clicked,thread.replied
+```
+
+For detailed information about tracking setup and webhook payloads, run:
+```bash
+nylas email tracking-info
+```
+
+### Message Metadata
+
+Manage custom metadata on messages for organization and filtering:
+
+```bash
+# View metadata information and usage guide
+nylas email metadata info
+
+# Show metadata for a specific message
+nylas email metadata show <message-id>
+nylas email metadata show <message-id> --json
+
+# Filter messages by metadata (when listing)
+nylas email list --metadata key1:project-alpha
+nylas email list --metadata key2:urgent --limit 20
+```
+
+**Indexed Keys (Searchable):**
+Only five keys support filtering in queries:
+- `key1`, `key2`, `key3`, `key4`, `key5`
+
+**Setting Metadata:**
+Metadata can only be set when sending messages or creating drafts:
+
+```bash
+# Send with metadata
+nylas email send --to user@example.com \\
+  --subject "Project Update" \\
+  --body "Status report" \\
+  --metadata key1=project-alpha \\
+  --metadata key2=status-update
+```
+
+**Features:**
+- Store up to 50 custom key-value pairs per message
+- Only `key1`-`key5` are indexed and searchable
+- Cannot update metadata on existing messages
+- Useful for categorization, tracking, and custom workflows
+
+**Example filtering workflow:**
+```bash
+# Send emails with metadata tags
+nylas email send --to team@company.com \\
+  --subject "Sprint Planning" \\
+  --metadata key1=sprint-23 \\
+  --metadata key2=planning
+
+# Later, filter by metadata
+nylas email list --metadata key1:sprint-23
+nylas email list --metadata key2:planning --unread
+```
+
+For detailed information about metadata usage and best practices, run:
+```bash
+nylas email metadata info
 ```
 
 ---
@@ -524,6 +701,107 @@ Available 30-minute Meeting Slots
 Found 7 available slots
 ```
 
+### Virtual Calendars
+
+Virtual calendars allow scheduling without connecting to a third-party provider. They're perfect for conference rooms, equipment, or external contractors.
+
+**Features:**
+- No OAuth required
+- Never expire
+- Support calendar and event operations only (no email/contacts)
+- Maximum 10 calendars per virtual account
+
+```bash
+# List all virtual calendar grants
+nylas calendar virtual list
+nylas calendar virtual list --json
+
+# Create a virtual calendar grant
+nylas calendar virtual create --email conference-room-a@company.com
+nylas calendar virtual create --email projector-1@company.com
+
+# Show virtual calendar grant details
+nylas calendar virtual show <grant-id>
+nylas calendar virtual show <grant-id> --json
+
+# Delete a virtual calendar grant
+nylas calendar virtual delete <grant-id>
+nylas calendar virtual delete <grant-id> -y  # Skip confirmation
+```
+
+**Example workflow:**
+```bash
+# 1. Create a virtual calendar grant for a conference room
+$ nylas calendar virtual create --email conference-room-a@company.com
+✓ Created virtual calendar grant
+  ID:     vcal-grant-123abc
+  Email:  conference-room-a@company.com
+  Status: valid
+
+# 2. Create a calendar for this virtual grant
+$ nylas calendar create vcal-grant-123abc --name "Conference Room A"
+✓ Created calendar
+  ID:   primary
+  Name: Conference Room A
+
+# 3. Create events on the virtual calendar
+$ nylas calendar events create vcal-grant-123abc primary \
+  --title "Board Meeting" \
+  --start "2024-01-15T14:00:00" \
+  --end "2024-01-15T16:00:00"
+✓ Created event
+```
+
+### Recurring Events
+
+Manage recurring calendar events, including viewing all instances and updating or deleting specific occurrences.
+
+**Supported recurrence patterns:**
+- Daily: `RRULE:FREQ=DAILY;COUNT=5`
+- Weekly: `RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=10`
+- Monthly: `RRULE:FREQ=MONTHLY;COUNT=12`
+- Yearly: `RRULE:FREQ=YEARLY;COUNT=3`
+
+```bash
+# List all instances of a recurring event
+nylas calendar recurring list <master-event-id> --calendar <calendar-id>
+nylas calendar recurring list event-123 --calendar cal-456 --limit 100
+nylas calendar recurring list event-123 --calendar cal-456 \
+  --start 1704067200 --end 1706745600
+
+# Update a single instance
+nylas calendar recurring update <instance-id> --calendar <calendar-id> \
+  --title "Updated Meeting Title"
+nylas calendar recurring update instance-789 --calendar cal-456 \
+  --start "2024-01-15T14:00:00" --end "2024-01-15T15:30:00" \
+  --location "Conference Room B"
+
+# Delete a single instance (creates an exception)
+nylas calendar recurring delete <instance-id> --calendar <calendar-id>
+nylas calendar recurring delete instance-789 --calendar cal-456 -y
+```
+
+**Example output (list):**
+```bash
+$ nylas calendar recurring list event-master-123 --calendar primary
+
+INSTANCE ID        TITLE                   START TIME        STATUS
+event-inst-1       Weekly Team Meeting     2024-01-08 10:00  confirmed
+event-inst-2       Weekly Team Meeting     2024-01-15 10:00  confirmed
+event-inst-3       Weekly Team Meeting     2024-01-22 10:00  confirmed
+event-inst-4       Weekly Team Meeting     2024-01-29 10:00  confirmed
+
+Total instances: 4
+Master Event ID: event-master-123
+```
+
+**Understanding recurring events:**
+- **Master Event ID**: The parent event that defines the recurrence pattern
+- **Instance**: A single occurrence of the recurring series
+- **Exception**: An instance that has been modified or deleted
+- When you update an instance, it becomes an exception with custom properties
+- When you delete an instance, it adds an EXDATE to the recurrence rule
+
 ---
 
 ## Contacts Management
@@ -694,6 +972,137 @@ $ nylas contacts groups create "VIP Clients"
 Name: VIP Clients
 ID: group_new_123
 ```
+
+### Advanced Contact Search
+
+Search contacts with advanced filtering options including company name, email, phone, and more.
+
+```bash
+# Basic search
+nylas contacts search [grant-id]
+
+# Search by company name (partial match, case-insensitive)
+nylas contacts search --company "Acme"
+
+# Search by email address
+nylas contacts search --email "john@example.com"
+
+# Search by phone number
+nylas contacts search --phone "+1-555-0101"
+
+# Filter by contact source
+nylas contacts search --source address_book
+nylas contacts search --source inbox
+nylas contacts search --source domain
+
+# Only show contacts with email addresses
+nylas contacts search --has-email
+
+# Combine multiple filters
+nylas contacts search --company "Corp" --has-email --limit 20
+
+# Output as JSON
+nylas contacts search --json
+```
+
+**Example output:**
+```bash
+$ nylas contacts search --company "Acme" --has-email
+
+ID              Name              Email                   Company         Job Title
+---             ----              -----                   -------         ---------
+contact_001     Alice Johnson     alice@company.com       Acme Corp       Engineer
+contact_002     Eve Martinez      eve@company.com         Acme Corp       Designer
+
+Found 2 contacts
+```
+
+**Available filters:**
+- `--company` - Filter by company name (partial match)
+- `--email` - Filter by email address
+- `--phone` - Filter by phone number
+- `--source` - Filter by source (address_book, inbox, domain)
+- `--group` - Filter by contact group ID
+- `--has-email` - Only show contacts with email addresses
+- `--limit` - Maximum number of contacts to retrieve (default: 50)
+- `--json` - Output as JSON
+
+### Profile Picture Management
+
+Download and manage contact profile pictures.
+
+#### Download Profile Picture
+
+```bash
+# Get Base64-encoded profile picture data
+nylas contacts photo download <contact-id> [grant-id]
+
+# Save profile picture to file (automatically decodes Base64)
+nylas contacts photo download <contact-id> --output photo.jpg
+
+# Get as JSON
+nylas contacts photo download <contact-id> --json
+```
+
+**Example output:**
+```bash
+$ nylas contacts photo download contact_abc123 --output alice.jpg
+
+Profile picture saved to: alice.jpg
+Size: 15234 bytes
+```
+
+**Example output (Base64):**
+```bash
+$ nylas contacts photo download contact_abc123
+
+Base64-encoded profile picture:
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+
+To save to a file, use the --output flag
+```
+
+#### Profile Picture Information
+
+```bash
+# View information about how profile pictures work in Nylas API v3
+nylas contacts photo info
+```
+
+**Key points:**
+- Profile pictures are retrieved using `?profile_picture=true` query parameter
+- API returns Base64-encoded image data
+- Images come directly from email provider (Gmail, Outlook, etc.)
+- **Upload not supported** - pictures must be managed through provider
+- Not all contacts have profile pictures
+- Cache pictures locally if using frequently
+
+### Contact Synchronization Info
+
+View information about how contact synchronization works in Nylas API v3.
+
+```bash
+# View sync architecture and best practices
+nylas contacts sync
+```
+
+**Key changes in v3:**
+- **No more traditional sync model** - v3 eliminated local data storage
+- **Direct provider access** - Requests forwarded to email providers
+- **Provider-native IDs** - Contact IDs come from provider
+- **Real-time data** - No stale cached data
+- **No sync delays** - Instant access to new contacts
+
+**Provider-specific behavior:**
+- **Google/Gmail**: Real-time via Google Contacts API (5 min polling)
+- **Microsoft/Outlook**: Real-time via Microsoft Graph
+- **IMAP**: Depends on provider support
+- **Virtual calendars**: Nylas-managed (no provider sync)
+
+**Webhook events for change notifications:**
+- `contact.created` - New contact added
+- `contact.updated` - Contact modified
+- `contact.deleted` - Contact removed
 
 ---
 
@@ -1328,6 +1737,412 @@ nylas inbound messages
 nylas inbound messages --unread
 nylas inbound monitor --tunnel cloudflared
 ```
+
+---
+
+## Scheduler Management
+
+Manage Nylas Scheduler for creating booking pages, configurations, sessions, and appointments.
+
+### What is Nylas Scheduler?
+
+Nylas Scheduler enables you to create customizable booking workflows for scheduling meetings. Key features include:
+- **Configurations**: Define meeting types with availability rules and settings
+- **Sessions**: Generate temporary booking sessions for specific configurations
+- **Bookings**: Manage scheduled appointments (view, confirm, reschedule, cancel)
+- **Pages**: Create and manage hosted scheduling pages
+
+### Scheduler Configurations
+
+Manage scheduling configurations (meeting types):
+
+```bash
+# List all scheduler configurations
+nylas scheduler configurations list
+nylas scheduler configs list              # Alias
+nylas scheduler configurations list --json
+
+# Show configuration details
+nylas scheduler configurations show <config-id>
+nylas scheduler configs show <config-id>
+
+# Create a new configuration
+nylas scheduler configurations create \\
+  --name "30 Min Meeting" \\
+  --duration 30 \\
+  --interval 15
+
+# Update a configuration
+nylas scheduler configurations update <config-id> \\
+  --name "Updated Name" \\
+  --duration 60
+
+# Delete a configuration
+nylas scheduler configurations delete <config-id>
+nylas scheduler configs delete <config-id> -f    # Skip confirmation
+```
+
+**Configuration Features:**
+- Duration and interval settings
+- Availability rules and windows
+- Buffer times before/after meetings
+- Booking limits and restrictions
+- Custom event settings
+
+### Scheduler Sessions
+
+Create temporary booking sessions for configurations:
+
+```bash
+# Create a session for a configuration
+nylas scheduler sessions create <config-id>
+
+# Show session details
+nylas scheduler sessions show <session-id>
+```
+
+**Session Features:**
+- Temporary booking URLs with expiration
+- Configuration-specific availability
+- Session-based booking tracking
+
+### Scheduler Bookings
+
+Manage scheduled appointments:
+
+```bash
+# List all bookings
+nylas scheduler bookings list
+nylas scheduler bookings list --json
+
+# Show booking details
+nylas scheduler bookings show <booking-id>
+
+# Confirm a booking
+nylas scheduler bookings confirm <booking-id>
+
+# Reschedule a booking
+nylas scheduler bookings reschedule <booking-id> \\
+  --start-time "2024-03-20T10:00:00Z"
+
+# Cancel a booking
+nylas scheduler bookings cancel <booking-id>
+nylas scheduler bookings cancel <booking-id> \\
+  --reason "Meeting no longer needed"
+```
+
+**Booking Information Includes:**
+- Event ID and configuration ID
+- Start and end times
+- Participant details
+- Status (pending, confirmed, cancelled)
+
+### Scheduler Pages
+
+Create and manage hosted booking pages:
+
+```bash
+# List all scheduler pages
+nylas scheduler pages list
+nylas scheduler pages list --json
+
+# Show page details
+nylas scheduler pages show <page-id>
+
+# Create a new page
+nylas scheduler pages create \\
+  --config-id <config-id> \\
+  --slug "meet-me"
+
+# Update a page
+nylas scheduler pages update <page-id> \\
+  --slug "new-slug" \\
+  --name "Updated Page"
+
+# Delete a page
+nylas scheduler pages delete <page-id>
+```
+
+**Page Features:**
+- Custom slugs for friendly URLs
+- Configuration-based availability
+- Optional custom domain support
+- Appearance customization
+
+**Example Workflow:**
+
+```bash
+# 1. Create a meeting type
+nylas scheduler configs create \\
+  --name "Product Demo" \\
+  --duration 30
+
+# 2. Create a booking page
+nylas scheduler pages create \\
+  --config-id <config-id> \\
+  --slug "product-demo"
+
+# 3. Share the booking URL with prospects
+# URL format: https://schedule.nylas.com/product-demo
+
+# 4. View bookings
+nylas scheduler bookings list
+
+# 5. Manage bookings
+nylas scheduler bookings confirm <booking-id>
+nylas scheduler bookings reschedule <booking-id> --start-time "..."
+```
+
+**Note:** Some scheduler features may not be available in all Nylas API versions or require specific subscription tiers.
+
+---
+
+## Admin Commands
+
+Administrative commands for managing Nylas platform resources at an organizational level. These commands require API key authentication.
+
+### Applications
+
+Manage Nylas applications in your organization.
+
+```bash
+# List applications
+nylas admin applications list
+nylas admin apps list              # Alias
+nylas admin app list --json        # Output as JSON
+
+# Show application details
+nylas admin applications show <app-id>
+nylas admin app show <app-id> --json
+
+# Create application
+nylas admin applications create --name "My App" --region us
+nylas admin app create --name "My App" --region eu \
+  --branding-name "MyApp" \
+  --website-url "https://myapp.com" \
+  --callback-uris "https://myapp.com/oauth/callback,https://myapp.com/oauth/redirect"
+
+# Update application
+nylas admin applications update <app-id> --name "Updated Name"
+nylas admin app update <app-id> --branding-name "NewBrand" --website-url "https://new.com"
+
+# Delete application
+nylas admin applications delete <app-id>
+nylas admin app delete <app-id> --yes  # Skip confirmation
+```
+
+**Example: List applications**
+```bash
+$ nylas admin applications list
+
+Found 2 application(s):
+
+APP ID              REGION    ENVIRONMENT
+myapp-prod-123      us        production
+myapp-dev-456       us        development
+```
+
+**Example: Show application details**
+```bash
+$ nylas admin applications show myapp-prod-123
+
+Application Details
+  ID: app_abc123
+  Application ID: myapp-prod-123
+  Organization ID: org_xyz789
+  Region: us
+  Environment: production
+
+Branding:
+  Name: MyApp
+  Website: https://myapp.com
+
+Callback URIs (2):
+  1. https://myapp.com/oauth/callback
+  2. https://myapp.com/oauth/redirect
+```
+
+### Connectors
+
+Manage email provider connectors (Google, Microsoft, IMAP, etc.).
+
+```bash
+# List connectors
+nylas admin connectors list
+nylas admin conn list              # Alias
+nylas admin connectors list --json
+
+# Show connector details
+nylas admin connectors show <connector-id>
+nylas admin conn show <connector-id> --json
+
+# Create OAuth connector (Google/Microsoft)
+nylas admin connectors create --name "Gmail" --provider google \
+  --client-id "xxx.apps.googleusercontent.com" \
+  --client-secret "GOCSPX-xxx" \
+  --scopes "https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/calendar"
+
+# Create IMAP connector
+nylas admin connectors create --name "Custom IMAP" --provider imap \
+  --imap-host "imap.example.com" --imap-port 993 \
+  --smtp-host "smtp.example.com" --smtp-port 587
+
+# Update connector
+nylas admin connectors update <connector-id> --name "Updated Name"
+nylas admin conn update <connector-id> --scopes "new,scopes,list"
+
+# Delete connector
+nylas admin connectors delete <connector-id>
+nylas admin conn delete <connector-id> --yes
+```
+
+**Example: List connectors**
+```bash
+$ nylas admin connectors list
+
+Found 3 connector(s):
+
+NAME                ID                    PROVIDER      SCOPES
+Gmail               conn_google_123       google        3
+Microsoft 365       conn_ms365_456        microsoft     4
+Custom IMAP         conn_imap_789         imap          0
+```
+
+**Example: Show connector details**
+```bash
+$ nylas admin connectors show conn_google_123
+
+Connector: Gmail
+  ID: conn_google_123
+  Provider: google
+
+Scopes (3):
+  1. https://www.googleapis.com/auth/gmail.readonly
+  2. https://www.googleapis.com/auth/calendar
+  3. https://www.googleapis.com/auth/contacts.readonly
+
+Settings:
+  Client ID: 123456789.apps.googleusercontent.com
+```
+
+### Credentials
+
+Manage authentication credentials for connectors.
+
+```bash
+# List credentials
+nylas admin credentials list
+nylas admin creds list             # Alias
+nylas admin credentials list --json
+
+# Show credential details
+nylas admin credentials show <credential-id>
+nylas admin cred show <credential-id> --json
+
+# Create credential
+nylas admin credentials create --connector-id <connector-id> \
+  --name "Production Credentials" \
+  --credential-type oauth
+
+# Create credential with data
+nylas admin cred create --connector-id <connector-id> \
+  --name "Service Account" \
+  --credential-type service_account \
+  --credential-data '{"private_key":"..."}'
+
+# Update credential
+nylas admin credentials update <credential-id> --name "Updated Name"
+
+# Delete credential
+nylas admin credentials delete <credential-id>
+nylas admin cred delete <credential-id> --yes
+```
+
+**Example: List credentials**
+```bash
+$ nylas admin credentials list
+
+Found 2 credential(s):
+
+NAME                    ID                    CONNECTOR          TYPE
+Production OAuth        cred_oauth_123        conn_google_123    oauth
+Service Account         cred_sa_456           conn_google_123    service_account
+```
+
+**Example: Show credential details**
+```bash
+$ nylas admin credentials show cred_oauth_123
+
+Credential: Production OAuth
+  ID: cred_oauth_123
+  Connector ID: conn_google_123
+  Name: Production OAuth
+  Type: oauth
+
+Created: Dec 1, 2024 10:00 AM
+Updated: Dec 15, 2024 2:30 PM
+```
+
+### Grants
+
+View and manage grants across all applications.
+
+```bash
+# List grants
+nylas admin grants list
+nylas admin grant list             # Alias
+nylas admin grants list --limit 100 --offset 0
+nylas admin grants list --connector-id <connector-id>
+nylas admin grants list --status valid
+nylas admin grants list --status invalid
+nylas admin grants list --json
+
+# Show grant statistics
+nylas admin grants stats
+nylas admin grants stats --json
+```
+
+**Example: List grants**
+```bash
+$ nylas admin grants list --limit 5
+
+Found 5 grant(s):
+
+EMAIL                   ID                    PROVIDER    STATUS
+user@gmail.com          grant_abc123          google      valid
+work@company.com        grant_def456          microsoft   valid
+john@example.com        grant_ghi789          google      invalid
+-                       grant_jkl012          imap        valid
+alice@startup.io        grant_mno345          google      valid
+```
+
+**Example: Grant statistics**
+```bash
+$ nylas admin grants stats
+
+Grant Statistics
+  Total Grants: 150
+  Valid: 142
+  Invalid: 8
+
+By Provider:
+PROVIDER          COUNT
+google            95
+microsoft         42
+imap              13
+
+By Status:
+STATUS            COUNT
+valid             142
+invalid           8
+```
+
+**Filter options:**
+- `--limit` - Maximum number of grants to return (default: 50)
+- `--offset` - Offset for pagination (default: 0)
+- `--connector-id` - Filter by connector ID
+- `--status` - Filter by status (valid, invalid)
+- `--json` - Output as JSON
 
 ---
 

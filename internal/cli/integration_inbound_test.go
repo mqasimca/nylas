@@ -290,10 +290,10 @@ func TestCLI_InboundCreate(t *testing.T) {
 	if err != nil {
 		// Skip if inbound is not enabled for this account or if there are validation errors
 		if strings.Contains(stderr, "not found") ||
-		   strings.Contains(stderr, "unauthorized") ||
-		   strings.Contains(stderr, "not enabled") ||
-		   strings.Contains(stderr, "invalid 'email'") ||
-		   strings.Contains(stderr, "invalid email") {
+			strings.Contains(stderr, "unauthorized") ||
+			strings.Contains(stderr, "not enabled") ||
+			strings.Contains(stderr, "invalid 'email'") ||
+			strings.Contains(stderr, "invalid email") {
 			t.Skip("Inbound not enabled or email validation failed for this account")
 		}
 		t.Fatalf("inbound create failed: %v\nstderr: %s", err, stderr)
@@ -336,10 +336,10 @@ func TestCLI_InboundCreate_JSON(t *testing.T) {
 	if err != nil {
 		// Skip if inbound is not enabled for this account or if there are validation errors
 		if strings.Contains(stderr, "not found") ||
-		   strings.Contains(stderr, "unauthorized") ||
-		   strings.Contains(stderr, "not enabled") ||
-		   strings.Contains(stderr, "invalid 'email'") ||
-		   strings.Contains(stderr, "invalid email") {
+			strings.Contains(stderr, "unauthorized") ||
+			strings.Contains(stderr, "not enabled") ||
+			strings.Contains(stderr, "invalid 'email'") ||
+			strings.Contains(stderr, "invalid email") {
 			t.Skip("Inbound not enabled or email validation failed for this account")
 		}
 		t.Fatalf("inbound create --json failed: %v\nstderr: %s", err, stderr)

@@ -1,35 +1,11 @@
 package tui
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
-	"github.com/mqasimca/nylas/internal/domain"
 )
-
-// TestAppConfig creates a test configuration
-func testAppConfig() Config {
-	mockClient := nylas.NewMockClient()
-	// Set up mock responses
-	mockClient.GetMessagesFunc = func(ctx context.Context, grantID string, limit int) ([]domain.Message, error) {
-		return []domain.Message{
-			{ID: "msg-1", Subject: "Test Message 1", From: []domain.EmailParticipant{{Email: "test@example.com"}}},
-			{ID: "msg-2", Subject: "Test Message 2", From: []domain.EmailParticipant{{Email: "test2@example.com"}}},
-		}, nil
-	}
-
-	return Config{
-		Client:          mockClient,
-		GrantID:         "test-grant-id",
-		Email:           "user@example.com",
-		Provider:        "google",
-		RefreshInterval: time.Second * 30,
-		Theme:           ThemeK9s,
-	}
-}
 
 func TestVimKeySequence_gg(t *testing.T) {
 	// Test the gg key sequence tracking

@@ -95,12 +95,12 @@ func outputCSV(webhooks interface{}) error {
 	defer w.Flush()
 
 	// Write header
-	w.Write([]string{"ID", "Description", "URL", "Status", "Triggers"})
+	_ = w.Write([]string{"ID", "Description", "URL", "Status", "Triggers"})
 
 	// Get webhooks as slice
 	data, _ := json.Marshal(webhooks)
 	var items []map[string]interface{}
-	json.Unmarshal(data, &items)
+	_ = json.Unmarshal(data, &items)
 
 	for _, item := range items {
 		id, _ := item["id"].(string)
@@ -115,7 +115,7 @@ func outputCSV(webhooks interface{}) error {
 			}
 		}
 
-		w.Write([]string{id, desc, url, status, strings.Join(triggers, ";")})
+		_ = w.Write([]string{id, desc, url, status, strings.Join(triggers, ";")})
 	}
 
 	return nil
@@ -124,7 +124,7 @@ func outputCSV(webhooks interface{}) error {
 func outputTable(webhooks interface{}, fullIDs bool) error {
 	data, _ := json.Marshal(webhooks)
 	var items []map[string]interface{}
-	json.Unmarshal(data, &items)
+	_ = json.Unmarshal(data, &items)
 
 	// Calculate column widths
 	headers := []string{"ID", "Description", "URL", "Status", "Triggers"}

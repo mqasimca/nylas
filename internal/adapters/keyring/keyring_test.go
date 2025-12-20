@@ -72,8 +72,8 @@ func TestMockSecretStore(t *testing.T) {
 
 	t.Run("get all", func(t *testing.T) {
 		store.Reset()
-		store.Set("a", "1")
-		store.Set("b", "2")
+		_ = store.Set("a", "1")
+		_ = store.Set("b", "2")
 
 		all := store.GetAll()
 		assert.Equal(t, "1", all["a"])

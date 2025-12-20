@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	nylasadapter "github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -61,15 +62,25 @@ Get your credentials from https://dashboard.nylas.com`,
 				}
 
 				if apiKey == "" {
-					fmt.Print("API Key: ")
-					input, _ := reader.ReadString('\n')
-					apiKey = strings.TrimSpace(input)
+					fmt.Print("API Key (hidden): ")
+					// Use password masking for API key
+					apiKeyBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+					if err != nil {
+						return fmt.Errorf("failed to read API key: %w", err)
+					}
+					fmt.Println() // Add newline after hidden input
+					apiKey = strings.TrimSpace(string(apiKeyBytes))
 				}
 
 				if clientSecret == "" {
-					fmt.Print("Client Secret (optional, press Enter to skip): ")
-					input, _ := reader.ReadString('\n')
-					clientSecret = strings.TrimSpace(input)
+					fmt.Print("Client Secret (optional, hidden - press Enter to skip): ")
+					// Use password masking for client secret
+					secretBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+					if err != nil {
+						return fmt.Errorf("failed to read client secret: %w", err)
+					}
+					fmt.Println() // Add newline after hidden input
+					clientSecret = strings.TrimSpace(string(secretBytes))
 				}
 
 				if region == "" {
@@ -152,7 +163,7 @@ Get your credentials from https://dashboard.nylas.com`,
 
 				// Set first grant as default
 				if addedCount == 0 {
-					grantStore.SetDefaultGrant(grant.ID)
+					_ = grantStore.SetDefaultGrant(grant.ID)
 				}
 
 				addedCount++

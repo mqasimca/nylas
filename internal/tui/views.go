@@ -109,9 +109,9 @@ func (v *DashboardView) Load() {
 	muted := colorToHex(v.app.styles.BorderColor)
 
 	resources := []struct {
-		cmd   string
-		name  string
-		desc  string
+		cmd  string
+		name string
+		desc string
 	}{
 		{":m", "Messages", "Email messages"},
 		{":e", "Events", "Calendar events"},
@@ -511,15 +511,15 @@ func (v *MessagesView) showCompose(mode ComposeMode, replyTo *domain.Message) {
 
 // EventsView displays a Google Calendar-style calendar view.
 type EventsView struct {
-	app           *App
-	layout        *tview.Flex
-	calendar      *CalendarView
-	eventsList    *tview.TextView
-	events        []domain.Event
-	calendars     []domain.Calendar
-	name          string
-	title         string
-	focusedPanel  int // 0 = calendar, 1 = events list
+	app          *App
+	layout       *tview.Flex
+	calendar     *CalendarView
+	eventsList   *tview.TextView
+	events       []domain.Event
+	calendars    []domain.Calendar
+	name         string
+	title        string
+	focusedPanel int // 0 = calendar, 1 = events list
 }
 
 // NewEventsView creates a new calendar-style events view.
@@ -1138,17 +1138,17 @@ func (v *GrantsView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 
 // InboundView displays inbound inboxes and their messages.
 type InboundView struct {
-	app            *App
-	layout         *tview.Flex
-	inboxList      *Table
-	messageList    *Table
-	inboxes        []domain.InboundInbox
-	messages       []domain.InboundMessage
-	selectedInbox  *domain.InboundInbox
-	focusedPanel   int // 0 = inbox list, 1 = message list
-	showingDetail  bool
-	name           string
-	title          string
+	app           *App
+	layout        *tview.Flex
+	inboxList     *Table
+	messageList   *Table
+	inboxes       []domain.InboundInbox
+	messages      []domain.InboundMessage
+	selectedInbox *domain.InboundInbox
+	focusedPanel  int // 0 = inbox list, 1 = message list
+	showingDetail bool
+	name          string
+	title         string
 }
 
 // NewInboundView creates a new inbound view.
@@ -1520,18 +1520,6 @@ func formatDate(t time.Time) string {
 		return t.Format("Jan 2")
 	}
 	return t.Format("Jan 2, 06")
-}
-
-func formatEventTime(when domain.EventWhen) string {
-	if when.StartTime > 0 {
-		start := time.Unix(when.StartTime, 0)
-		end := time.Unix(when.EndTime, 0)
-		return fmt.Sprintf("%s - %s", start.Format("Jan 2 3:04 PM"), end.Format("3:04 PM"))
-	}
-	if when.Date != "" {
-		return when.Date
-	}
-	return ""
 }
 
 // stripHTMLForTUI removes HTML tags from a string for terminal display.

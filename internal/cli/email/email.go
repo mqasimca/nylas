@@ -24,6 +24,9 @@ func NewEmailCmd() *cobra.Command {
 	cmd.AddCommand(newDraftsCmd())
 	cmd.AddCommand(newAttachmentsCmd())
 	cmd.AddCommand(newScheduledCmd())
+	cmd.AddCommand(newSmartComposeCmd())
+	cmd.AddCommand(newTrackingInfoCmd())
+	cmd.AddCommand(newMetadataCmd())
 
 	return cmd
 }
