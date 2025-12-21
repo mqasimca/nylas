@@ -77,8 +77,13 @@ go tool cover -html=coverage.out
 
 ### Docs to Update (if applicable):
 - `docs/COMMANDS.md` → New/changed commands or flags
+- `docs/TIMEZONE.md` → Timezone-related changes, DST handling, calendar integration
+- `docs/AI.md` → AI features, provider setup, privacy settings
 - `plan.md` → Feature completed or API changes
+- `AI_plan.md` → AI/timezone implementation status
 - `README.md` → Major new features
+
+**📋 IMPORTANT**: See `.claude/rules/documentation-maintenance.md` for complete documentation update requirements
 
 ### Workflow:
 ```bash
@@ -281,6 +286,8 @@ go test ./...       # Run tests
 - **Architecture**: Hexagonal (ports and adapters)
 - **CLI Framework**: Cobra
 - **API**: Nylas v3 ONLY (never use v1/v2)
+- **AI Integration**: Multi-provider LLM support (Ollama, Claude, OpenAI, Groq) - **Planned** (see `AI_plan.md`)
+- **Timezone Support**: Offline utilities + calendar integration with `--timezone` and `--show-tz` flags ✅
 
 ## Directory Structure
 
@@ -304,15 +311,17 @@ internal/
 
 | Feature | CLI Commands | Adapter | Domain Model | Tests |
 |---------|-------------|---------|--------------|-------|
-| **Email** | `internal/cli/email/` | `internal/adapters/nylas/messages.go`<br>`internal/adapters/nylas/drafts.go`<br>`internal/adapters/nylas/threads.go`<br>`internal/adapters/nylas/attachments.go` | `internal/domain/message.go`<br>`internal/domain/email.go` | `internal/cli/integration_email_test.go`<br>`internal/cli/integration_drafts_test.go`<br>`internal/cli/integration_threads_test.go` |
-| **Calendar** | `internal/cli/calendar/` | `internal/adapters/nylas/calendars.go` | `internal/domain/calendar.go` | `internal/cli/integration_calendar_test.go` |
-| **Contacts** | `internal/cli/contacts/` | `internal/adapters/nylas/contacts.go` | `internal/domain/contact.go` | `internal/cli/integration_contacts_test.go` |
-| **Auth** | `internal/cli/auth/` | `internal/adapters/nylas/auth.go` | `internal/domain/grant.go`<br>`internal/domain/provider.go` | `internal/cli/integration_auth_test.go` |
-| **Webhooks** | `internal/cli/webhook/` | `internal/adapters/nylas/webhooks.go` | `internal/domain/webhook.go` | `internal/cli/integration_webhooks_test.go` |
-| **Folders** | N/A (utility) | `internal/adapters/nylas/folders.go` | N/A | `internal/cli/integration_folders_test.go` |
-| **Inbound** | `internal/cli/inbound/` | `internal/adapters/nylas/inbound.go` | `internal/domain/inbound.go` | `internal/cli/integration_inbound_test.go` |
+| **Email** | `internal/cli/email/` | `internal/adapters/nylas/messages.go`<br>`internal/adapters/nylas/drafts.go`<br>`internal/adapters/nylas/threads.go`<br>`internal/adapters/nylas/attachments.go` | `internal/domain/message.go`<br>`internal/domain/email.go` | `internal/cli/integration/email_test.go`<br>`internal/cli/integration/drafts_test.go`<br>`internal/cli/integration/threads_test.go` |
+| **Calendar** (with timezone & breaks ⚡) | `internal/cli/calendar/`<br>`internal/cli/calendar/helpers.go` | `internal/adapters/nylas/calendars.go`<br>`internal/adapters/utilities/timezone/service.go` | `internal/domain/calendar.go`<br>`internal/domain/config.go` 📅 Working Hours & Breaks<br>`internal/domain/utilities.go` | `internal/cli/integration/calendar_test.go`<br>`internal/cli/calendar/helpers_test.go` |
+| **Contacts** | `internal/cli/contacts/` | `internal/adapters/nylas/contacts.go` | `internal/domain/contact.go` | `internal/cli/integration/contacts_test.go` |
+| **Auth** | `internal/cli/auth/` | `internal/adapters/nylas/auth.go` | `internal/domain/grant.go`<br>`internal/domain/provider.go` | `internal/cli/integration/auth_test.go` |
+| **Webhooks** | `internal/cli/webhook/` | `internal/adapters/nylas/webhooks.go` | `internal/domain/webhook.go` | `internal/cli/integration/webhooks_test.go` |
+| **Folders** | N/A (utility) | `internal/adapters/nylas/folders.go` | N/A | `internal/cli/integration/folders_test.go` |
+| **Inbound** | `internal/cli/inbound/` | `internal/adapters/nylas/inbound.go` | `internal/domain/inbound.go` | `internal/cli/integration/inbound_test.go` |
 | **Notetaker** | `internal/cli/notetaker/` | `internal/adapters/nylas/notetakers.go` | `internal/domain/notetaker.go` | N/A |
 | **OTP** | `internal/cli/otp/` | `internal/adapters/nylas/otp.go` | N/A | `internal/adapters/nylas/otp_test.go` |
+| **Timezone** ⚡ | `internal/cli/timezone/` | `internal/adapters/utilities/timezone/service.go` | `internal/domain/utilities.go` | `internal/cli/timezone/timezone_test.go`<br>`internal/cli/timezone/helpers_test.go`<br>`internal/adapters/utilities/timezone/service_test.go`<br>`internal/cli/integration/timezone_test.go` |
+| **AI Scheduling** 🤖 | `internal/cli/calendar/ai_schedule.go`<br>`internal/cli/calendar/ai_*.go` | `internal/adapters/ai/`<br>`internal/ports/llm.go` | `internal/domain/ai.go` | `internal/adapters/ai/ollama_client_test.go`<br>`internal/adapters/ai/openai_client_test.go`<br>`internal/adapters/ai/claude_client_test.go`<br>`internal/adapters/ai/groq_client_test.go`<br>`internal/adapters/ai/router_test.go`<br>`internal/cli/integration/ai_test.go` |
 
 ### Core Files (Architecture Layers)
 
@@ -347,7 +356,7 @@ internal/cli/<feature>/
 | Type | Pattern | Location |
 |------|---------|----------|
 | Unit tests | `*_test.go` | Alongside source files |
-| Integration tests | `integration_*_test.go` | `internal/cli/` or `internal/adapters/nylas/` |
+| Integration tests | `*_test.go` | `internal/cli/integration/` |
 | Adapter tests | `*_test.go` | `internal/adapters/nylas/` |
 | Domain tests | `domain_test.go` | `internal/domain/` |
 
@@ -355,6 +364,7 @@ internal/cli/<feature>/
 
 | Command | File | Purpose |
 |---------|------|---------|
+| `nylas timezone` | `internal/cli/timezone/` | Offline timezone conversion, DST, meeting finder |
 | `nylas doctor` | `internal/cli/doctor.go` | System diagnostics |
 | `nylas version` | `internal/cli/version.go` | Version information |
 | `nylas tui` | `internal/cli/tui.go` | Interactive TUI mode |
@@ -377,7 +387,10 @@ internal/cli/<feature>/
 **Look in:** `internal/cli/auth/` and `internal/adapters/nylas/auth.go`
 
 **User asks:** "How do I test email functionality?"
-**Look in:** `internal/cli/integration_email_test.go`
+**Look in:** `internal/cli/integration/email_test.go`
+
+**User asks:** "How do I show calendar events in a different timezone?"
+**Look in:** `internal/cli/calendar/helpers.go` for timezone conversion helpers, `internal/cli/calendar/events.go` for `--timezone` and `--show-tz` flags
 
 ## Adding a New Feature (Step-by-Step)
 
@@ -517,6 +530,8 @@ go tool cover -html=coverage.out
 
 ### Integration Tests
 
+**Location**: All integration tests are in `internal/cli/integration/`
+
 Integration tests require valid Nylas API credentials:
 
 ```bash
@@ -525,21 +540,28 @@ export NYLAS_API_KEY="your-api-key"
 export NYLAS_GRANT_ID="your-grant-id"
 
 # Run all integration tests
-go test ./... -tags=integration
+go test -tags=integration ./internal/cli/integration/...
 
 # Run specific integration test
-go test ./internal/cli/... -tags=integration -run TestNotetaker
+go test -tags=integration ./internal/cli/integration/ -run TestAuth
 
 # Run integration tests with verbose output
-go test ./internal/cli/... -tags=integration -v
+go test -tags=integration -v ./internal/cli/integration/...
+
+# Run with timeout for long-running tests
+go test -tags=integration -v -timeout 30m ./internal/cli/integration/...
 ```
 
 **Integration Test Checklist:**
 - [ ] Tests tagged with `//go:build integration` and `// +build integration`
-- [ ] Tests skip when credentials missing: `if testing.Short() { t.Skip() }`
-- [ ] Tests clean up resources after execution
+- [ ] Tests in `internal/cli/integration/` directory
+- [ ] Tests use `package integration`
+- [ ] Tests skip when credentials missing: `if testAPIKey == "" { t.Skip() }`
+- [ ] Tests clean up resources using `t.Cleanup()`
 - [ ] Tests handle API rate limits gracefully
 - [ ] Tests don't assume test account state
+
+**See**: `internal/cli/integration/README.md` for detailed documentation
 
 ## Pre-Commit Hook (Recommended)
 

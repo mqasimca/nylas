@@ -83,6 +83,11 @@ type MockClient struct {
 	ListAttachmentsFunc       func(ctx context.Context, grantID, messageID string) ([]domain.Attachment, error)
 	GetAttachmentFunc         func(ctx context.Context, grantID, messageID, attachmentID string) (*domain.Attachment, error)
 	DownloadAttachmentFunc    func(ctx context.Context, grantID, messageID, attachmentID string) (io.ReadCloser, error)
+
+	// Calendar functions
+	GetCalendarsFunc func(ctx context.Context, grantID string) ([]domain.Calendar, error)
+	GetEventsFunc    func(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error)
+	GetEventFunc     func(ctx context.Context, grantID, calendarID, eventID string) (*domain.Event, error)
 }
 
 // NewMockClient creates a new MockClient.
@@ -587,6 +592,9 @@ func (m *MockClient) DownloadAttachment(ctx context.Context, grantID, messageID,
 
 // GetCalendars retrieves all calendars.
 func (m *MockClient) GetCalendars(ctx context.Context, grantID string) ([]domain.Calendar, error) {
+	if m.GetCalendarsFunc != nil {
+		return m.GetCalendarsFunc(ctx, grantID)
+	}
 	return []domain.Calendar{
 		{ID: "primary", Name: "Primary Calendar", IsPrimary: true},
 	}, nil
@@ -640,6 +648,9 @@ func (m *MockClient) DeleteCalendar(ctx context.Context, grantID, calendarID str
 
 // GetEvents retrieves events.
 func (m *MockClient) GetEvents(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error) {
+	if m.GetEventsFunc != nil {
+		return m.GetEventsFunc(ctx, grantID, calendarID, params)
+	}
 	return []domain.Event{}, nil
 }
 
@@ -650,6 +661,9 @@ func (m *MockClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 
 // GetEvent retrieves a single event.
 func (m *MockClient) GetEvent(ctx context.Context, grantID, calendarID, eventID string) (*domain.Event, error) {
+	if m.GetEventFunc != nil {
+		return m.GetEventFunc(ctx, grantID, calendarID, eventID)
+	}
 	return &domain.Event{
 		ID:         eventID,
 		CalendarID: calendarID,

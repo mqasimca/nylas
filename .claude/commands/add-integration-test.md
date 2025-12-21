@@ -9,7 +9,11 @@ Add a new integration test to the CLI test suite.
    - What scenario to test
    - Expected output/behavior
 
-2. Add test to `internal/cli/integration_test.go`:
+2. Add test to `internal/cli/integration/<feature>_test.go`:
+   - For email tests: `internal/cli/integration/email_test.go`
+   - For auth tests: `internal/cli/integration/auth_test.go`
+   - For calendar tests: `internal/cli/integration/calendar_test.go`
+   - etc.
 
 ### Test Template
 
@@ -105,5 +109,5 @@ func TestCLI_CommandWithFlags(t *testing.T) {
 3. Run the new test:
 ```bash
 NYLAS_API_KEY="key" NYLAS_GRANT_ID="id" NYLAS_TEST_BINARY="./bin/nylas" \
-  go test -tags=integration -v ./internal/cli/... -run "TestCLI_NewFeature"
+  go test -tags=integration -v ./internal/cli/integration/... -run "TestCLI_NewFeature"
 ```

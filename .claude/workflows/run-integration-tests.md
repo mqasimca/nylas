@@ -82,13 +82,13 @@ go test ./... -tags=integration -timeout=10m -v
 
 ```bash
 # Run specific test file
-go test ./internal/cli/integration_email_test.go -tags=integration -v
+go test ./internal/cli/integration -tags=integration -v -run=TestCLI_Email
 
 # Run specific test function
-go test ./internal/cli/... -tags=integration -run=TestEmail_Integration -v
+go test ./internal/cli/integration/... -tags=integration -run=TestCLI_EmailList -v
 
 # Run specific subtest
-go test ./internal/cli/... -tags=integration -run=TestEmail_Integration/SendEmail -v
+go test ./internal/cli/integration/... -tags=integration -run=TestCLI_Email -v
 ```
 
 ### Step 4: Handle Test Failures
@@ -105,7 +105,7 @@ Error: rate limit exceeded (429)
 ```bash
 # Add delay between test runs
 sleep 60
-go test ./internal/cli/... -tags=integration -v
+go test ./internal/cli/integration/... -tags=integration -v
 ```
 
 #### Common Failure: Invalid Grant
@@ -360,10 +360,10 @@ func (c *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Response,
 
 ```bash
 # Run one specific test to debug
-go test -tags=integration -v -run=TestEmail_Integration/SendEmail ./internal/cli/...
+go test -tags=integration -v -run=TestCLI_EmailList ./internal/cli/integration/...
 
 # With race detection
-go test -tags=integration -race -v -run=TestEmail_Integration/SendEmail ./internal/cli/...
+go test -tags=integration -race -v -run=TestCLI_EmailList ./internal/cli/integration/...
 ```
 
 ## Common Issues and Solutions
@@ -397,7 +397,7 @@ Ensure proper build tags at top of test file:
 //go:build integration
 // +build integration
 
-package cli
+package integration
 ```
 
 ### Issue 3: Tests Hang Indefinitely

@@ -63,12 +63,12 @@ go build -o bin/nylas ./cmd/nylas
 
 Run integration tests:
 ```bash
-go test -tags=integration ./internal/cli/...
+go test -tags=integration ./internal/cli/integration/...
 ```
 
 Run specific integration test:
 ```bash
-go test -tags=integration -v ./internal/cli/... -run "TestCLI_EmailList"
+go test -tags=integration -v ./internal/cli/integration/... -run "TestCLI_EmailList"
 ```
 
 ### Common Test Patterns

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -35,15 +36,43 @@ func newEventsListCmd() *cobra.Command {
 		limit      int
 		days       int
 		showAll    bool
+		targetTZ   string
+		showTZ     bool
 	)
 
 	cmd := &cobra.Command{
 		Use:     "list [grant-id]",
 		Aliases: []string{"ls"},
 		Short:   "List calendar events",
-		Long:    "List events from the specified calendar or primary calendar.",
-		Args:    cobra.MaximumNArgs(1),
+		Long: `List events from the specified calendar or primary calendar.
+
+Examples:
+  # List events in your local timezone
+  nylas calendar events list
+
+  # List events converted to a specific timezone
+  nylas calendar events list --timezone America/Los_Angeles
+
+  # List events with timezone abbreviations shown
+  nylas calendar events list --show-tz`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Auto-detect timezone if not specified
+			if targetTZ == "" && cmd.Flags().Changed("timezone") {
+				// User explicitly set --timezone="" to clear
+				targetTZ = ""
+			} else if targetTZ == "" {
+				// Default to local timezone for conversion display
+				targetTZ = getLocalTimeZone()
+			}
+
+			// Validate timezone if specified
+			if targetTZ != "" {
+				if err := validateTimeZone(targetTZ); err != nil {
+					return err
+				}
+			}
+
 			client, err := getClient()
 			if err != nil {
 				return err
@@ -114,12 +143,55 @@ func newEventsListCmd() *cobra.Command {
 			fmt.Printf("Found %d event(s):\n\n", len(events))
 
 			for _, event := range events {
-				// Title
-				fmt.Printf("%s\n", cyan.Sprint(event.Title))
+				// Title with timezone badge (if showing timezone info)
+				fmt.Printf("%s", cyan.Sprint(event.Title))
+				if showTZ && !event.When.IsAllDay() {
+					// Get event's original timezone
+					start := event.When.StartDateTime()
+					originalTZ := start.Location().String()
+					if originalTZ == "Local" {
+						originalTZ = getLocalTimeZone()
+					}
 
-				// Time
-				when := formatEventTime(event.When)
-				fmt.Printf("  %s %s\n", dim.Sprint("When:"), when)
+					// Add colored timezone badge
+					tzColor := getTimezoneColor(originalTZ)
+					badge := formatTimezoneBadge(originalTZ, true) // Use abbreviation
+					fmt.Printf(" %s", color.New(color.Attribute(tzColor)).Sprint(badge))
+				}
+				fmt.Println()
+
+				// Time (with timezone conversion if requested)
+				timeDisplay, err := formatEventTimeWithTZ(&event, targetTZ)
+				if err != nil {
+					fmt.Printf("  %s %s (timezone conversion error: %v)\n",
+						dim.Sprint("When:"),
+						formatEventTime(event.When),
+						err)
+				} else {
+					if timeDisplay.ShowConversion {
+						// Show converted time prominently
+						fmt.Printf("  %s %s", dim.Sprint("When:"), timeDisplay.ConvertedTime)
+						if showTZ {
+							fmt.Printf(" %s", color.New(color.FgBlue, color.Bold).Sprint(timeDisplay.ConvertedTimezone))
+						}
+						fmt.Println()
+						// Show original time as reference
+						fmt.Printf("       %s %s",
+							dim.Sprint("(Original:"),
+							dim.Sprint(timeDisplay.OriginalTime))
+						if showTZ {
+							fmt.Printf(" %s", dim.Sprint(timeDisplay.OriginalTimezone))
+						}
+						fmt.Printf("%s\n", dim.Sprint(")"))
+					} else {
+						// No conversion - show original time
+						fmt.Printf("  %s %s", dim.Sprint("When:"), timeDisplay.OriginalTime)
+						if showTZ && timeDisplay.OriginalTimezone != "" {
+							fmt.Printf(" %s", color.New(color.FgBlue, color.Bold).Sprint(timeDisplay.OriginalTimezone))
+						}
+						fmt.Println()
+					}
+				}
 
 				// Location
 				if event.Location != "" {
@@ -155,21 +227,49 @@ func newEventsListCmd() *cobra.Command {
 	cmd.Flags().IntVarP(&limit, "limit", "n", 10, "Maximum number of events to show")
 	cmd.Flags().IntVarP(&days, "days", "d", 7, "Show events for the next N days (0 for no limit)")
 	cmd.Flags().BoolVar(&showAll, "show-cancelled", false, "Include cancelled events")
+	cmd.Flags().StringVar(&targetTZ, "timezone", "", "Display times in this timezone (e.g., America/Los_Angeles). Defaults to local timezone.")
+	cmd.Flags().BoolVar(&showTZ, "show-tz", false, "Show timezone abbreviations (e.g., PST, EST)")
 
 	return cmd
 }
 
 func newEventsShowCmd() *cobra.Command {
-	var calendarID string
+	var (
+		calendarID string
+		targetTZ   string
+		showTZ     bool
+	)
 
 	cmd := &cobra.Command{
 		Use:     "show <event-id> [grant-id]",
 		Aliases: []string{"read", "get"},
 		Short:   "Show event details",
-		Long:    "Display detailed information about a specific event.",
-		Args:    cobra.RangeArgs(1, 2),
+		Long: `Display detailed information about a specific event.
+
+Examples:
+  # Show event in local timezone
+  nylas calendar events show <event-id>
+
+  # Show event in a specific timezone
+  nylas calendar events show <event-id> --timezone Europe/London
+
+  # Show event with timezone abbreviations
+  nylas calendar events show <event-id> --show-tz`,
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventID := args[0]
+
+			// Auto-detect timezone if not specified
+			if targetTZ == "" && !cmd.Flags().Changed("timezone") {
+				targetTZ = getLocalTimeZone()
+			}
+
+			// Validate timezone if specified
+			if targetTZ != "" {
+				if err := validateTimeZone(targetTZ); err != nil {
+					return err
+				}
+			}
 
 			client, err := getClient()
 			if err != nil {
@@ -218,9 +318,53 @@ func newEventsShowCmd() *cobra.Command {
 			// Title
 			fmt.Printf("%s\n\n", cyan.Sprint(event.Title))
 
-			// Time
+			// Time (with timezone conversion if requested)
 			fmt.Printf("%s\n", green.Sprint("When"))
-			fmt.Printf("  %s\n\n", formatEventTime(event.When))
+			timeDisplay, err := formatEventTimeWithTZ(event, targetTZ)
+			if err != nil {
+				fmt.Printf("  %s (timezone conversion error: %v)\n\n",
+					formatEventTime(event.When),
+					err)
+			} else {
+				if timeDisplay.ShowConversion {
+					// Show converted time prominently
+					fmt.Printf("  %s", timeDisplay.ConvertedTime)
+					if showTZ {
+						fmt.Printf(" %s", color.New(color.FgBlue).Sprint(timeDisplay.ConvertedTimezone))
+					}
+					fmt.Println()
+					// Show original time as reference
+					fmt.Printf("  %s %s",
+						dim.Sprint("(Original:"),
+						dim.Sprint(timeDisplay.OriginalTime))
+					if showTZ {
+						fmt.Printf(" %s", dim.Sprint(timeDisplay.OriginalTimezone))
+					}
+					fmt.Printf("%s\n\n", dim.Sprint(")"))
+				} else {
+					// No conversion - show original time
+					fmt.Printf("  %s", timeDisplay.OriginalTime)
+					if showTZ && timeDisplay.OriginalTimezone != "" {
+						fmt.Printf(" %s", color.New(color.FgBlue).Sprint(timeDisplay.OriginalTimezone))
+					}
+					fmt.Printf("\n\n")
+				}
+			}
+
+			// DST Warning (if applicable)
+			if !event.When.IsAllDay() {
+				start := event.When.StartDateTime()
+				eventTZ := start.Location().String()
+				if eventTZ == "Local" {
+					eventTZ = getLocalTimeZone()
+				}
+
+				dstWarning := checkDSTWarning(start, eventTZ)
+				if dstWarning != "" {
+					yellow := color.New(color.FgYellow)
+					fmt.Printf("  %s\n\n", yellow.Sprint(dstWarning))
+				}
+			}
 
 			// Location
 			if event.Location != "" {
@@ -285,21 +429,26 @@ func newEventsShowCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&calendarID, "calendar", "c", "", "Calendar ID (defaults to primary)")
+	cmd.Flags().StringVar(&targetTZ, "timezone", "", "Display times in this timezone (e.g., America/Los_Angeles). Defaults to local timezone.")
+	cmd.Flags().BoolVar(&showTZ, "show-tz", false, "Show timezone abbreviations (e.g., PST, EST)")
 
 	return cmd
 }
 
 func newEventsCreateCmd() *cobra.Command {
 	var (
-		calendarID   string
-		title        string
-		description  string
-		location     string
-		startTime    string
-		endTime      string
-		allDay       bool
-		participants []string
-		busy         bool
+		calendarID         string
+		title              string
+		description        string
+		location           string
+		startTime          string
+		endTime            string
+		allDay             bool
+		participants       []string
+		busy               bool
+		ignoreDSTWarning   bool
+		ignoreWorkingHours bool
+		lockTimezone       bool
 	)
 
 	cmd := &cobra.Command{
@@ -380,6 +529,59 @@ Examples:
 				return err
 			}
 
+			// Check for DST warnings (unless ignored or all-day event)
+			if !ignoreDSTWarning && !allDay {
+				eventStart := when.StartDateTime()
+				eventTZ := eventStart.Location().String()
+				if eventTZ == "Local" {
+					eventTZ = getLocalTimeZone()
+				}
+
+				// Check for DST conflict
+				dstWarning, err := checkDSTConflict(eventStart, eventTZ, when.EndDateTime().Sub(eventStart))
+				if err == nil && dstWarning != nil {
+					// Display DST warning
+					if !confirmDSTConflict(dstWarning) {
+						fmt.Println("Cancelled.")
+						return nil
+					}
+				}
+			}
+
+			// Check for working hours violations (unless ignored or all-day event)
+			if !ignoreWorkingHours && !allDay {
+				eventStart := when.StartDateTime()
+
+				// Load config to get working hours settings
+				configStore := config.NewDefaultFileStore()
+				cfg, err := configStore.Load()
+				if err == nil && cfg != nil {
+					// Check for break violations first (hard block - cannot override)
+					breakViolation := checkBreakViolation(eventStart, cfg)
+					if breakViolation != "" {
+						red := color.New(color.FgRed, color.Bold)
+						red.Println("\n⛔ Break Time Conflict")
+						fmt.Printf("\n%s\n\n", breakViolation)
+						fmt.Println("Tip: Schedule the event outside of break times, or update your")
+						fmt.Println("     break configuration in ~/.nylas/config.yaml")
+						return fmt.Errorf("event conflicts with break time")
+					}
+
+					// Check for working hours violations (soft warning - can override)
+					violation := checkWorkingHoursViolation(eventStart, cfg)
+					if violation != "" {
+						// Get schedule for display
+						weekday := strings.ToLower(eventStart.Weekday().String())
+						schedule := cfg.WorkingHours.GetScheduleForDay(weekday)
+
+						if !confirmWorkingHoursViolation(violation, eventStart, schedule) {
+							fmt.Println("Cancelled.")
+							return nil
+						}
+					}
+				}
+			}
+
 			req := &domain.CreateEventRequest{
 				Title:       title,
 				Description: description,
@@ -393,6 +595,14 @@ Examples:
 				req.Participants = append(req.Participants, domain.Participant{
 					Email: email,
 				})
+			}
+
+			// Set timezone lock in metadata if requested
+			if lockTimezone && !allDay {
+				if req.Metadata == nil {
+					req.Metadata = make(map[string]string)
+				}
+				req.Metadata["timezone_locked"] = "true"
 			}
 
 			spinner := common.NewSpinner("Creating event...")
@@ -409,6 +619,11 @@ Examples:
 			fmt.Printf("%s Event created successfully!\n\n", green.Sprint("✓"))
 			fmt.Printf("Title: %s\n", event.Title)
 			fmt.Printf("When: %s\n", formatEventTime(event.When))
+			if lockTimezone && !allDay {
+				cyan := color.New(color.FgCyan)
+				fmt.Printf("%s %s\n", cyan.Sprint("🔒 Timezone locked:"), when.StartTimezone)
+				fmt.Println("     This event will always display in this timezone, regardless of viewer's location.")
+			}
 			fmt.Printf("ID: %s\n", event.ID)
 
 			return nil
@@ -424,6 +639,9 @@ Examples:
 	cmd.Flags().BoolVar(&allDay, "all-day", false, "Create an all-day event")
 	cmd.Flags().StringArrayVarP(&participants, "participant", "p", nil, "Add participant email (can be used multiple times)")
 	cmd.Flags().BoolVar(&busy, "busy", true, "Mark time as busy")
+	cmd.Flags().BoolVar(&ignoreDSTWarning, "ignore-dst-warning", false, "Skip DST conflict warnings")
+	cmd.Flags().BoolVar(&ignoreWorkingHours, "ignore-working-hours", false, "Skip working hours validation")
+	cmd.Flags().BoolVar(&lockTimezone, "lock-timezone", false, "Lock event to its timezone (always display in this timezone)")
 
 	_ = cmd.MarkFlagRequired("title")
 	_ = cmd.MarkFlagRequired("start")
@@ -516,16 +734,18 @@ func newEventsDeleteCmd() *cobra.Command {
 
 func newEventsUpdateCmd() *cobra.Command {
 	var (
-		calendarID   string
-		title        string
-		description  string
-		location     string
-		startTime    string
-		endTime      string
-		allDay       bool
-		participants []string
-		busy         bool
-		visibility   string
+		calendarID     string
+		title          string
+		description    string
+		location       string
+		startTime      string
+		endTime        string
+		allDay         bool
+		participants   []string
+		busy           bool
+		visibility     string
+		lockTimezone   bool
+		unlockTimezone bool
 	)
 
 	cmd := &cobra.Command{
@@ -617,6 +837,26 @@ Examples:
 				}
 			}
 
+			// Handle timezone locking/unlocking
+			if lockTimezone && unlockTimezone {
+				return common.NewUserError(
+					"cannot use both --lock-timezone and --unlock-timezone",
+					"Use only one flag to either lock or unlock timezone",
+				)
+			}
+
+			if lockTimezone {
+				if req.Metadata == nil {
+					req.Metadata = make(map[string]string)
+				}
+				req.Metadata["timezone_locked"] = "true"
+			} else if unlockTimezone {
+				if req.Metadata == nil {
+					req.Metadata = make(map[string]string)
+				}
+				req.Metadata["timezone_locked"] = "false"
+			}
+
 			spinner := common.NewSpinner("Updating event...")
 			spinner.Start()
 
@@ -631,6 +871,13 @@ Examples:
 			fmt.Printf("%s Event updated successfully!\n\n", green.Sprint("✓"))
 			fmt.Printf("Title: %s\n", event.Title)
 			fmt.Printf("When: %s\n", formatEventTime(event.When))
+			if lockTimezone {
+				cyan := color.New(color.FgCyan)
+				fmt.Printf("%s Timezone is now locked\n", cyan.Sprint("🔒"))
+			} else if unlockTimezone {
+				cyan := color.New(color.FgCyan)
+				fmt.Printf("%s Timezone lock removed\n", cyan.Sprint("🔓"))
+			}
 			fmt.Printf("ID: %s\n", event.ID)
 
 			return nil
@@ -647,6 +894,8 @@ Examples:
 	cmd.Flags().StringArrayVarP(&participants, "participant", "p", nil, "Set participant emails (replaces existing)")
 	cmd.Flags().BoolVar(&busy, "busy", true, "Mark time as busy")
 	cmd.Flags().StringVar(&visibility, "visibility", "", "Event visibility (public, private, default)")
+	cmd.Flags().BoolVar(&lockTimezone, "lock-timezone", false, "Lock event to its timezone")
+	cmd.Flags().BoolVar(&unlockTimezone, "unlock-timezone", false, "Remove timezone lock from event")
 
 	return cmd
 }

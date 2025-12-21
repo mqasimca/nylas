@@ -1,0 +1,215 @@
+package ai
+
+import (
+	"context"
+	"testing"
+
+	"github.com/mqasimca/nylas/internal/domain"
+)
+
+func TestNewGroqClient(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    *domain.GroqConfig
+		wantModel string
+	}{
+		{
+			name:      "nil config uses defaults",
+			config:    nil,
+			wantModel: "mixtral-8x7b-32768",
+		},
+		{
+			name: "custom config",
+			config: &domain.GroqConfig{
+				APIKey: "test-key",
+				Model:  "llama2-70b-4096",
+			},
+			wantModel: "llama2-70b-4096",
+		},
+		{
+			name: "env var config",
+			config: &domain.GroqConfig{
+				APIKey: "$GROQ_API_KEY",
+				Model:  "gemma-7b-it",
+			},
+			wantModel: "gemma-7b-it",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := NewGroqClient(tt.config)
+
+			if client.model != tt.wantModel {
+				t.Errorf("model = %q, want %q", client.model, tt.wantModel)
+			}
+
+			if client.client == nil {
+				t.Error("HTTP client is nil")
+			}
+		})
+	}
+}
+
+func TestGroqClient_Name(t *testing.T) {
+	client := NewGroqClient(nil)
+	if name := client.Name(); name != "groq" {
+		t.Errorf("Name() = %q, want %q", name, "groq")
+	}
+}
+
+func TestGroqClient_IsAvailable(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    *domain.GroqConfig
+		wantAvail bool
+	}{
+		{
+			name: "with API key",
+			config: &domain.GroqConfig{
+				APIKey: "test-key",
+				Model:  "mixtral-8x7b-32768",
+			},
+			wantAvail: true,
+		},
+		{
+			name: "without API key",
+			config: &domain.GroqConfig{
+				Model: "mixtral-8x7b-32768",
+			},
+			wantAvail: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := NewGroqClient(tt.config)
+			ctx := context.Background()
+
+			avail := client.IsAvailable(ctx)
+			if avail != tt.wantAvail {
+				t.Errorf("IsAvailable() = %v, want %v", avail, tt.wantAvail)
+			}
+		})
+	}
+}
+
+func TestGroqClient_GetModel(t *testing.T) {
+	client := NewGroqClient(&domain.GroqConfig{
+		APIKey: "test-key",
+		Model:  "mixtral-8x7b-32768",
+	})
+
+	tests := []struct {
+		name         string
+		requestModel string
+		want         string
+	}{
+		{
+			name:         "use request model",
+			requestModel: "llama2-70b-4096",
+			want:         "llama2-70b-4096",
+		},
+		{
+			name:         "use default model",
+			requestModel: "",
+			want:         "mixtral-8x7b-32768",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := client.getModel(tt.requestModel)
+			if got != tt.want {
+				t.Errorf("getModel() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGroqClient_ConvertMessages(t *testing.T) {
+	client := NewGroqClient(nil)
+
+	messages := []domain.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant"},
+		{Role: "user", Content: "Hello"},
+		{Role: "assistant", Content: "Hi there!"},
+	}
+
+	converted := client.convertMessages(messages)
+
+	if len(converted) != len(messages) {
+		t.Errorf("converted messages count = %d, want %d", len(converted), len(messages))
+	}
+
+	for i, msg := range converted {
+		if msg["role"] != messages[i].Role {
+			t.Errorf("message[%d] role = %q, want %q", i, msg["role"], messages[i].Role)
+		}
+		if msg["content"] != messages[i].Content {
+			t.Errorf("message[%d] content = %q, want %q", i, msg["content"], messages[i].Content)
+		}
+	}
+}
+
+func TestGroqClient_ConvertTools(t *testing.T) {
+	client := NewGroqClient(nil)
+
+	tools := []domain.Tool{
+		{
+			Name:        "get_weather",
+			Description: "Get current weather",
+			Parameters: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"location": map[string]any{
+						"type":        "string",
+						"description": "City name",
+					},
+				},
+			},
+		},
+	}
+
+	converted := client.convertTools(tools)
+
+	if len(converted) != len(tools) {
+		t.Errorf("converted tools count = %d, want %d", len(converted), len(tools))
+	}
+
+	if converted[0]["type"] != "function" {
+		t.Errorf("tool type = %v, want %q", converted[0]["type"], "function")
+	}
+
+	fn, ok := converted[0]["function"].(map[string]any)
+	if !ok {
+		t.Fatal("function field is not a map")
+	}
+
+	if fn["name"] != tools[0].Name {
+		t.Errorf("function name = %v, want %q", fn["name"], tools[0].Name)
+	}
+
+	if fn["description"] != tools[0].Description {
+		t.Errorf("function description = %v, want %q", fn["description"], tools[0].Description)
+	}
+}
+
+func TestGroqClient_ChatWithTools_NoAPIKey(t *testing.T) {
+	client := NewGroqClient(&domain.GroqConfig{
+		Model: "mixtral-8x7b-32768",
+		// No API key
+	})
+
+	ctx := context.Background()
+	req := &domain.ChatRequest{
+		Messages: []domain.ChatMessage{
+			{Role: "user", Content: "Hello"},
+		},
+	}
+
+	_, err := client.ChatWithTools(ctx, req, nil)
+	if err == nil {
+		t.Error("expected error when API key not configured, got nil")
+	}
+}

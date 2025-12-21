@@ -5,6 +5,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
@@ -14,6 +15,7 @@ import (
 )
 
 var client ports.NylasClient
+var llmRouter ports.LLMRouter
 
 // NewCalendarCmd creates the calendar command group.
 func NewCalendarCmd() *cobra.Command {
@@ -35,6 +37,9 @@ View calendars, list events, create new events, and more.`,
 	cmd.AddCommand(newAvailabilityCmd())
 	cmd.AddCommand(newVirtualCmd())
 	cmd.AddCommand(newRecurringCmd())
+	cmd.AddCommand(newFindTimeCmd())
+	cmd.AddCommand(newScheduleCmd())
+	cmd.AddCommand(newAICmd()) // AI command group includes: analyze, conflicts, reschedule, focus-time, adapt
 
 	return cmd
 }
@@ -86,4 +91,41 @@ func getGrantID(args []string) (string, error) {
 
 func createContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 30*time.Second)
+}
+
+func getLLMRouter() (ports.LLMRouter, error) {
+	if llmRouter != nil {
+		return llmRouter, nil
+	}
+
+	// Load configuration
+	configStore := config.NewDefaultFileStore()
+	cfg, err := configStore.Load()
+	if err != nil {
+		// Default AI config if none exists
+		cfg = &domain.Config{
+			AI: &domain.AIConfig{
+				DefaultProvider: "ollama",
+				Ollama: &domain.OllamaConfig{
+					Host:  "http://localhost:11434",
+					Model: "mistral:latest",
+				},
+			},
+		}
+	}
+
+	// Ensure AI config exists
+	if cfg.AI == nil {
+		cfg.AI = &domain.AIConfig{
+			DefaultProvider: "ollama",
+			Ollama: &domain.OllamaConfig{
+				Host:  "http://localhost:11434",
+				Model: "mistral:latest",
+			},
+		}
+	}
+
+	// Create and cache router
+	llmRouter = ai.NewRouter(cfg.AI)
+	return llmRouter, nil
 }

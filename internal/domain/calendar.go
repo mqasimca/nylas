@@ -19,28 +19,29 @@ type Calendar struct {
 
 // Event represents a calendar event from Nylas.
 type Event struct {
-	ID            string        `json:"id"`
-	GrantID       string        `json:"grant_id"`
-	CalendarID    string        `json:"calendar_id"`
-	Title         string        `json:"title"`
-	Description   string        `json:"description,omitempty"`
-	Location      string        `json:"location,omitempty"`
-	When          EventWhen     `json:"when"`
-	Participants  []Participant `json:"participants,omitempty"`
-	Organizer     *Participant  `json:"organizer,omitempty"`
-	Status        string        `json:"status,omitempty"` // confirmed, cancelled, tentative
-	Busy          bool          `json:"busy"`
-	ReadOnly      bool          `json:"read_only"`
-	Visibility    string        `json:"visibility,omitempty"` // public, private
-	Recurrence    []string      `json:"recurrence,omitempty"`
-	Conferencing  *Conferencing `json:"conferencing,omitempty"`
-	Reminders     *Reminders    `json:"reminders,omitempty"`
-	MasterEventID string        `json:"master_event_id,omitempty"`
-	ICalUID       string        `json:"ical_uid,omitempty"`
-	HtmlLink      string        `json:"html_link,omitempty"`
-	CreatedAt     time.Time     `json:"created_at,omitempty"`
-	UpdatedAt     time.Time     `json:"updated_at,omitempty"`
-	Object        string        `json:"object,omitempty"`
+	ID            string            `json:"id"`
+	GrantID       string            `json:"grant_id"`
+	CalendarID    string            `json:"calendar_id"`
+	Title         string            `json:"title"`
+	Description   string            `json:"description,omitempty"`
+	Location      string            `json:"location,omitempty"`
+	When          EventWhen         `json:"when"`
+	Participants  []Participant     `json:"participants,omitempty"`
+	Organizer     *Participant      `json:"organizer,omitempty"`
+	Status        string            `json:"status,omitempty"` // confirmed, cancelled, tentative
+	Busy          bool              `json:"busy"`
+	ReadOnly      bool              `json:"read_only"`
+	Visibility    string            `json:"visibility,omitempty"` // public, private
+	Recurrence    []string          `json:"recurrence,omitempty"`
+	Conferencing  *Conferencing     `json:"conferencing,omitempty"`
+	Reminders     *Reminders        `json:"reminders,omitempty"`
+	Metadata      map[string]string `json:"metadata,omitempty"`
+	MasterEventID string            `json:"master_event_id,omitempty"`
+	ICalUID       string            `json:"ical_uid,omitempty"`
+	HtmlLink      string            `json:"html_link,omitempty"`
+	CreatedAt     time.Time         `json:"created_at,omitempty"`
+	UpdatedAt     time.Time         `json:"updated_at,omitempty"`
+	Object        string            `json:"object,omitempty"`
 }
 
 // EventWhen represents when an event occurs.
@@ -97,6 +98,27 @@ func (w EventWhen) EndDateTime() time.Time {
 // IsAllDay returns true if this is an all-day event.
 func (w EventWhen) IsAllDay() bool {
 	return w.Object == "date" || w.Object == "datespan" || w.Date != "" || w.StartDate != ""
+}
+
+// IsTimezoneLocked returns true if the event has timezone locking enabled.
+func (e Event) IsTimezoneLocked() bool {
+	if e.Metadata == nil {
+		return false
+	}
+	return e.Metadata["timezone_locked"] == "true"
+}
+
+// GetLockedTimezone returns the locked timezone for the event, if set.
+// Returns empty string if timezone is not locked.
+func (e Event) GetLockedTimezone() string {
+	if !e.IsTimezoneLocked() {
+		return ""
+	}
+	// Return the event's start timezone if locked
+	if !e.When.IsAllDay() && e.When.StartTimezone != "" {
+		return e.When.StartTimezone
+	}
+	return ""
 }
 
 // Participant represents an event participant.
@@ -167,16 +189,17 @@ type CreateEventRequest struct {
 
 // UpdateEventRequest for updating an event.
 type UpdateEventRequest struct {
-	Title        *string       `json:"title,omitempty"`
-	Description  *string       `json:"description,omitempty"`
-	Location     *string       `json:"location,omitempty"`
-	When         *EventWhen    `json:"when,omitempty"`
-	Participants []Participant `json:"participants,omitempty"`
-	Busy         *bool         `json:"busy,omitempty"`
-	Visibility   *string       `json:"visibility,omitempty"`
-	Recurrence   []string      `json:"recurrence,omitempty"`
-	Conferencing *Conferencing `json:"conferencing,omitempty"`
-	Reminders    *Reminders    `json:"reminders,omitempty"`
+	Title        *string           `json:"title,omitempty"`
+	Description  *string           `json:"description,omitempty"`
+	Location     *string           `json:"location,omitempty"`
+	When         *EventWhen        `json:"when,omitempty"`
+	Participants []Participant     `json:"participants,omitempty"`
+	Busy         *bool             `json:"busy,omitempty"`
+	Visibility   *string           `json:"visibility,omitempty"`
+	Recurrence   []string          `json:"recurrence,omitempty"`
+	Conferencing *Conferencing     `json:"conferencing,omitempty"`
+	Reminders    *Reminders        `json:"reminders,omitempty"`
+	Metadata     map[string]string `json:"metadata,omitempty"`
 }
 
 // CalendarListResponse represents a paginated calendar list response.

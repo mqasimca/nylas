@@ -6,10 +6,12 @@
 - Table tests: use `t.Run(tt.name, ...)`
 
 ## Integration Tests
-- File: `integration_*_test.go`
+- Location: `internal/cli/integration/`
+- File: `*_test.go` (e.g., `email_test.go`, `auth_test.go`)
 - Build tag: `//go:build integration` and `// +build integration`
-- Function: `TestFeature_Integration`
-- Skip tag: `if testing.Short() { t.Skip() }`
+- Package: `package integration`
+- Function: `TestCLI_CommandName` (e.g., `TestCLI_EmailList`)
+- Skip tag: `if testAPIKey == "" { t.Skip() }`
 
 ## Examples
 

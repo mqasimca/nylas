@@ -65,7 +65,7 @@ go test ./... -short
 make security
 
 # Integration tests (if credentials available)
-go test -tags=integration ./internal/cli/...
+go test -tags=integration ./internal/cli/integration/...
 ```
 
 4. Provide feedback in this format:

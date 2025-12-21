@@ -311,7 +311,7 @@ When you add, modify, or remove ANY command or feature:
    - [ ] Add subcommands (list, show, create, etc.)
    - [ ] Add `helpers.go` with getClient(), getGrantID()
    - [ ] Add unit tests in `{resource}_test.go`
-   - [ ] Add integration tests in `integration_{resource}_test.go`
+   - [ ] Add integration tests in `internal/cli/integration/{resource}_test.go`
 
 5. **Registration**
    - [ ] Add to `cmd/nylas/main.go`: `rootCmd.AddCommand(resource.NewResourceCmd())`
@@ -388,7 +388,7 @@ export NYLAS_API_KEY="your-api-key"
 export NYLAS_GRANT_ID="your-grant-id"
 export NYLAS_TEST_BINARY="/path/to/bin/nylas"
 
-go test -tags=integration ./internal/cli/...
+go test -tags=integration ./internal/cli/integration/...
 ```
 
 ## Code Quality

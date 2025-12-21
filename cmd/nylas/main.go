@@ -7,6 +7,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli"
 	"github.com/mqasimca/nylas/internal/cli/admin"
+	"github.com/mqasimca/nylas/internal/cli/ai"
 	"github.com/mqasimca/nylas/internal/cli/auth"
 	"github.com/mqasimca/nylas/internal/cli/calendar"
 	"github.com/mqasimca/nylas/internal/cli/contacts"
@@ -15,12 +16,14 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/notetaker"
 	"github.com/mqasimca/nylas/internal/cli/otp"
 	"github.com/mqasimca/nylas/internal/cli/scheduler"
+	"github.com/mqasimca/nylas/internal/cli/timezone"
 	"github.com/mqasimca/nylas/internal/cli/webhook"
 )
 
 func main() {
 	// Add subcommands
 	rootCmd := cli.GetRootCmd()
+	rootCmd.AddCommand(ai.NewAICmd())
 	rootCmd.AddCommand(auth.NewAuthCmd())
 	rootCmd.AddCommand(otp.NewOTPCmd())
 	rootCmd.AddCommand(email.NewEmailCmd())
@@ -31,6 +34,7 @@ func main() {
 	rootCmd.AddCommand(webhook.NewWebhookCmd())
 	rootCmd.AddCommand(notetaker.NewNotetakerCmd())
 	rootCmd.AddCommand(inbound.NewInboundCmd())
+	rootCmd.AddCommand(timezone.NewTimezoneCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
 
 	if err := cli.Execute(); err != nil {
