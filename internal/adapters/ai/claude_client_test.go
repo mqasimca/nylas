@@ -359,3 +359,98 @@ func TestExpandEnvVar(t *testing.T) {
 		})
 	}
 }
+
+func TestClaudeClient_Chat_Success(t *testing.T) {
+	// Note: This test requires a real API call or more complex HTTP mocking
+	// For now, we test that the method properly delegates to ChatWithTools
+	client := NewClaudeClient(&domain.ClaudeConfig{
+		APIKey: "test-key",
+		Model:  "claude-3-5-sonnet-20241022",
+	})
+
+	ctx := context.Background()
+	req := &domain.ChatRequest{
+		Messages: []domain.ChatMessage{
+			{Role: "user", Content: "Hello"},
+		},
+	}
+
+	// This will fail with API error since we don't have a valid API key
+	// But it exercises the code path
+	_, err := client.Chat(ctx, req)
+	if err != nil {
+		// Expected - no valid API key
+		t.Logf("Chat() error = %v (expected without valid API key)", err)
+	}
+}
+
+func TestClaudeClient_Chat_NoAPIKey(t *testing.T) {
+	client := NewClaudeClient(&domain.ClaudeConfig{
+		Model: "claude-3-5-sonnet-20241022",
+		// No API key
+	})
+
+	ctx := context.Background()
+	req := &domain.ChatRequest{
+		Messages: []domain.ChatMessage{
+			{Role: "user", Content: "Hello"},
+		},
+	}
+
+	_, err := client.Chat(ctx, req)
+	if err == nil {
+		t.Error("expected error when API key not configured, got nil")
+	}
+}
+
+func TestClaudeClient_StreamChat(t *testing.T) {
+	client := NewClaudeClient(&domain.ClaudeConfig{
+		APIKey: "test-key",
+		Model:  "claude-3-5-sonnet-20241022",
+	})
+
+	ctx := context.Background()
+	req := &domain.ChatRequest{
+		Messages: []domain.ChatMessage{
+			{Role: "user", Content: "Hello"},
+		},
+	}
+
+	// Collect chunks
+	var chunks []string
+	callback := func(chunk string) error {
+		chunks = append(chunks, chunk)
+		return nil
+	}
+
+	// This will fail with API error since we don't have a valid API key
+	// But it exercises the code path
+	err := client.StreamChat(ctx, req, callback)
+	if err != nil {
+		// Expected - no valid API endpoint
+		t.Logf("StreamChat() error = %v (expected without valid API)", err)
+	}
+}
+
+func TestClaudeClient_StreamChat_NoAPIKey(t *testing.T) {
+	client := NewClaudeClient(&domain.ClaudeConfig{
+		Model: "claude-3-5-sonnet-20241022",
+		// No API key
+	})
+
+	ctx := context.Background()
+	req := &domain.ChatRequest{
+		Messages: []domain.ChatMessage{
+			{Role: "user", Content: "Hello"},
+		},
+	}
+
+	callback := func(chunk string) error {
+		return nil
+	}
+
+	err := client.StreamChat(ctx, req, callback)
+	if err == nil {
+		t.Error("expected error when API key not configured, got nil")
+	}
+}

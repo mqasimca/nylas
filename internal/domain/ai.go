@@ -50,6 +50,8 @@ type TokenUsage struct {
 type AIConfig struct {
 	DefaultProvider string            `yaml:"default_provider"` // ollama, claude, openai, groq
 	Fallback        *AIFallbackConfig `yaml:"fallback,omitempty"`
+	Privacy         *PrivacyConfig    `yaml:"privacy,omitempty"`
+	Features        *FeaturesConfig   `yaml:"features,omitempty"`
 	Ollama          *OllamaConfig     `yaml:"ollama,omitempty"`
 	Claude          *ClaudeConfig     `yaml:"claude,omitempty"`
 	OpenAI          *OpenAIConfig     `yaml:"openai,omitempty"`
@@ -91,6 +93,22 @@ type GroqConfig struct {
 type OpenRouterConfig struct {
 	APIKey string `yaml:"api_key,omitempty"` // Can use ${ENV_VAR}
 	Model  string `yaml:"model"`             // e.g., anthropic/claude-3.5-sonnet
+}
+
+// PrivacyConfig represents privacy settings for AI features.
+type PrivacyConfig struct {
+	AllowCloudAI     bool `yaml:"allow_cloud_ai"`     // Require explicit opt-in for cloud AI
+	DataRetention    int  `yaml:"data_retention"`     // Days to keep learned patterns (0 = disabled)
+	LocalStorageOnly bool `yaml:"local_storage_only"` // Only use local storage, no cloud
+}
+
+// FeaturesConfig represents feature toggles for AI capabilities.
+type FeaturesConfig struct {
+	NaturalLanguageScheduling bool `yaml:"natural_language_scheduling"` // Enable natural language scheduling
+	PredictiveScheduling      bool `yaml:"predictive_scheduling"`       // Enable predictive scheduling
+	FocusTimeProtection       bool `yaml:"focus_time_protection"`       // Enable focus time protection
+	ConflictResolution        bool `yaml:"conflict_resolution"`         // Enable conflict resolution
+	EmailContextAnalysis      bool `yaml:"email_context_analysis"`      // Enable email context analysis
 }
 
 // EmailThreadAnalysis represents the AI analysis of an email thread.

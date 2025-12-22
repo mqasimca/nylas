@@ -667,6 +667,171 @@ For working hours and break configuration, see [Timezone & Working Hours Guide](
 
 ---
 
+### Recurring Pattern Learning
+
+**Status:** ✅ Available (Phase 4)
+
+AI-powered analysis of your historical calendar data to learn scheduling patterns and provide personalized recommendations.
+
+#### What It Analyzes
+
+The pattern learner examines your past meetings to discover:
+
+- **Acceptance Patterns**: Which days/times you most frequently accept meetings
+- **Duration Patterns**: Actual vs scheduled meeting lengths by type
+- **Timezone Preferences**: Cross-timezone meeting patterns
+- **Productivity Insights**: Peak focus times based on meeting density
+- **Participant Patterns**: Per-person scheduling preferences
+
+#### Example Usage
+
+**Basic Analysis (Last 30 Days):**
+
+```bash
+$ nylas calendar ai analyze --days 30
+
+🔍 Analyzing 30 days of meeting history...
+
+📊 Analysis Period: 2025-11-21 to 2025-12-21
+📅 Total Meetings Analyzed: 122
+
+✅ Meeting Acceptance Patterns
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Overall Acceptance Rate: 100.0%
+
+By Day of Week:
+     Monday: 100.0% ████████████████████
+    Tuesday: 100.0% ████████████████████
+  Wednesday: 100.0% ████████████████████
+   Thursday: 100.0% ████████████████████
+     Friday: 100.0% ████████████████████
+
+By Time of Day (working hours):
+  09:00: 100.0% ████████████████████
+  10:00: 100.0% ████████████████████
+  11:00: 100.0% ████████████████████
+  12:00: 100.0% ████████████████████
+
+⏱️  Meeting Duration Patterns
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Average Scheduled: 56 minutes
+Average Actual: 56 minutes
+Overrun Rate: 0.0%
+
+🌍 Timezone Distribution
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  America/Toronto: 72 meetings (59%)
+  UTC: 18 meetings (15%)
+  America/New_York: 14 meetings (11%)
+  America/Los_Angeles: 10 meetings (8%)
+
+🎯 Productivity Insights
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Peak Focus Times (recommended for deep work):
+  1. Monday 09:00-11:00 (score: 80/100)
+  2. Monday 10:00-12:00 (score: 90/100)
+  3. Monday 11:00-13:00 (score: 90/100)
+
+Meeting Density by Day:
+     Monday: 1.0 meetings/day  ⭐ Best for focus
+    Tuesday: 1.8 meetings/day
+  Wednesday: 2.8 meetings/day  ⚠️ Busiest
+   Thursday: 2.5 meetings/day
+     Friday: 2.0 meetings/day
+
+💡 AI Recommendations
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 🔴 Block Monday 09:00-11:00 for focus time
+   Historical data shows you have few meetings during this time,
+   making it ideal for deep work.
+
+   📌 Action: Create recurring focus time block
+   📈 Impact: Increase productivity by 20-30%
+   🎯 Confidence: 80%
+
+📝 Key Insights
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. You accept 100% of meetings on Wednesdays (your best day)
+2. Peak focus time: Monday 09:00-11:00 (fewest meetings)
+3. Most meetings in America/Toronto timezone (72 meetings)
+4. Analyzed 122 meetings over 30 days
+```
+
+**Custom Analysis Period:**
+
+```bash
+# Analyze last 60 days
+$ nylas calendar ai analyze --days 60
+
+# Analyze last 90 days (quarterly patterns)
+$ nylas calendar ai analyze --days 90
+```
+
+#### How It Works
+
+1. **Data Collection**: Fetches historical events from all your calendars
+2. **Pattern Detection**: Uses statistical analysis to identify trends
+3. **AI Enhancement**: Optional LLM analysis for deeper insights and recommendations
+4. **Privacy**: All analysis happens locally; LLM calls only for recommendations (opt-in)
+
+#### Technical Details
+
+**API Limits:**
+- Nylas API v3 has a maximum limit of **200 events per request per calendar**
+- Pattern learner automatically iterates through all calendars
+- For accounts with many events, analysis fetches up to 200 events per calendar
+
+**Event Scope:**
+- Analyzes events from **all accessible calendars** (primary + shared)
+- Includes confirmed, tentative, and declined meetings
+- Excludes recurring event rules (analyzes individual instances)
+
+**Performance:**
+- Typical analysis (30 days): 2-5 seconds
+- Large accounts (500+ events): 10-15 seconds
+- All processing happens locally for privacy
+
+#### Use Cases
+
+**📊 Quarterly Review:**
+```bash
+# Analyze 90 days to understand quarterly patterns
+$ nylas calendar ai analyze --days 90
+```
+
+**🎯 Optimize Schedule:**
+- Identify when you're most available for focus work
+- Discover your preferred meeting times
+- Understand meeting overrun patterns
+
+**🌍 Multi-Timezone Teams:**
+- Identify which timezones you collaborate with most
+- Find optimal times that work across time zones
+- Detect timezone-related scheduling patterns
+
+**⏰ Meeting Efficiency:**
+- Compare scheduled vs actual meeting durations
+- Identify which meeting types run long
+- Optimize future meeting time allocations
+
+#### Privacy & Data
+
+- ✅ **Historical data only**: Analyzes past meetings (no future predictions exposed)
+- ✅ **Local processing**: Pattern detection happens on your machine
+- ✅ **Opt-in LLM**: AI recommendations require explicit consent
+- ✅ **No storage**: Patterns computed on-demand, not stored
+- ✅ **GDPR compliant**: All data processing follows privacy regulations
+
+#### Integration with Other Features
+
+Pattern learning enhances other AI features:
+
+- **Focus Time Protection**: Uses learned patterns to suggest optimal focus blocks
+- **Smart Meeting Finder**: Considers your acceptance patterns when suggesting times
+- **Conflict Resolution**: Understands which meetings are more flexible based on history
+
+---
+
 ### Meeting Context Analysis
 
 **Status:** 🔄 Planned (Phase 3, Task 3.5)
@@ -1270,6 +1435,53 @@ AI will try Ollama first, fall back to Claude if needed.
 
 All suggestions include confidence scores.
 
+### Q: How does pattern learning work?
+
+**A:** Pattern learning analyzes your **historical** calendar events to identify:
+- Meeting acceptance patterns (which days/times you prefer)
+- Duration patterns (how long meetings actually run)
+- Timezone preferences (which zones you collaborate with most)
+- Productivity patterns (best times for focus work)
+
+**Requirements:**
+- Minimum 10-15 historical events for basic patterns
+- 30+ days recommended for reliable insights
+- Works with completed meetings only (past events)
+
+**Usage:**
+```bash
+# Analyze last 30 days
+nylas calendar ai analyze --days 30
+
+# Quarterly review
+nylas calendar ai analyze --days 90
+```
+
+**Privacy:** All analysis happens locally. LLM calls only for recommendations (opt-in).
+
+### Q: Why am I getting "no events found" for pattern learning?
+
+**A:** Pattern learning analyzes **past events only**. If you see "no events found":
+
+1. **Check date range**: The default is last 30 days. Your calendar may only have future events.
+2. **Try longer period**: `nylas calendar ai analyze --days 60`
+3. **Verify calendar access**: Ensure the CLI can access your calendars
+
+**Note:** Pattern learning needs historical data. It cannot analyze future events.
+
+### Q: Does pattern learning analyze all my events?
+
+**A:** Pattern learning fetches up to **200 events per calendar** (Nylas API v3 limit). For most users, this covers 1-3 months of history.
+
+**If you have many calendars:**
+- Analysis includes events from all accessible calendars
+- Each calendar contributes up to 200 events
+- Total analyzed = 200 × number of calendars
+
+**Example:** If you have 3 calendars, pattern learning can analyze up to 600 total events.
+
+**Tip:** For very active calendars (500+ events/month), the analysis focuses on the most recent 200 events per calendar within the specified date range.
+
 ### Q: Can I delete my AI data?
 
 **A:** Yes! Run:
@@ -1323,6 +1535,23 @@ The AI integration test suite includes:
 - Calendar context retrieval
 - End-to-end workflows
 
+**Break Time Awareness Tests** (`ai_break_awareness_test.go`):
+- Event creation blocked during lunch breaks
+- Event creation blocked during coffee breaks
+- Event creation succeeds outside break times
+- Override with `--ignore-working-hours` flag
+- AI focus time excludes configured breaks
+- AI scheduling avoids break times
+- Conflict detection identifies break violations
+
+**Pattern Learning Tests** (`ai_pattern_learning_test.go`):
+- Historical event analysis with real calendar data
+- Pattern detection (acceptance, duration, timezone)
+- Productivity insights generation
+- Empty data handling (no events case)
+- JSON export of learned patterns
+- CLI command execution and output validation
+
 #### Running Tests with Ollama
 
 ```bash
@@ -1356,7 +1585,21 @@ NYLAS_TEST_BINARY="$(pwd)/bin/nylas" \
 go test -tags=integration -v -timeout=15m \
   ./internal/cli/integration/ai_features_test.go \
   ./internal/cli/integration/test.go
+
+# 8. Run only break time awareness tests
+NYLAS_TEST_BINARY="$(pwd)/bin/nylas" \
+NYLAS_TEST_EMAIL="your-email@example.com" \
+go test -tags=integration -v -timeout=10m \
+  ./internal/cli/integration/ai_break_awareness_test.go \
+  ./internal/cli/integration/test.go
+
+# 9. Run only pattern learning tests
+NYLAS_TEST_BINARY="$(pwd)/bin/nylas" \
+go test -tags=integration -v -timeout=20m \
+  ./internal/cli/integration/ -run "TestAI_Pattern|TestCLI_AI_Pattern"
 ```
+
+**Note:** Pattern learning tests require **historical calendar events** (past 30+ days) for meaningful results.
 
 #### Running Tests with Remote Ollama
 
@@ -1469,13 +1712,13 @@ nylas calendar events delete <event-id> --force
 **Phase 4: Advanced AI** 🔄 In Progress
 - [ ] Meeting context analysis from email threads
 - [ ] Multi-participant timezone optimization
-- [ ] Recurring pattern learning
+- [x] Recurring pattern learning
 - [ ] Custom AI agents for specialized workflows
 
 ---
 
-**Last Updated:** December 21, 2025
-**Version:** 1.0 (Production Ready)
+**Last Updated:** December 22, 2025
+**Version:** 1.1 (Pattern Learning Added)
 **Maintained By:** Nylas CLI Team
 
-**Status:** ✅ AI features are fully implemented and tested with comprehensive integration test coverage.
+**Status:** ✅ AI features are fully implemented and tested with comprehensive integration test coverage. Phase 4 pattern learning now available.

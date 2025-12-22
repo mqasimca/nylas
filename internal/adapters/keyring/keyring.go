@@ -2,6 +2,8 @@
 package keyring
 
 import (
+	"os"
+
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/zalando/go-keyring"
@@ -60,6 +62,11 @@ func (k *SystemKeyring) Name() string {
 // If the system keyring is available but empty, and the encrypted file has credentials,
 // it will migrate the credentials to the system keyring.
 func NewSecretStore(configDir string) (ports.SecretStore, error) {
+	// Check if keyring is disabled via environment variable (useful for testing)
+	if os.Getenv("NYLAS_DISABLE_KEYRING") == "true" {
+		return NewEncryptedFileStore(configDir)
+	}
+
 	kr := NewSystemKeyring()
 	if !kr.IsAvailable() {
 		return NewEncryptedFileStore(configDir)

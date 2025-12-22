@@ -109,11 +109,32 @@ func runCLI(args ...string) (string, string, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	// Build environment with all necessary variables
+	env := []string{
+		"NYLAS_API_KEY=" + testAPIKey,
+		"NYLAS_GRANT_ID=" + testGrantID,
+		"NYLAS_DISABLE_KEYRING=true", // Disable keyring during tests to avoid macOS prompts
+	}
+
+	// Pass through AI provider credentials if set
+	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
+		env = append(env, "ANTHROPIC_API_KEY="+apiKey)
+	}
+	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+		env = append(env, "OPENAI_API_KEY="+apiKey)
+	}
+	if apiKey := os.Getenv("GROQ_API_KEY"); apiKey != "" {
+		env = append(env, "GROQ_API_KEY="+apiKey)
+	}
+	if apiKey := os.Getenv("OPENROUTER_API_KEY"); apiKey != "" {
+		env = append(env, "OPENROUTER_API_KEY="+apiKey)
+	}
+	if ollamaHost := os.Getenv("OLLAMA_HOST"); ollamaHost != "" {
+		env = append(env, "OLLAMA_HOST="+ollamaHost)
+	}
+
 	// Set environment for the CLI
-	cmd.Env = append(os.Environ(),
-		"NYLAS_API_KEY="+testAPIKey,
-		"NYLAS_GRANT_ID="+testGrantID,
-	)
+	cmd.Env = append(os.Environ(), env...)
 
 	err := cmd.Run()
 	return stdout.String(), stderr.String(), err
@@ -127,10 +148,31 @@ func runCLIWithInput(input string, args ...string) (string, string, error) {
 	cmd.Stderr = &stderr
 	cmd.Stdin = strings.NewReader(input)
 
-	cmd.Env = append(os.Environ(),
-		"NYLAS_API_KEY="+testAPIKey,
-		"NYLAS_GRANT_ID="+testGrantID,
-	)
+	// Build environment with all necessary variables
+	env := []string{
+		"NYLAS_API_KEY=" + testAPIKey,
+		"NYLAS_GRANT_ID=" + testGrantID,
+		"NYLAS_DISABLE_KEYRING=true", // Disable keyring during tests to avoid macOS prompts
+	}
+
+	// Pass through AI provider credentials if set
+	if apiKey := os.Getenv("ANTHROPIC_API_KEY"); apiKey != "" {
+		env = append(env, "ANTHROPIC_API_KEY="+apiKey)
+	}
+	if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+		env = append(env, "OPENAI_API_KEY="+apiKey)
+	}
+	if apiKey := os.Getenv("GROQ_API_KEY"); apiKey != "" {
+		env = append(env, "GROQ_API_KEY="+apiKey)
+	}
+	if apiKey := os.Getenv("OPENROUTER_API_KEY"); apiKey != "" {
+		env = append(env, "OPENROUTER_API_KEY="+apiKey)
+	}
+	if ollamaHost := os.Getenv("OLLAMA_HOST"); ollamaHost != "" {
+		env = append(env, "OLLAMA_HOST="+ollamaHost)
+	}
+
+	cmd.Env = append(os.Environ(), env...)
 
 	err := cmd.Run()
 	return stdout.String(), stderr.String(), err
@@ -180,6 +222,7 @@ func checkOllamaAvailable() bool {
 	hosts := []string{
 		"http://localhost:11434",
 		"http://192.168.1.100:11434",
+		"http://linux.local:11434",
 	}
 
 	for _, host := range hosts {

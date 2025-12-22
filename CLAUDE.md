@@ -321,7 +321,7 @@ internal/
 | **Notetaker** | `internal/cli/notetaker/` | `internal/adapters/nylas/notetakers.go` | `internal/domain/notetaker.go` | N/A |
 | **OTP** | `internal/cli/otp/` | `internal/adapters/nylas/otp.go` | N/A | `internal/adapters/nylas/otp_test.go` |
 | **Timezone** ⚡ | `internal/cli/timezone/` | `internal/adapters/utilities/timezone/service.go` | `internal/domain/utilities.go` | `internal/cli/timezone/timezone_test.go`<br>`internal/cli/timezone/helpers_test.go`<br>`internal/adapters/utilities/timezone/service_test.go`<br>`internal/cli/integration/timezone_test.go` |
-| **AI Scheduling** 🤖 | `internal/cli/calendar/ai_schedule.go`<br>`internal/cli/calendar/ai_*.go` | `internal/adapters/ai/`<br>`internal/ports/llm.go` | `internal/domain/ai.go` | `internal/adapters/ai/ollama_client_test.go`<br>`internal/adapters/ai/openai_client_test.go`<br>`internal/adapters/ai/claude_client_test.go`<br>`internal/adapters/ai/groq_client_test.go`<br>`internal/adapters/ai/router_test.go`<br>`internal/cli/integration/ai_test.go` |
+| **AI Scheduling** 🤖 | `internal/cli/calendar/ai_schedule.go`<br>`internal/cli/calendar/ai_*.go` | `internal/adapters/ai/`<br>`internal/ports/llm.go` | `internal/domain/ai.go` | `internal/adapters/ai/ollama_client_test.go`<br>`internal/adapters/ai/openai_client_test.go`<br>`internal/adapters/ai/claude_client_test.go`<br>`internal/adapters/ai/groq_client_test.go`<br>`internal/adapters/ai/router_test.go`<br>`internal/cli/integration/ai_test.go`<br>`internal/cli/integration/ai_break_awareness_test.go` ⚡ |
 
 ### Core Files (Architecture Layers)
 

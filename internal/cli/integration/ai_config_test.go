@@ -100,6 +100,32 @@ ai:
 			},
 		},
 		{
+			name: "show with openrouter config",
+			setup: func(t *testing.T) string {
+				tmpDir := t.TempDir()
+				configPath := filepath.Join(tmpDir, "config.yaml")
+				configContent := `region: us
+callback_port: 8080
+ai:
+  default_provider: openrouter
+  openrouter:
+    api_key: ${OPENROUTER_API_KEY}
+    model: anthropic/claude-3.5-sonnet
+`
+				if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+					t.Fatalf("failed to write test config: %v", err)
+				}
+				return configPath
+			},
+			contains: []string{
+				"AI Configuration:",
+				"default_provider: openrouter",
+				"openrouter:",
+				"api_key: ${OPENROUTER_API_KEY}",
+				"model: anthropic/claude-3.5-sonnet",
+			},
+		},
+		{
 			name: "show with no AI config",
 			setup: func(t *testing.T) string {
 				tmpDir := t.TempDir()
@@ -218,6 +244,10 @@ ai:
     model: llama3.1:8b
   claude:
     model: claude-3-5-sonnet-20241022
+  groq:
+    model: mixtral-8x7b-32768
+  openrouter:
+    model: anthropic/claude-3.5-sonnet
   fallback:
     enabled: true
     providers:
@@ -269,6 +299,16 @@ ai:
 			name:    "get non-existent key",
 			key:     "openai.model",
 			wantErr: true,
+		},
+		{
+			name: "get groq.model",
+			key:  "groq.model",
+			want: "mixtral-8x7b-32768",
+		},
+		{
+			name: "get openrouter.model",
+			key:  "openrouter.model",
+			want: "anthropic/claude-3.5-sonnet",
 		},
 	}
 
@@ -416,6 +456,48 @@ func TestCLI_AIConfigSet(t *testing.T) {
 				}
 				if strings.TrimSpace(stdout) != "ollama,claude,openai,groq" {
 					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "ollama,claude,openai,groq")
+				}
+			},
+		},
+		{
+			name:  "set openrouter.api_key",
+			key:   "openrouter.api_key",
+			value: "${OPENROUTER_API_KEY}",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "openrouter.api_key", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "${OPENROUTER_API_KEY}" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "${OPENROUTER_API_KEY}")
+				}
+			},
+		},
+		{
+			name:  "set openrouter.model",
+			key:   "openrouter.model",
+			value: "anthropic/claude-3.5-sonnet",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "openrouter.model", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "anthropic/claude-3.5-sonnet" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "anthropic/claude-3.5-sonnet")
+				}
+			},
+		},
+		{
+			name:  "set default_provider to openrouter",
+			key:   "default_provider",
+			value: "openrouter",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "default_provider", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "openrouter" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "openrouter")
 				}
 			},
 		},
@@ -585,5 +667,403 @@ func TestCLI_AIConfigSet_MissingArgs(t *testing.T) {
 				t.Error("Expected error for missing arguments, got none")
 			}
 		})
+	}
+}
+
+// Privacy Settings Tests
+
+func TestCLI_AIConfigPrivacy(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+
+	// Initialize with basic config
+	configContent := `region: us
+callback_port: 8080
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		validate func(*testing.T, string)
+	}{
+		{
+			name:  "set privacy.allow_cloud_ai to false",
+			key:   "privacy.allow_cloud_ai",
+			value: "false",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "privacy.allow_cloud_ai", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "false" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "false")
+				}
+			},
+		},
+		{
+			name:  "set privacy.data_retention to 90",
+			key:   "privacy.data_retention",
+			value: "90",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "privacy.data_retention", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "90" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "90")
+				}
+			},
+		},
+		{
+			name:  "set privacy.local_storage_only to true",
+			key:   "privacy.local_storage_only",
+			value: "true",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "privacy.local_storage_only", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "true" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "true")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stdout, stderr, err := runCLI("ai", "config", "set", tt.key, tt.value, "--config", configPath)
+
+			if err != nil {
+				t.Fatalf("Unexpected error: %v\nstderr: %s\nstdout: %s", err, stderr, stdout)
+			}
+
+			// Verify success message
+			expectedMsg := "✓ Set " + tt.key + " = " + tt.value
+			if !strings.Contains(stdout, expectedMsg) {
+				t.Errorf("Expected output to contain %q\nGot: %s", expectedMsg, stdout)
+			}
+
+			// Run custom validation
+			if tt.validate != nil {
+				tt.validate(t, configPath)
+			}
+		})
+	}
+}
+
+// Feature Toggles Tests
+
+func TestCLI_AIConfigFeatures(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+
+	// Initialize with basic config
+	configContent := `region: us
+callback_port: 8080
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		validate func(*testing.T, string)
+	}{
+		{
+			name:  "set features.natural_language_scheduling to true",
+			key:   "features.natural_language_scheduling",
+			value: "true",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "features.natural_language_scheduling", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "true" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "true")
+				}
+			},
+		},
+		{
+			name:  "set features.predictive_scheduling to false",
+			key:   "features.predictive_scheduling",
+			value: "false",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "features.predictive_scheduling", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "false" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "false")
+				}
+			},
+		},
+		{
+			name:  "set features.focus_time_protection to true",
+			key:   "features.focus_time_protection",
+			value: "true",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "features.focus_time_protection", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "true" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "true")
+				}
+			},
+		},
+		{
+			name:  "set features.conflict_resolution to true",
+			key:   "features.conflict_resolution",
+			value: "true",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "features.conflict_resolution", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "true" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "true")
+				}
+			},
+		},
+		{
+			name:  "set features.email_context_analysis to false",
+			key:   "features.email_context_analysis",
+			value: "false",
+			validate: func(t *testing.T, configPath string) {
+				stdout, _, err := runCLI("ai", "config", "get", "features.email_context_analysis", "--config", configPath)
+				if err != nil {
+					t.Fatalf("failed to verify: %v", err)
+				}
+				if strings.TrimSpace(stdout) != "false" {
+					t.Errorf("got %q, want %q", strings.TrimSpace(stdout), "false")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stdout, stderr, err := runCLI("ai", "config", "set", tt.key, tt.value, "--config", configPath)
+
+			if err != nil {
+				t.Fatalf("Unexpected error: %v\nstderr: %s\nstdout: %s", err, stderr, stdout)
+			}
+
+			// Verify success message
+			expectedMsg := "✓ Set " + tt.key + " = " + tt.value
+			if !strings.Contains(stdout, expectedMsg) {
+				t.Errorf("Expected output to contain %q\nGot: %s", expectedMsg, stdout)
+			}
+
+			// Run custom validation
+			if tt.validate != nil {
+				tt.validate(t, configPath)
+			}
+		})
+	}
+}
+
+// Data Management Commands Tests
+
+func TestCLI_AIUsageCommand(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	// Test usage command (should work even with no data)
+	stdout, stderr, err := runCLI("ai", "usage")
+
+	if err != nil {
+		t.Fatalf("ai usage failed: %v\nstderr: %s", err, stderr)
+	}
+
+	expectedStrings := []string{
+		"AI Usage for",
+		"Total Requests:",
+		"Ollama:",
+		"Claude:",
+		"OpenAI:",
+		"Groq:",
+		"OpenRouter:",
+		"Total Tokens:",
+		"Estimated Cost:",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(stdout, expected) {
+			t.Errorf("Expected output to contain %q\nGot: %s", expected, stdout)
+		}
+	}
+}
+
+func TestCLI_AIUsageJSON(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	// Test usage command with JSON output
+	stdout, stderr, err := runCLI("ai", "usage", "--json")
+
+	if err != nil {
+		t.Fatalf("ai usage --json failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should be valid JSON
+	if !strings.Contains(stdout, "{") || !strings.Contains(stdout, "}") {
+		t.Errorf("Expected JSON output, got: %s", stdout)
+	}
+
+	// Should contain expected fields
+	expectedFields := []string{
+		"month",
+		"total_requests",
+		"estimated_cost",
+	}
+
+	for _, field := range expectedFields {
+		if !strings.Contains(stdout, field) {
+			t.Errorf("Expected JSON to contain field %q\nGot: %s", field, stdout)
+		}
+	}
+}
+
+func TestCLI_AISetBudget(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	// Set a budget
+	stdout, stderr, err := runCLI("ai", "set-budget", "--monthly", "50")
+
+	if err != nil {
+		t.Fatalf("ai set-budget failed: %v\nstderr: %s", err, stderr)
+	}
+
+	expectedStrings := []string{
+		"✓ Monthly budget set to $50.00",
+		"Alert threshold: 80%",
+		"Budget applies to:",
+		"Claude",
+		"OpenAI",
+		"Groq",
+		"OpenRouter",
+		"Ollama (local) usage is free",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(stdout, expected) {
+			t.Errorf("Expected output to contain %q\nGot: %s", expected, stdout)
+		}
+	}
+
+	// Verify with show-budget
+	stdout, stderr, err = runCLI("ai", "show-budget")
+
+	if err != nil {
+		t.Fatalf("ai show-budget failed: %v\nstderr: %s", err, stderr)
+	}
+
+	if !strings.Contains(stdout, "Monthly Limit:       $50.00") {
+		t.Errorf("Expected show-budget to show $50.00 limit\nGot: %s", stdout)
+	}
+}
+
+func TestCLI_AIClearData(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	// Clear data with --force flag (no confirmation prompt)
+	stdout, stderr, err := runCLI("ai", "clear-data", "--force")
+
+	if err != nil {
+		t.Fatalf("ai clear-data failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should succeed (even if no data exists)
+	expectedStrings := []string{
+		"AI data cleared",
+		"Learned scheduling patterns",
+		"Usage statistics",
+		"Cached responses",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(stdout, expected) {
+			t.Errorf("Expected output to contain %q\nGot: %s", expected, stdout)
+		}
+	}
+}
+
+// Privacy and Features Config Show Test
+
+func TestCLI_AIConfigShow_WithPrivacyAndFeatures(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yaml")
+
+	// Create config with privacy and features
+	configContent := `region: us
+callback_port: 8080
+ai:
+  default_provider: ollama
+  privacy:
+    allow_cloud_ai: false
+    data_retention: 90
+    local_storage_only: true
+  features:
+    natural_language_scheduling: true
+    predictive_scheduling: true
+    focus_time_protection: true
+    conflict_resolution: true
+    email_context_analysis: false
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	stdout, stderr, err := runCLI("ai", "config", "show", "--config", configPath)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v\nstderr: %s\nstdout: %s", err, stderr, stdout)
+	}
+
+	expectedStrings := []string{
+		"AI Configuration:",
+		"default_provider: ollama",
+		"privacy:",
+		"allow_cloud_ai: false",
+		"data_retention: 90",
+		"local_storage_only: true",
+		"features:",
+		"natural_language_scheduling: true",
+		"predictive_scheduling: true",
+		"focus_time_protection: true",
+		"conflict_resolution: true",
+		"email_context_analysis: false",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(stdout, expected) {
+			t.Errorf("Expected output to contain %q\nGot: %s", expected, stdout)
+		}
 	}
 }

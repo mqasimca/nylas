@@ -82,7 +82,7 @@ func (p *PatternLearner) fetchEvents(ctx context.Context, grantID string, start,
 	params := &domain.EventQueryParams{
 		Start: start.Unix(),
 		End:   end.Unix(),
-		Limit: 500, // Maximum events per calendar
+		Limit: 200, // Maximum allowed by Nylas API v3
 	}
 
 	// Fetch events from each calendar

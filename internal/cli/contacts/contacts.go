@@ -7,8 +7,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
-	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
@@ -44,30 +43,13 @@ func getClient() (ports.NylasClient, error) {
 		return client, nil
 	}
 
-	configStore := config.NewDefaultFileStore()
-	cfg, err := configStore.Load()
-	if err != nil {
-		cfg = &domain.Config{Region: "us"}
-	}
-
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+	c, err := common.GetNylasClient()
 	if err != nil {
 		return nil, err
 	}
 
-	apiKey, err := secretStore.Get(ports.KeyAPIKey)
-	if err != nil {
-		return nil, err
-	}
-
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
-
-	c := nylas.NewHTTPClient()
-	c.SetRegion(cfg.Region)
-	c.SetCredentials(clientID, clientSecret, apiKey)
-
-	return c, nil
+	client = c
+	return client, nil
 }
 
 func getGrantID(args []string) (string, error) {

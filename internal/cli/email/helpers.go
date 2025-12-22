@@ -10,7 +10,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 )
@@ -24,28 +24,9 @@ var (
 )
 
 // getClient creates and configures a Nylas client.
+// Supports credentials from keyring/file store or environment variables.
 func getClient() (ports.NylasClient, error) {
-	configStore := config.NewDefaultFileStore()
-	cfg, _ := configStore.Load()
-
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize secret store: %w", err)
-	}
-
-	apiKey, err := secretStore.Get(ports.KeyAPIKey)
-	if err != nil {
-		return nil, fmt.Errorf("API key not configured. Run 'nylas auth config' first")
-	}
-
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
-
-	client := nylas.NewHTTPClient()
-	client.SetRegion(cfg.Region)
-	client.SetCredentials(clientID, clientSecret, apiKey)
-
-	return client, nil
+	return common.GetNylasClient()
 }
 
 // getGrantID gets the grant ID from args or default.

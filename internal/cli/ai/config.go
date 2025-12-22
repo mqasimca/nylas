@@ -157,6 +157,24 @@ func newConfigListCmd() *cobra.Command {
 				fmt.Printf("    model: %s\n", cfg.AI.OpenRouter.Model)
 			}
 
+			// Privacy
+			if cfg.AI.Privacy != nil {
+				fmt.Printf("\n  Privacy:\n")
+				fmt.Printf("    allow_cloud_ai: %v\n", cfg.AI.Privacy.AllowCloudAI)
+				fmt.Printf("    data_retention: %d\n", cfg.AI.Privacy.DataRetention)
+				fmt.Printf("    local_storage_only: %v\n", cfg.AI.Privacy.LocalStorageOnly)
+			}
+
+			// Features
+			if cfg.AI.Features != nil {
+				fmt.Printf("\n  Features:\n")
+				fmt.Printf("    natural_language_scheduling: %v\n", cfg.AI.Features.NaturalLanguageScheduling)
+				fmt.Printf("    predictive_scheduling: %v\n", cfg.AI.Features.PredictiveScheduling)
+				fmt.Printf("    focus_time_protection: %v\n", cfg.AI.Features.FocusTimeProtection)
+				fmt.Printf("    conflict_resolution: %v\n", cfg.AI.Features.ConflictResolution)
+				fmt.Printf("    email_context_analysis: %v\n", cfg.AI.Features.EmailContextAnalysis)
+			}
+
 			return nil
 		},
 	}
@@ -182,11 +200,20 @@ Supported keys:
   - groq.model
   - openrouter.api_key
   - openrouter.model
+  - privacy.allow_cloud_ai
+  - privacy.data_retention
+  - privacy.local_storage_only
+  - features.natural_language_scheduling
+  - features.predictive_scheduling
+  - features.focus_time_protection
+  - features.conflict_resolution
+  - features.email_context_analysis
 
 Examples:
   nylas ai config get default_provider
   nylas ai config get ollama.model
-  nylas ai config get claude.model`,
+  nylas ai config get privacy.allow_cloud_ai
+  nylas ai config get features.natural_language_scheduling`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
@@ -231,6 +258,14 @@ Supported keys:
   - groq.model (e.g., mixtral-8x7b-32768)
   - openrouter.api_key (e.g., ${OPENROUTER_API_KEY} or actual key)
   - openrouter.model (e.g., anthropic/claude-3.5-sonnet)
+  - privacy.allow_cloud_ai (true, false)
+  - privacy.data_retention (number of days, 0 to disable)
+  - privacy.local_storage_only (true, false)
+  - features.natural_language_scheduling (true, false)
+  - features.predictive_scheduling (true, false)
+  - features.focus_time_protection (true, false)
+  - features.conflict_resolution (true, false)
+  - features.email_context_analysis (true, false)
 
 Examples:
   # Set Ollama as default provider
@@ -246,7 +281,16 @@ Examples:
 
   # Enable fallback with multiple providers
   nylas ai config set fallback.enabled true
-  nylas ai config set fallback.providers ollama,claude,openai`,
+  nylas ai config set fallback.providers ollama,claude,openai
+
+  # Configure privacy settings
+  nylas ai config set privacy.allow_cloud_ai false
+  nylas ai config set privacy.data_retention 90
+  nylas ai config set privacy.local_storage_only true
+
+  # Configure feature toggles
+  nylas ai config set features.natural_language_scheduling true
+  nylas ai config set features.focus_time_protection true`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
@@ -382,6 +426,46 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("unknown openrouter key: %s", parts[1])
 		}
 
+	case "privacy":
+		if ai.Privacy == nil {
+			return "", fmt.Errorf("privacy not configured")
+		}
+		if len(parts) < 2 {
+			return "", fmt.Errorf("invalid key: %s", key)
+		}
+		switch parts[1] {
+		case "allow_cloud_ai":
+			return fmt.Sprintf("%v", ai.Privacy.AllowCloudAI), nil
+		case "data_retention":
+			return fmt.Sprintf("%d", ai.Privacy.DataRetention), nil
+		case "local_storage_only":
+			return fmt.Sprintf("%v", ai.Privacy.LocalStorageOnly), nil
+		default:
+			return "", fmt.Errorf("unknown privacy key: %s", parts[1])
+		}
+
+	case "features":
+		if ai.Features == nil {
+			return "", fmt.Errorf("features not configured")
+		}
+		if len(parts) < 2 {
+			return "", fmt.Errorf("invalid key: %s", key)
+		}
+		switch parts[1] {
+		case "natural_language_scheduling":
+			return fmt.Sprintf("%v", ai.Features.NaturalLanguageScheduling), nil
+		case "predictive_scheduling":
+			return fmt.Sprintf("%v", ai.Features.PredictiveScheduling), nil
+		case "focus_time_protection":
+			return fmt.Sprintf("%v", ai.Features.FocusTimeProtection), nil
+		case "conflict_resolution":
+			return fmt.Sprintf("%v", ai.Features.ConflictResolution), nil
+		case "email_context_analysis":
+			return fmt.Sprintf("%v", ai.Features.EmailContextAnalysis), nil
+		default:
+			return "", fmt.Errorf("unknown features key: %s", parts[1])
+		}
+
 	default:
 		return "", fmt.Errorf("unknown config key: %s", key)
 	}
@@ -501,6 +585,51 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.OpenRouter.Model = value
 		default:
 			return fmt.Errorf("unknown openrouter key: %s", parts[1])
+		}
+
+	case "privacy":
+		if ai.Privacy == nil {
+			ai.Privacy = &domain.PrivacyConfig{}
+		}
+		if len(parts) < 2 {
+			return fmt.Errorf("invalid key: %s", key)
+		}
+		switch parts[1] {
+		case "allow_cloud_ai":
+			ai.Privacy.AllowCloudAI = value == "true"
+		case "data_retention":
+			var retention int
+			_, err := fmt.Sscanf(value, "%d", &retention)
+			if err != nil {
+				return fmt.Errorf("invalid data_retention value: %s (must be integer)", value)
+			}
+			ai.Privacy.DataRetention = retention
+		case "local_storage_only":
+			ai.Privacy.LocalStorageOnly = value == "true"
+		default:
+			return fmt.Errorf("unknown privacy key: %s", parts[1])
+		}
+
+	case "features":
+		if ai.Features == nil {
+			ai.Features = &domain.FeaturesConfig{}
+		}
+		if len(parts) < 2 {
+			return fmt.Errorf("invalid key: %s", key)
+		}
+		switch parts[1] {
+		case "natural_language_scheduling":
+			ai.Features.NaturalLanguageScheduling = value == "true"
+		case "predictive_scheduling":
+			ai.Features.PredictiveScheduling = value == "true"
+		case "focus_time_protection":
+			ai.Features.FocusTimeProtection = value == "true"
+		case "conflict_resolution":
+			ai.Features.ConflictResolution = value == "true"
+		case "email_context_analysis":
+			ai.Features.EmailContextAnalysis = value == "true"
+		default:
+			return fmt.Errorf("unknown features key: %s", parts[1])
 		}
 
 	default:

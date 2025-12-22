@@ -116,13 +116,13 @@ func TestCLI_CalendarAI_Schedule_InvalidInput(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "schedule without description",
-			args:    []string{"calendar", "ai", "schedule"},
+			name:    "schedule without query",
+			args:    []string{"calendar", "schedule", "ai"},
 			wantErr: true,
 		},
 		{
 			name:    "schedule with invalid provider",
-			args:    []string{"calendar", "ai", "schedule", "--provider", "invalid", "--description", "Test meeting"},
+			args:    []string{"calendar", "schedule", "ai", "--provider", "invalid", "Test meeting"},
 			wantErr: true,
 		},
 	}
@@ -162,13 +162,13 @@ func TestCLI_CalendarAI_Reschedule_InvalidInput(t *testing.T) {
 	}{
 		{
 			name:    "reschedule without event ID",
-			args:    []string{"calendar", "ai", "reschedule"},
+			args:    []string{"calendar", "ai", "reschedule", "ai"},
 			wantErr: true,
 		},
 		{
-			name:    "reschedule without reason",
-			args:    []string{"calendar", "ai", "reschedule", "event-id"},
-			wantErr: true,
+			name:    "reschedule with event ID but no Nylas credentials",
+			args:    []string{"calendar", "ai", "reschedule", "ai", "event-id"},
+			wantErr: true, // Will fail on "secret not found" or API call
 		},
 	}
 
@@ -212,17 +212,15 @@ func TestCLI_CalendarAI_Context_Basic(t *testing.T) {
 		contains []string
 	}{
 		{
-			name: "get context without query",
-			args: []string{"calendar", "ai", "context"},
-			contains: []string{
-				"Calendar Context",
-			},
+			name:    "analyze without credentials shows error",
+			args:    []string{"calendar", "ai", "analyze"},
+			wantErr: true, // Will fail on secret not found or API error
 		},
 		{
-			name: "get context with custom days",
-			args: []string{"calendar", "ai", "context", "--days", "7"},
+			name: "analyze help command works",
+			args: []string{"calendar", "ai", "analyze", "--help"},
 			contains: []string{
-				"Calendar Context",
+				"Analyze historical meeting data",
 			},
 		},
 	}

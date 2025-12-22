@@ -37,6 +37,10 @@ Examples:
 
 	// Add subcommands
 	cmd.AddCommand(newConfigCmd())
+	cmd.AddCommand(newClearDataCmd())
+	cmd.AddCommand(newUsageCmd())
+	cmd.AddCommand(newSetBudgetCmd())
+	cmd.AddCommand(newShowBudgetCmd())
 
 	return cmd
 }
