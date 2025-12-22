@@ -258,7 +258,19 @@ func (p *PatternLearner) learnProductivityPatterns(events []domain.Event) domain
 		meetingsByDay[dayOfWeek]++
 	}
 
-	// Identify peak focus times (low meeting density)
+	// Calculate average meeting density per hour to use as baseline
+	totalMeetings := 0
+	totalHours := 0
+	for _, count := range meetingsByDayHour {
+		totalMeetings += count
+		totalHours++
+	}
+	avgDensity := 0.0
+	if totalHours > 0 {
+		avgDensity = float64(totalMeetings) / float64(totalHours)
+	}
+
+	// Identify peak focus times (below-average meeting density)
 	var peakFocus []domain.TimeBlock
 	daysOfWeek := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
 	for _, day := range daysOfWeek {
@@ -266,13 +278,28 @@ func (p *PatternLearner) learnProductivityPatterns(events []domain.Event) domain
 			key := fmt.Sprintf("%s-%02d", day, hour)
 			density := meetingsByDayHour[key]
 
-			// Low density = good for focus
-			if density <= 1 {
+			// Calculate score based on how much better this slot is than average
+			// Lower density = higher score
+			// Score formula: 100 - (density/avgDensity * 50) capped at 0-100
+			score := 100.0
+			if avgDensity > 0 {
+				densityRatio := float64(density) / avgDensity
+				score = 100.0 - (densityRatio * 50.0)
+				// Cap between 0-100
+				if score < 0 {
+					score = 0
+				} else if score > 100 {
+					score = 100
+				}
+			}
+
+			// Include blocks with score >= 50 (better than or equal to average)
+			if score >= 50 {
 				peakFocus = append(peakFocus, domain.TimeBlock{
 					DayOfWeek: day,
 					StartTime: fmt.Sprintf("%02d:00", hour),
 					EndTime:   fmt.Sprintf("%02d:00", hour+2),
-					Score:     90.0 - float64(density)*10,
+					Score:     score,
 				})
 			}
 		}
@@ -285,11 +312,30 @@ func (p *PatternLearner) learnProductivityPatterns(events []domain.Event) domain
 		meetingDensity[day] = float64(count) / 12.0 // ~12 weeks
 	}
 
+	// Select the BEST focus block for each day (1 per day)
+	// Group blocks by day and pick the highest-scoring one
+	bestByDay := make(map[string]domain.TimeBlock)
+	for _, block := range peakFocus {
+		existing, exists := bestByDay[block.DayOfWeek]
+		if !exists || block.Score > existing.Score {
+			bestByDay[block.DayOfWeek] = block
+		}
+	}
+
+	// Convert map to slice and sort by day order (Mon-Fri)
+	var topFocusBlocks []domain.TimeBlock
+	dayOrder := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+	for _, day := range dayOrder {
+		if block, exists := bestByDay[day]; exists {
+			topFocusBlocks = append(topFocusBlocks, block)
+		}
+	}
+
 	return domain.ProductivityPatterns{
 		PeakFocus:      peakFocus,
 		LowEnergy:      []domain.TimeBlock{}, // Would analyze based on declined meetings
 		MeetingDensity: meetingDensity,
-		FocusBlocks:    peakFocus[:min(len(peakFocus), 5)], // Top 5
+		FocusBlocks:    topFocusBlocks, // 1 best block per day (max 5 for Mon-Fri)
 	}
 }
 
@@ -344,17 +390,25 @@ func (p *PatternLearner) generateRecommendations(patterns *domain.MeetingPattern
 	var recommendations []domain.Recommendation
 
 	// Recommend focus time blocks
-	if len(patterns.Productivity.FocusBlocks) > 0 {
-		topBlock := patterns.Productivity.FocusBlocks[0]
-		recommendations = append(recommendations, domain.Recommendation{
-			Type:        "focus_time",
-			Priority:    "high",
-			Title:       fmt.Sprintf("Block %s %s-%s for focus time", topBlock.DayOfWeek, topBlock.StartTime, topBlock.EndTime),
-			Description: "Historical data shows you have few meetings during this time, making it ideal for deep work.",
-			Confidence:  topBlock.Score,
-			Action:      "Create recurring focus time block",
-			Impact:      "Increase productivity by 20-30%",
-		})
+	// Generate recommendations for all high-scoring focus blocks (score >= 70)
+	for _, block := range patterns.Productivity.FocusBlocks {
+		if block.Score >= 70 {
+			// Determine priority based on score
+			priority := "medium"
+			if block.Score >= 85 {
+				priority = "high"
+			}
+
+			recommendations = append(recommendations, domain.Recommendation{
+				Type:        "focus_time",
+				Priority:    priority,
+				Title:       fmt.Sprintf("Block %s %s-%s for focus time", block.DayOfWeek, block.StartTime, block.EndTime),
+				Description: fmt.Sprintf("Historical data shows you have few meetings during this time (score: %.0f/100), making it ideal for deep work.", block.Score),
+				Confidence:  block.Score,
+				Action:      "Create recurring focus time block",
+				Impact:      "Increase productivity by 20-30%",
+			})
+		}
 	}
 
 	// Recommend declining low-value time slots

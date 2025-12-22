@@ -871,4 +871,77 @@ func TestCLI_AIFeatures_EndToEnd(t *testing.T) {
 	})
 }
 
+// =============================================================================
+// CALENDAR AI ANALYZE-THREAD TESTS (Phase 3.2)
+// =============================================================================
+
+// TestCLI_CalendarAIAnalyzeThreadHelp tests the analyze-thread help output
+func TestCLI_CalendarAIAnalyzeThreadHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("calendar", "ai", "analyze-thread", "--help")
+
+	if err != nil {
+		t.Fatalf("calendar ai analyze-thread --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show required --thread flag
+	if !strings.Contains(stdout, "--thread") {
+		t.Errorf("Expected '--thread' flag in help, got: %s", stdout)
+	}
+
+	// Should show optional flags
+	expectedFlags := []string{"--agenda", "--time", "--create-meeting", "--provider", "--json"}
+	for _, flag := range expectedFlags {
+		if !strings.Contains(stdout, flag) {
+			t.Errorf("Expected '%s' flag in help, got: %s", flag, stdout)
+		}
+	}
+
+	t.Logf("calendar ai analyze-thread --help output:\n%s", stdout)
+}
+
+// TestCLI_CalendarAIAnalyzeThread tests AI email thread analysis
+func TestCLI_CalendarAIAnalyzeThread(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	if testAPIKey == "" || testGrantID == "" {
+		t.Skip("Nylas API credentials not configured")
+	}
+
+	if !hasAnyAIProvider() {
+		t.Skip("No AI provider configured")
+	}
+
+	// This test is skipped by default as it requires:
+	// 1. Existing email thread with meeting context
+	// 2. Thread ID to analyze
+	// 3. AI provider configured
+	t.Skip("Calendar AI analyze-thread requires existing email threads with meeting context.\n" +
+		"This requires:\n" +
+		"  1. Email thread with meeting-related discussion\n" +
+		"  2. Valid thread ID from email list\n" +
+		"  3. AI provider configured (Ollama, Claude, OpenAI, or Groq)\n\n" +
+		"Manual testing:\n" +
+		"  (1) List email threads: nylas email threads list\n" +
+		"  (2) Find thread with meeting discussion\n" +
+		"  (3) Analyze thread: nylas calendar ai analyze-thread --thread <thread-id>\n" +
+		"  (4) Analyze with agenda: nylas calendar ai analyze-thread --thread <thread-id> --agenda\n" +
+		"  (5) Analyze with time suggestions: nylas calendar ai analyze-thread --thread <thread-id> --time\n" +
+		"  (6) Get JSON output: nylas calendar ai analyze-thread --thread <thread-id> --json\n" +
+		"  (7) Create meeting from thread: nylas calendar ai analyze-thread --thread <thread-id> --create-meeting\n\n" +
+		"Expected output:\n" +
+		"  - Meeting purpose and topics\n" +
+		"  - Key action items\n" +
+		"  - Priority level\n" +
+		"  - Required and optional participants\n" +
+		"  - Suggested duration\n" +
+		"  - Auto-generated agenda (if --agenda flag used)\n" +
+		"  - Recommended meeting times (if --time flag used)\n")
+}
+
 // Helper functions are now in test.go
