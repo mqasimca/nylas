@@ -30,19 +30,6 @@ deps:
 	go mod tidy
 	go mod download
 
-# Run tests 3 times as requested
-test-3x:
-	@echo "=== Test Run 1 of 3 ==="
-	go test ./... -v
-	@echo ""
-	@echo "=== Test Run 2 of 3 ==="
-	go test ./... -v
-	@echo ""
-	@echo "=== Test Run 3 of 3 ==="
-	go test ./... -v
-	@echo ""
-	@echo "=== All 3 test runs completed successfully ==="
-
 # Quick test (skip slow tests)
 test-short:
 	go test ./... -short
