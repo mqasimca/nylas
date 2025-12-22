@@ -10,9 +10,11 @@ build:
 	go build $(LDFLAGS) -o bin/nylas ./cmd/nylas
 
 test:
+	@go clean -testcache
 	go test ./... -v
 
 test-coverage:
+	@go clean -testcache
 	go test ./... -cover -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 
@@ -32,20 +34,35 @@ deps:
 
 # Quick test (skip slow tests)
 test-short:
+	@go clean -testcache
 	go test ./... -short
 
 # Integration tests (requires NYLAS_API_KEY and NYLAS_GRANT_ID env vars)
 test-integration:
+	@go clean -testcache
 	go test ./... -tags=integration -v
 
 # Integration tests with extended timeout and cleanup
 test-integration-clean: test-integration test-cleanup
 
-# Clean up test resources (virtual calendars, test grants, test events, etc.)
+# Clean up test resources (virtual calendars, test grants, test events, test emails, etc.)
 test-cleanup:
 	@echo "=== Cleaning up test resources ==="
 	@echo ""
-	@echo "1. Cleaning test events from calendars..."
+	@echo "1. Cleaning test emails (messages and drafts)..."
+	@./bin/nylas email list --limit 100 --id 2>/dev/null | \
+		grep -E "(Test|Integration|Draft|AI|Metadata)" -A1 | \
+		grep "ID:" | \
+		awk '{print $$2}' | \
+		while read msg_id; do \
+			if [ ! -z "$$msg_id" ]; then \
+				echo "  Deleting test message: $$msg_id"; \
+				./bin/nylas email delete $$msg_id --force 2>/dev/null && \
+				echo "    ✓ Deleted message $$msg_id" || echo "    ⚠ Could not delete $$msg_id"; \
+			fi \
+		done
+	@echo ""
+	@echo "2. Cleaning test events from calendars..."
 	@./bin/nylas calendar events list --limit 100 2>/dev/null | \
 		awk '/AI Test|Test Meeting|Integration Test|test-event/ { \
 			getline; getline; getline; getline; \
@@ -59,7 +76,7 @@ test-cleanup:
 			fi \
 		done
 	@echo ""
-	@echo "2. Cleaning test virtual calendar grants..."
+	@echo "3. Cleaning test virtual calendar grants..."
 	@./bin/nylas admin grants list | grep -E "^(test-|integration-)" | awk '{print $$2}' | while read grant_id; do \
 		if [ ! -z "$$grant_id" ] && [ "$$grant_id" != "ID" ]; then \
 			echo "  Deleting test grant: $$grant_id"; \

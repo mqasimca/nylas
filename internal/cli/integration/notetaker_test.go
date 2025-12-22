@@ -16,7 +16,8 @@ func TestNotetaker_Integration(t *testing.T) {
 	skipIfMissingCreds(t)
 
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	t.Run("ListNotetakers", func(t *testing.T) {
 		notetakers, err := client.ListNotetakers(ctx, testGrantID, nil)
@@ -80,7 +81,8 @@ func TestNotetaker_ValidationErrors(t *testing.T) {
 	skipIfMissingCreds(t)
 
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	t.Run("CreateNotetaker_MissingRequired", func(t *testing.T) {
 		// Missing required fields
