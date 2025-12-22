@@ -103,9 +103,11 @@ func TestFormatEventTimeWithTZ(t *testing.T) {
 		{
 			name: "timed event - same timezone - no conversion",
 			when: domain.EventWhen{
-				Object:    "timespan",
-				StartTime: testTime.Unix(),
-				EndTime:   testTime.Add(time.Hour).Unix(),
+				Object:        "timespan",
+				StartTime:     testTime.Unix(),
+				EndTime:       testTime.Add(time.Hour).Unix(),
+				StartTimezone: "America/New_York",
+				EndTimezone:   "America/New_York",
 			},
 			targetTZ:       "America/New_York",
 			wantConversion: false,
@@ -114,9 +116,11 @@ func TestFormatEventTimeWithTZ(t *testing.T) {
 		{
 			name: "timed event - different timezone - with conversion",
 			when: domain.EventWhen{
-				Object:    "timespan",
-				StartTime: testTime.Unix(),
-				EndTime:   testTime.Add(time.Hour).Unix(),
+				Object:        "timespan",
+				StartTime:     testTime.Unix(),
+				EndTime:       testTime.Add(time.Hour).Unix(),
+				StartTimezone: "America/New_York",
+				EndTimezone:   "America/New_York",
 			},
 			targetTZ:       "America/Los_Angeles",
 			wantConversion: true,
@@ -125,9 +129,11 @@ func TestFormatEventTimeWithTZ(t *testing.T) {
 		{
 			name: "timed event - empty timezone - no conversion",
 			when: domain.EventWhen{
-				Object:    "timespan",
-				StartTime: testTime.Unix(),
-				EndTime:   testTime.Add(time.Hour).Unix(),
+				Object:        "timespan",
+				StartTime:     testTime.Unix(),
+				EndTime:       testTime.Add(time.Hour).Unix(),
+				StartTimezone: "America/New_York",
+				EndTimezone:   "America/New_York",
 			},
 			targetTZ:       "",
 			wantConversion: false,
@@ -136,9 +142,11 @@ func TestFormatEventTimeWithTZ(t *testing.T) {
 		{
 			name: "timed event - invalid timezone - error",
 			when: domain.EventWhen{
-				Object:    "timespan",
-				StartTime: testTime.Unix(),
-				EndTime:   testTime.Add(time.Hour).Unix(),
+				Object:        "timespan",
+				StartTime:     testTime.Unix(),
+				EndTime:       testTime.Add(time.Hour).Unix(),
+				StartTimezone: "America/New_York",
+				EndTimezone:   "America/New_York",
 			},
 			targetTZ:  "Invalid/Timezone",
 			wantError: true,
@@ -254,9 +262,11 @@ func TestFormatEventTimeWithTZ_TimedEventConversion(t *testing.T) {
 	endTime := startTime.Add(time.Hour) // 3 PM EST
 
 	when := domain.EventWhen{
-		Object:    "timespan",
-		StartTime: startTime.Unix(),
-		EndTime:   endTime.Unix(),
+		Object:        "timespan",
+		StartTime:     startTime.Unix(),
+		EndTime:       endTime.Unix(),
+		StartTimezone: "America/New_York",
+		EndTimezone:   "America/New_York",
 	}
 
 	// Convert to PST (Pacific Time)
@@ -296,9 +306,11 @@ func TestFormatEventTimeWithTZ_SameDayEvent(t *testing.T) {
 	endTime := startTime.Add(2 * time.Hour)
 
 	when := domain.EventWhen{
-		Object:    "timespan",
-		StartTime: startTime.Unix(),
-		EndTime:   endTime.Unix(),
+		Object:        "timespan",
+		StartTime:     startTime.Unix(),
+		EndTime:       endTime.Unix(),
+		StartTimezone: "America/New_York",
+		EndTimezone:   "America/New_York",
 	}
 
 	event := &domain.Event{When: when}
@@ -325,9 +337,11 @@ func TestFormatEventTimeWithTZ_MultiDayEvent(t *testing.T) {
 	endTime := time.Date(2025, 1, 16, 14, 0, 0, 0, loc) // Next day
 
 	when := domain.EventWhen{
-		Object:    "timespan",
-		StartTime: startTime.Unix(),
-		EndTime:   endTime.Unix(),
+		Object:        "timespan",
+		StartTime:     startTime.Unix(),
+		EndTime:       endTime.Unix(),
+		StartTimezone: "America/New_York",
+		EndTimezone:   "America/New_York",
 	}
 
 	event := &domain.Event{When: when}

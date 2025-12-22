@@ -64,9 +64,18 @@ type EventWhen struct {
 }
 
 // StartDateTime returns the start time as a time.Time.
+// If StartTimezone is specified, the time is returned in that timezone.
 func (w EventWhen) StartDateTime() time.Time {
 	if w.StartTime > 0 {
-		return time.Unix(w.StartTime, 0)
+		t := time.Unix(w.StartTime, 0)
+		// If a timezone is specified, convert to that timezone
+		if w.StartTimezone != "" {
+			loc, err := time.LoadLocation(w.StartTimezone)
+			if err == nil {
+				t = t.In(loc)
+			}
+		}
+		return t
 	}
 	if w.Date != "" {
 		t, _ := time.Parse("2006-01-02", w.Date)
@@ -80,9 +89,18 @@ func (w EventWhen) StartDateTime() time.Time {
 }
 
 // EndDateTime returns the end time as a time.Time.
+// If EndTimezone is specified, the time is returned in that timezone.
 func (w EventWhen) EndDateTime() time.Time {
 	if w.EndTime > 0 {
-		return time.Unix(w.EndTime, 0)
+		t := time.Unix(w.EndTime, 0)
+		// If a timezone is specified, convert to that timezone
+		if w.EndTimezone != "" {
+			loc, err := time.LoadLocation(w.EndTimezone)
+			if err == nil {
+				t = t.In(loc)
+			}
+		}
+		return t
 	}
 	if w.EndDate != "" {
 		t, _ := time.Parse("2006-01-02", w.EndDate)
