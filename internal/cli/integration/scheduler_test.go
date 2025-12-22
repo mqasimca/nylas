@@ -177,6 +177,121 @@ func TestCLI_SchedulerBookingsListJSON(t *testing.T) {
 	t.Logf("scheduler bookings list --json output:\n%s", stdout)
 }
 
+// =============================================================================
+// SCHEDULER BOOKINGS CRUD TESTS (Phase 2.6)
+// =============================================================================
+
+func TestCLI_SchedulerBookingsShowHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "bookings", "show", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler bookings show --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with booking-id
+	if !strings.Contains(stdout, "booking-id") && !strings.Contains(stdout, "<booking-id>") {
+		t.Errorf("Expected booking-id in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--json") {
+		t.Errorf("Expected '--json' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler bookings show --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerBookingsConfirmHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "bookings", "confirm", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler bookings confirm --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with booking-id
+	if !strings.Contains(stdout, "booking-id") && !strings.Contains(stdout, "<booking-id>") {
+		t.Errorf("Expected booking-id in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler bookings confirm --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerBookingsRescheduleHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "bookings", "reschedule", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler bookings reschedule --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with booking-id
+	if !strings.Contains(stdout, "booking-id") && !strings.Contains(stdout, "<booking-id>") {
+		t.Errorf("Expected booking-id in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler bookings reschedule --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerBookingsCancelHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "bookings", "cancel", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler bookings cancel --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with booking-id
+	if !strings.Contains(stdout, "booking-id") && !strings.Contains(stdout, "<booking-id>") {
+		t.Errorf("Expected booking-id in help, got: %s", stdout)
+	}
+	// Should show --yes flag for skipping confirmation
+	if !strings.Contains(stdout, "--yes") && !strings.Contains(stdout, "-y") {
+		t.Errorf("Expected '--yes' flag in help, got: %s", stdout)
+	}
+	// Should show --reason flag
+	if !strings.Contains(stdout, "--reason") {
+		t.Errorf("Expected '--reason' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler bookings cancel --help output:\n%s", stdout)
+}
+
+// Lifecycle test: Full CRUD workflow (show, confirm, reschedule, cancel)
+// NOTE: This test is skipped due to complex API requirements
+// See skip message below for manual testing instructions
+func TestCLI_SchedulerBookingsLifecycle(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	t.Skip("Scheduler bookings CRUD operations require existing bookings created via sessions.\n" +
+		"This requires:\n" +
+		"  1. Valid scheduler configuration with availability rules\n" +
+		"  2. Scheduler session created via API or web interface\n" +
+		"  3. Booking created through the session booking flow\n" +
+		"  4. Proper participant and calendar permissions\n\n" +
+		"These requirements cannot be reliably satisfied via simple CLI automation.\n\n" +
+		"Manual testing:\n" +
+		"  (1) Create a scheduler configuration via Dashboard\n" +
+		"  (2) Create a booking via the public booking page or sessions API\n" +
+		"  (3) Get booking ID from 'scheduler bookings list'\n" +
+		"  (4) Test show command: nylas scheduler bookings show <booking-id>\n" +
+		"  (5) Test show JSON: nylas scheduler bookings show <booking-id> --json\n" +
+		"  (6) Test confirm (if pending): nylas scheduler bookings confirm <booking-id>\n" +
+		"  (7) Test reschedule: nylas scheduler bookings reschedule <booking-id>\n" +
+		"  (8) Test cancel: nylas scheduler bookings cancel <booking-id> --yes --reason 'Testing'\n")
+}
+
 // Pages Tests
 
 func TestCLI_SchedulerPagesHelp(t *testing.T) {
@@ -243,6 +358,199 @@ func TestCLI_SchedulerPagesListJSON(t *testing.T) {
 	}
 
 	t.Logf("scheduler pages list --json output:\n%s", stdout)
+}
+
+// =============================================================================
+// SCHEDULER PAGES CRUD TESTS (Phase 2.7)
+// =============================================================================
+
+func TestCLI_SchedulerPagesCreateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "pages", "create", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler pages create --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show required flags
+	if !strings.Contains(stdout, "--name") {
+		t.Errorf("Expected '--name' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--config-id") {
+		t.Errorf("Expected '--config-id' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--slug") {
+		t.Errorf("Expected '--slug' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler pages create --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerPagesShowHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "pages", "show", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler pages show --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with page-id
+	if !strings.Contains(stdout, "page-id") && !strings.Contains(stdout, "<page-id>") {
+		t.Errorf("Expected page-id in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--json") {
+		t.Errorf("Expected '--json' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler pages show --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerPagesUpdateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "pages", "update", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler pages update --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with page-id
+	if !strings.Contains(stdout, "page-id") && !strings.Contains(stdout, "<page-id>") {
+		t.Errorf("Expected page-id in help, got: %s", stdout)
+	}
+	// Should show update flags
+	if !strings.Contains(stdout, "--name") {
+		t.Errorf("Expected '--name' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--slug") {
+		t.Errorf("Expected '--slug' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler pages update --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerPagesDeleteHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "pages", "delete", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler pages delete --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with page-id
+	if !strings.Contains(stdout, "page-id") && !strings.Contains(stdout, "<page-id>") {
+		t.Errorf("Expected page-id in help, got: %s", stdout)
+	}
+	// Should show --yes flag for skipping confirmation
+	if !strings.Contains(stdout, "--yes") && !strings.Contains(stdout, "-y") {
+		t.Errorf("Expected '--yes' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler pages delete --help output:\n%s", stdout)
+}
+
+// Lifecycle test: Full CRUD workflow (create, show, update, delete)
+// NOTE: This test is skipped due to complex API requirements
+// See skip message below for manual testing instructions
+func TestCLI_SchedulerPagesLifecycle(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	t.Skip("Scheduler pages CRUD operations require existing scheduler configurations.\n" +
+		"This requires:\n" +
+		"  1. Valid scheduler configuration ID\n" +
+		"  2. Unique page slug that doesn't conflict with existing pages\n" +
+		"  3. Proper account permissions for page management\n\n" +
+		"These requirements cannot be reliably satisfied via simple CLI automation.\n\n" +
+		"Manual testing:\n" +
+		"  (1) Get a configuration ID: nylas scheduler configurations list\n" +
+		"  (2) Create page: nylas scheduler pages create --name 'Test Page' --config-id <config-id> --slug test-page-123\n" +
+		"  (3) Show page: nylas scheduler pages show <page-id>\n" +
+		"  (4) Show JSON: nylas scheduler pages show <page-id> --json\n" +
+		"  (5) Update page: nylas scheduler pages update <page-id> --name 'Updated Page'\n" +
+		"  (6) Delete page: nylas scheduler pages delete <page-id> --yes\n")
+}
+
+// =============================================================================
+// SCHEDULER SESSIONS TESTS (Phase 2.8)
+// =============================================================================
+
+func TestCLI_SchedulerSessionsCreateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "sessions", "create", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler sessions create --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show required flags
+	if !strings.Contains(stdout, "--config-id") {
+		t.Errorf("Expected '--config-id' flag in help, got: %s", stdout)
+	}
+	// Should show optional ttl flag
+	if !strings.Contains(stdout, "--ttl") {
+		t.Errorf("Expected '--ttl' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler sessions create --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerSessionsShowHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "sessions", "show", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler sessions show --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with session-id
+	if !strings.Contains(stdout, "session-id") && !strings.Contains(stdout, "<session-id>") {
+		t.Errorf("Expected session-id in help, got: %s", stdout)
+	}
+	// Should show --json flag
+	if !strings.Contains(stdout, "--json") {
+		t.Errorf("Expected '--json' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler sessions show --help output:\n%s", stdout)
+}
+
+// Lifecycle test: Create and show session
+// NOTE: This test is skipped due to complex API requirements
+// See skip message below for manual testing instructions
+func TestCLI_SchedulerSessionsLifecycle(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	t.Skip("Scheduler sessions operations require existing scheduler configurations.\n" +
+		"This requires:\n" +
+		"  1. Valid scheduler configuration ID\n" +
+		"  2. Proper account permissions for session management\n" +
+		"  3. Sessions expire based on TTL (default 30 minutes)\n\n" +
+		"These requirements cannot be reliably satisfied via simple CLI automation.\n\n" +
+		"Manual testing:\n" +
+		"  (1) Get a configuration ID: nylas scheduler configurations list\n" +
+		"  (2) Create session: nylas scheduler sessions create --config-id <config-id>\n" +
+		"  (3) Create session with custom TTL: nylas scheduler sessions create --config-id <config-id> --ttl 60\n" +
+		"  (4) Show session: nylas scheduler sessions show <session-id>\n" +
+		"  (5) Show JSON: nylas scheduler sessions show <session-id> --json\n" +
+		"  (6) Verify session ID and configuration ID in output\n\n" +
+		"Note: Sessions are temporary and automatically expire. There is no delete command.\n")
 }
 
 // =============================================================================
