@@ -56,7 +56,9 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 				return fmt.Errorf("failed to get grant ID: %w", err)
 			}
 
-			ctx := context.Background()
+			// AI analysis can take time - use longer timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			defer cancel()
 
 			// Create pattern learner
 			learner := analytics.NewPatternLearner(client)

@@ -244,3 +244,113 @@ func TestCLI_SchedulerPagesListJSON(t *testing.T) {
 
 	t.Logf("scheduler pages list --json output:\n%s", stdout)
 }
+
+// =============================================================================
+// SCHEDULER CONFIGURATIONS CRUD TESTS (Phase 2.5)
+// =============================================================================
+
+func TestCLI_SchedulerConfigurationsCreateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "configurations", "create", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler configurations create --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show required flags
+	if !strings.Contains(stdout, "--name") {
+		t.Errorf("Expected '--name' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--title") {
+		t.Errorf("Expected '--title' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--duration") {
+		t.Errorf("Expected '--duration' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler configurations create --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerConfigurationsShowHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "configurations", "show", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler configurations show --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show usage with config-id
+	if !strings.Contains(stdout, "config-id") && !strings.Contains(stdout, "<id>") {
+		t.Errorf("Expected config-id in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler configurations show --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerConfigurationsUpdateHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "configurations", "update", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler configurations update --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show update flags
+	if !strings.Contains(stdout, "--name") {
+		t.Errorf("Expected '--name' flag in help, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "--duration") {
+		t.Errorf("Expected '--duration' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler configurations update --help output:\n%s", stdout)
+}
+
+func TestCLI_SchedulerConfigurationsDeleteHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("scheduler", "configurations", "delete", "--help")
+
+	if err != nil {
+		t.Fatalf("scheduler configurations delete --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show --yes flag
+	if !strings.Contains(stdout, "--yes") && !strings.Contains(stdout, "-y") {
+		t.Errorf("Expected '--yes' flag in help, got: %s", stdout)
+	}
+
+	t.Logf("scheduler configurations delete --help output:\n%s", stdout)
+}
+
+// Lifecycle test: Full CRUD workflow (create, show, update, delete)
+// NOTE: This test is skipped due to complex API requirements
+// See skip message below for manual testing instructions
+func TestCLI_SchedulerConfigurationsLifecycle(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	t.Skip("Scheduler configurations create requires complex participant availability and booking data.\n" +
+		"This endpoint requires:\n" +
+		"  1. Participant with availability subobject (calendar_ids + open_hours)\n" +
+		"  2. Participant with booking subobject (calendar_id for bookings)\n" +
+		"  3. Participant email must match the grant/API key's associated email\n" +
+		"  4. Proper calendar access and permissions\n\n" +
+		"These requirements cannot be reliably satisfied via simple CLI flags or programmatic creation.\n\n" +
+		"Manual testing:\n" +
+		"  (1) Create configuration via Nylas Dashboard or API with proper availability/booking data\n" +
+		"  (2) Use 'scheduler configurations list' to get config ID\n" +
+		"  (3) Test show command: nylas scheduler configurations show <config-id>\n" +
+		"  (4) Test update command: nylas scheduler configurations update <config-id> --duration 45\n" +
+		"  (5) Test delete command: nylas scheduler configurations delete <config-id> --yes\n")
+}

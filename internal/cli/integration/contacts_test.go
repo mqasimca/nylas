@@ -332,3 +332,120 @@ func TestCLI_ContactsGroupsDeleteHelp(t *testing.T) {
 
 	t.Logf("contacts groups delete --help output:\n%s", stdout)
 }
+
+// =============================================================================
+// CONTACT SEARCH COMMAND TESTS
+// =============================================================================
+
+// Note: General --query flag search is not supported in contacts search command.
+// The CLI provides specific search flags: --email, --company, --phone, --source, --group
+// TestCLI_ContactsSearch_Email below tests the --email search functionality.
+
+func TestCLI_ContactsSearch_Email(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	if os.Getenv("NYLAS_TEST_DELETE") != "true" {
+		t.Skip("NYLAS_TEST_DELETE not set to 'true'")
+	}
+
+	// Create a test contact for searching
+	contactFirstName := "EmailSearch"
+	contactLastName := fmt.Sprintf("Test%d", time.Now().Unix())
+	contactEmail := fmt.Sprintf("emailsearch%d@example.com", time.Now().Unix())
+
+	var contactID string
+
+	// Create contact
+	stdout, stderr, err := runCLI("contacts", "create",
+		"--first-name", contactFirstName,
+		"--last-name", contactLastName,
+		"--email", contactEmail,
+		testGrantID)
+
+	if err != nil {
+		t.Fatalf("contacts create failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Extract contact ID for cleanup
+	if idx := strings.Index(stdout, "ID:"); idx != -1 {
+		contactID = strings.TrimSpace(stdout[idx+3:])
+		if newline := strings.Index(contactID, "\n"); newline != -1 {
+			contactID = contactID[:newline]
+		}
+	}
+
+	// Cleanup contact after test
+	if contactID != "" {
+		t.Cleanup(func() {
+			_, _, _ = runCLIWithInput("y\n", "contacts", "delete", contactID, testGrantID)
+		})
+	}
+
+	// Wait for contact to sync
+	time.Sleep(2 * time.Second)
+
+	// Search by email
+	t.Run("search by email", func(t *testing.T) {
+		stdout, stderr, err := runCLI("contacts", "search", "--email", contactEmail, testGrantID)
+		skipIfProviderNotSupported(t, stderr)
+
+		if err != nil {
+			t.Fatalf("contacts search --email failed: %v\nstderr: %s", err, stderr)
+		}
+
+		// Should find the contact
+		if !strings.Contains(stdout, contactEmail) || !strings.Contains(stdout, contactFirstName) {
+			t.Errorf("Expected to find contact with email %s, got: %s", contactEmail, stdout)
+		}
+
+		t.Logf("contacts search --email output:\n%s", stdout)
+	})
+}
+
+// =============================================================================
+// CONTACT SYNC COMMAND TESTS
+// =============================================================================
+
+func TestCLI_ContactsSyncHelp(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	stdout, stderr, err := runCLI("contacts", "sync", "--help")
+
+	if err != nil {
+		t.Fatalf("contacts sync --help failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show sync command description
+	if !strings.Contains(stdout, "sync") || !strings.Contains(stdout, "Sync") {
+		t.Errorf("Expected sync description in help, got: %s", stdout)
+	}
+
+	t.Logf("contacts sync --help output:\n%s", stdout)
+}
+
+func TestCLI_ContactsSync(t *testing.T) {
+	skipIfMissingCreds(t)
+
+	stdout, stderr, err := runCLI("contacts", "sync", testGrantID)
+	skipIfProviderNotSupported(t, stderr)
+
+	if err != nil {
+		t.Fatalf("contacts sync failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show sync status information
+	// Look for sync-related keywords like "cursor", "state", or sync status
+	validOutput := strings.Contains(stdout, "cursor") ||
+		strings.Contains(stdout, "state") ||
+		strings.Contains(stdout, "Sync") ||
+		strings.Contains(stdout, "sync") ||
+		strings.Contains(stdout, "Status")
+
+	if !validOutput {
+		t.Errorf("Expected sync status information in output, got: %s", stdout)
+	}
+
+	t.Logf("contacts sync output:\n%s", stdout)
+}

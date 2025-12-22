@@ -112,8 +112,9 @@ Examples:
 			// Show processing message
 			fmt.Printf("Processing your request: \"%s\"\n\n", query)
 
-			// Call AI scheduler
-			ctx := context.Background()
+			// Call AI scheduler - use longer timeout for AI operations
+			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			defer cancel()
 			response, err := scheduler.Schedule(ctx, scheduleReq)
 			if err != nil {
 				return fmt.Errorf("AI scheduling failed: %w", err)

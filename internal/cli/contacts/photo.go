@@ -69,7 +69,8 @@ and saves it to a file or displays the Base64 data.`,
 					return fmt.Errorf("failed to decode image data: %w", err)
 				}
 
-				if err := os.WriteFile(outputFile, imageData, 0644); err != nil {
+				// Use restrictive permissions (owner-only) for contact photos
+				if err := os.WriteFile(outputFile, imageData, 0600); err != nil {
 					return fmt.Errorf("failed to write file: %w", err)
 				}
 

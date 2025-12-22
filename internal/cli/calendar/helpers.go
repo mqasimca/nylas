@@ -169,7 +169,8 @@ func formatEventTimeWithTZ(event *domain.Event, targetTZ string) (*EventTimeDisp
 
 	// Convert to target timezone
 	tzService := timezone.NewService()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	convertedStart, err := tzService.ConvertTime(ctx, originalTZ, targetTZ, start)
 	if err != nil {
@@ -267,7 +268,8 @@ func checkDSTWarning(eventTime time.Time, tz string) string {
 
 	// Use timezone service to check for DST warnings
 	tzService := timezone.NewService()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// Check for warnings within 7 days
 	warning, err := tzService.CheckDSTWarning(ctx, eventTime, tz, 7)
@@ -312,7 +314,8 @@ func checkDSTConflict(eventTime time.Time, tz string, duration time.Duration) (*
 	}
 
 	tzService := timezone.NewService()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// Check for DST warning at event time (no warning window, only exact conflicts)
 	warning, err := tzService.CheckDSTWarning(ctx, eventTime, tz, 0)

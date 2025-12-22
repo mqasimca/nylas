@@ -229,11 +229,16 @@ func TestRouter_ChatWithProvider(t *testing.T) {
 }
 
 func TestRouter_Chat(t *testing.T) {
+	// Test with fallback disabled - router should fail fast if provider unavailable
 	config := &domain.AIConfig{
 		DefaultProvider: "ollama",
 		Ollama: &domain.OllamaConfig{
 			Host:  "http://localhost:11434",
 			Model: "mistral:latest",
+		},
+		Fallback: &domain.AIFallbackConfig{
+			Enabled:   false,
+			Providers: []string{},
 		},
 	}
 
@@ -247,12 +252,13 @@ func TestRouter_Chat(t *testing.T) {
 		},
 	}
 
-	// This will attempt to connect to localhost:11434, which may fail in test
-	// That's ok - we're testing that the method routes to the correct provider
+	// This will attempt to connect to localhost:11434, which will fail in test
+	// We're testing that the method routes to the correct provider
 	_, err := router.Chat(ctx, req)
 	// Error is expected since we don't have a real Ollama server running
-	if err != nil {
-		t.Logf("Chat() error = %v (expected in test without real Ollama server)", err)
+	// and fallback is disabled
+	if err == nil {
+		t.Error("expected error when Ollama server not available, got nil")
 	}
 }
 

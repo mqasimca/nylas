@@ -26,7 +26,7 @@ func TestCLI_AISchedule_RealCalendar(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	tests := []struct {
@@ -113,7 +113,7 @@ func TestCLI_AIReschedule_RealEvent(t *testing.T) {
 	// First, create a test event to reschedule
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Create a test event for tomorrow
@@ -306,7 +306,7 @@ func TestCLI_AIAnalyze_ScoreTime(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Score a time next week
@@ -390,7 +390,7 @@ func TestCLI_AIConflicts_Detection(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Test conflicts with a time tomorrow
@@ -474,7 +474,7 @@ func TestCLI_AIFindTime_MultiTimezone(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	tests := []struct {
@@ -778,7 +778,7 @@ func TestCLI_AIFeatures_EndToEnd(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// End-to-end workflow:

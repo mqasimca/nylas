@@ -23,6 +23,7 @@ type ConfigurationParticipant struct {
 	Name         string                    `json:"name,omitempty"`
 	IsOrganizer  bool                      `json:"is_organizer,omitempty"`
 	Availability ConfigurationAvailability `json:"availability,omitempty"`
+	Booking      *ParticipantBooking       `json:"booking,omitempty"`
 }
 
 // ConfigurationAvailability holds participant availability settings
@@ -31,9 +32,14 @@ type ConfigurationAvailability struct {
 	OpenHours   []OpenHours `json:"open_hours,omitempty"`
 }
 
+// ParticipantBooking represents booking calendar settings for a participant
+type ParticipantBooking struct {
+	CalendarID string `json:"calendar_id"`
+}
+
 // OpenHours represents available hours
 type OpenHours struct {
-	Days     []string `json:"days"`  // ["monday", "tuesday", etc.]
+	Days     []int    `json:"days"`  // [1, 2, 3, 4, 5] for Monday-Friday (0=Sunday, 1=Monday, ..., 6=Saturday)
 	Start    string   `json:"start"` // "09:00"
 	End      string   `json:"end"`   // "17:00"
 	Timezone string   `json:"timezone,omitempty"`

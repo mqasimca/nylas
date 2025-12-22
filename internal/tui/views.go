@@ -182,7 +182,8 @@ func NewMessagesView(app *App) *MessagesView {
 }
 
 func (v *MessagesView) Load() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	// Default to INBOX folder to show only inbox threads
 	params := &domain.ThreadQueryParams{
 		Limit: 50,
@@ -314,7 +315,8 @@ func (v *MessagesView) toggleStar() {
 	}
 
 	go func() {
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 		newStarred := !thread.Starred
 		_, err := v.app.config.Client.UpdateThread(ctx, v.app.config.GrantID, thread.ID, &domain.UpdateMessageRequest{
 			Starred: &newStarred,
@@ -342,7 +344,8 @@ func (v *MessagesView) markUnread() {
 	}
 
 	go func() {
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 		unread := true
 		_, err := v.app.config.Client.UpdateThread(ctx, v.app.config.GrantID, thread.ID, &domain.UpdateMessageRequest{
 			Unread: &unread,
@@ -572,7 +575,8 @@ func (v *EventsView) Hints() []Hint {
 }
 
 func (v *EventsView) Load() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// Get calendars first
 	calendars, err := v.app.config.Client.GetCalendars(ctx, v.app.config.GrantID)
@@ -594,7 +598,8 @@ func (v *EventsView) Load() {
 }
 
 func (v *EventsView) loadEventsForCalendar(calendarID string) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// Get events from selected calendar (fetch 2 months range)
 	now := time.Now()
@@ -908,7 +913,8 @@ func NewContactsView(app *App) *ContactsView {
 }
 
 func (v *ContactsView) Load() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	contacts, err := v.app.config.Client.GetContacts(ctx, v.app.config.GrantID, nil)
 	if err != nil {
 		v.app.Flash(FlashError, "Failed to load contacts: %v", err)
@@ -979,7 +985,8 @@ func NewWebhooksView(app *App) *WebhooksView {
 }
 
 func (v *WebhooksView) Load() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	webhooks, err := v.app.config.Client.ListWebhooks(ctx)
 	if err != nil {
 		v.app.Flash(FlashError, "Failed to load webhooks: %v", err)
@@ -1052,7 +1059,8 @@ func NewGrantsView(app *App) *GrantsView {
 }
 
 func (v *GrantsView) Load() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	grants, err := v.app.config.Client.ListGrants(ctx)
 	if err != nil {
 		v.app.Flash(FlashError, "Failed to load grants: %v", err)
@@ -1214,7 +1222,8 @@ func (v *InboundView) Hints() []Hint {
 }
 
 func (v *InboundView) Load() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// Load inbound inboxes
 	inboxes, err := v.app.config.Client.ListInboundInboxes(ctx)
@@ -1280,7 +1289,8 @@ func (v *InboundView) renderInboxes() {
 }
 
 func (v *InboundView) loadMessages(inboxID string) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	messages, err := v.app.config.Client.GetInboundMessages(ctx, inboxID, &domain.MessageQueryParams{Limit: 50})
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -60,7 +61,8 @@ func TestCLI_ThreadsShow(t *testing.T) {
 
 	// Get a thread ID
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	threads, err := client.GetThreads(ctx, testGrantID, &domain.ThreadQueryParams{Limit: 1})
 	if err != nil {

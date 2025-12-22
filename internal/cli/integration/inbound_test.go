@@ -85,7 +85,8 @@ func TestCLI_InboundShow(t *testing.T) {
 
 	// First get an inbox ID
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {
@@ -116,7 +117,8 @@ func TestCLI_InboundShow_JSON(t *testing.T) {
 
 	// First get an inbox ID
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {
@@ -166,7 +168,8 @@ func TestCLI_InboundMessages(t *testing.T) {
 
 	// First get an inbox ID
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {
@@ -196,7 +199,8 @@ func TestCLI_InboundMessages_WithLimit(t *testing.T) {
 	skipIfMissingCreds(t)
 
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {
@@ -221,7 +225,8 @@ func TestCLI_InboundMessages_UnreadOnly(t *testing.T) {
 	skipIfMissingCreds(t)
 
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {
@@ -246,7 +251,8 @@ func TestCLI_InboundMessages_JSON(t *testing.T) {
 	skipIfMissingCreds(t)
 
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {
@@ -309,7 +315,8 @@ func TestCLI_InboundCreate(t *testing.T) {
 	// Cleanup: Extract inbox ID and delete it
 	// Look for the inbox we just created and delete it
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err == nil {
 		for _, inbox := range inboxes {
@@ -357,7 +364,8 @@ func TestCLI_InboundCreate_JSON(t *testing.T) {
 
 	// Cleanup: Extract inbox ID and delete it
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err == nil {
 		for _, inbox := range inboxes {
@@ -399,7 +407,8 @@ func TestCLI_InboundDelete(t *testing.T) {
 	prefix := "todelete-" + time.Now().Format("20060102150405")
 
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inbox, err := client.CreateInboundInbox(ctx, prefix)
 	if err != nil {
@@ -539,7 +548,8 @@ func TestCLI_InboundWithEnvVar(t *testing.T) {
 
 	// First get an inbox ID
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	inboxes, err := client.ListInboundInboxes(ctx)
 	if err != nil {

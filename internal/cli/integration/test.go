@@ -32,12 +32,14 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
+	"gopkg.in/yaml.v3"
 )
 
 // Test configuration loaded from environment
@@ -243,7 +245,7 @@ func getTestEmail() string {
 	if testEmail != "" {
 		return testEmail
 	}
-	return getEnvOrDefault("NYLAS_TEST_EMAIL", "qasim.m@nylas.com")
+	return getEnvOrDefault("NYLAS_TEST_EMAIL", "")
 }
 
 // extractEventID extracts event ID from CLI output
@@ -330,7 +332,33 @@ func getAvailableProvider() string {
 	if getEnvOrDefault("GROQ_API_KEY", "") != "" {
 		return "groq"
 	}
-	return "ollama" // Default
+	return "" // Return empty string when no provider is available
+}
+
+// getAIConfigFromUserConfig reads the AI configuration from ~/.config/nylas/config.yaml
+func getAIConfigFromUserConfig() map[string]interface{} {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	configPath := filepath.Join(home, ".config", "nylas", "config.yaml")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil
+	}
+
+	var config map[string]interface{}
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil
+	}
+
+	aiConfig, ok := config["ai"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	return aiConfig
 }
 
 // Ensure imports are used (these are used in other test files)

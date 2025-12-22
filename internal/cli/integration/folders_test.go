@@ -94,7 +94,8 @@ func TestCLI_FoldersCreateAndDelete(t *testing.T) {
 
 	// Get folder ID
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	folders, err := client.GetFolders(ctx, testGrantID)
 	if err != nil {

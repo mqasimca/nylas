@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -376,7 +377,9 @@ func (c *ComposeView) send() {
 	c.app.Flash(FlashInfo, "Sending message...")
 
 	go func() {
-		ctx := context.Background()
+		// Email send operations should complete within 30 seconds
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 		_, err := c.app.config.Client.SendMessage(ctx, c.app.config.GrantID, req)
 		if err != nil {
 			c.app.QueueUpdateDraw(func() {

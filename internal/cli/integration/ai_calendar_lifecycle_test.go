@@ -23,7 +23,7 @@ func TestCLI_AI_CalendarEventLifecycle(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	t.Run("create_event_and_analyze_conflicts", func(t *testing.T) {
@@ -353,7 +353,7 @@ func TestCLI_AI_ScheduleAndCleanup(t *testing.T) {
 
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// This test would use AI to schedule an event

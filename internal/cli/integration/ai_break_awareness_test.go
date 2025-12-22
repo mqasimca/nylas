@@ -28,9 +28,24 @@ func TestCLI_AI_BreakTimeAwareness(t *testing.T) {
 		t.Skip("No AI provider configured")
 	}
 
+	// Get available provider - skip if none available
+	aiProvider := getAvailableProvider()
+	if aiProvider == "" {
+		t.Skip("No AI provider available (Ollama not running and no cloud API keys configured)")
+	}
+
+	// Load AI config from user's config file
+	aiConfig := getAIConfigFromUserConfig()
+	if aiConfig == nil {
+		// Fallback to minimal config if user config not found
+		aiConfig = map[string]interface{}{
+			"default_provider": aiProvider,
+		}
+	}
+
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Create a temporary config file with working hours and breaks
@@ -68,9 +83,7 @@ func TestCLI_AI_BreakTimeAwareness(t *testing.T) {
 				},
 			},
 		},
-		"ai": map[string]interface{}{
-			"default_provider": getAvailableProvider(),
-		},
+		"ai": aiConfig,
 	}
 
 	// Write config to file
@@ -273,9 +286,17 @@ func TestCLI_AI_FocusTime_BreakAwareness(t *testing.T) {
 		t.Skip("No AI provider configured")
 	}
 
+	// Load AI config from user's config file
+	aiConfig := getAIConfigFromUserConfig()
+	if aiConfig == nil {
+		aiConfig = map[string]interface{}{
+			"default_provider": getAvailableProvider(),
+		}
+	}
+
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Create config with breaks
@@ -316,9 +337,7 @@ func TestCLI_AI_FocusTime_BreakAwareness(t *testing.T) {
 				},
 			},
 		},
-		"ai": map[string]interface{}{
-			"default_provider": getAvailableProvider(),
-		},
+		"ai": aiConfig,
 	}
 
 	configData, err := yaml.Marshal(config)
@@ -383,9 +402,17 @@ func TestCLI_AI_Scheduling_BreakAwareness(t *testing.T) {
 		t.Skip("No AI provider configured")
 	}
 
+	// Load AI config from user's config file
+	aiConfig := getAIConfigFromUserConfig()
+	if aiConfig == nil {
+		aiConfig = map[string]interface{}{
+			"default_provider": getAvailableProvider(),
+		}
+	}
+
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Create config with breaks
@@ -420,9 +447,7 @@ func TestCLI_AI_Scheduling_BreakAwareness(t *testing.T) {
 				},
 			},
 		},
-		"ai": map[string]interface{}{
-			"default_provider": getAvailableProvider(),
-		},
+		"ai": aiConfig,
 	}
 
 	configData, err := yaml.Marshal(config)
@@ -504,9 +529,17 @@ func TestCLI_AI_ConflictDetection_BreakAwareness(t *testing.T) {
 		t.Skip("No AI provider configured")
 	}
 
+	// Load AI config from user's config file
+	aiConfig := getAIConfigFromUserConfig()
+	if aiConfig == nil {
+		aiConfig = map[string]interface{}{
+			"default_provider": getAvailableProvider(),
+		}
+	}
+
 	testEmail := getTestEmail()
 	if testEmail == "" {
-		testEmail = "qasim.m@nylas.com"
+		t.Skip("NYLAS_TEST_EMAIL environment variable not set")
 	}
 
 	// Create config with breaks
@@ -541,9 +574,7 @@ func TestCLI_AI_ConflictDetection_BreakAwareness(t *testing.T) {
 				},
 			},
 		},
-		"ai": map[string]interface{}{
-			"default_provider": getAvailableProvider(),
-		},
+		"ai": aiConfig,
 	}
 
 	configData, err := yaml.Marshal(config)

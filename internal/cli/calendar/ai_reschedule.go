@@ -69,7 +69,9 @@ func newAIRescheduleCmd() *cobra.Command {
 				return fmt.Errorf("failed to get grant ID: %w", err)
 			}
 
-			ctx := context.Background()
+			// AI rescheduling can take time - use longer timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			defer cancel()
 
 			// Fetch the event to reschedule
 			fmt.Printf("📅 Fetching event %s...\n", eventID)

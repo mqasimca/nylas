@@ -375,7 +375,8 @@ k9s:
         fgColor: "#000000"
         bgColor: "#00FF00"
 `
-	if err := os.WriteFile(themePath, []byte(themeContent), 0644); err != nil {
+	// Use restrictive permissions for config files
+	if err := os.WriteFile(themePath, []byte(themeContent), 0600); err != nil {
 		t.Fatalf("Failed to write theme file: %v", err)
 	}
 
@@ -451,7 +452,8 @@ k9s:
         fgColor: "#000000"
         bgColor: "#9900FF"
 `
-	if err := os.WriteFile(themePath, []byte(themeContent), 0644); err != nil {
+	// Use restrictive permissions for config files
+	if err := os.WriteFile(themePath, []byte(themeContent), 0600); err != nil {
 		t.Fatalf("Failed to write theme file: %v", err)
 	}
 

@@ -51,11 +51,15 @@ func (s *Service) StartServer(ctx context.Context, config *domain.WebhookServerC
 	mux.HandleFunc("/", s.handleWebhook)
 	mux.HandleFunc("/health", s.handleHealth)
 
-	// Create server
+	// Create server with timeouts to prevent slowloris attacks
 	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
 	s.server = &http.Server{
-		Addr:    addr,
-		Handler: mux,
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second, // Prevent slowloris attacks
+		ReadTimeout:       30 * time.Second, // Timeout for reading entire request
+		WriteTimeout:      30 * time.Second, // Timeout for writing response
+		IdleTimeout:       60 * time.Second, // Timeout for keep-alive connections
 	}
 
 	// Start server in goroutine
@@ -159,7 +163,8 @@ func (s *Service) SaveWebhook(ctx context.Context, payload *domain.WebhookPayloa
 		return fmt.Errorf("marshal webhook: %w", err)
 	}
 
-	if err := os.WriteFile(filepath, data, 0644); err != nil {
+	// Use restrictive permissions (owner-only) for webhook payloads
+	if err := os.WriteFile(filepath, data, 0600); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 

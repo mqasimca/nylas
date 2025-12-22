@@ -67,7 +67,8 @@ Analyzes participant timezones and suggests meeting times with a 100-point scori
 				"Europe/London",       // Bob
 			}
 
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
 			// Find overlapping times
 			slots, err := findMeetingSlots(ctx, timezones, dur, workingStart, workingEnd, days, excludeWeekends)
