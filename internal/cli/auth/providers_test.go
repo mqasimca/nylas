@@ -2,11 +2,38 @@ package auth
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
+
+	"github.com/mqasimca/nylas/internal/adapters/config"
+	"github.com/mqasimca/nylas/internal/adapters/keyring"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
+// hasAPIKey checks if API key is configured (from env or keyring)
+func hasAPIKey() bool {
+	// Check environment variable first
+	if os.Getenv("NYLAS_API_KEY") != "" {
+		return true
+	}
+
+	// Check keyring
+	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+	if err != nil {
+		return false
+	}
+
+	_, err = secretStore.Get(ports.KeyAPIKey)
+	return err == nil
+}
+
 func TestProvidersCmd(t *testing.T) {
+	// Skip if API key is not configured
+	if !hasAPIKey() {
+		t.Skip("API key not configured - run 'nylas auth config' to set it")
+	}
+
 	tests := []struct {
 		name       string
 		args       []string

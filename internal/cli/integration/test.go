@@ -12,6 +12,28 @@
 //   - NYLAS_TEST_EMAIL: Email address for send tests (default: uses grant email)
 //   - NYLAS_TEST_SEND_EMAIL: Set to "true" to enable send tests
 //   - NYLAS_TEST_DELETE: Set to "true" to enable delete tests
+//   - NYLAS_TEST_AUTH_LOGOUT: Set to "true" to enable auth logout tests
+//   - NYLAS_TEST_RATE_LIMIT_RPS: API rate limit (requests/sec, default: 2.0)
+//   - NYLAS_TEST_RATE_LIMIT_BURST: API rate limit burst capacity (default: 5)
+//
+// Parallel Testing:
+//   Tests can use t.Parallel() to run concurrently. The package includes a global
+//   rate limiter that ensures API calls don't exceed Nylas rate limits.
+//
+//   Usage:
+//     func TestExample(t *testing.T) {
+//         skipIfMissingCreds(t)
+//         t.Parallel()  // Enable parallel execution
+//
+//         // For API calls, use rate-limited functions:
+//         stdout, stderr, err := runCLIWithRateLimit(t, "calendar", "events", "list")
+//         // OR manually acquire rate limit:
+//         acquireRateLimit(t)
+//         stdout, stderr, err := runCLI("calendar", "events", "list")
+//     }
+//
+//   For offline commands (timezone, ai config, help), rate limiting is not needed:
+//     stdout, _, _ := runCLI("timezone", "list")  // No rate limit needed
 //
 // Test files are organized by feature:
 //   - test.go: Common setup and helpers (this file)
@@ -23,6 +45,9 @@
 //   - calendar_test.go: Calendar command tests
 //   - contacts_test.go: Contact command tests
 //   - webhooks_test.go: Webhook command tests
+//   - timezone_test.go: Timezone utility tests (offline, no API)
+//   - ai_config_test.go: AI config tests (offline, no API)
+//   - ai_features_test.go: AI features tests
 //   - misc_test.go: Help, error handling, workflow tests
 package integration
 
@@ -33,12 +58,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
+	"golang.org/x/time/rate"
 	"gopkg.in/yaml.v3"
 )
 
@@ -51,11 +78,35 @@ var (
 	testBinary   string
 )
 
+// Rate limiter for API calls to prevent hitting Nylas rate limits
+// Default: 2 requests per second with burst of 5
+// This works across all parallel tests
+var (
+	apiRateLimiter *rate.Limiter
+	rateLimitRPS   = 2.0 // Requests per second
+	rateLimitBurst = 5   // Burst capacity
+)
+
 func init() {
 	testAPIKey = os.Getenv("NYLAS_API_KEY")
 	testGrantID = os.Getenv("NYLAS_GRANT_ID")
 	testClientID = os.Getenv("NYLAS_CLIENT_ID")
 	testEmail = os.Getenv("NYLAS_TEST_EMAIL")
+
+	// Configure rate limiter from environment
+	if rpsStr := os.Getenv("NYLAS_TEST_RATE_LIMIT_RPS"); rpsStr != "" {
+		if rps, err := strconv.ParseFloat(rpsStr, 64); err == nil && rps > 0 {
+			rateLimitRPS = rps
+		}
+	}
+	if burstStr := os.Getenv("NYLAS_TEST_RATE_LIMIT_BURST"); burstStr != "" {
+		if burst, err := strconv.Atoi(burstStr); err == nil && burst > 0 {
+			rateLimitBurst = burst
+		}
+	}
+
+	// Initialize rate limiter
+	apiRateLimiter = rate.NewLimiter(rate.Limit(rateLimitRPS), rateLimitBurst)
 
 	// Find the binary - try environment variable first, then common locations
 	testBinary = os.Getenv("NYLAS_TEST_BINARY")
@@ -84,14 +135,21 @@ func init() {
 	}
 }
 
-// rateLimitDelay adds a small delay between API calls to avoid rate limiting.
-const rateLimitDelay = 500 * time.Millisecond
+// acquireRateLimit waits for permission to make an API call.
+// This ensures we don't exceed Nylas rate limits when running parallel tests.
+// Safe to use with t.Parallel() - the rate limiter is shared across all tests.
+func acquireRateLimit(t *testing.T) {
+	t.Helper()
+	ctx := context.Background()
+	if err := apiRateLimiter.Wait(ctx); err != nil {
+		t.Fatalf("Rate limiter error: %v", err)
+	}
+}
 
 // skipIfMissingCreds skips the test if required credentials are missing.
-// It also adds a rate limit delay to avoid hitting API rate limits.
+// Call this at the start of tests that require API credentials.
 func skipIfMissingCreds(t *testing.T) {
-	// Add delay to avoid rate limiting between tests
-	time.Sleep(rateLimitDelay)
+	t.Helper()
 
 	if testBinary == "" {
 		t.Skip("CLI binary not found - run 'go build -o bin/nylas ./cmd/nylas' first")
@@ -104,7 +162,9 @@ func skipIfMissingCreds(t *testing.T) {
 	}
 }
 
-// runCLI executes a CLI command and returns stdout, stderr, and error
+// runCLI executes a CLI command and returns stdout, stderr, and error.
+// NOTE: This does NOT apply rate limiting. For tests that make API calls,
+// either call acquireRateLimit(t) before this, or use runCLIWithRateLimit.
 func runCLI(args ...string) (string, string, error) {
 	cmd := exec.Command(testBinary, args...)
 	var stdout, stderr bytes.Buffer
@@ -142,7 +202,18 @@ func runCLI(args ...string) (string, string, error) {
 	return stdout.String(), stderr.String(), err
 }
 
-// runCLIWithInput executes a CLI command with stdin input
+// runCLIWithRateLimit executes a CLI command with rate limiting.
+// Use this for commands that make API calls when running tests with t.Parallel().
+// For offline commands (timezone, ai config, help), use runCLI directly.
+func runCLIWithRateLimit(t *testing.T, args ...string) (string, string, error) {
+	t.Helper()
+	acquireRateLimit(t)
+	return runCLI(args...)
+}
+
+// runCLIWithInput executes a CLI command with stdin input.
+// NOTE: This does NOT apply rate limiting. For tests that make API calls,
+// either call acquireRateLimit(t) before this, or use runCLIWithInputAndRateLimit.
 func runCLIWithInput(input string, args ...string) (string, string, error) {
 	cmd := exec.Command(testBinary, args...)
 	var stdout, stderr bytes.Buffer
@@ -178,6 +249,14 @@ func runCLIWithInput(input string, args ...string) (string, string, error) {
 
 	err := cmd.Run()
 	return stdout.String(), stderr.String(), err
+}
+
+// runCLIWithInputAndRateLimit executes a CLI command with stdin input and rate limiting.
+// Use this for commands that make API calls when running tests with t.Parallel().
+func runCLIWithInputAndRateLimit(t *testing.T, input string, args ...string) (string, string, error) {
+	t.Helper()
+	acquireRateLimit(t)
+	return runCLIWithInput(input, args...)
 }
 
 // getTestClient creates a test API client
