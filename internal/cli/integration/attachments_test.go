@@ -6,6 +6,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 // =============================================================================
@@ -39,7 +40,8 @@ func TestCLI_EmailAttachmentsList(t *testing.T) {
 
 	// Get a message to test attachments
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	messages, err := client.GetMessages(ctx, testGrantID, 10)
 	if err != nil {
@@ -72,7 +74,8 @@ func TestCLI_EmailAttachmentsListJSON(t *testing.T) {
 
 	// Get a message to test attachments
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	messages, err := client.GetMessages(ctx, testGrantID, 10)
 	if err != nil {
@@ -170,7 +173,8 @@ func TestCLI_EmailAttachmentsListAllFormats(t *testing.T) {
 
 	// Get a message to test attachments
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	messages, err := client.GetMessages(ctx, testGrantID, 10)
 	if err != nil {
@@ -210,7 +214,8 @@ func TestCLI_EmailAttachmentsDownloadInvalidAttachmentID(t *testing.T) {
 
 	// Get a message to test attachments
 	client := getTestClient()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	messages, err := client.GetMessages(ctx, testGrantID, 1)
 	if err != nil {

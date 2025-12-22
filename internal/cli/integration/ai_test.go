@@ -212,15 +212,18 @@ func TestCLI_CalendarAI_Context_Basic(t *testing.T) {
 		contains []string
 	}{
 		{
-			name:    "analyze without credentials shows error",
-			args:    []string{"calendar", "ai", "analyze"},
-			wantErr: true, // Will fail on secret not found or API error
-		},
-		{
 			name: "analyze help command works",
 			args: []string{"calendar", "ai", "analyze", "--help"},
 			contains: []string{
 				"Analyze historical meeting data",
+			},
+		},
+		{
+			name: "analyze shows meeting patterns",
+			args: []string{"calendar", "ai", "analyze"},
+			contains: []string{
+				"Analyzing",
+				"meetings",
 			},
 		},
 	}
