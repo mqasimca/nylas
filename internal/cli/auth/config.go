@@ -18,11 +18,10 @@ import (
 
 func newConfigCmd() *cobra.Command {
 	var (
-		region       string
-		clientID     string
-		clientSecret string
-		apiKey       string
-		reset        bool
+		region   string
+		clientID string
+		apiKey   string
+		reset    bool
 	)
 
 	cmd := &cobra.Command{
@@ -31,7 +30,9 @@ func newConfigCmd() *cobra.Command {
 		Long: `Configure Nylas API credentials.
 
 You can provide credentials via flags or interactively.
-Get your credentials from https://dashboard.nylas.com`,
+Get your credentials from https://dashboard.nylas.com
+
+The CLI only requires your API Key - Client ID is auto-detected.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configSvc, _, _, err := createConfigService()
 			if err != nil {
@@ -47,60 +48,93 @@ Get your credentials from https://dashboard.nylas.com`,
 				return nil
 			}
 
-			// Interactive mode if credentials not provided
-			if clientID == "" || apiKey == "" {
-				reader := bufio.NewReader(os.Stdin)
+			reader := bufio.NewReader(os.Stdin)
 
+			// Interactive mode if API key not provided
+			if apiKey == "" {
 				fmt.Println("Configure Nylas API Credentials")
-				fmt.Println("Get your credentials from: https://dashboard.nylas.com")
+				fmt.Println("Get your API key from: https://dashboard.nylas.com")
 				fmt.Println()
 
-				if clientID == "" {
-					fmt.Print("Client ID: ")
+				fmt.Print("API Key (hidden): ")
+				apiKeyBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+				if err != nil {
+					return fmt.Errorf("failed to read API key: %w", err)
+				}
+				fmt.Println()
+				apiKey = strings.TrimSpace(string(apiKeyBytes))
+			}
+
+			if apiKey == "" {
+				return fmt.Errorf("API key is required")
+			}
+
+			// Get region if not provided
+			if region == "" {
+				fmt.Print("Region [us/eu] (default: us): ")
+				input, _ := reader.ReadString('\n')
+				region = strings.TrimSpace(input)
+				if region == "" {
+					region = "us"
+				}
+			}
+
+			// Auto-detect Client ID from API key if not provided
+			if clientID == "" {
+				fmt.Println()
+				fmt.Println("Detecting applications...")
+
+				client := nylasadapter.NewHTTPClient()
+				client.SetRegion(region)
+				client.SetCredentials("", "", apiKey) // Only API key needed for ListApplications
+
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				apps, err := client.ListApplications(ctx)
+				cancel()
+
+				if err != nil {
+					yellow := color.New(color.FgYellow)
+					yellow.Printf("  Could not auto-detect Client ID: %v\n", err)
+					fmt.Println()
+					fmt.Print("Client ID (manual entry): ")
 					input, _ := reader.ReadString('\n')
 					clientID = strings.TrimSpace(input)
-				}
-
-				if apiKey == "" {
-					fmt.Print("API Key (hidden): ")
-					// Use password masking for API key
-					apiKeyBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
-					if err != nil {
-						return fmt.Errorf("failed to read API key: %w", err)
+				} else if len(apps) == 0 {
+					return fmt.Errorf("no applications found for this API key")
+				} else if len(apps) == 1 {
+					// Single app - auto-select
+					app := apps[0]
+					clientID = getAppClientID(app)
+					green := color.New(color.FgGreen)
+					green.Printf("  ✓ Found application: %s\n", getAppDisplayName(app))
+				} else {
+					// Multiple apps - let user choose
+					fmt.Printf("  Found %d applications:\n\n", len(apps))
+					for i, app := range apps {
+						fmt.Printf("  [%d] %s\n", i+1, getAppDisplayName(app))
 					}
-					fmt.Println() // Add newline after hidden input
-					apiKey = strings.TrimSpace(string(apiKeyBytes))
-				}
-
-				if clientSecret == "" {
-					fmt.Print("Client Secret (optional, hidden - press Enter to skip): ")
-					// Use password masking for client secret
-					secretBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
-					if err != nil {
-						return fmt.Errorf("failed to read client secret: %w", err)
-					}
-					fmt.Println() // Add newline after hidden input
-					clientSecret = strings.TrimSpace(string(secretBytes))
-				}
-
-				if region == "" {
-					fmt.Print("Region [us/eu] (default: us): ")
+					fmt.Println()
+					fmt.Print("Select application (1-", len(apps), "): ")
 					input, _ := reader.ReadString('\n')
-					region = strings.TrimSpace(input)
-					if region == "" {
-						region = "us"
+					choice := strings.TrimSpace(input)
+
+					var selected int
+					if _, err := fmt.Sscanf(choice, "%d", &selected); err != nil || selected < 1 || selected > len(apps) {
+						return fmt.Errorf("invalid selection: %s", choice)
 					}
+
+					app := apps[selected-1]
+					clientID = getAppClientID(app)
+					green := color.New(color.FgGreen)
+					green.Printf("  ✓ Selected: %s\n", getAppDisplayName(app))
 				}
 			}
 
 			if clientID == "" {
 				return fmt.Errorf("client ID is required")
 			}
-			if apiKey == "" {
-				return fmt.Errorf("API key is required")
-			}
 
-			if err := configSvc.SetupConfig(region, clientID, clientSecret, apiKey); err != nil {
+			if err := configSvc.SetupConfig(region, clientID, "", apiKey); err != nil {
 				return err
 			}
 
@@ -113,7 +147,7 @@ Get your credentials from https://dashboard.nylas.com`,
 
 			client := nylasadapter.NewHTTPClient()
 			client.SetRegion(region)
-			client.SetCredentials(clientID, clientSecret, apiKey)
+			client.SetCredentials(clientID, "", apiKey)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
@@ -189,10 +223,40 @@ Get your credentials from https://dashboard.nylas.com`,
 	}
 
 	cmd.Flags().StringVarP(&region, "region", "r", "us", "API region (us or eu)")
-	cmd.Flags().StringVar(&clientID, "client-id", "", "Nylas Client ID")
-	cmd.Flags().StringVar(&clientSecret, "client-secret", "", "Nylas Client Secret")
+	cmd.Flags().StringVar(&clientID, "client-id", "", "Nylas Client ID (auto-detected if not provided)")
 	cmd.Flags().StringVar(&apiKey, "api-key", "", "Nylas API Key")
 	cmd.Flags().BoolVar(&reset, "reset", false, "Reset all configuration")
 
 	return cmd
+}
+
+// getAppClientID returns the client ID for an application.
+// It checks both ID and ApplicationID fields since the API may use either.
+func getAppClientID(app domain.Application) string {
+	if app.ApplicationID != "" {
+		return app.ApplicationID
+	}
+	return app.ID
+}
+
+// getAppDisplayName returns a human-readable display name for an application.
+func getAppDisplayName(app domain.Application) string {
+	clientID := getAppClientID(app)
+	env := app.Environment
+	if env == "" {
+		env = "production"
+	}
+
+	region := app.Region
+	if region == "" {
+		region = "us"
+	}
+
+	// Truncate client ID for display if too long
+	displayID := clientID
+	if len(displayID) > 20 {
+		displayID = displayID[:17] + "..."
+	}
+
+	return fmt.Sprintf("%s (%s, %s)", displayID, env, region)
 }
