@@ -297,10 +297,11 @@ func (p *Proxy) readSSE(reader io.Reader) ([]byte, error) {
 	return batch, nil
 }
 
-// toolsRequiringGrant lists tools that accept a grant_id parameter.
+// toolsRequiringGrant lists tools that accept a grant_id parameter at the root level.
 // Utility tools like time converters should NOT have grant_id injected.
-// Note: confirm_send_message and confirm_send_draft are excluded because they
-// don't accept grant_id at the root level - they only validate message content.
+// Excluded tools (don't accept grant_id at root level):
+//   - confirm_send_message, confirm_send_draft: only validate message content
+//   - availability: grant_id goes inside participants array, not at root
 var toolsRequiringGrant = map[string]bool{
 	"get_grant":        true,
 	"list_calendars":   true,
@@ -314,7 +315,6 @@ var toolsRequiringGrant = map[string]bool{
 	"update_draft":     true,
 	"send_draft":       true,
 	"send_message":     true,
-	"availability":     true,
 }
 
 // injectDefaultGrant injects the default grant_id into tool call requests if not already specified.

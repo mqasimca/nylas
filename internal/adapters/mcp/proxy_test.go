@@ -289,6 +289,21 @@ func TestProxy_injectDefaultGrant(t *testing.T) {
 			wantGrant: false,
 		},
 		{
+			name:      "does not inject grant_id for availability (grant_id goes in participants)",
+			input:     `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"availability","arguments":{"availability_request":{"participants":[]}}}}`,
+			wantGrant: false,
+		},
+		{
+			name:      "does not inject grant_id for confirm_send_message (validates message content only)",
+			input:     `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"confirm_send_message","arguments":{"message_request":{"to":[{"email":"test@example.com"}]}}}}`,
+			wantGrant: false,
+		},
+		{
+			name:      "does not inject grant_id for confirm_send_draft (validates draft content only)",
+			input:     `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"confirm_send_draft","arguments":{"grant_id":"abc","draft_id":"123"}}}`,
+			wantGrant: false,
+		},
+		{
 			name:       "injects grant_id for create_event",
 			input:      `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_event","arguments":{}}}`,
 			wantGrant:  true,
