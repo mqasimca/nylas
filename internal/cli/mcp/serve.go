@@ -64,11 +64,18 @@ func runServe(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get API key: %w\n\nPlease run 'nylas auth login' first", err)
 	}
 
+	// Get region from config (defaults to "us")
+	region := "us"
+	configStore := config.NewDefaultFileStore()
+	if cfg, err := configStore.Load(); err == nil && cfg.Region != "" {
+		region = cfg.Region
+	}
+
 	// Get default grant ID (optional - helps Claude know which account to use)
 	grantID, _ := common.GetGrantID(nil)
 
-	// Create MCP proxy
-	proxy := mcp.NewProxy(apiKey)
+	// Create MCP proxy with region
+	proxy := mcp.NewProxy(apiKey, region)
 	if grantID != "" {
 		proxy.SetDefaultGrant(grantID)
 	}

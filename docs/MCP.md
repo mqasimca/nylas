@@ -10,7 +10,7 @@ Enable AI assistants to interact with your Nylas email and calendar through the 
 
 The Nylas CLI includes an MCP proxy server that enables AI assistants like Claude Desktop, Cursor, and Windsurf to access your email and calendar. The proxy:
 
-1. Forwards requests to the official Nylas MCP server (`mcp.us.nylas.com`)
+1. Forwards requests to the official Nylas MCP server (region-specific)
 2. Injects your authenticated credentials automatically
 3. Detects your system timezone for consistent time display
 4. Handles local grant lookups without requiring email input
@@ -142,6 +142,25 @@ The `get_grant` tool can be called without an email parameter. The proxy returns
 
 ---
 
+## Regional Endpoints
+
+The Nylas MCP server operates in two regions. The CLI automatically selects the correct endpoint based on your configured region:
+
+| Region | Endpoint |
+|--------|----------|
+| `us` (default) | `https://mcp.us.nylas.com` |
+| `eu` | `https://mcp.eu.nylas.com` |
+
+Configure your region in `~/.config/nylas/config.yaml`:
+
+```yaml
+region: eu  # or "us" (default)
+```
+
+The MCP proxy reads this setting and routes requests to the appropriate regional endpoint.
+
+---
+
 ## Configuration
 
 ### Manual Configuration
@@ -206,17 +225,19 @@ AI Assistant (Claude/Cursor/etc.)
 │     Nylas CLI MCP Proxy         │
 │  (nylas mcp serve)              │
 │                                 │
+│  - Reads region from config     │
 │  - Injects credentials          │
 │  - Detects timezone             │
 │  - Handles local get_grant      │
 │  - Modifies tool schemas        │
 └─────────────────────────────────┘
         │
-        │ HTTPS
+        │ HTTPS (region-based)
         ▼
 ┌─────────────────────────────────┐
 │   Nylas MCP Server              │
-│   (mcp.us.nylas.com)            │
+│   mcp.us.nylas.com (US)         │
+│   mcp.eu.nylas.com (EU)         │
 └─────────────────────────────────┘
         │
         │ Nylas API v3

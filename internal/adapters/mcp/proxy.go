@@ -19,12 +19,24 @@ import (
 )
 
 const (
-	// NylasMCPEndpoint is the official Nylas MCP server endpoint.
-	NylasMCPEndpoint = "https://mcp.us.nylas.com"
+	// NylasMCPEndpointUS is the US regional MCP endpoint.
+	NylasMCPEndpointUS = "https://mcp.us.nylas.com"
+	// NylasMCPEndpointEU is the EU regional MCP endpoint.
+	NylasMCPEndpointEU = "https://mcp.eu.nylas.com"
 
 	// DefaultTimeout for HTTP requests.
 	DefaultTimeout = 90 * time.Second
 )
+
+// GetMCPEndpoint returns the appropriate MCP endpoint for the given region.
+func GetMCPEndpoint(region string) string {
+	switch strings.ToLower(region) {
+	case "eu":
+		return NylasMCPEndpointEU
+	default:
+		return NylasMCPEndpointUS
+	}
+}
 
 // rpcRequest represents a JSON-RPC request structure.
 // Defined once to avoid duplicate parsing.
@@ -50,10 +62,10 @@ type Proxy struct {
 	mu           sync.RWMutex
 }
 
-// NewProxy creates a new MCP proxy with the given API key.
-func NewProxy(apiKey string) *Proxy {
+// NewProxy creates a new MCP proxy with the given API key and region.
+func NewProxy(apiKey, region string) *Proxy {
 	return &Proxy{
-		endpoint:   NylasMCPEndpoint,
+		endpoint:   GetMCPEndpoint(region),
 		apiKey:     apiKey,
 		authHeader: "Bearer " + apiKey, // Cache auth header
 		httpClient: &http.Client{
@@ -287,22 +299,22 @@ func (p *Proxy) readSSE(reader io.Reader) ([]byte, error) {
 
 // toolsRequiringGrant lists tools that accept a grant_id parameter.
 // Utility tools like time converters should NOT have grant_id injected.
+// Note: confirm_send_message and confirm_send_draft are excluded because they
+// don't accept grant_id at the root level - they only validate message content.
 var toolsRequiringGrant = map[string]bool{
-	"get_grant":            true,
-	"list_calendars":       true,
-	"list_events":          true,
-	"create_event":         true,
-	"update_event":         true,
-	"list_messages":        true,
-	"list_threads":         true,
-	"get_folder_by_id":     true,
-	"create_draft":         true,
-	"update_draft":         true,
-	"send_draft":           true,
-	"send_message":         true,
-	"confirm_send_message": true,
-	"confirm_send_draft":   true,
-	"availability":         true,
+	"get_grant":        true,
+	"list_calendars":   true,
+	"list_events":      true,
+	"create_event":     true,
+	"update_event":     true,
+	"list_messages":    true,
+	"list_threads":     true,
+	"get_folder_by_id": true,
+	"create_draft":     true,
+	"update_draft":     true,
+	"send_draft":       true,
+	"send_message":     true,
+	"availability":     true,
 }
 
 // injectDefaultGrant injects the default grant_id into tool call requests if not already specified.

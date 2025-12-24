@@ -11,29 +11,69 @@ import (
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
+func TestGetMCPEndpoint(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		region   string
+		expected string
+	}{
+		{"us", NylasMCPEndpointUS},
+		{"US", NylasMCPEndpointUS},
+		{"eu", NylasMCPEndpointEU},
+		{"EU", NylasMCPEndpointEU},
+		{"", NylasMCPEndpointUS},      // default to US
+		{"other", NylasMCPEndpointUS}, // unknown defaults to US
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.region, func(t *testing.T) {
+			got := GetMCPEndpoint(tt.region)
+			if got != tt.expected {
+				t.Errorf("GetMCPEndpoint(%q) = %q, want %q", tt.region, got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestNewProxy(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-api-key")
+	t.Run("US region", func(t *testing.T) {
+		proxy := NewProxy("test-api-key", "us")
+		if proxy == nil {
+			t.Fatal("NewProxy returned nil")
+		}
+		if proxy.apiKey != "test-api-key" {
+			t.Errorf("expected apiKey 'test-api-key', got '%s'", proxy.apiKey)
+		}
+		if proxy.endpoint != NylasMCPEndpointUS {
+			t.Errorf("expected endpoint '%s', got '%s'", NylasMCPEndpointUS, proxy.endpoint)
+		}
+		if proxy.httpClient == nil {
+			t.Error("httpClient is nil")
+		}
+	})
 
-	if proxy == nil {
-		t.Fatal("NewProxy returned nil")
-	}
-	if proxy.apiKey != "test-api-key" {
-		t.Errorf("expected apiKey 'test-api-key', got '%s'", proxy.apiKey)
-	}
-	if proxy.endpoint != NylasMCPEndpoint {
-		t.Errorf("expected endpoint '%s', got '%s'", NylasMCPEndpoint, proxy.endpoint)
-	}
-	if proxy.httpClient == nil {
-		t.Error("httpClient is nil")
-	}
+	t.Run("EU region", func(t *testing.T) {
+		proxy := NewProxy("test-api-key", "eu")
+		if proxy.endpoint != NylasMCPEndpointEU {
+			t.Errorf("expected endpoint '%s', got '%s'", NylasMCPEndpointEU, proxy.endpoint)
+		}
+	})
+
+	t.Run("empty region defaults to US", func(t *testing.T) {
+		proxy := NewProxy("test-api-key", "")
+		if proxy.endpoint != NylasMCPEndpointUS {
+			t.Errorf("expected endpoint '%s', got '%s'", NylasMCPEndpointUS, proxy.endpoint)
+		}
+	})
 }
 
 func TestProxy_SetDefaultGrant(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 
 	// Initially empty
 	if proxy.defaultGrant != "" {
@@ -50,7 +90,7 @@ func TestProxy_SetDefaultGrant(t *testing.T) {
 func TestProxy_createErrorResponse(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-key")
+	proxy := NewProxy("test-key", "us")
 
 	tests := []struct {
 		name   string
@@ -128,7 +168,7 @@ func TestProxy_forward(t *testing.T) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 	proxy.endpoint = server.URL
 
 	request := []byte(`{"jsonrpc":"2.0","id":1,"method":"test"}`)
@@ -181,7 +221,7 @@ func TestProxy_forward_WithDefaultGrant(t *testing.T) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 	proxy.endpoint = server.URL
 	proxy.SetDefaultGrant("test-grant-456")
 
@@ -201,7 +241,7 @@ func TestProxy_forward_WithDefaultGrant(t *testing.T) {
 func TestProxy_injectDefaultGrant(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 	proxy.SetDefaultGrant("my-grant-id")
 
 	tests := []struct {
@@ -297,7 +337,7 @@ func TestProxy_forward_SSE(t *testing.T) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 	proxy.endpoint = server.URL
 
 	request := []byte(`{"jsonrpc":"2.0","id":1,"method":"test"}`)
@@ -332,7 +372,7 @@ func TestProxy_forward_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 	proxy.endpoint = server.URL
 
 	request := []byte(`{"jsonrpc":"2.0","id":1,"method":"test"}`)
@@ -346,7 +386,7 @@ func TestProxy_forward_Error(t *testing.T) {
 func TestProxy_readSSE(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-key")
+	proxy := NewProxy("test-key", "us")
 
 	tests := []struct {
 		name     string
@@ -542,7 +582,7 @@ func TestProxy_handleLocalToolCall(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			proxy := NewProxy("test-api-key")
+			proxy := NewProxy("test-api-key", "us")
 			if tt.grantStore != nil {
 				proxy.SetGrantStore(tt.grantStore)
 			}
@@ -617,7 +657,7 @@ func TestProxy_handleLocalToolCall(t *testing.T) {
 func TestProxy_SetGrantStore(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 
 	// Initially nil
 	if proxy.grantStore != nil {
@@ -636,7 +676,7 @@ func TestProxy_SetGrantStore(t *testing.T) {
 func TestProxy_modifyInitializeResponse(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 
 	tests := []struct {
 		name                 string
@@ -708,7 +748,7 @@ func TestProxy_modifyInitializeResponse(t *testing.T) {
 func TestProxy_modifyToolsListResponse(t *testing.T) {
 	t.Parallel()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 
 	tests := []struct {
 		name              string
@@ -900,7 +940,7 @@ func TestProxy_forward_ModifiesToolsList(t *testing.T) {
 	}))
 	defer server.Close()
 
-	proxy := NewProxy("test-api-key")
+	proxy := NewProxy("test-api-key", "us")
 	proxy.endpoint = server.URL
 
 	// Send a tools/list request
