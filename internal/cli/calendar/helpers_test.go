@@ -1163,3 +1163,378 @@ func TestCheckBreakViolation(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckWorkingHoursViolation(t *testing.T) {
+	tests := []struct {
+		name          string
+		eventTime     time.Time
+		config        *domain.Config
+		wantViolation bool
+		wantContains  string
+	}{
+		{
+			name:          "no config - no violation",
+			eventTime:     time.Date(2025, 1, 15, 20, 0, 0, 0, time.UTC), // 8 PM
+			config:        nil,
+			wantViolation: false,
+		},
+		{
+			name:      "no working hours config - no violation",
+			eventTime: time.Date(2025, 1, 15, 20, 0, 0, 0, time.UTC), // 8 PM
+			config: &domain.Config{
+				WorkingHours: nil,
+			},
+			wantViolation: false,
+		},
+		{
+			name:      "working hours disabled - no violation",
+			eventTime: time.Date(2025, 1, 15, 20, 0, 0, 0, time.UTC), // 8 PM (Wednesday)
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: false,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: false,
+		},
+		{
+			name:      "event before working hours - violation",
+			eventTime: time.Date(2025, 1, 15, 8, 0, 0, 0, time.UTC), // 8 AM (before 9 AM)
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true,
+			wantContains:  "before start",
+		},
+		{
+			name:      "event after working hours - violation",
+			eventTime: time.Date(2025, 1, 15, 18, 0, 0, 0, time.UTC), // 6 PM (after 5 PM)
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true,
+			wantContains:  "after end",
+		},
+		{
+			name:      "event during working hours - no violation",
+			eventTime: time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC), // 10 AM
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: false,
+		},
+		{
+			name:      "event exactly at start time - no violation",
+			eventTime: time.Date(2025, 1, 15, 9, 0, 0, 0, time.UTC), // 9 AM
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: false,
+		},
+		{
+			name:      "event exactly at end time - violation",
+			eventTime: time.Date(2025, 1, 15, 17, 0, 0, 0, time.UTC), // 5 PM (at boundary)
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true,
+			wantContains:  "after end",
+		},
+		{
+			name:      "event 1 minute before start - violation",
+			eventTime: time.Date(2025, 1, 15, 8, 59, 0, 0, time.UTC), // 8:59 AM
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true,
+			wantContains:  "before start",
+		},
+		{
+			name:      "event 1 minute before end - no violation",
+			eventTime: time.Date(2025, 1, 15, 16, 59, 0, 0, time.UTC), // 4:59 PM
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: false,
+		},
+		{
+			name:      "day-specific schedule - Monday early start",
+			eventTime: time.Date(2025, 1, 20, 8, 30, 0, 0, time.UTC), // Monday 8:30 AM
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Monday: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "08:00", // Monday starts at 8 AM
+						End:     "16:00",
+					},
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: false, // Within Monday's working hours
+		},
+		{
+			name:      "day-specific schedule - Tuesday uses default",
+			eventTime: time.Date(2025, 1, 21, 8, 30, 0, 0, time.UTC), // Tuesday 8:30 AM
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Monday: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "08:00",
+						End:     "16:00",
+					},
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true, // Before default start time
+			wantContains:  "before start",
+		},
+		{
+			name:      "invalid start time in config - skip validation",
+			eventTime: time.Date(2025, 1, 15, 8, 0, 0, 0, time.UTC),
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "invalid",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: false, // Invalid config is skipped
+		},
+		{
+			name:      "invalid end time in config - skip validation",
+			eventTime: time.Date(2025, 1, 15, 18, 0, 0, 0, time.UTC),
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "invalid",
+					},
+				},
+			},
+			wantViolation: false, // Invalid config is skipped
+		},
+		{
+			name:      "very early morning - multiple hours before start",
+			eventTime: time.Date(2025, 1, 15, 6, 30, 0, 0, time.UTC), // 6:30 AM (2.5 hours before)
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true,
+			wantContains:  "2h 30m before start",
+		},
+		{
+			name:      "late evening - multiple hours after end",
+			eventTime: time.Date(2025, 1, 15, 20, 15, 0, 0, time.UTC), // 8:15 PM (3.25 hours after)
+			config: &domain.Config{
+				WorkingHours: &domain.WorkingHoursConfig{
+					Default: &domain.DaySchedule{
+						Enabled: true,
+						Start:   "09:00",
+						End:     "17:00",
+					},
+				},
+			},
+			wantViolation: true,
+			wantContains:  "3h 15m after end",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := checkWorkingHoursViolation(tt.eventTime, tt.config)
+
+			if tt.wantViolation {
+				if result == "" {
+					t.Error("Expected violation message, got empty string")
+					return
+				}
+				if tt.wantContains != "" {
+					// Check if result contains expected string
+					found := false
+					for i := 0; i <= len(result)-len(tt.wantContains); i++ {
+						if result[i:i+len(tt.wantContains)] == tt.wantContains {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("checkWorkingHoursViolation() = %q, want to contain %q", result, tt.wantContains)
+					}
+				}
+			} else {
+				if result != "" {
+					t.Errorf("Expected no violation, got: %q", result)
+				}
+			}
+		})
+	}
+}
+
+func TestCheckDSTConflict(t *testing.T) {
+	tests := []struct {
+		name        string
+		eventTime   time.Time
+		tz          string
+		duration    time.Duration
+		wantWarning bool
+		wantError   bool
+	}{
+		{
+			name:        "empty timezone - no warning",
+			eventTime:   time.Now(),
+			tz:          "",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   false,
+		},
+		{
+			name:        "invalid timezone - error",
+			eventTime:   time.Now(),
+			tz:          "Invalid/Timezone",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   true,
+		},
+		{
+			name: "event far from DST transition - no warning",
+			// June is far from DST transitions in most zones
+			eventTime:   time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC),
+			tz:          "America/New_York",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   false,
+		},
+		{
+			name: "normal event in winter - no warning",
+			// January is standard time in Northern Hemisphere
+			eventTime:   time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC),
+			tz:          "America/New_York",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   false,
+		},
+		{
+			name: "normal event in summer - no warning",
+			// July is daylight saving time in Northern Hemisphere
+			eventTime:   time.Date(2025, 7, 15, 10, 0, 0, 0, time.UTC),
+			tz:          "America/Los_Angeles",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   false,
+		},
+		{
+			name:        "timezone without DST - no warning",
+			eventTime:   time.Date(2025, 3, 15, 10, 0, 0, 0, time.UTC),
+			tz:          "UTC",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   false,
+		},
+		{
+			name:        "Arizona timezone (no DST) - no warning",
+			eventTime:   time.Date(2025, 3, 15, 10, 0, 0, 0, time.UTC),
+			tz:          "America/Phoenix",
+			duration:    time.Hour,
+			wantWarning: false,
+			wantError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warning, err := checkDSTConflict(tt.eventTime, tt.tz, tt.duration)
+
+			if tt.wantError {
+				if err == nil {
+					t.Error("Expected error, got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+
+			if tt.wantWarning {
+				if warning == nil {
+					t.Error("Expected DST warning, got nil")
+					return
+				}
+				// Verify warning has expected fields
+				if warning.Warning == "" {
+					t.Error("Expected warning message, got empty string")
+				}
+				if warning.Severity == "" {
+					t.Error("Expected severity, got empty string")
+				}
+			} else {
+				if warning != nil {
+					t.Errorf("Expected no warning, got: %+v", warning)
+				}
+			}
+		})
+	}
+}

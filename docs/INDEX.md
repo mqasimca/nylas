@@ -1,0 +1,142 @@
+# Documentation Index
+
+Quick navigation guide to find the right documentation for your needs.
+
+---
+
+## 🎯 I want to...
+
+### Get Started
+
+- **Learn about Nylas CLI** → [README.md](../README.md)
+- **Quick command reference** → [COMMANDS.md](COMMANDS.md)
+- **See examples** → [EXAMPLES.md](EXAMPLES.md) or [examples/](examples/)
+
+### Understand the Project
+
+- **Architecture overview** → [ARCHITECTURE.md](ARCHITECTURE.md)
+- **Code organization** → [CODE_INDEX.md](../CODE_INDEX.md)
+- **File structure** → [CLAUDE.md](../CLAUDE.md#file-structure)
+
+### Development
+
+- **Set up development environment** → [DEVELOPMENT.md](DEVELOPMENT.md)
+- **Run tests** → [.claude/workflows/testing.md](../.claude/workflows/testing.md)
+- **Code quality checklist** → [.claude/workflows/code-quality-checklist.md](../.claude/workflows/code-quality-checklist.md)
+- **Contributing guidelines** → [CONTRIBUTING.md](../CONTRIBUTING.md)
+
+### Add Features
+
+- **Add a new feature** → [.claude/commands/add-feature.md](../.claude/commands/add-feature.md)
+- **Add a CLI command** → [.claude/commands/add-command.md](../.claude/commands/add-command.md)
+- **Add an API method** → [.claude/commands/add-api-method.md](../.claude/commands/add-api-method.md)
+- **Add a domain type** → [.claude/commands/add-domain-type.md](../.claude/commands/add-domain-type.md)
+- **Add a command flag** → [.claude/commands/add-flag.md](../.claude/commands/add-flag.md)
+- **Generate CRUD command** → [.claude/commands/generate-crud-command.md](../.claude/commands/generate-crud-command.md)
+
+### Testing
+
+- **Run tests** → [.claude/commands/run-tests.md](../.claude/commands/run-tests.md)
+- **Add integration test** → [.claude/commands/add-integration-test.md](../.claude/commands/add-integration-test.md)
+- **Debug test failure** → [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md)
+- **Analyze coverage** → [.claude/commands/analyze-coverage.md](../.claude/commands/analyze-coverage.md)
+- **Testing guidelines** → [.claude/rules/testing.md](../.claude/rules/testing.md)
+
+### Fix Issues
+
+- **Fix a bug** → [.claude/commands/fix-bug.md](../.claude/commands/fix-bug.md)
+- **Fix build errors** → [.claude/commands/fix-build.md](../.claude/commands/fix-build.md)
+- **Troubleshooting guide** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md) or [troubleshooting/](troubleshooting/)
+
+### Quality & Security
+
+- **Security scan** → [.claude/commands/security-scan.md](../.claude/commands/security-scan.md)
+- **Security guidelines** → [SECURITY.md](SECURITY.md)
+- **Code review** → [.claude/commands/review-pr.md](../.claude/commands/review-pr.md)
+- **Linting rules** → [.claude/rules/linting.md](../.claude/rules/linting.md)
+- **Go best practices** → [.claude/rules/go-best-practices.md](../.claude/rules/go-best-practices.md)
+
+### Maintenance
+
+- **Smart commit** → [.claude/commands/smart-commit.md](../.claude/commands/smart-commit.md)
+- **Update documentation** → [.claude/commands/update-docs.md](../.claude/commands/update-docs.md)
+- **Modernize Go code** → [.claude/commands/go-modernize.md](../.claude/commands/go-modernize.md)
+- **Sync mock implementations** → [.claude/commands/sync-mock-implementations.md](../.claude/commands/sync-mock-implementations.md)
+- **Validate API signatures** → [.claude/commands/validate-api-signatures.md](../.claude/commands/validate-api-signatures.md)
+
+### Specific Features
+
+- **AI features** → [AI.md](AI.md) or [ai/](ai/)
+- **Timezone handling** → [TIMEZONE.md](TIMEZONE.md) or [timezone/](timezone/)
+- **Calendar commands** → [commands/calendar.md](commands/calendar.md)
+- **Email commands** → [commands/email.md](commands/email.md)
+- **Webhooks** → [WEBHOOKS.md](WEBHOOKS.md) or [commands/webhooks.md](commands/webhooks.md)
+- **TUI (Terminal UI)** → [TUI.md](TUI.md)
+
+---
+
+## 📂 Documentation Structure
+
+```
+docs/
+├── *.md                    # Main documentation (auto-loaded by Claude)
+├── INDEX.md               # This file
+├── ai/                    # AI feature details (load on-demand)
+├── commands/              # Detailed command guides (load on-demand)
+├── development/           # Development guides (load on-demand)
+├── examples/              # Usage examples (load on-demand)
+├── timezone/              # Detailed timezone docs (load on-demand)
+└── troubleshooting/       # Debug guides (load on-demand)
+
+.claude/
+├── commands/              # 22 actionable skills/workflows
+├── rules/                 # Development rules
+├── workflows/             # Multi-step workflows
+└── agents/                # Specialized agents
+```
+
+---
+
+## 🔍 By Role
+
+### **New Contributors**
+1. [README.md](../README.md) - Project overview
+2. [CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
+3. [DEVELOPMENT.md](DEVELOPMENT.md) - Setup instructions
+4. [CODE_INDEX.md](../CODE_INDEX.md) - Code navigation
+
+### **Developers Adding Features**
+1. [ARCHITECTURE.md](ARCHITECTURE.md) - Understand the design
+2. [.claude/commands/add-feature.md](../.claude/commands/add-feature.md) - Feature workflow
+3. [.claude/rules/testing.md](../.claude/rules/testing.md) - Testing requirements
+4. [.claude/rules/documentation-maintenance.md](../.claude/rules/documentation-maintenance.md) - Doc updates
+
+### **Bug Fixers**
+1. [.claude/commands/fix-bug.md](../.claude/commands/fix-bug.md) - Bug fix workflow
+2. [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+3. [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md) - Test debugging
+
+### **Maintainers**
+1. [.claude/commands/security-scan.md](../.claude/commands/security-scan.md) - Security checks
+2. [.claude/commands/review-pr.md](../.claude/commands/review-pr.md) - PR review
+3. [.claude/commands/smart-commit.md](../.claude/commands/smart-commit.md) - Commit workflow
+
+### **Users**
+1. [README.md](../README.md) - Getting started
+2. [COMMANDS.md](COMMANDS.md) - Command reference
+3. [EXAMPLES.md](EXAMPLES.md) - Usage examples
+4. [FAQ.md](FAQ.md) - Common questions
+
+---
+
+## 💡 Quick Tips
+
+- **For AI (Claude):** Most docs are in CLAUDE.md and .claude/ directory
+- **For humans:** Start with README.md and COMMANDS.md
+- **Need help?** Check FAQ.md or TROUBLESHOOTING.md
+- **Adding code?** Follow workflows in .claude/commands/
+- **Security concern?** See SECURITY.md
+
+---
+
+**Last Updated:** December 23, 2024

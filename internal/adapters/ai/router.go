@@ -31,21 +31,29 @@ func NewRouter(config *domain.AIConfig) *Router {
 		fallbackChain:   []string{},
 	}
 
-	// Initialize providers based on config
+	// Initialize providers based on config - only add if client creation succeeds
 	if config.Ollama != nil {
-		router.providers["ollama"] = NewOllamaClient(config.Ollama)
+		if client := NewOllamaClient(config.Ollama); client != nil {
+			router.providers["ollama"] = client
+		}
 	}
 
 	if config.Claude != nil {
-		router.providers["claude"] = NewClaudeClient(config.Claude)
+		if client := NewClaudeClient(config.Claude); client != nil {
+			router.providers["claude"] = client
+		}
 	}
 
 	if config.OpenAI != nil {
-		router.providers["openai"] = NewOpenAIClient(config.OpenAI)
+		if client := NewOpenAIClient(config.OpenAI); client != nil {
+			router.providers["openai"] = client
+		}
 	}
 
 	if config.Groq != nil {
-		router.providers["groq"] = NewGroqClient(config.Groq)
+		if client := NewGroqClient(config.Groq); client != nil {
+			router.providers["groq"] = client
+		}
 	}
 
 	// Set up fallback chain

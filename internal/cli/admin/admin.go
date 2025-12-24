@@ -25,8 +25,7 @@ the Nylas platform at an organizational level.`,
 
 	cmd.AddCommand(newApplicationsCmd())
 	cmd.AddCommand(newConnectorsCmd())
-	// TODO: Implement credentials command
-	// cmd.AddCommand(newCredentialsCmd())
+	cmd.AddCommand(newCredentialsCmd())
 	cmd.AddCommand(newGrantsCmd())
 
 	return cmd

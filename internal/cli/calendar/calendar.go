@@ -3,12 +3,12 @@ package calendar
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
@@ -76,30 +76,52 @@ func getLLMRouter() (ports.LLMRouter, error) {
 	configStore := config.NewDefaultFileStore()
 	cfg, err := configStore.Load()
 	if err != nil {
-		// Default AI config if none exists
-		cfg = &domain.Config{
-			AI: &domain.AIConfig{
-				DefaultProvider: "ollama",
-				Ollama: &domain.OllamaConfig{
-					Host:  "http://localhost:11434",
-					Model: "mistral:latest",
-				},
-			},
-		}
+		return nil, fmt.Errorf("failed to load config: %w\n\nTo configure AI, run:\n  nylas ai config set default_provider ollama\n  nylas ai config set ollama.host http://localhost:11434\n  nylas ai config set ollama.model mistral:latest", err)
 	}
 
-	// Ensure AI config exists
-	if cfg.AI == nil {
-		cfg.AI = &domain.AIConfig{
-			DefaultProvider: "ollama",
-			Ollama: &domain.OllamaConfig{
-				Host:  "http://localhost:11434",
-				Model: "mistral:latest",
-			},
-		}
+	// Check if AI is configured
+	if cfg.AI == nil || !cfg.AI.IsConfigured() {
+		return nil, fmt.Errorf("AI not configured in %s\n\nTo configure AI, run:\n  nylas ai config set default_provider ollama\n  nylas ai config set ollama.host http://localhost:11434\n  nylas ai config set ollama.model mistral:latest", configStore.Path())
+	}
+
+	// Validate the default provider is configured
+	provider := cfg.AI.DefaultProvider
+	if provider == "" {
+		return nil, fmt.Errorf("no default AI provider set\n\nTo set a default provider, run:\n  nylas ai config set default_provider ollama")
+	}
+
+	if err := cfg.AI.ValidateForProvider(provider); err != nil {
+		return nil, fmt.Errorf("AI configuration error: %w\n\nRun 'nylas ai config show' to see current configuration", err)
 	}
 
 	// Create and cache router
 	llmRouter = ai.NewRouter(cfg.AI)
 	return llmRouter, nil
+}
+
+// getConfigStore returns the appropriate config store based on the --config flag
+func getConfigStore(cmd *cobra.Command) ports.ConfigStore {
+	// Try to get custom config path from flag
+	configPath, _ := cmd.Flags().GetString("config")
+	if configPath == "" {
+		// Try to get from parent (persistent flag)
+		if cmd.Parent() != nil {
+			configPath, _ = cmd.Parent().Flags().GetString("config")
+		}
+	}
+
+	// Walk up parent chain to find config flag
+	if configPath == "" {
+		for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
+			if p, _ := parent.Flags().GetString("config"); p != "" {
+				configPath = p
+				break
+			}
+		}
+	}
+
+	if configPath != "" {
+		return config.NewFileStore(configPath)
+	}
+	return config.NewDefaultFileStore()
 }

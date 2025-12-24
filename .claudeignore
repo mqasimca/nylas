@@ -1,0 +1,98 @@
+# Claude Code Context Exclusions
+# Exclude files from being loaded in Claude's context to reduce token usage
+
+# Local temporary files and historical documentation
+local/
+local/**
+*.local.md
+
+# Historical/archived documentation
+local/well-architected-optimizations.md
+local/suggestions.md
+local/SECURITY_REPORT.md
+local/video-*.md
+
+# Example/sample files (load on-demand only)
+docs/examples/
+**/examples/**
+
+# Build artifacts and temporary files
+*.log
+*.tmp
+*.temp
+**/.DS_Store
+
+# Test coverage reports (large files)
+coverage.out
+coverage.html
+*.coverprofile
+
+# Binary files
+bin/
+**/*.exe
+**/*.test
+
+# Vendor dependencies (if present)
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Large generated files
+**/*_generated.go
+
+# Detailed command documentation (load on-demand)
+docs/commands/
+docs/ai/
+
+# Detailed timezone documentation (load on-demand)
+docs/timezone/
+
+# Detailed troubleshooting guides (load on-demand)
+docs/troubleshooting/
+
+# Usage examples (load on-demand)
+docs/examples/
+
+# Developer guides (load on-demand)
+docs/development/
+
+# User-facing guides (load on-demand)
+docs/FAQ.md
+docs/EXAMPLES.md
+docs/TROUBLESHOOTING.md
+docs/INDEX.md
+
+# Historical planning documents
+plan.md
+AI_plan.md
+*.plan.md
+
+# Git-related files not needed for coding
+.github/workflows/
+.github/ISSUE_TEMPLATE/
+.goreleaser.yml
+Brewfile
+
+# Test fixtures and mock data (load when needed)
+**/testdata/**
+**/fixtures/**
+
+# License and legal files (rarely changed)
+LICENSE
+COPYING
+
+# Changelog (historical, not needed for current work)
+CHANGELOG.md
+HISTORY.md
+
+# Screenshots and media (load on-demand)
+**/*.png
+**/*.jpg
+**/*.gif
+**/*.mp4
+**/*.svg

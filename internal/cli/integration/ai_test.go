@@ -27,6 +27,9 @@ func TestCLI_AIProvider_Availability(t *testing.T) {
 		t.Skip("CLI binary not found")
 	}
 
+	// Check if default_provider is set in config
+	skipIfNoDefaultAIProvider(t)
+
 	// Check if at least one AI provider is configured
 	hasOllama := checkOllamaAvailable()
 	hasClaude := os.Getenv("ANTHROPIC_API_KEY") != ""
@@ -45,10 +48,8 @@ func TestCLI_CalendarAI_Basic(t *testing.T) {
 		t.Skip("CLI binary not found")
 	}
 
-	// Skip if no AI provider configured
-	if !hasAnyAIProvider() {
-		t.Skip("No AI provider configured")
-	}
+	// Skip if no default AI provider configured
+	skipIfNoDefaultAIProvider(t)
 
 	tests := []struct {
 		name     string
@@ -105,10 +106,8 @@ func TestCLI_CalendarAI_Schedule_InvalidInput(t *testing.T) {
 		t.Skip("CLI binary not found")
 	}
 
-	// Skip if no AI provider configured
-	if !hasAnyAIProvider() {
-		t.Skip("No AI provider configured")
-	}
+	// Skip if no default AI provider configured
+	skipIfNoDefaultAIProvider(t)
 
 	tests := []struct {
 		name    string
@@ -150,10 +149,8 @@ func TestCLI_CalendarAI_Reschedule_InvalidInput(t *testing.T) {
 		t.Skip("CLI binary not found")
 	}
 
-	// Skip if no AI provider configured
-	if !hasAnyAIProvider() {
-		t.Skip("No AI provider configured")
-	}
+	// Skip if no default AI provider configured
+	skipIfNoDefaultAIProvider(t)
 
 	tests := []struct {
 		name    string
@@ -200,10 +197,8 @@ func TestCLI_CalendarAI_Context_Basic(t *testing.T) {
 		t.Skip("Nylas API credentials not configured")
 	}
 
-	// Skip if no AI provider configured
-	if !hasAnyAIProvider() {
-		t.Skip("No AI provider configured")
-	}
+	// Skip if no default AI provider configured
+	skipIfNoDefaultAIProvider(t)
 
 	tests := []struct {
 		name     string
@@ -582,6 +577,80 @@ func TestCLI_CalendarAI_ProviderSwitching(t *testing.T) {
 				if strings.Contains(output, "Provider:") {
 					t.Logf("Provider %s: command accepted", provider)
 				}
+			}
+		})
+	}
+}
+
+func TestCLI_CalendarAI_Adapt(t *testing.T) {
+	if testBinary == "" {
+		t.Skip("CLI binary not found")
+	}
+
+	// Skip if no Nylas API configured
+	if testAPIKey == "" || testGrantID == "" {
+		t.Skip("Nylas API credentials not configured")
+	}
+
+	// Skip if no default AI provider configured
+	skipIfNoDefaultAIProvider(t)
+
+	tests := []struct {
+		name        string
+		args        []string
+		skipOnError bool
+	}{
+		{
+			name:        "adapt help",
+			args:        []string{"calendar", "ai", "adapt", "--help"},
+			skipOnError: false,
+		},
+		{
+			name:        "adapt default trigger",
+			args:        []string{"calendar", "ai", "adapt"},
+			skipOnError: true,
+		},
+		{
+			name:        "adapt with overload trigger",
+			args:        []string{"calendar", "ai", "adapt", "--trigger", "overload"},
+			skipOnError: true,
+		},
+		{
+			name:        "adapt with deadline trigger",
+			args:        []string{"calendar", "ai", "adapt", "--trigger", "deadline"},
+			skipOnError: true,
+		},
+		{
+			name:        "adapt with focus-risk trigger",
+			args:        []string{"calendar", "ai", "adapt", "--trigger", "focus-risk"},
+			skipOnError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stdout, stderr, err := runCLI(tt.args...)
+
+			if err != nil && tt.skipOnError {
+				t.Logf("Test skipped: %v", err)
+				t.Logf("stderr: %s", stderr)
+				return
+			}
+
+			if err != nil && !tt.skipOnError {
+				t.Fatalf("Unexpected error: %v\nstderr: %s\nstdout: %s", err, stderr, stdout)
+			}
+
+			// For help command, verify it shows expected content
+			if tt.name == "adapt help" {
+				if !strings.Contains(stdout, "adaptive") && !strings.Contains(stdout, "Adaptive") {
+					t.Errorf("Expected help output to mention 'adaptive'\nGot: %s", stdout)
+				}
+			}
+
+			// Log output for debugging
+			if stdout != "" || stderr != "" {
+				t.Logf("Command executed. Output length: stdout=%d, stderr=%d", len(stdout), len(stderr))
 			}
 		})
 	}

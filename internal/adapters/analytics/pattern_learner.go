@@ -17,7 +17,8 @@ type CalendarClient interface {
 
 // PatternLearner analyzes calendar history to learn meeting patterns.
 type PatternLearner struct {
-	client CalendarClient
+	client       CalendarClient
+	workingHours *domain.DaySchedule
 }
 
 // NewPatternLearner creates a new pattern learner.
@@ -25,6 +26,47 @@ func NewPatternLearner(client CalendarClient) *PatternLearner {
 	return &PatternLearner{
 		client: client,
 	}
+}
+
+// NewPatternLearnerWithWorkingHours creates a pattern learner with working hours config.
+func NewPatternLearnerWithWorkingHours(client CalendarClient, workingHours *domain.DaySchedule) *PatternLearner {
+	return &PatternLearner{
+		client:       client,
+		workingHours: workingHours,
+	}
+}
+
+// getWorkingHoursRange returns the start and end hours based on config or defaults.
+func (p *PatternLearner) getWorkingHoursRange() (startHour, endHour int) {
+	// Default working hours: 9-17
+	startHour = 9
+	endHour = 17
+
+	if p.workingHours == nil || !p.workingHours.Enabled {
+		return startHour, endHour
+	}
+
+	// Parse start time (format: "HH:MM")
+	if p.workingHours.Start != "" {
+		var h, m int
+		if _, err := fmt.Sscanf(p.workingHours.Start, "%d:%d", &h, &m); err == nil {
+			startHour = h
+			// If minutes > 0, round up to next hour for block analysis
+			if m > 0 {
+				startHour = h + 1
+			}
+		}
+	}
+
+	// Parse end time (format: "HH:MM")
+	if p.workingHours.End != "" {
+		var h, m int
+		if _, err := fmt.Sscanf(p.workingHours.End, "%d:%d", &h, &m); err == nil {
+			endHour = h
+		}
+	}
+
+	return startHour, endHour
 }
 
 // AnalyzeHistory analyzes meeting history to learn patterns.
@@ -270,11 +312,14 @@ func (p *PatternLearner) learnProductivityPatterns(events []domain.Event) domain
 		avgDensity = float64(totalMeetings) / float64(totalHours)
 	}
 
+	// Get working hours from config
+	startHour, endHour := p.getWorkingHoursRange()
+
 	// Identify peak focus times (below-average meeting density)
 	var peakFocus []domain.TimeBlock
 	daysOfWeek := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
 	for _, day := range daysOfWeek {
-		for hour := 9; hour < 17; hour++ {
+		for hour := startHour; hour < endHour; hour++ {
 			key := fmt.Sprintf("%s-%02d", day, hour)
 			density := meetingsByDayHour[key]
 

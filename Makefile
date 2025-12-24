@@ -1,4 +1,4 @@
-.PHONY: build test test-short test-integration test-integration-clean test-cleanup test-coverage clean install lint deps check security
+.PHONY: build test test-short test-integration test-integration-clean test-cleanup test-coverage clean install lint deps check security check-context
 
 VERSION ?= dev
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
@@ -38,9 +38,17 @@ test-short:
 	go test ./... -short
 
 # Integration tests (requires NYLAS_API_KEY and NYLAS_GRANT_ID env vars)
+# Uses 10 minute timeout to prevent hanging on slow LLM calls
 test-integration:
 	@go clean -testcache
-	go test ./... -tags=integration -v
+	go test ./... -tags=integration -v -timeout 10m
+
+# Integration tests excluding slow LLM-dependent tests (for when Ollama is slow/unavailable)
+# Runs: Admin, Timezone, AIConfig, CalendarAI (Basic, Adapt, Analyze working hours)
+test-integration-fast:
+	@go clean -testcache
+	NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas go test ./internal/cli/integration/... -tags=integration -v -timeout 2m \
+		-run "TestCLI_Admin|TestCLI_Timezone|TestCLI_AIConfig|TestCLI_AIProvider|TestCLI_CalendarAI_Basic|TestCLI_CalendarAI_Adapt|TestCLI_CalendarAI_Analyze_Respects|TestCLI_CalendarAI_Analyze_Default|TestCLI_CalendarAI_Analyze_Disabled|TestCLI_CalendarAI_Analyze_Focus|TestCLI_CalendarAI_Analyze_With"
 
 # Integration tests with extended timeout and cleanup
 test-integration-clean: test-integration test-cleanup
@@ -105,6 +113,30 @@ security:
 	@echo ""
 	@echo "=== Security scan complete ==="
 
+# Check context size for Claude Code
+check-context:
+	@echo "📊 Context Size Report"
+	@echo "======================"
+	@echo ""
+	@echo "Auto-loaded files (excluding FAQ, EXAMPLES, TROUBLESHOOTING, INDEX per .claudeignore):"
+	@ls -lh CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
+	@echo ""
+	@TOTAL=$$(ls -l CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	TIMEZONE=$$(ls -l docs/TIMEZONE.md 2>/dev/null | awk '{print int($$5/1024)}'); \
+	echo "Total auto-loaded context: $${TOTAL}KB (~$$((TOTAL / 4)) tokens)"; \
+	echo "TIMEZONE.md: $${TIMEZONE}KB"; \
+	echo ""; \
+	if [ $$TOTAL -gt 60 ]; then \
+		echo "⚠️  Context exceeds 60KB budget (currently $${TOTAL}KB)"; \
+	else \
+		echo "✅ Context within 60KB budget ($${TOTAL}KB)"; \
+	fi; \
+	if [ $$TIMEZONE -gt 5 ]; then \
+		echo "⚠️  TIMEZONE.md exceeds 5KB target (currently $${TIMEZONE}KB)"; \
+	else \
+		echo "✅ TIMEZONE.md within 5KB target ($${TIMEZONE}KB)"; \
+	fi
+
 # Full check before commit
 check: lint test-short security build
 	@echo "All checks passed!"
@@ -132,6 +164,7 @@ help:
 	@echo "  lint                 - Run golangci-lint"
 	@echo "  security             - Run security scan for credentials"
 	@echo "  check                - Run lint, test, security, build (pre-commit)"
+	@echo "  check-context        - Check Claude Code context size"
 	@echo "  clean                - Remove build artifacts"
 	@echo "  install              - Install binary to GOPATH/bin"
 	@echo "  deps                 - Tidy and download dependencies"

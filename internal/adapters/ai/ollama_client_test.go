@@ -8,50 +8,43 @@ import (
 )
 
 func TestNewOllamaClient(t *testing.T) {
-	tests := []struct {
-		name      string
-		config    *domain.OllamaConfig
-		wantHost  string
-		wantModel string
-	}{
-		{
-			name:      "nil config uses defaults",
-			config:    nil,
-			wantHost:  "http://localhost:11434",
-			wantModel: "mistral:latest",
-		},
-		{
-			name: "custom config",
-			config: &domain.OllamaConfig{
-				Host:  "http://custom:8080",
-				Model: "llama2",
-			},
-			wantHost:  "http://custom:8080",
-			wantModel: "llama2",
-		},
-	}
+	t.Run("nil config returns nil", func(t *testing.T) {
+		client := NewOllamaClient(nil)
+		if client != nil {
+			t.Error("expected nil client for nil config")
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client := NewOllamaClient(tt.config)
+	t.Run("custom config", func(t *testing.T) {
+		config := &domain.OllamaConfig{
+			Host:  "http://custom:8080",
+			Model: "llama2",
+		}
+		client := NewOllamaClient(config)
 
-			if client.host != tt.wantHost {
-				t.Errorf("host = %q, want %q", client.host, tt.wantHost)
-			}
+		if client == nil {
+			t.Fatal("expected non-nil client")
+		}
 
-			if client.model != tt.wantModel {
-				t.Errorf("model = %q, want %q", client.model, tt.wantModel)
-			}
+		if client.host != "http://custom:8080" {
+			t.Errorf("host = %q, want %q", client.host, "http://custom:8080")
+		}
 
-			if client.client == nil {
-				t.Error("HTTP client is nil")
-			}
-		})
-	}
+		if client.model != "llama2" {
+			t.Errorf("model = %q, want %q", client.model, "llama2")
+		}
+
+		if client.client == nil {
+			t.Error("HTTP client is nil")
+		}
+	})
 }
 
 func TestOllamaClient_Name(t *testing.T) {
-	client := NewOllamaClient(nil)
+	client := NewOllamaClient(&domain.OllamaConfig{
+		Host:  "http://localhost:11434",
+		Model: "mistral:latest",
+	})
 	if name := client.Name(); name != "ollama" {
 		t.Errorf("Name() = %q, want %q", name, "ollama")
 	}
@@ -91,7 +84,10 @@ func TestOllamaClient_GetModel(t *testing.T) {
 }
 
 func TestOllamaClient_ConvertMessages(t *testing.T) {
-	client := NewOllamaClient(nil)
+	client := NewOllamaClient(&domain.OllamaConfig{
+		Host:  "http://localhost:11434",
+		Model: "mistral:latest",
+	})
 
 	messages := []domain.ChatMessage{
 		{Role: "system", Content: "You are a helpful assistant"},
@@ -116,7 +112,10 @@ func TestOllamaClient_ConvertMessages(t *testing.T) {
 }
 
 func TestOllamaClient_ConvertTools(t *testing.T) {
-	client := NewOllamaClient(nil)
+	client := NewOllamaClient(&domain.OllamaConfig{
+		Host:  "http://localhost:11434",
+		Model: "mistral:latest",
+	})
 
 	tools := []domain.Tool{
 		{

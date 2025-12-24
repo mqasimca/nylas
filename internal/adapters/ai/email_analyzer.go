@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -374,6 +375,205 @@ func (a *EmailAnalyzer) analyzeParticipants(thread *domain.Thread, messages []do
 
 	return participants
 }
+
+// InboxSummaryRequest represents a request to summarize recent emails.
+type InboxSummaryRequest struct {
+	Messages     []domain.Message
+	ProviderName string // Optional: specific provider to use
+}
+
+// InboxSummaryResponse represents the AI summary of emails.
+type InboxSummaryResponse struct {
+	Summary      string          `json:"summary"`
+	Categories   []EmailCategory `json:"categories"`
+	ActionItems  []ActionItem    `json:"action_items"`
+	Highlights   []string        `json:"highlights"`
+	ProviderUsed string          `json:"provider_used"`
+	TokensUsed   int             `json:"tokens_used"`
+}
+
+// EmailCategory groups emails by type.
+type EmailCategory struct {
+	Name     string   `json:"name"`
+	Count    int      `json:"count"`
+	Subjects []string `json:"subjects"`
+}
+
+// ActionItem represents an email that needs attention.
+type ActionItem struct {
+	Subject string `json:"subject"`
+	From    string `json:"from"`
+	Urgency string `json:"urgency"` // high, medium, low
+	Reason  string `json:"reason"`
+}
+
+// AnalyzeInbox analyzes recent emails and returns a summary.
+func (a *EmailAnalyzer) AnalyzeInbox(ctx context.Context, req *InboxSummaryRequest) (*InboxSummaryResponse, error) {
+	if len(req.Messages) == 0 {
+		return nil, fmt.Errorf("no messages to analyze")
+	}
+
+	// Build the prompt with email data
+	prompt := a.buildInboxPrompt(req.Messages)
+
+	// Create chat request
+	chatReq := &domain.ChatRequest{
+		Messages: []domain.ChatMessage{
+			{
+				Role:    "system",
+				Content: inboxAnalysisSystemPrompt,
+			},
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
+		Temperature: 0.3, // Lower temperature for more consistent output
+	}
+
+	// Send to AI
+	var resp *domain.ChatResponse
+	var err error
+
+	if req.ProviderName != "" {
+		resp, err = a.llmRouter.ChatWithProvider(ctx, req.ProviderName, chatReq)
+	} else {
+		resp, err = a.llmRouter.Chat(ctx, chatReq)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("AI analysis failed: %w", err)
+	}
+
+	// Parse response
+	result, err := a.parseInboxResponse(resp.Content)
+	if err != nil {
+		// If parsing fails, return a basic response with the raw content
+		return &InboxSummaryResponse{
+			Summary:      resp.Content,
+			Categories:   []EmailCategory{},
+			ActionItems:  []ActionItem{},
+			Highlights:   []string{},
+			ProviderUsed: resp.Provider,
+			TokensUsed:   resp.Usage.TotalTokens,
+		}, nil
+	}
+
+	result.ProviderUsed = resp.Provider
+	result.TokensUsed = resp.Usage.TotalTokens
+
+	return result, nil
+}
+
+func (a *EmailAnalyzer) buildInboxPrompt(messages []domain.Message) string {
+	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf("Analyze these %d emails and provide insights:\n\n", len(messages)))
+
+	for i, msg := range messages {
+		sb.WriteString(fmt.Sprintf("--- Email %d ---\n", i+1))
+		sb.WriteString(fmt.Sprintf("From: %s\n", formatInboxParticipants(msg.From)))
+		sb.WriteString(fmt.Sprintf("Subject: %s\n", msg.Subject))
+		sb.WriteString(fmt.Sprintf("Date: %s\n", msg.Date.Format(time.RFC3339)))
+
+		// Use snippet for preview (cleaner than full body)
+		if msg.Snippet != "" {
+			sb.WriteString(fmt.Sprintf("Preview: %s\n", truncateStr(msg.Snippet, 200)))
+		}
+
+		if msg.Unread {
+			sb.WriteString("Status: UNREAD\n")
+		}
+		if msg.Starred {
+			sb.WriteString("Status: STARRED\n")
+		}
+
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
+}
+
+func (a *EmailAnalyzer) parseInboxResponse(content string) (*InboxSummaryResponse, error) {
+	// Try to extract JSON from the response
+	content = strings.TrimSpace(content)
+
+	// Find JSON block (may be wrapped in markdown code blocks)
+	jsonStart := strings.Index(content, "{")
+	jsonEnd := strings.LastIndex(content, "}")
+
+	if jsonStart == -1 || jsonEnd == -1 || jsonEnd <= jsonStart {
+		return nil, fmt.Errorf("no JSON found in response")
+	}
+
+	jsonStr := content[jsonStart : jsonEnd+1]
+
+	var result InboxSummaryResponse
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	}
+
+	return &result, nil
+}
+
+func formatInboxParticipants(participants []domain.EmailParticipant) string {
+	if len(participants) == 0 {
+		return "Unknown"
+	}
+
+	names := make([]string, 0, len(participants))
+	for _, p := range participants {
+		if p.Name != "" {
+			names = append(names, fmt.Sprintf("%s <%s>", p.Name, p.Email))
+		} else {
+			names = append(names, p.Email)
+		}
+	}
+
+	return strings.Join(names, ", ")
+}
+
+func truncateStr(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
+}
+
+const inboxAnalysisSystemPrompt = `You are an email analyst. Analyze the provided emails and return a JSON response with the following structure:
+
+{
+  "summary": "A brief 2-3 sentence overview of the inbox",
+  "categories": [
+    {
+      "name": "Category name (e.g., Work, Personal, Newsletters, Promotions)",
+      "count": 3,
+      "subjects": ["Subject 1", "Subject 2", "Subject 3"]
+    }
+  ],
+  "action_items": [
+    {
+      "subject": "Email subject",
+      "from": "sender@example.com",
+      "urgency": "high|medium|low",
+      "reason": "Why this needs attention"
+    }
+  ],
+  "highlights": [
+    "Key point or important information from the emails",
+    "Another key insight"
+  ]
+}
+
+Guidelines:
+- Categories should group similar emails (Work, Personal, Newsletters, Social, Promotions, Updates)
+- Action items are emails that likely need a response or action
+- Urgency levels: high (time-sensitive, important), medium (should respond soon), low (informational)
+- Highlights should capture 3-5 key points from across all emails
+- Keep the summary concise and actionable
+- Focus on what matters most to the user
+
+Respond ONLY with valid JSON, no additional text.`
 
 // detectUrgencyIndicators detects urgency signals in the email thread.
 func (a *EmailAnalyzer) detectUrgencyIndicators(messages []domain.Message) []string {

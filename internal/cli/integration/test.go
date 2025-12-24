@@ -166,7 +166,16 @@ func skipIfMissingCreds(t *testing.T) {
 // NOTE: This does NOT apply rate limiting. For tests that make API calls,
 // either call acquireRateLimit(t) before this, or use runCLIWithRateLimit.
 func runCLI(args ...string) (string, string, error) {
-	cmd := exec.Command(testBinary, args...)
+	return runCLIWithTimeout(2*time.Minute, args...)
+}
+
+// runCLIWithTimeout executes a CLI command with a specified timeout.
+// Use this for commands that might take a long time (e.g., AI/LLM calls).
+func runCLIWithTimeout(timeout time.Duration, args ...string) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, testBinary, args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -438,6 +447,51 @@ func getAIConfigFromUserConfig() map[string]interface{} {
 	}
 
 	return aiConfig
+}
+
+// hasDefaultAIProvider checks if a default AI provider is configured in config.yaml
+func hasDefaultAIProvider() bool {
+	aiConfig := getAIConfigFromUserConfig()
+	if aiConfig == nil {
+		return false
+	}
+
+	provider, ok := aiConfig["default_provider"].(string)
+	return ok && provider != ""
+}
+
+// skipIfNoDefaultAIProvider skips tests if no default AI provider is configured
+func skipIfNoDefaultAIProvider(t *testing.T) {
+	t.Helper()
+	if !hasDefaultAIProvider() {
+		t.Skip("No default AI provider configured in config.yaml. Set ai.default_provider to run AI tests.")
+	}
+}
+
+// getWorkingHoursFromUserConfig reads working hours configuration from ~/.config/nylas/config.yaml
+func getWorkingHoursFromUserConfig() map[string]interface{} {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	configPath := filepath.Join(home, ".config", "nylas", "config.yaml")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil
+	}
+
+	var config map[string]interface{}
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil
+	}
+
+	whConfig, ok := config["working_hours"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	return whConfig
 }
 
 // Ensure imports are used (these are used in other test files)

@@ -20,12 +20,10 @@ type OllamaClient struct {
 }
 
 // NewOllamaClient creates a new Ollama client.
+// Returns nil if config is nil - callers should validate config before calling.
 func NewOllamaClient(config *domain.OllamaConfig) *OllamaClient {
 	if config == nil {
-		config = &domain.OllamaConfig{
-			Host:  "http://localhost:11434",
-			Model: "mistral:latest",
-		}
+		return nil
 	}
 
 	return &OllamaClient{

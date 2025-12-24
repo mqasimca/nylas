@@ -1,5 +1,7 @@
 package domain
 
+import "fmt"
+
 // ChatMessage represents a chat message for AI/LLM interactions.
 type ChatMessage struct {
 	Role    string `json:"role"`    // system, user, assistant, tool
@@ -63,6 +65,78 @@ type AIConfig struct {
 type AIFallbackConfig struct {
 	Enabled   bool     `yaml:"enabled"`
 	Providers []string `yaml:"providers"` // Try in order
+}
+
+// IsConfigured returns true if the AI config has at least one provider configured.
+func (c *AIConfig) IsConfigured() bool {
+	if c == nil {
+		return false
+	}
+	return c.Ollama != nil || c.Claude != nil || c.OpenAI != nil ||
+		c.Groq != nil || c.OpenRouter != nil
+}
+
+// ValidateForProvider validates that the required fields are set for the given provider.
+func (c *AIConfig) ValidateForProvider(provider string) error {
+	if c == nil {
+		return fmt.Errorf("AI configuration is nil")
+	}
+
+	switch provider {
+	case "ollama":
+		if c.Ollama == nil {
+			return fmt.Errorf("ollama configuration not found in config.yaml")
+		}
+		if c.Ollama.Host == "" {
+			return fmt.Errorf("ollama.host is required")
+		}
+		if c.Ollama.Model == "" {
+			return fmt.Errorf("ollama.model is required")
+		}
+	case "claude":
+		if c.Claude == nil {
+			return fmt.Errorf("claude configuration not found in config.yaml")
+		}
+		if c.Claude.Model == "" {
+			return fmt.Errorf("claude.model is required")
+		}
+	case "openai":
+		if c.OpenAI == nil {
+			return fmt.Errorf("openai configuration not found in config.yaml")
+		}
+		if c.OpenAI.Model == "" {
+			return fmt.Errorf("openai.model is required")
+		}
+	case "groq":
+		if c.Groq == nil {
+			return fmt.Errorf("groq configuration not found in config.yaml")
+		}
+		if c.Groq.Model == "" {
+			return fmt.Errorf("groq.model is required")
+		}
+	case "openrouter":
+		if c.OpenRouter == nil {
+			return fmt.Errorf("openrouter configuration not found in config.yaml")
+		}
+		if c.OpenRouter.Model == "" {
+			return fmt.Errorf("openrouter.model is required")
+		}
+	default:
+		return fmt.Errorf("unknown provider: %s", provider)
+	}
+
+	return nil
+}
+
+// DefaultAIConfig returns a default AI configuration for first-time setup.
+func DefaultAIConfig() *AIConfig {
+	return &AIConfig{
+		DefaultProvider: "ollama",
+		Ollama: &OllamaConfig{
+			Host:  "http://localhost:11434",
+			Model: "mistral:latest",
+		},
+	}
 }
 
 // OllamaConfig represents Ollama-specific configuration.

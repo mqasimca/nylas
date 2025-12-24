@@ -60,8 +60,18 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 			defer cancel()
 
-			// Create pattern learner
-			learner := analytics.NewPatternLearner(client)
+			// Load config to get working hours - respect --config flag
+			configStore := getConfigStore(cmd)
+			cfg, _ := configStore.Load()
+
+			// Get working hours from config (use default if not set)
+			var workingHours *domain.DaySchedule
+			if cfg != nil && cfg.WorkingHours != nil && cfg.WorkingHours.Default != nil {
+				workingHours = cfg.WorkingHours.Default
+			}
+
+			// Create pattern learner with working hours
+			learner := analytics.NewPatternLearnerWithWorkingHours(client, workingHours)
 
 			// If scoring a specific time
 			if scoreTime != "" {
@@ -77,7 +87,7 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 			}
 
 			// Display results
-			displayAnalysis(analysis)
+			displayAnalysis(analysis, workingHours)
 
 			// Apply recommendations if requested
 			if applyRecs {
@@ -97,7 +107,7 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 	return cmd
 }
 
-func displayAnalysis(analysis *domain.MeetingAnalysis) {
+func displayAnalysis(analysis *domain.MeetingAnalysis, workingHours *domain.DaySchedule) {
 	fmt.Printf("📊 Analysis Period: %s to %s\n",
 		analysis.Period.Start.Format("2006-01-02"),
 		analysis.Period.End.Format("2006-01-02"))
@@ -109,6 +119,26 @@ func displayAnalysis(analysis *domain.MeetingAnalysis) {
 	}
 
 	patterns := analysis.Patterns
+
+	// Get working hours range (default 9-17)
+	startHour, endHour := 9, 17
+	if workingHours != nil && workingHours.Enabled {
+		if workingHours.Start != "" {
+			var h, m int
+			if _, err := fmt.Sscanf(workingHours.Start, "%d:%d", &h, &m); err == nil {
+				startHour = h
+				if m > 0 {
+					startHour = h + 1
+				}
+			}
+		}
+		if workingHours.End != "" {
+			var h, m int
+			if _, err := fmt.Sscanf(workingHours.End, "%d:%d", &h, &m); err == nil {
+				endHour = h
+			}
+		}
+	}
 
 	// Acceptance Patterns
 	fmt.Println("✅ Meeting Acceptance Patterns")
@@ -129,7 +159,7 @@ func displayAnalysis(analysis *domain.MeetingAnalysis) {
 
 	if len(patterns.Acceptance.ByTimeOfDay) > 0 {
 		fmt.Println("By Time of Day (working hours):")
-		for hour := 9; hour <= 17; hour++ {
+		for hour := startHour; hour <= endHour; hour++ {
 			hourStr := fmt.Sprintf("%02d:00", hour)
 			if rate, exists := patterns.Acceptance.ByTimeOfDay[hourStr]; exists {
 				bar := strings.Repeat("█", int(rate*20))
