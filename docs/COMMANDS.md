@@ -28,6 +28,22 @@ nylas auth logout <grant-id>     # Disconnect account
 
 ---
 
+## Demo Mode (No Account Required)
+
+Explore the CLI with sample data before connecting your accounts:
+
+```bash
+nylas demo email list            # Browse sample emails
+nylas demo calendar list         # View sample events
+nylas demo contacts list         # See sample contacts
+nylas demo notetaker list        # Explore AI notetaker
+nylas demo tui                   # Interactive demo UI
+```
+
+All demo commands mirror real CLI structure: `nylas demo <feature> <command>`
+
+---
+
 ## Email
 
 ```bash

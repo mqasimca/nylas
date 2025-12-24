@@ -11,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/auth"
 	"github.com/mqasimca/nylas/internal/cli/calendar"
 	"github.com/mqasimca/nylas/internal/cli/contacts"
+	"github.com/mqasimca/nylas/internal/cli/demo"
 	"github.com/mqasimca/nylas/internal/cli/email"
 	"github.com/mqasimca/nylas/internal/cli/inbound"
 	"github.com/mqasimca/nylas/internal/cli/mcp"
@@ -37,6 +38,7 @@ func main() {
 	rootCmd.AddCommand(inbound.NewInboundCmd())
 	rootCmd.AddCommand(timezone.NewTimezoneCmd())
 	rootCmd.AddCommand(mcp.NewMCPCmd())
+	rootCmd.AddCommand(demo.NewDemoCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
 
 	if err := cli.Execute(); err != nil {
