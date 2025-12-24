@@ -26,7 +26,8 @@ Commands:
   config    Configure API credentials
   providers List available authentication providers
   detect    Detect provider from email address
-  scopes    Show OAuth scopes for a grant`,
+  scopes    Show OAuth scopes for a grant
+  migrate   Migrate credentials to system keyring`,
 	}
 
 	cmd.AddCommand(newLoginCmd())
@@ -44,6 +45,7 @@ Commands:
 	cmd.AddCommand(newProvidersCmd())
 	cmd.AddCommand(newDetectCmd())
 	cmd.AddCommand(newScopesCmd())
+	cmd.AddCommand(newMigrateCmd())
 
 	return cmd
 }

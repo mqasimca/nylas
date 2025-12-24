@@ -5,8 +5,10 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"net/url"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -54,11 +56,8 @@ func (t *CloudflaredTunnel) Start(ctx context.Context) (string, error) {
 	t.cancel = cancel
 
 	// Validate localURL to prevent command injection
-	if !strings.HasPrefix(t.localURL, "http://localhost:") &&
-		!strings.HasPrefix(t.localURL, "http://127.0.0.1:") &&
-		!strings.HasPrefix(t.localURL, "https://localhost:") &&
-		!strings.HasPrefix(t.localURL, "https://127.0.0.1:") {
-		return "", fmt.Errorf("invalid local URL: must be http(s)://localhost:PORT or http(s)://127.0.0.1:PORT")
+	if err := validateLocalURL(t.localURL); err != nil {
+		return "", err
 	}
 
 	// Start cloudflared tunnel
@@ -194,4 +193,45 @@ func (t *CloudflaredTunnel) StatusMessage() string {
 func IsCloudflaredInstalled() bool {
 	_, err := exec.LookPath("cloudflared")
 	return err == nil
+}
+
+// validateLocalURL validates that the URL is a safe localhost URL with valid port.
+func validateLocalURL(rawURL string) error {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL format: %w", err)
+	}
+
+	// Validate scheme
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("invalid scheme: must be http or https")
+	}
+
+	// Validate host is localhost only
+	hostname := parsed.Hostname()
+	if hostname != "localhost" && hostname != "127.0.0.1" {
+		return fmt.Errorf("invalid host: must be localhost or 127.0.0.1")
+	}
+
+	// Validate port is present and valid
+	portStr := parsed.Port()
+	if portStr == "" {
+		return fmt.Errorf("port is required")
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return fmt.Errorf("invalid port: must be a number")
+	}
+
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("invalid port: must be between 1 and 65535")
+	}
+
+	// Validate no unexpected path components that could be shell injection
+	if parsed.User != nil {
+		return fmt.Errorf("URL must not contain user credentials")
+	}
+
+	return nil
 }

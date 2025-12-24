@@ -2,8 +2,9 @@ package common
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"time"
 )
@@ -143,10 +144,15 @@ func calculateDelay(config RetryConfig, attempt int) time.Duration {
 		delay = float64(config.MaxDelay)
 	}
 
-	// Add jitter
+	// Add jitter using crypto/rand for unpredictable timing
 	if config.JitterRatio > 0 {
-		jitter := delay * config.JitterRatio * (rand.Float64()*2 - 1) // -jitter to +jitter
-		delay += jitter
+		// Generate random value 0-1000000 and convert to float 0.0-1.0
+		n, err := rand.Int(rand.Reader, big.NewInt(1000001))
+		if err == nil {
+			randFloat := float64(n.Int64()) / 1000000.0        // 0.0 to 1.0
+			jitter := delay * config.JitterRatio * (randFloat*2 - 1) // -jitter to +jitter
+			delay += jitter
+		}
 	}
 
 	return time.Duration(delay)

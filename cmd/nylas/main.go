@@ -13,6 +13,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/contacts"
 	"github.com/mqasimca/nylas/internal/cli/email"
 	"github.com/mqasimca/nylas/internal/cli/inbound"
+	"github.com/mqasimca/nylas/internal/cli/mcp"
 	"github.com/mqasimca/nylas/internal/cli/notetaker"
 	"github.com/mqasimca/nylas/internal/cli/otp"
 	"github.com/mqasimca/nylas/internal/cli/scheduler"
@@ -35,6 +36,7 @@ func main() {
 	rootCmd.AddCommand(notetaker.NewNotetakerCmd())
 	rootCmd.AddCommand(inbound.NewInboundCmd())
 	rootCmd.AddCommand(timezone.NewTimezoneCmd())
+	rootCmd.AddCommand(mcp.NewMCPCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
 
 	if err := cli.Execute(); err != nil {

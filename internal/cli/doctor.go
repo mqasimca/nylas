@@ -240,6 +240,13 @@ func checkConfig() CheckResult {
 }
 
 func checkSecretStore() CheckResult {
+	// Check if keyring is disabled via environment
+	keyringDisabled := os.Getenv("NYLAS_DISABLE_KEYRING") == "true"
+
+	// First check if system keyring is available
+	kr := keyring.NewSystemKeyring()
+	keyringAvailable := kr.IsAvailable()
+
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
 	if err != nil {
 		return CheckResult{
@@ -259,10 +266,40 @@ func checkSecretStore() CheckResult {
 		}
 	}
 
+	// Warn if using encrypted file when keyring should be available
+	storeName := secretStore.Name()
+
+	if storeName == "encrypted file" && keyringDisabled {
+		return CheckResult{
+			Name:    "Secret Store",
+			Status:  CheckStatusWarning,
+			Message: storeName,
+			Detail:  "NYLAS_DISABLE_KEYRING is set. Unset to use system keyring.",
+		}
+	}
+
+	if storeName == "encrypted file" && !keyringAvailable {
+		return CheckResult{
+			Name:    "Secret Store",
+			Status:  CheckStatusWarning,
+			Message: storeName,
+			Detail:  "System keyring unavailable. Using encrypted file fallback.",
+		}
+	}
+
+	if storeName == "encrypted file" && keyringAvailable {
+		return CheckResult{
+			Name:    "Secret Store",
+			Status:  CheckStatusWarning,
+			Message: storeName,
+			Detail:  "Credentials in encrypted file. Run 'nylas auth migrate' to use system keyring.",
+		}
+	}
+
 	return CheckResult{
 		Name:    "Secret Store",
 		Status:  CheckStatusOK,
-		Message: secretStore.Name(),
+		Message: storeName,
 	}
 }
 
@@ -308,7 +345,7 @@ func checkAPICredentials() CheckResult {
 	return CheckResult{
 		Name:    "API Credentials",
 		Status:  CheckStatusOK,
-		Message: fmt.Sprintf("Configured (%s...)", apiKey[:8]),
+		Message: "Configured",
 	}
 }
 

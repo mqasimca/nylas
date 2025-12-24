@@ -46,6 +46,7 @@ make check   # Runs: fmt → lint → test → security → build
 - `docs/COMMANDS.md` → New/changed commands or flags
 - `docs/TIMEZONE.md` → Timezone-related changes, DST handling
 - `docs/AI.md` → AI features, provider setup
+- `docs/MCP.md` → MCP server, AI assistant integration
 - `README.md` → Major new features
 
 **📋 Complete rules:** `.claude/rules/documentation-maintenance.md`
@@ -88,6 +89,10 @@ make check   # Runs: fmt → lint → test → security → build
 - `internal/ports/nylas.go` - Interface contract
 - `internal/adapters/nylas/client.go` - HTTP client
 - `internal/domain/config.go` - Configuration (working hours, breaks)
+
+**MCP files:**
+- `internal/cli/mcp/` - CLI commands (install, serve, status, uninstall)
+- `internal/adapters/mcp/proxy.go` - MCP proxy server
 
 **CLI pattern:**
 ```

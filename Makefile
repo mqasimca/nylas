@@ -7,6 +7,7 @@ LDFLAGS := -ldflags "-s -w -X github.com/mqasimca/nylas/internal/cli.Version=$(V
 
 build:
 	@mkdir -p bin
+	@go clean -cache
 	go build $(LDFLAGS) -o bin/nylas ./cmd/nylas
 
 test:

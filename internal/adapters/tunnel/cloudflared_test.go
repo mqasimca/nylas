@@ -136,3 +136,56 @@ func TestCloudflaredTunnel_ConcurrentAccess(t *testing.T) {
 		<-done
 	}
 }
+
+func TestValidateLocalURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		url     string
+		wantErr bool
+		errMsg  string
+	}{
+		// Valid URLs
+		{"valid http localhost", "http://localhost:3000", false, ""},
+		{"valid http 127.0.0.1", "http://127.0.0.1:8080", false, ""},
+		{"valid https localhost", "https://localhost:443", false, ""},
+		{"valid https 127.0.0.1", "https://127.0.0.1:8443", false, ""},
+		{"valid port 1", "http://localhost:1", false, ""},
+		{"valid port 65535", "http://localhost:65535", false, ""},
+		{"valid with path", "http://localhost:3000/webhook", false, ""},
+
+		// Invalid schemes
+		{"ftp scheme", "ftp://localhost:3000", true, "invalid scheme"},
+		{"no scheme", "localhost:3000", true, "invalid scheme"},
+
+		// Invalid hosts
+		{"external host", "http://example.com:3000", true, "invalid host"},
+		{"local IP other", "http://192.168.1.1:3000", true, "invalid host"},
+		{"0.0.0.0", "http://0.0.0.0:3000", true, "invalid host"},
+
+		// Invalid ports
+		{"no port", "http://localhost", true, "port is required"},
+		{"port 0", "http://localhost:0", true, "invalid port"},
+		{"port too high", "http://localhost:65536", true, "invalid port"},
+		{"port negative", "http://localhost:-1", true, "invalid port"},
+		{"port non-numeric", "http://localhost:abc", true, "invalid port"},
+
+		// Other invalid inputs
+		{"with user credentials", "http://user:pass@localhost:3000", true, "user credentials"},
+		{"empty string", "", true, "invalid"},
+		{"malformed url", "http://local host:3000", true, "invalid"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateLocalURL(tt.url)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

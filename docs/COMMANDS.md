@@ -151,6 +151,39 @@ nylas tui                        # Launch interactive UI
 
 ---
 
+## MCP (Model Context Protocol)
+
+Enable AI assistants (Claude Desktop, Cursor, Windsurf, VS Code) to interact with your email and calendar.
+
+```bash
+nylas mcp install                          # Interactive assistant selection
+nylas mcp install --assistant claude-code  # Install for Claude Code
+nylas mcp install --assistant cursor       # Install for Cursor
+nylas mcp install --all                    # Install for all detected assistants
+nylas mcp status                           # Check installation status
+nylas mcp uninstall --assistant cursor     # Remove configuration
+nylas mcp serve                            # Start MCP server (used by assistants)
+```
+
+**Supported assistants:**
+| Assistant | Config Location |
+|-----------|-----------------|
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Code | `~/.claude.json` + permissions in `~/.claude/settings.json` |
+| Cursor | `~/.cursor/mcp.json` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| VS Code | `.vscode/mcp.json` (project-level) |
+
+**Features:**
+- Auto-detects system timezone for consistent time display
+- Auto-configures Claude Code permissions (`mcp__nylas__*`)
+- Injects default grant ID for seamless authentication
+- Local grant lookup (no email required for `get_grant`)
+
+**Available MCP tools:** `list_messages`, `list_threads`, `list_calendars`, `list_events`, `create_event`, `update_event`, `send_message`, `create_draft`, `availability`, `get_grant`, `epoch_to_datetime`, `current_time`
+
+---
+
 ## Utility Commands
 
 ```bash
@@ -178,3 +211,4 @@ All commands follow consistent pattern:
 - Webhooks: `docs/commands/webhooks.md`
 - Timezone: `docs/TIMEZONE.md`
 - AI: `docs/AI.md`
+- MCP: `docs/MCP.md`

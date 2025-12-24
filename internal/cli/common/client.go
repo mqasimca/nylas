@@ -65,6 +65,32 @@ func GetNylasClient() (ports.NylasClient, error) {
 	return c, nil
 }
 
+// GetAPIKey returns the API key from keyring or environment variable.
+// It checks in this order:
+// 1. System keyring (if available)
+// 2. Encrypted file store (if keyring unavailable)
+// 3. Environment variable (NYLAS_API_KEY)
+func GetAPIKey() (string, error) {
+	var apiKey string
+
+	// Try to get from keyring/file store
+	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+	if err == nil {
+		apiKey, _ = secretStore.Get(ports.KeyAPIKey)
+	}
+
+	// Fall back to environment variable
+	if apiKey == "" {
+		apiKey = os.Getenv("NYLAS_API_KEY")
+	}
+
+	if apiKey == "" {
+		return "", fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
+	}
+
+	return apiKey, nil
+}
+
 // GetGrantID returns the grant ID from arguments, keyring, or environment variable.
 // It checks in this order:
 // 1. Command line argument (if provided)
