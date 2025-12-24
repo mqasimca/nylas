@@ -59,6 +59,8 @@ credentials.yaml
 credentials.yml
 *credentials*
 *credential*
+!*credential*.go
+!*credentials*.go
 
 # API keys and tokens
 *.key
