@@ -593,3 +593,54 @@ func TestWebhookServerHelp(t *testing.T) {
 	assert.Contains(t, stdout, "--tunnel")
 	assert.Contains(t, stdout, "cloudflared")
 }
+
+func TestMaskSecret(t *testing.T) {
+	tests := []struct {
+		name   string
+		secret string
+		want   string
+	}{
+		{
+			name:   "short_secret_fully_masked",
+			secret: "abc123",
+			want:   "******",
+		},
+		{
+			name:   "8_char_secret_fully_masked",
+			secret: "12345678",
+			want:   "********",
+		},
+		{
+			name:   "9_char_secret_partial_mask",
+			secret: "123456789",
+			want:   "12*****89",
+		},
+		{
+			name:   "12_char_secret_partial_mask",
+			secret: "123456789012",
+			want:   "12********12",
+		},
+		{
+			name:   "13_char_secret_full_mask",
+			secret: "1234567890123",
+			want:   "1234*****0123",
+		},
+		{
+			name:   "typical_webhook_secret",
+			secret: "whsec_abcdefghijklmnopqrstuvwxyz123456",
+			want:   "whse******************************3456",
+		},
+		{
+			name:   "empty_secret",
+			secret: "",
+			want:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := maskSecret(tt.secret)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

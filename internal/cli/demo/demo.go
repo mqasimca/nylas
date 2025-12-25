@@ -20,6 +20,7 @@ All commands use realistic sample data so you can explore:
   - Scheduling capabilities
   - AI notetaker features
   - Interactive TUI
+  - Web-based UI
 
 This is perfect for:
   - Evaluating the CLI before signing up
@@ -44,11 +45,15 @@ To connect your real email account, run: nylas auth login`,
   nylas demo scheduler list
 
   # Try the notetaker
-  nylas demo notetaker list`,
+  nylas demo notetaker list
+
+  # Launch the web UI with sample data
+  nylas demo ui`,
 	}
 
 	// Add demo subcommands
 	cmd.AddCommand(newDemoTUICmd())
+	cmd.AddCommand(newDemoUICmd())
 	cmd.AddCommand(newDemoEmailCmd())
 	cmd.AddCommand(newDemoCalendarCmd())
 	cmd.AddCommand(newDemoContactsCmd())

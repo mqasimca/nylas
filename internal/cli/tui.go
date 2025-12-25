@@ -20,7 +20,6 @@ import (
 func NewTUICmd() *cobra.Command {
 	var refreshInterval int
 	var theme string
-	var demoMode bool
 
 	cmd := &cobra.Command{
 		Use:   "tui [resource]",
@@ -73,26 +72,19 @@ Resources:
   nylas tui messages --theme green
 
   # Launch directly to events with custom refresh
-  nylas tui events --refresh 5
-
-  # Launch in demo mode (no credentials required, uses sample data)
-  nylas tui --demo
-
-  # Demo mode with a specific theme (great for screenshots)
-  nylas tui --demo --theme amber`,
+  nylas tui events --refresh 5`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			initialView := ""
 			if len(args) > 0 {
 				initialView = args[0]
 			}
 			themeExplicitlySet := cmd.Flags().Changed("theme")
-			return runTUI(time.Duration(refreshInterval)*time.Second, initialView, tui.ThemeName(theme), themeExplicitlySet, demoMode)
+			return runTUI(time.Duration(refreshInterval)*time.Second, initialView, tui.ThemeName(theme), themeExplicitlySet)
 		},
 	}
 
 	cmd.Flags().IntVar(&refreshInterval, "refresh", 3, "Refresh interval in seconds")
 	cmd.Flags().StringVar(&theme, "theme", "k9s", "Color theme (k9s, amber, green, apple2, vintage, ibm, futuristic, matrix, norton, or custom)")
-	cmd.Flags().BoolVar(&demoMode, "demo", false, "Run in demo mode with sample data (no credentials required)")
 
 	// Add subcommands for direct navigation
 	cmd.AddCommand(newTUIResourceCmd("messages", "m", "Launch TUI directly to messages view"))
@@ -353,30 +345,28 @@ func newTUIResourceCmd(resource, alias, desc string) *cobra.Command {
 func newTUIResourceCmdWithAliases(resource string, aliases []string, desc string) *cobra.Command {
 	var refreshInterval int
 	var theme string
-	var demoMode bool
 
 	cmd := &cobra.Command{
 		Use:     resource,
 		Aliases: aliases,
 		Short:   desc,
-		Example: fmt.Sprintf("  nylas tui %s\n  nylas tui %s --refresh 5\n  nylas tui %s --theme amber\n  nylas tui %s --demo", resource, aliases[0], resource, resource),
+		Example: fmt.Sprintf("  nylas tui %s\n  nylas tui %s --refresh 5\n  nylas tui %s --theme amber", resource, aliases[0], resource),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			themeExplicitlySet := cmd.Flags().Changed("theme")
-			return runTUI(time.Duration(refreshInterval)*time.Second, resource, tui.ThemeName(theme), themeExplicitlySet, demoMode)
+			return runTUI(time.Duration(refreshInterval)*time.Second, resource, tui.ThemeName(theme), themeExplicitlySet)
 		},
 	}
 
 	cmd.Flags().IntVar(&refreshInterval, "refresh", 3, "Refresh interval in seconds")
 	cmd.Flags().StringVar(&theme, "theme", "k9s", "Color theme (k9s, amber, green, apple2, vintage, ibm, futuristic, matrix, norton, or custom)")
-	cmd.Flags().BoolVar(&demoMode, "demo", false, "Run in demo mode with sample data (no credentials required)")
 	return cmd
 }
 
-func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeName, themeExplicitlySet bool, demoMode bool) error {
-	// Load config (even in demo mode, for theme preferences)
+func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeName, themeExplicitlySet bool) error {
+	// Load config
 	configStore := config.NewDefaultFileStore()
 	cfg, err := configStore.Load()
-	if err != nil && !demoMode {
+	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 	if cfg == nil {
@@ -397,24 +387,7 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 		fmt.Fprintf(os.Stderr, "To fix this, run: nylas tui theme validate %s\n\n", theme)
 	}
 
-	// Demo mode: use demo client with sample data
-	if demoMode {
-		client := nylas.NewDemoClient()
-
-		app := tui.NewApp(tui.Config{
-			Client:          client,
-			GrantID:         "demo-grant-001",
-			Email:           "demo@example.com",
-			Provider:        "google",
-			RefreshInterval: refreshInterval,
-			InitialView:     initialView,
-			Theme:           theme,
-		})
-
-		return app.Run()
-	}
-
-	// Normal mode: initialize real credentials and client
+	// Initialize real credentials and client
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
 	if err != nil {
 		return fmt.Errorf("failed to initialize secret store: %w", err)

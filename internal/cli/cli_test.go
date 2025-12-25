@@ -270,40 +270,6 @@ func TestTUIThemeCommand(t *testing.T) {
 	})
 }
 
-// TestTUIDemoFlag tests the --demo flag on TUI commands.
-func TestTUIDemoFlag(t *testing.T) {
-	t.Run("tui_has_demo_flag", func(t *testing.T) {
-		rootCmd := getRootCmdWithTUI()
-		tuiCmd, _, _ := rootCmd.Find([]string{"tui"})
-		flag := tuiCmd.Flags().Lookup("demo")
-		if flag == nil {
-			t.Error("Expected --demo flag on tui command")
-			return
-		}
-		if flag.DefValue != "false" {
-			t.Errorf("Expected default demo 'false', got %q", flag.DefValue)
-		}
-	})
-
-	t.Run("tui_messages_has_demo_flag", func(t *testing.T) {
-		rootCmd := getRootCmdWithTUI()
-		cmd, _, _ := rootCmd.Find([]string{"tui", "messages"})
-		flag := cmd.Flags().Lookup("demo")
-		if flag == nil {
-			t.Error("Expected --demo flag on tui messages command")
-		}
-	})
-
-	t.Run("tui_events_has_demo_flag", func(t *testing.T) {
-		rootCmd := getRootCmdWithTUI()
-		cmd, _, _ := rootCmd.Find([]string{"tui", "events"})
-		flag := cmd.Flags().Lookup("demo")
-		if flag == nil {
-			t.Error("Expected --demo flag on tui events command")
-		}
-	})
-}
-
 // TestTUIResourceAliases tests the resource command aliases.
 func TestTUIResourceAliases(t *testing.T) {
 	testCases := []struct {

@@ -125,7 +125,7 @@ func newConfigListCmd() *cobra.Command {
 			if cfg.AI.Claude != nil {
 				fmt.Printf("\n  Claude:\n")
 				if cfg.AI.Claude.APIKey != "" {
-					fmt.Printf("    api_key: %s\n", cfg.AI.Claude.APIKey)
+					fmt.Printf("    api_key: %s\n", maskAPIKey(cfg.AI.Claude.APIKey))
 				}
 				fmt.Printf("    model: %s\n", cfg.AI.Claude.Model)
 			}
@@ -134,7 +134,7 @@ func newConfigListCmd() *cobra.Command {
 			if cfg.AI.OpenAI != nil {
 				fmt.Printf("\n  OpenAI:\n")
 				if cfg.AI.OpenAI.APIKey != "" {
-					fmt.Printf("    api_key: %s\n", cfg.AI.OpenAI.APIKey)
+					fmt.Printf("    api_key: %s\n", maskAPIKey(cfg.AI.OpenAI.APIKey))
 				}
 				fmt.Printf("    model: %s\n", cfg.AI.OpenAI.Model)
 			}
@@ -143,7 +143,7 @@ func newConfigListCmd() *cobra.Command {
 			if cfg.AI.Groq != nil {
 				fmt.Printf("\n  Groq:\n")
 				if cfg.AI.Groq.APIKey != "" {
-					fmt.Printf("    api_key: %s\n", cfg.AI.Groq.APIKey)
+					fmt.Printf("    api_key: %s\n", maskAPIKey(cfg.AI.Groq.APIKey))
 				}
 				fmt.Printf("    model: %s\n", cfg.AI.Groq.Model)
 			}
@@ -152,7 +152,7 @@ func newConfigListCmd() *cobra.Command {
 			if cfg.AI.OpenRouter != nil {
 				fmt.Printf("\n  OpenRouter:\n")
 				if cfg.AI.OpenRouter.APIKey != "" {
-					fmt.Printf("    api_key: %s\n", cfg.AI.OpenRouter.APIKey)
+					fmt.Printf("    api_key: %s\n", maskAPIKey(cfg.AI.OpenRouter.APIKey))
 				}
 				fmt.Printf("    model: %s\n", cfg.AI.OpenRouter.Model)
 			}
@@ -320,6 +320,16 @@ Examples:
 			return nil
 		},
 	}
+}
+
+// maskAPIKey masks an API key for display, showing first 8 and last 4 characters.
+// Example: "sk-proj-abcdefghijklmnop" -> "sk-proj-***...***mnop"
+func maskAPIKey(key string) string {
+	if len(key) <= 12 {
+		// Too short to mask meaningfully
+		return "***"
+	}
+	return key[:8] + "***...***" + key[len(key)-4:]
 }
 
 // getConfigValue retrieves a configuration value by key path.

@@ -90,9 +90,7 @@ func displayWebhookDetails(webhook interface{}) error {
 	fmt.Printf("Status:       %s %s\n", statusIcon, status)
 
 	if secret != "" {
-		// Mask the secret for display
-		masked := secret[:4] + strings.Repeat("*", len(secret)-8) + secret[len(secret)-4:]
-		fmt.Printf("Secret:       %s\n", masked)
+		fmt.Printf("Secret:       %s\n", maskSecret(secret))
 	}
 
 	// Trigger types
@@ -131,4 +129,20 @@ func getString(m map[string]interface{}, key string) string {
 		return fmt.Sprintf("%v", v)
 	}
 	return ""
+}
+
+// maskSecret masks a secret for display, showing first 4 and last 4 characters.
+// Handles edge cases for short secrets to prevent panics.
+func maskSecret(secret string) string {
+	switch {
+	case len(secret) <= 8:
+		// Too short to show any characters safely
+		return strings.Repeat("*", len(secret))
+	case len(secret) <= 12:
+		// Show first 2 and last 2 only
+		return secret[:2] + strings.Repeat("*", len(secret)-4) + secret[len(secret)-2:]
+	default:
+		// Show first 4 and last 4
+		return secret[:4] + strings.Repeat("*", len(secret)-8) + secret[len(secret)-4:]
+	}
 }

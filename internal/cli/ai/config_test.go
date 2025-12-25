@@ -524,3 +524,51 @@ func TestConfigFile_NotExists(t *testing.T) {
 		t.Error("config file was not created")
 	}
 }
+
+func TestMaskAPIKey(t *testing.T) {
+	tests := []struct {
+		name string
+		key  string
+		want string
+	}{
+		{
+			name: "typical_api_key",
+			key:  "sk-proj-abcdefghijklmnopqrstuvwxyz123456",
+			want: "sk-proj-***...***3456",
+		},
+		{
+			name: "short_key_masked_completely",
+			key:  "short",
+			want: "***",
+		},
+		{
+			name: "exactly_12_chars",
+			key:  "123456789012",
+			want: "***",
+		},
+		{
+			name: "13_chars_shows_partial",
+			key:  "1234567890123",
+			want: "12345678***...***0123",
+		},
+		{
+			name: "openai_style_key",
+			key:  "sk-1234567890abcdefghijklmnop",
+			want: "sk-12345***...***mnop",
+		},
+		{
+			name: "anthropic_style_key",
+			key:  "sk-ant-api03-abcdefghijklmnop",
+			want: "sk-ant-a***...***mnop",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := maskAPIKey(tt.key)
+			if got != tt.want {
+				t.Errorf("maskAPIKey(%q) = %q, want %q", tt.key, got, tt.want)
+			}
+		})
+	}
+}

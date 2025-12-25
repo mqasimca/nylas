@@ -30,6 +30,7 @@ type Commands struct {
 // PageData contains all data needed to render the page.
 type PageData struct {
 	Configured        bool
+	DemoMode          bool
 	ClientID          string
 	Region            string
 	HasAPIKey         bool

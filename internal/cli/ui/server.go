@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"html/template"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -28,6 +29,7 @@ var staticFiles embed.FS
 // Server represents the web UI server.
 type Server struct {
 	addr        string
+	demoMode    bool
 	configSvc   *authapp.ConfigService
 	configStore ports.ConfigStore
 	secretStore ports.SecretStore
@@ -51,11 +53,129 @@ func NewServer(addr string) *Server {
 
 	return &Server{
 		addr:        addr,
+		demoMode:    false,
 		configSvc:   configSvc,
 		configStore: configStore,
 		secretStore: secretStore,
 		grantStore:  grantStore,
 		templates:   tmpl,
+	}
+}
+
+// NewDemoServer creates a UI server in demo mode with sample data.
+func NewDemoServer(addr string) *Server {
+	// Load templates
+	tmpl, err := loadTemplates()
+	if err != nil {
+		tmpl = nil
+	}
+
+	return &Server{
+		addr:      addr,
+		demoMode:  true,
+		templates: tmpl,
+		// Other fields are nil - demo mode doesn't use real stores
+	}
+}
+
+// demoGrants returns sample grants for demo mode.
+func demoGrants() []Grant {
+	return []Grant{
+		{ID: "demo-grant-001", Email: "alice@example.com", Provider: "google"},
+		{ID: "demo-grant-002", Email: "bob@work.com", Provider: "microsoft"},
+		{ID: "demo-grant-003", Email: "carol@company.org", Provider: "google"},
+	}
+}
+
+// demoDefaultGrant returns the default grant ID for demo mode.
+func demoDefaultGrant() string {
+	return "demo-grant-001"
+}
+
+// getDemoCommandOutput returns sample output for demo mode commands.
+func getDemoCommandOutput(command string) string {
+	cmd := strings.TrimSpace(command)
+	args := strings.Fields(cmd)
+	if len(args) == 0 {
+		return "Demo mode - no command specified"
+	}
+
+	baseCmd := args[0]
+	if len(args) >= 2 {
+		baseCmd = args[0] + " " + args[1]
+	}
+
+	switch baseCmd {
+	case "email list":
+		return `Demo Mode - Sample Emails
+
+  ★ ●  alice@example.com       Weekly Team Sync - Agenda        2 min ago
+    ●  bob@work.com            Project Update: Q4 Goals         15 min ago
+  ★    calendar@google.com     Reminder: Design Review          1 hour ago
+    ●  notifications@github    [nylas/cli] New PR opened        2 hours ago
+       support@nylas.com       Welcome to Nylas!                1 day ago
+
+Showing 5 of 127 messages`
+
+	case "email threads":
+		return `Demo Mode - Sample Threads
+
+  ★ ●  Team Weekly Standup     5 messages    alice, bob, carol    2 min ago
+    ●  Project Planning Q1     12 messages   team@company.org     1 hour ago
+  ★    Design Review           3 messages    design@example.com   3 hours ago
+       Onboarding Docs         2 messages    hr@company.org       1 day ago
+
+Showing 4 threads`
+
+	case "calendar list":
+		return `Demo Mode - Sample Calendars
+
+  ID                     NAME                 PRIMARY
+  cal-primary-001        Work Calendar        ✓
+  cal-personal-002       Personal
+  cal-team-003           Team Events
+
+3 calendars found`
+
+	case "calendar events":
+		return `Demo Mode - Sample Events
+
+  TODAY
+  09:00 - 10:00   Team Standup                  Conference Room A
+  14:00 - 15:00   Design Review                 Zoom Meeting
+
+  TOMORROW
+  10:00 - 11:00   1:1 with Manager              Office
+  15:00 - 16:00   Sprint Planning               Conference Room B
+
+4 upcoming events`
+
+	case "auth status":
+		return `Demo Mode - Authentication Status
+
+  Status:     Configured ✓
+  Region:     US
+  Client ID:  demo-client-id
+  API Key:    ********configured
+
+  Default Account: alice@example.com (Google)`
+
+	case "auth list":
+		return `Demo Mode - Connected Accounts
+
+  ✓  alice@example.com    Google      demo-grant-001 (default)
+     bob@work.com         Microsoft   demo-grant-002
+     carol@company.org    Google      demo-grant-003
+
+3 accounts connected`
+
+	case "version":
+		return `nylas version dev (demo mode)
+Built: 2024-01-01T00:00:00Z
+Go: go1.24`
+
+	default:
+		return "Demo Mode - Command: " + cmd + "\n\n(This is sample output. Connect your account with 'nylas auth login' to see real data.)"
 	}
 }
 
@@ -120,6 +240,19 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 func (s *Server) buildPageData() PageData {
 	data := PageData{
 		Commands: GetDefaultCommands(),
+		DemoMode: s.demoMode,
+	}
+
+	// Demo mode: return sample data
+	if s.demoMode {
+		data.Configured = true
+		data.ClientID = "demo-client-id"
+		data.Region = "us"
+		data.HasAPIKey = true
+		data.DefaultGrant = demoDefaultGrant()
+		data.Grants = demoGrants()
+		data.DefaultGrantEmail = "alice@example.com"
+		return data
 	}
 
 	// Get config status
@@ -167,6 +300,19 @@ type ConfigStatusResponse struct {
 func (s *Server) handleConfigStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Demo mode: return sample configured status
+	if s.demoMode {
+		writeJSON(w, http.StatusOK, ConfigStatusResponse{
+			Configured:   true,
+			Region:       "us",
+			ClientID:     "demo-client-id",
+			HasAPIKey:    true,
+			GrantCount:   3,
+			DefaultGrant: demoDefaultGrant(),
+		})
 		return
 	}
 
@@ -233,8 +379,22 @@ func (s *Server) handleConfigSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Demo mode: simulate successful setup
+	if s.demoMode {
+		writeJSON(w, http.StatusOK, SetupResponse{
+			Success:  true,
+			Message:  "Demo mode - configuration simulated",
+			ClientID: "demo-client-id",
+			Applications: []Application{
+				{ID: "demo-app", Name: "Demo Application", Environment: "production"},
+			},
+			Grants: demoGrants(),
+		})
+		return
+	}
+
 	var req SetupRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, SetupResponse{
 			Success: false,
 			Error:   "Invalid request body",
@@ -360,6 +520,15 @@ func (s *Server) handleListGrants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Demo mode: return sample grants
+	if s.demoMode {
+		writeJSON(w, http.StatusOK, GrantsResponse{
+			Grants:       demoGrants(),
+			DefaultGrant: demoDefaultGrant(),
+		})
+		return
+	}
+
 	grants, err := s.grantStore.ListGrants()
 	if err != nil {
 		writeJSON(w, http.StatusOK, GrantsResponse{Grants: []Grant{}})
@@ -397,8 +566,17 @@ func (s *Server) handleSetDefaultGrant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Demo mode: simulate success
+	if s.demoMode {
+		writeJSON(w, http.StatusOK, SetDefaultGrantResponse{
+			Success: true,
+			Message: "Default account updated (demo mode)",
+		})
+		return
+	}
+
 	var req SetDefaultGrantRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, SetDefaultGrantResponse{
 			Success: false,
 			Error:   "Invalid request body",
@@ -455,6 +633,16 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(data)
+}
+
+// maxRequestBodySize is the maximum allowed request body size (1MB).
+// This prevents memory exhaustion attacks via large payloads.
+const maxRequestBodySize = 1 << 20 // 1MB
+
+// limitedBody wraps a request body with a size limit.
+// Returns an error response if the body exceeds the limit.
+func limitedBody(w http.ResponseWriter, r *http.Request) io.ReadCloser {
+	return http.MaxBytesReader(w, r.Body, maxRequestBodySize)
 }
 
 // ExecRequest represents a command execution request.
@@ -577,9 +765,17 @@ func (s *Server) handleExecCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req ExecRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, ExecResponse{
 			Error: "Invalid request body",
+		})
+		return
+	}
+
+	// Demo mode: return sample output
+	if s.demoMode {
+		writeJSON(w, http.StatusOK, ExecResponse{
+			Output: getDemoCommandOutput(req.Command),
 		})
 		return
 	}
