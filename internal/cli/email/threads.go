@@ -28,6 +28,7 @@ func newThreadsListCmd() *cobra.Command {
 	var unread bool
 	var starred bool
 	var subject string
+	var showID bool
 
 	cmd := &cobra.Command{
 		Use:   "list [grant-id]",
@@ -105,6 +106,10 @@ func newThreadsListCmd() *cobra.Command {
 
 				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
 					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
+
+				if showID {
+					dim.Printf("      ID: %s\n", t.ID)
+				}
 			}
 
 			return nil
@@ -115,6 +120,7 @@ func newThreadsListCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&unread, "unread", "u", false, "Only show unread threads")
 	cmd.Flags().BoolVarP(&starred, "starred", "s", false, "Only show starred threads")
 	cmd.Flags().StringVar(&subject, "subject", "", "Filter by subject")
+	cmd.Flags().BoolVar(&showID, "id", false, "Show thread IDs")
 
 	return cmd
 }
@@ -373,6 +379,7 @@ func newThreadsSearchCmd() *cobra.Command {
 		unread        bool
 		starred       bool
 		inFolder      string
+		showID        bool
 	)
 
 	cmd := &cobra.Command{
@@ -496,6 +503,10 @@ Examples:
 
 				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
 					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
+
+				if showID {
+					dim.Printf("      ID: %s\n", t.ID)
+				}
 			}
 
 			return nil
@@ -512,6 +523,7 @@ Examples:
 	cmd.Flags().BoolVar(&unread, "unread", false, "Only unread threads")
 	cmd.Flags().BoolVar(&starred, "starred", false, "Only starred threads")
 	cmd.Flags().StringVar(&inFolder, "in", "", "Filter by folder (e.g., INBOX, SENT)")
+	cmd.Flags().BoolVar(&showID, "id", false, "Show thread IDs")
 
 	return cmd
 }

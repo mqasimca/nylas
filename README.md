@@ -173,6 +173,7 @@ nylas admin applications list
 | `nylas admin` | Administration (applications, connectors, credentials, grants) | Yes |
 | `nylas otp` | OTP code extraction | Yes |
 | `nylas tui` | Interactive terminal interface | Yes |
+| `nylas ui` | Web-based graphical interface | Yes |
 | `nylas doctor` | Diagnostic checks | No |
 
 **[Full Command Reference](docs/COMMANDS.md)**
@@ -194,6 +195,22 @@ nylas tui --theme amber      # Retro amber CRT theme
 **Vim-style keys:** `j/k` navigate, `gg/G` first/last, `dd` delete, `:q` quit, `/` search
 
 **[Full TUI Documentation](docs/TUI.md)**
+
+---
+
+## Web UI
+
+Launch a browser-based interface for visual CLI management:
+
+```bash
+nylas ui                     # Start on http://localhost:3000
+nylas ui --port 8080         # Custom port
+nylas ui --no-browser        # Don't auto-open browser
+```
+
+**Features:** API configuration, account switching, email/calendar/auth commands, ID autocomplete, command history
+
+**Security:** Localhost only, command whitelist, shell injection protection
 
 ---
 

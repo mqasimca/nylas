@@ -19,6 +19,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/otp"
 	"github.com/mqasimca/nylas/internal/cli/scheduler"
 	"github.com/mqasimca/nylas/internal/cli/timezone"
+	"github.com/mqasimca/nylas/internal/cli/ui"
 	"github.com/mqasimca/nylas/internal/cli/webhook"
 )
 
@@ -40,6 +41,7 @@ func main() {
 	rootCmd.AddCommand(mcp.NewMCPCmd())
 	rootCmd.AddCommand(demo.NewDemoCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
+	rootCmd.AddCommand(ui.NewUICmd())
 
 	if err := cli.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

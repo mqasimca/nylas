@@ -1,0 +1,53 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nylas CLI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/commands.css">
+    <link rel="stylesheet" href="/css/utilities.css">
+</head>
+<body class="bg-gradient">
+    <div class="app">
+        {{template "header" .}}
+        {{template "content" .}}
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <!-- Initial State from Server -->
+    <script>
+        window.__INITIAL_STATE__ = {
+            configured: {{.Configured}},
+            clientID: "{{.ClientID}}",
+            region: "{{.Region}}",
+            hasAPIKey: {{.HasAPIKey}},
+            defaultGrant: "{{.DefaultGrant}}",
+            grants: {{.GrantsJSON}},
+            commands: {{.CommandsJSON}}
+        };
+    </script>
+    <!-- JavaScript Modules -->
+    <script src="/js/helpers.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/toast.js"></script>
+    <script src="/js/timestamps.js"></script>
+    <script src="/js/params.js"></script>
+    <script src="/js/output.js"></script>
+    <script src="/js/state.js"></script>
+    <script src="/js/dropdowns.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="/js/form.js"></script>
+    <script src="/js/commands.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>
+{{end}}

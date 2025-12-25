@@ -167,6 +167,32 @@ nylas tui                        # Launch interactive UI
 
 ---
 
+## Web UI
+
+Launch a local web interface for managing Nylas CLI:
+
+```bash
+nylas ui                         # Start on default port (3000)
+nylas ui --port 8080             # Custom port
+nylas ui --no-browser            # Don't auto-open browser
+```
+
+**Features:**
+- Configure API credentials visually
+- View and switch between authenticated accounts
+- Execute email, calendar, and auth commands
+- ID caching with autocomplete suggestions
+- Command output with copy functionality
+
+**Security:**
+- Runs on localhost only (not accessible externally)
+- Command whitelist prevents arbitrary execution
+- Shell injection protection
+
+**URL:** `http://localhost:3000` (default)
+
+---
+
 ## MCP (Model Context Protocol)
 
 Enable AI assistants (Claude Desktop, Cursor, Windsurf, VS Code) to interact with your email and calendar.

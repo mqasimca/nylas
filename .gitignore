@@ -3,6 +3,7 @@
 
 # Local development (not committed)
 /local/
+*design/
 
 # ===========================================
 # Claude Code - Local/Personal Files
@@ -39,6 +40,11 @@ Thumbs.db
 
 # Go
 vendor/
+
+# Node.js
+node_modules/
+internal/cli/ui/static/js/package*.json
+internal/cli/ui/static/js/*.test.js
 
 # ===========================================
 # SECURITY - Credential & Secret Protection
