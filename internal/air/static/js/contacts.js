@@ -144,20 +144,23 @@ const ContactsManager = {
 
     renderContactItem(contact) {
         const isSelected = contact.id === this.selectedContactId;
-        const initials = this.getInitials(contact.display_name || contact.given_name || '?');
         const primaryEmail = contact.emails && contact.emails[0] ? contact.emails[0].email : '';
-        const primaryPhone = contact.phone_numbers && contact.phone_numbers[0] ? contact.phone_numbers[0].number : '';
+        const displayName = contact.display_name || contact.given_name || 'Unknown';
+        // Try photo endpoint first, fall back to UI Avatars
+        const photoUrl = `/api/contacts/${contact.id}/photo`;
+        const fallbackUrl = this.getAvatarImageUrl(displayName, primaryEmail, 48);
 
         return `
             <div class="contact-item ${isSelected ? 'selected' : ''}"
                  data-contact-id="${contact.id}">
-                <div class="contact-avatar" style="background: ${this.getAvatarColor(contact.display_name || '')}">
-                    ${contact.picture_url ?
-                        `<img src="${contact.picture_url}" alt="${contact.display_name}" />` :
-                        initials}
+                <div class="contact-avatar">
+                    <img src="${photoUrl}"
+                         alt="${this.escapeHtml(displayName)}"
+                         loading="lazy"
+                         onerror="this.onerror=null; this.src='${fallbackUrl}';" />
                 </div>
                 <div class="contact-info">
-                    <div class="contact-name">${this.escapeHtml(contact.display_name || 'Unknown')}</div>
+                    <div class="contact-name">${this.escapeHtml(displayName)}</div>
                     ${contact.job_title ? `<div class="contact-title">${this.escapeHtml(contact.job_title)}</div>` : ''}
                     ${primaryEmail ? `<div class="contact-email">${this.escapeHtml(primaryEmail)}</div>` : ''}
                 </div>
@@ -199,17 +202,20 @@ const ContactsManager = {
         const container = document.getElementById('contactDetail');
         if (!container) return;
 
-        const initials = this.getInitials(contact.display_name || contact.given_name || '?');
-        const avatarColor = this.getAvatarColor(contact.display_name || '');
+        const displayName = contact.display_name || contact.given_name || 'Unknown';
+        const primaryEmail = contact.emails && contact.emails[0] ? contact.emails[0].email : '';
+        // Try photo endpoint first, fall back to UI Avatars
+        const photoUrl = `/api/contacts/${contact.id}/photo`;
+        const fallbackUrl = this.getAvatarImageUrl(displayName, primaryEmail, 120);
 
         container.innerHTML = `
             <div class="contact-detail-header">
-                <div class="contact-detail-avatar" style="background: ${avatarColor}">
-                    ${contact.picture_url ?
-                        `<img src="${contact.picture_url}" alt="${contact.display_name}" />` :
-                        initials}
+                <div class="contact-detail-avatar">
+                    <img src="${photoUrl}"
+                         alt="${this.escapeHtml(displayName)}"
+                         onerror="this.onerror=null; this.src='${fallbackUrl}';" />
                 </div>
-                <div class="contact-detail-name">${this.escapeHtml(contact.display_name || 'Unknown')}</div>
+                <div class="contact-detail-name">${this.escapeHtml(displayName)}</div>
                 ${contact.job_title ?
                     `<div class="contact-detail-title">${this.escapeHtml(contact.job_title)}${contact.company_name ? ` at ${this.escapeHtml(contact.company_name)}` : ''}</div>` :
                     (contact.company_name ? `<div class="contact-detail-title">${this.escapeHtml(contact.company_name)}</div>` : '')}
@@ -651,6 +657,15 @@ const ContactsManager = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    // Generate avatar image URL using UI Avatars API as fallback
+    getAvatarImageUrl(name, email, size = 80) {
+        // Use initials with consistent background color
+        const initials = this.getInitials(name || '?');
+        const bgColor = this.getAvatarColor(name || '').replace('#', '');
+        // UI Avatars API generates professional-looking avatars
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${bgColor}&color=fff&size=${size}&font-size=0.4&bold=true`;
     }
 };
 

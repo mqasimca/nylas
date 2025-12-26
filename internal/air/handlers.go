@@ -2,6 +2,7 @@ package air
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -2485,7 +2486,7 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 
 // handleContactByID handles single contact operations: GET, PUT, DELETE.
 func (s *Server) handleContactByID(w http.ResponseWriter, r *http.Request) {
-	// Parse contact ID from path: /api/contacts/{id}
+	// Parse contact ID from path: /api/contacts/{id} or /api/contacts/{id}/photo
 	path := strings.TrimPrefix(r.URL.Path, "/api/contacts/")
 	parts := strings.Split(path, "/")
 	if len(parts) == 0 || parts[0] == "" {
@@ -2493,6 +2494,16 @@ func (s *Server) handleContactByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	contactID := parts[0]
+
+	// Check for /photo suffix
+	if len(parts) > 1 && parts[1] == "photo" {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		s.handleContactPhoto(w, r, contactID)
+		return
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -2551,6 +2562,116 @@ func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request, contac
 	}
 
 	writeJSON(w, http.StatusOK, contactToResponse(*contact))
+}
+
+// handleContactPhoto returns the contact's profile picture as an image.
+// Photos are cached locally for 30 days to reduce API calls.
+func (s *Server) handleContactPhoto(w http.ResponseWriter, r *http.Request, contactID string) {
+	// Demo mode: return a placeholder image
+	if s.demoMode {
+		// Return a 1x1 transparent PNG as placeholder
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		// 1x1 transparent PNG
+		transparentPNG := []byte{
+			0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+			0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+			0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+			0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+			0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
+			0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+		}
+		_, _ = w.Write(transparentPNG)
+		return
+	}
+
+	// Check if configured
+	if s.nylasClient == nil {
+		http.Error(w, "Not configured", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Try to serve from cache first
+	if s.photoStore != nil {
+		if imageData, contentType, err := s.photoStore.Get(contactID); err == nil && imageData != nil {
+			w.Header().Set("Content-Type", contentType)
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			w.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
+			w.Header().Set("X-Cache", "HIT")
+			_, _ = w.Write(imageData)
+			return
+		}
+	}
+
+	// Get default grant
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		http.Error(w, "No default account", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch contact with picture from Nylas API
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	contact, err := s.nylasClient.GetContactWithPicture(ctx, grantID, contactID, true)
+	if err != nil {
+		http.Error(w, "Failed to fetch contact photo", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if contact has a picture
+	if contact.Picture == "" {
+		// No picture available - return 404
+		http.Error(w, "No photo available", http.StatusNotFound)
+		return
+	}
+
+	// Parse the base64 data URL (format: data:image/jpeg;base64,/9j/4AAQ...)
+	pictureData := contact.Picture
+	var contentType string
+	var imageData []byte
+
+	if strings.HasPrefix(pictureData, "data:") {
+		// Parse data URL
+		parts := strings.SplitN(pictureData, ",", 2)
+		if len(parts) != 2 {
+			http.Error(w, "Invalid image data format", http.StatusInternalServerError)
+			return
+		}
+		// Extract content type from "data:image/jpeg;base64"
+		metaParts := strings.SplitN(parts[0], ";", 2)
+		contentType = strings.TrimPrefix(metaParts[0], "data:")
+		if contentType == "" {
+			contentType = "image/jpeg"
+		}
+		// Decode base64
+		imageData, err = base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			http.Error(w, "Failed to decode image data", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Assume raw base64
+		contentType = "image/jpeg"
+		imageData, err = base64.StdEncoding.DecodeString(pictureData)
+		if err != nil {
+			http.Error(w, "Failed to decode image data", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Cache the photo for future requests (30 days)
+	if s.photoStore != nil {
+		_ = s.photoStore.Put(contactID, contentType, imageData)
+	}
+
+	// Set headers and write image
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=86400") // Browser cache for 1 day
+	w.Header().Set("Content-Length", strconv.Itoa(len(imageData)))
+	w.Header().Set("X-Cache", "MISS")
+	_, _ = w.Write(imageData)
 }
 
 // handleCreateContact creates a new contact.

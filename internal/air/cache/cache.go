@@ -62,6 +62,26 @@ func NewManager(cfg Config) (*Manager, error) {
 	}, nil
 }
 
+// OpenSharedDB opens a shared SQLite database for cross-account data (like photos).
+func OpenSharedDB(basePath, filename string) (*sql.DB, error) {
+	// Ensure base directory exists
+	if err := os.MkdirAll(basePath, 0700); err != nil {
+		return nil, fmt.Errorf("create cache directory: %w", err)
+	}
+
+	dbPath := filepath.Join(basePath, filename)
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("open shared database: %w", err)
+	}
+
+	// Enable WAL mode for better concurrency
+	_, _ = db.Exec("PRAGMA journal_mode=WAL")
+	_, _ = db.Exec("PRAGMA synchronous=NORMAL")
+
+	return db, nil
+}
+
 // sanitizeEmail converts email to a safe filename.
 // Example: qasim.m@nylas.com -> qasim.m@nylas.com.db
 func sanitizeEmail(email string) string {

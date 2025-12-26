@@ -1588,3 +1588,267 @@ func TestIntegration_Templates(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
 	}
 }
+
+// ================================
+// CONTACT CRUD INTEGRATION TESTS
+// ================================
+
+func TestIntegration_CreateContact(t *testing.T) {
+	server := testServer(t)
+
+	contact := CreateContactRequest{
+		GivenName:   "Integration",
+		Surname:     "Test",
+		CompanyName: "Test Company",
+		JobTitle:    "Tester",
+		Emails: []ContactEmailInput{
+			{Email: "integration-test@example.com", Type: "work"},
+		},
+		PhoneNumbers: []ContactPhoneInput{
+			{Number: "+1-555-0123", Type: "mobile"},
+		},
+		Notes: "Created by integration test",
+	}
+	body, _ := json.Marshal(contact)
+	req := httptest.NewRequest(http.MethodPost, "/api/contacts", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleContactsRoute(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp ContactActionResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if !resp.Success {
+		t.Fatalf("expected success, got error: %s", resp.Error)
+	}
+
+	if resp.Contact == nil {
+		t.Fatal("expected contact in response")
+	}
+
+	t.Logf("Created contact: %s (%s)", resp.Contact.DisplayName, resp.Contact.ID)
+
+	// Clean up - delete the contact
+	req = httptest.NewRequest(http.MethodDelete, "/api/contacts/"+resp.Contact.ID, nil)
+	w = httptest.NewRecorder()
+	server.handleContactByID(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Logf("Warning: failed to delete test contact: %s", w.Body.String())
+	}
+}
+
+func TestIntegration_ContactCRUD(t *testing.T) {
+	server := testServer(t)
+
+	// Create a contact
+	contact := CreateContactRequest{
+		GivenName:   "CRUD",
+		Surname:     "Test",
+		CompanyName: "CRUD Company",
+		Emails: []ContactEmailInput{
+			{Email: "crud-test@example.com", Type: "work"},
+		},
+	}
+	body, _ := json.Marshal(contact)
+	req := httptest.NewRequest(http.MethodPost, "/api/contacts", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleContactsRoute(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("CREATE failed: expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var createResp ContactActionResponse
+	if err := json.NewDecoder(w.Body).Decode(&createResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if !createResp.Success || createResp.Contact == nil {
+		t.Fatalf("expected successful creation with contact, got: %+v", createResp)
+	}
+
+	contactID := createResp.Contact.ID
+	t.Logf("Created contact: %s", contactID)
+
+	// Read the contact
+	req = httptest.NewRequest(http.MethodGet, "/api/contacts/"+contactID, nil)
+	w = httptest.NewRecorder()
+	server.handleContactByID(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("READ failed: expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var readResp ContactResponse
+	if err := json.NewDecoder(w.Body).Decode(&readResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if readResp.ID != contactID {
+		t.Errorf("expected ID %s, got %s", contactID, readResp.ID)
+	}
+
+	t.Logf("Read contact: %s", readResp.DisplayName)
+
+	// Update the contact
+	update := UpdateContactRequest{
+		GivenName:   "Updated",
+		Surname:     "Name",
+		CompanyName: "Updated Company",
+	}
+	updateBody, _ := json.Marshal(update)
+	req = httptest.NewRequest(http.MethodPut, "/api/contacts/"+contactID, bytes.NewBuffer(updateBody))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	server.handleContactByID(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("UPDATE failed: expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var updateResp ContactActionResponse
+	if err := json.NewDecoder(w.Body).Decode(&updateResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if !updateResp.Success {
+		t.Fatalf("expected successful update, got error: %s", updateResp.Error)
+	}
+
+	t.Logf("Updated contact: %s", updateResp.Contact.DisplayName)
+
+	// Delete the contact
+	req = httptest.NewRequest(http.MethodDelete, "/api/contacts/"+contactID, nil)
+	w = httptest.NewRecorder()
+	server.handleContactByID(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("DELETE failed: expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var deleteResp ContactActionResponse
+	if err := json.NewDecoder(w.Body).Decode(&deleteResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if !deleteResp.Success {
+		t.Fatalf("expected successful deletion, got error: %s", deleteResp.Error)
+	}
+
+	t.Logf("Deleted contact: %s", contactID)
+
+	// Verify contact is deleted
+	req = httptest.NewRequest(http.MethodGet, "/api/contacts/"+contactID, nil)
+	w = httptest.NewRecorder()
+	server.handleContactByID(w, req)
+
+	// Should return 404 or error
+	if w.Code == http.StatusOK {
+		t.Log("Note: Contact may still be accessible briefly after deletion")
+	} else {
+		t.Logf("Contact no longer accessible (status %d)", w.Code)
+	}
+}
+
+// ================================
+// AI INTEGRATION TESTS
+// ================================
+
+func TestIntegration_AISummarize(t *testing.T) {
+	server := testServer(t)
+
+	// Test with a simple prompt
+	reqBody := AIRequest{
+		EmailID: "test-email-id",
+		Prompt:  "Say 'test successful' in exactly those words",
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/summarize", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleAISummarize(w, req)
+
+	// If claude CLI is installed, we should get a response
+	// If not, we should get an error about CLI not found
+	if w.Code == http.StatusOK {
+		var resp AIResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if !resp.Success {
+			t.Errorf("expected success, got error: %s", resp.Error)
+		}
+
+		t.Logf("AI response: %s", resp.Summary)
+	} else if w.Code == http.StatusInternalServerError {
+		var resp AIResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if strings.Contains(resp.Error, "Claude Code CLI not found") {
+			t.Skip("Claude Code CLI not installed, skipping AI test")
+		}
+
+		t.Logf("AI error: %s", resp.Error)
+	} else {
+		t.Fatalf("unexpected status %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestIntegration_AISummarize_MethodNotAllowed(t *testing.T) {
+	server := testServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ai/summarize", nil)
+	w := httptest.NewRecorder()
+
+	server.handleAISummarize(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status 405, got %d", w.Code)
+	}
+}
+
+func TestIntegration_AISummarize_EmptyPrompt(t *testing.T) {
+	server := testServer(t)
+
+	reqBody := AIRequest{
+		EmailID: "test-email-id",
+		Prompt:  "",
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/summarize", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleAISummarize(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+
+	var resp AIResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp.Success {
+		t.Error("expected failure for empty prompt")
+	}
+
+	if resp.Error != "Prompt is required" {
+		t.Errorf("expected 'Prompt is required', got: %s", resp.Error)
+	}
+}

@@ -124,13 +124,23 @@
                 document.getElementById('commandPalette').classList.add('hidden');
                 document.getElementById('composeModal').classList.add('hidden');
             }
-            if (!e.target.matches('input, textarea, [contenteditable]')) {
+            // Skip shortcuts when modifier keys are pressed (allow Cmd+R refresh, etc.)
+            if (!e.target.matches('input, textarea, [contenteditable]') && !e.metaKey && !e.ctrlKey && !e.altKey) {
                 if (e.key === 'c') { e.preventDefault(); toggleCompose(); }
                 if (e.key === '1') { document.querySelector('.nav-tab').click(); }
                 if (e.key === '2') { document.querySelectorAll('.nav-tab')[1].click(); }
                 if (e.key === '3') { document.querySelectorAll('.nav-tab')[2].click(); }
                 if (e.key === 'e') { showToast('success', 'Archived', 'Moved to archive'); }
-                if (e.key === 'r') { toggleCompose(); }
+                if (e.key === 'r') {
+                    // Reply to selected email
+                    if (typeof EmailListManager !== 'undefined' && EmailListManager.selectedEmailFull) {
+                        if (typeof ComposeManager !== 'undefined') {
+                            ComposeManager.openReply(EmailListManager.selectedEmailFull);
+                        }
+                    } else {
+                        showToast('info', 'No email selected', 'Select an email first to reply');
+                    }
+                }
                 if (e.key === 's') { showToast('info', 'Starred', 'Conversation starred'); }
                 if (e.key === '#') { showToast('warning', 'Deleted', 'Moved to trash'); }
                 if (e.key === 'j') { selectNextEmail(); }

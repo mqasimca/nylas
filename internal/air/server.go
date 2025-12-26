@@ -40,6 +40,7 @@ type Server struct {
 	// Cache components
 	cacheManager  *cache.Manager
 	cacheSettings *cache.Settings
+	photoStore    *cache.PhotoStore              // Contact photo cache
 	offlineQueues map[string]*cache.OfflineQueue // Per-email offline queues
 	syncStopCh    chan struct{}                  // Channel to stop background sync
 	syncWg        sync.WaitGroup                 // Wait group for sync goroutines
@@ -95,6 +96,21 @@ func NewServer(addr string) *Server {
 	cacheManager, _ := cache.NewManager(cacheCfg)
 	cacheSettings, _ := cache.LoadSettings(cacheCfg.BasePath)
 
+	// Initialize photo store with shared database
+	var photoStore *cache.PhotoStore
+	photoDB, err := cache.OpenSharedDB(cacheCfg.BasePath, "photos.db")
+	if err == nil {
+		photoStore, _ = cache.NewPhotoStore(photoDB, cacheCfg.BasePath, cache.DefaultPhotoTTL)
+		// Prune expired photos on startup
+		if photoStore != nil {
+			go func() {
+				if pruned, err := photoStore.Prune(); err == nil && pruned > 0 {
+					fmt.Fprintf(os.Stderr, "Pruned %d expired photos from cache\n", pruned)
+				}
+			}()
+		}
+	}
+
 	return &Server{
 		addr:          addr,
 		demoMode:      false,
@@ -106,6 +122,7 @@ func NewServer(addr string) *Server {
 		templates:     tmpl,
 		cacheManager:  cacheManager,
 		cacheSettings: cacheSettings,
+		photoStore:    photoStore,
 		offlineQueues: make(map[string]*cache.OfflineQueue),
 		syncStopCh:    make(chan struct{}),
 		isOnline:      true,
@@ -184,9 +201,17 @@ func (s *Server) Start() error {
 	staticFS, _ := fs.Sub(staticFiles, "static")
 	fileServer := http.FileServer(http.FS(staticFS))
 
+	// Wrap JS files with no-cache headers to prevent stale caching
+	noCacheJS := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		fileServer.ServeHTTP(w, r)
+	})
+
 	// Serve static files for specific paths
 	mux.Handle("/css/", fileServer)
-	mux.Handle("/js/", fileServer)
+	mux.Handle("/js/", noCacheJS)
 	mux.Handle("/icons/", fileServer)
 
 	// Template-rendered index page

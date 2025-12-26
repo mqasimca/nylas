@@ -26,6 +26,26 @@ const (
 	driverName = "sqlite3"
 )
 
+// allowedTables is a whitelist of table names that can be used in SQL queries.
+// This prevents SQL injection by ensuring only known table names are used.
+var allowedTables = map[string]bool{
+	"emails":     true,
+	"events":     true,
+	"contacts":   true,
+	"folders":    true,
+	"calendars":  true,
+	"sync_state": true,
+}
+
+// tableNames returns the list of allowed table names for migration operations.
+func tableNames() []string {
+	names := make([]string, 0, len(allowedTables))
+	for name := range allowedTables {
+		names = append(names, name)
+	}
+	return names
+}
+
 // EncryptionConfig holds encryption configuration.
 type EncryptionConfig struct {
 	Enabled bool
@@ -232,7 +252,7 @@ func (m *EncryptedManager) MigrateToEncrypted(email string) error {
 	}
 
 	// Copy data (for each table)
-	tables := []string{"emails", "events", "contacts", "folders", "calendars", "sync_state"}
+	tables := tableNames()
 	for _, table := range tables {
 		if err := copyTable(unencryptedDB, encryptedDB, table); err != nil {
 			os.Remove(encryptedPath)
@@ -305,7 +325,7 @@ func (m *EncryptedManager) MigrateToUnencrypted(email string) error {
 	}
 
 	// Copy data
-	tables := []string{"emails", "events", "contacts", "folders", "calendars", "sync_state"}
+	tables := tableNames()
 	for _, table := range tables {
 		if err := copyTable(encryptedDB, unencryptedDB, table); err != nil {
 			os.Remove(unencryptedPath)
@@ -340,8 +360,13 @@ func (m *EncryptedManager) MigrateToUnencrypted(email string) error {
 
 // copyTable copies all rows from one table to another.
 func copyTable(src, dst *sql.DB, table string) error {
+	// Validate table name against whitelist to prevent SQL injection
+	if !allowedTables[table] {
+		return fmt.Errorf("invalid table name: %s", table)
+	}
+
 	// Get column names
-	rows, err := src.Query(fmt.Sprintf("SELECT * FROM %s LIMIT 0", table))
+	rows, err := src.Query(fmt.Sprintf("SELECT * FROM %s LIMIT 0", table)) //nolint:gosec // table name validated above
 	if err != nil {
 		return err
 	}
@@ -360,10 +385,10 @@ func copyTable(src, dst *sql.DB, table string) error {
 	for i := 1; i < len(columns); i++ {
 		placeholders += ", ?"
 	}
-	insertSQL := fmt.Sprintf("INSERT INTO %s VALUES (%s)", table, placeholders)
+	insertSQL := fmt.Sprintf("INSERT INTO %s VALUES (%s)", table, placeholders) //nolint:gosec // table name validated above
 
 	// Copy rows
-	rows, err = src.Query(fmt.Sprintf("SELECT * FROM %s", table))
+	rows, err = src.Query(fmt.Sprintf("SELECT * FROM %s", table)) //nolint:gosec // table name validated above
 	if err != nil {
 		return err
 	}
