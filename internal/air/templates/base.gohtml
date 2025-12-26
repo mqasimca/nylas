@@ -1,0 +1,69 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Nylas Air</title>
+
+    <!-- Meta Tags -->
+    <meta name="description" content="Modern email client powered by Nylas">
+    <meta name="theme-color" content="#8b5cf6">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/main.css">
+    <!-- Productivity features disabled for now -->
+    <!-- <link rel="stylesheet" href="/css/productivity.css"> -->
+</head>
+<body>
+    <!-- Skip Navigation Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <div class="bg-gradient" aria-hidden="true"></div>
+
+    <div class="app" role="application" aria-label="Nylas Air Email Client">
+        {{template "header" .}}
+
+        <!-- Main Layout -->
+        <main class="main-layout" id="main-content" role="main">
+            {{template "email-view" .}}
+            {{template "calendar-view" .}}
+            {{template "contacts-view" .}}
+        </main>
+
+        {{template "status-bar" .}}
+    </div>
+
+    {{template "modals" .}}
+
+    <!-- Screen Reader Live Region for Announcements -->
+    <div class="live-region" role="status" aria-live="polite" aria-atomic="true" id="announcer"></div>
+
+    <!-- JavaScript (load order matters) -->
+    <!-- 1. Utilities and helpers -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/settings.js"></script>
+
+    <!-- 2. Core API client (required by domain modules) -->
+    <script src="/js/api.js"></script>
+
+    <!-- 3. Domain modules -->
+    <script src="/js/email.js"></script>
+    <script src="/js/compose.js"></script>
+    <script src="/js/calendar.js"></script>
+    <script src="/js/contacts.js"></script>
+
+    <!-- 4. Productivity features (disabled for now) -->
+    <!-- <script src="/js/productivity.js"></script> -->
+
+    <!-- 5. UI modules -->
+    <script src="/js/mobile.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
+{{end}}

@@ -1,5 +1,7 @@
 package domain
 
+import "slices"
+
 // Provider represents an email provider type.
 type Provider string
 
@@ -10,6 +12,9 @@ const (
 	ProviderVirtual   Provider = "virtual"
 	ProviderInbox     Provider = "inbox" // Nylas Native Auth
 )
+
+// SupportedAirProviders lists providers supported by the Air web UI.
+var SupportedAirProviders = []Provider{ProviderGoogle, ProviderMicrosoft}
 
 // DisplayName returns the user-friendly name for the provider.
 func (p Provider) DisplayName() string {
@@ -37,6 +42,11 @@ func (p Provider) IsValid() bool {
 	default:
 		return false
 	}
+}
+
+// IsSupportedByAir checks if the provider is supported by the Air web UI.
+func (p Provider) IsSupportedByAir() bool {
+	return slices.Contains(SupportedAirProviders, p)
 }
 
 // ParseProvider converts a string to a Provider.

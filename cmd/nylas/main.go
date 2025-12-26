@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mqasimca/nylas/internal/air"
 	"github.com/mqasimca/nylas/internal/cli"
 	"github.com/mqasimca/nylas/internal/cli/admin"
 	"github.com/mqasimca/nylas/internal/cli/ai"
@@ -42,6 +43,7 @@ func main() {
 	rootCmd.AddCommand(demo.NewDemoCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
 	rootCmd.AddCommand(ui.NewUICmd())
+	rootCmd.AddCommand(air.NewAirCmd())
 
 	if err := cli.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
