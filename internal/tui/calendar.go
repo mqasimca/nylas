@@ -155,6 +155,7 @@ func parseHexColor(hex string) tcell.Color {
 	g := parseHexDigits(hex[2:4])
 	b := parseHexDigits(hex[4:6])
 
+	// #nosec G115 -- r, g, b are from parseHexDigits which returns 0-255, no overflow possible
 	return tcell.NewRGBColor(int32(r), int32(g), int32(b))
 }
 

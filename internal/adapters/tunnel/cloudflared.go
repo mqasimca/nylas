@@ -61,6 +61,7 @@ func (t *CloudflaredTunnel) Start(ctx context.Context) (string, error) {
 	}
 
 	// Start cloudflared tunnel
+	// #nosec G204 -- localURL is validated above (localhost only, valid port, http/https scheme)
 	t.cmd = exec.CommandContext(tunnelCtx, "cloudflared", "tunnel", "--url", t.localURL)
 
 	// Get stderr pipe (cloudflared outputs to stderr)

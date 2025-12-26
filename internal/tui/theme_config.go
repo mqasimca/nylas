@@ -653,10 +653,10 @@ func parseColor(s string) tcell.Color {
 		if len(hex) == 6 {
 			val, err := strconv.ParseInt(hex, 16, 32)
 			if err == nil {
-				// Safe: & 0xFF masks to 0-255 range, no overflow possible
-				r := int32((val >> 16) & 0xFF) // Red component (0-255)
-				g := int32((val >> 8) & 0xFF)  // Green component (0-255)
-				b := int32(val & 0xFF)         // Blue component (0-255)
+				// #nosec G115 -- & 0xFF masks to 0-255 range, no overflow possible
+				r := int32((val >> 16) & 0xFF) // #nosec G115
+				g := int32((val >> 8) & 0xFF)  // #nosec G115
+				b := int32(val & 0xFF)         // #nosec G115
 				return tcell.NewRGBColor(r, g, b)
 			}
 		}
