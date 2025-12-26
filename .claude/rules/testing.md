@@ -17,6 +17,31 @@ Consolidated testing rules for the Nylas CLI project.
 - **Package:** `package integration`
 - **Function:** `TestCLI_CommandName`
 
+### Air Integration Tests (Web UI)
+- **Location:** `internal/air/integration_*.go`
+- **Build tags:** `//go:build integration` and `// +build integration`
+- **Package:** `package air`
+- **Function:** `TestIntegration_FeatureName`
+- **Files:**
+  - `integration_base_test.go` - Shared helpers (`testServer()`, utilities)
+  - `integration_core_test.go` - Config, Grants, Folders, Index
+  - `integration_email_test.go` - Email and draft operations
+  - `integration_calendar_test.go` - Calendar, events, availability
+  - `integration_contacts_test.go` - Contact operations
+  - `integration_cache_test.go` - Cache operations
+  - `integration_ai_test.go` - AI features
+  - `integration_middleware_test.go` - Middleware tests
+
+**⚠️ CRITICAL: Always run Air tests with cleanup**
+
+Air tests create real resources (drafts, events, contacts) in the connected account. **Always use the cleanup target** to avoid polluting the account:
+
+```bash
+make test-air-integration-clean  # RECOMMENDED: Tests + cleanup
+make test-air-integration        # Tests only (manual cleanup needed)
+make test-air-integration-cleanup # Cleanup only
+```
+
 ---
 
 ## Parallel Testing
@@ -111,11 +136,12 @@ go tool cover -html=coverage.out
 
 ### Run Tests
 ```bash
-go test ./... -short                     # Unit tests
-make test-integration                     # Integration tests
+go test ./... -short                      # Unit tests
+make test-integration                      # CLI integration tests
+make test-air-integration-clean            # Air integration tests + cleanup (RECOMMENDED)
 ```
 
-### Integration Test Template
+### CLI Integration Test Template
 ```go
 //go:build integration
 // +build integration
@@ -137,6 +163,43 @@ func TestFeature(t *testing.T) {
     // Test logic here
 }
 ```
+
+### Air Integration Test Template
+```go
+//go:build integration
+// +build integration
+
+package air
+
+import (
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+)
+
+func TestIntegration_Feature(t *testing.T) {
+    server := testServer(t)  // Uses shared helper from integration_base_test.go
+
+    req := httptest.NewRequest(http.MethodGet, "/api/endpoint", nil)
+    w := httptest.NewRecorder()
+
+    server.handleEndpoint(w, req)
+
+    if w.Code != http.StatusOK {
+        t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
+    }
+
+    var resp ResponseType
+    if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+        t.Fatalf("failed to decode response: %v", err)
+    }
+
+    // Assertions here
+}
+```
+
+**Note:** Air tests use `testServer(t)` helper from `integration_base_test.go` and test HTTP handlers directly using `httptest`.
 
 ---
 

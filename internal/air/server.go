@@ -222,10 +222,22 @@ func (s *Server) Start() error {
 		s.startBackgroundSync()
 	}
 
+	// Apply middleware chain for performance and security
+	// Order matters: CORS → Security → Compression → Cache → Monitoring → MethodOverride → Handler
+	handler := CORSMiddleware(
+		SecurityHeadersMiddleware(
+			CompressionMiddleware(
+				CacheMiddleware(
+					PerformanceMonitoringMiddleware(
+						MethodOverrideMiddleware(mux))))))
+
 	server := &http.Server{
 		Addr:              s.addr,
-		Handler:           mux,
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MB
 	}
 
 	return server.ListenAndServe()

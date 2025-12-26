@@ -1,0 +1,120 @@
+package air
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// TestEmailListNoMaxHeightConstraint is a regression test to ensure that the
+// email list is not constrained by the accessibility.css [role="listbox"] rule.
+//
+// Bug history: The email list had role="listbox" for accessibility, but the
+// generic [role="listbox"] selector in accessibility.css had max-height: 300px,
+// which prevented the email list from filling the viewport height.
+//
+// Fix: Changed the selector to [role="listbox"]:not(.email-list) to exclude
+// the email list from this constraint.
+func TestEmailListNoMaxHeightConstraint(t *testing.T) {
+	t.Parallel()
+
+	// Read the accessibility.css file
+	cssPath := filepath.Join("static", "css", "accessibility.css")
+	content, err := os.ReadFile(cssPath)
+	if err != nil {
+		t.Fatalf("Failed to read accessibility.css: %v", err)
+	}
+
+	cssContent := string(content)
+
+	// Verify that the [role="listbox"] selector excludes .email-list
+	if !strings.Contains(cssContent, `[role="listbox"]:not(.email-list)`) {
+		t.Error("accessibility.css must use [role=\"listbox\"]:not(.email-list) to exclude email list from max-height constraint")
+	}
+
+	// Verify the old broken selector is not present
+	if strings.Contains(cssContent, `[role="listbox"] {`) && !strings.Contains(cssContent, `:not(.email-list)`) {
+		t.Error("Found [role=\"listbox\"] without :not(.email-list) - this will constrain email list to 300px!")
+	}
+}
+
+// TestEmailListContainerUsesGrid verifies that email-list-container uses CSS Grid
+// instead of flexbox for more reliable height calculation.
+func TestEmailListContainerUsesGrid(t *testing.T) {
+	t.Parallel()
+
+	// Read the email-list.css file
+	cssPath := filepath.Join("static", "css", "email-list.css")
+	content, err := os.ReadFile(cssPath)
+	if err != nil {
+		t.Fatalf("Failed to read email-list.css: %v", err)
+	}
+
+	cssContent := string(content)
+
+	// Verify .email-list-container uses CSS Grid
+	if !strings.Contains(cssContent, "display: grid") {
+		t.Error("email-list-container must use 'display: grid' for proper layout")
+	}
+
+	if !strings.Contains(cssContent, "grid-template-rows: auto 1fr") {
+		t.Error("email-list-container must use 'grid-template-rows: auto 1fr' to size header and list")
+	}
+}
+
+// TestEmailViewUsesGrid verifies that email-view uses CSS Grid for layout.
+func TestEmailViewUsesGrid(t *testing.T) {
+	t.Parallel()
+
+	// Read the calendar.css file (where email-view.active is defined)
+	cssPath := filepath.Join("static", "css", "calendar.css")
+	content, err := os.ReadFile(cssPath)
+	if err != nil {
+		t.Fatalf("Failed to read calendar.css: %v", err)
+	}
+
+	cssContent := string(content)
+
+	// Verify .email-view.active uses CSS Grid
+	if !strings.Contains(cssContent, ".email-view.active") {
+		t.Error("calendar.css must define .email-view.active")
+	}
+
+	// Check for grid layout (need to find the rule and verify it has display: grid)
+	emailViewActiveIndex := strings.Index(cssContent, ".email-view.active")
+	if emailViewActiveIndex == -1 {
+		t.Fatal("Could not find .email-view.active in calendar.css")
+	}
+
+	// Get the next 500 characters after .email-view.active to check for grid properties
+	snippet := cssContent[emailViewActiveIndex : emailViewActiveIndex+500]
+
+	if !strings.Contains(snippet, "display: grid") {
+		t.Error("email-view.active must use 'display: grid'")
+	}
+
+	if !strings.Contains(snippet, "grid-template-columns") {
+		t.Error("email-view.active must define grid-template-columns for sidebar|email-list|preview layout")
+	}
+}
+
+// TestMainLayoutHasExplicitHeight verifies that main-layout has an explicit height
+// calculation to ensure proper flexbox/grid sizing.
+func TestMainLayoutHasExplicitHeight(t *testing.T) {
+	t.Parallel()
+
+	// Read the layout.css file
+	cssPath := filepath.Join("static", "css", "layout.css")
+	content, err := os.ReadFile(cssPath)
+	if err != nil {
+		t.Fatalf("Failed to read layout.css: %v", err)
+	}
+
+	cssContent := string(content)
+
+	// Verify .main-layout has height calculation
+	if !strings.Contains(cssContent, "calc(100vh") {
+		t.Error("main-layout should use calc(100vh - ...) for explicit height calculation")
+	}
+}

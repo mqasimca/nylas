@@ -275,7 +275,6 @@ func TestGenerateKey(t *testing.T) {
 	}
 }
 
-
 func TestIsEncrypted_UnencryptedDB(t *testing.T) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
