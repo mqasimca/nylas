@@ -738,7 +738,9 @@ func TestParseNaturalTime(t *testing.T) {
 			tz:    "America/New_York",
 			checkTime: func(t *testing.T, result time.Time) {
 				// Check it's tomorrow and at 3pm
-				now := time.Now()
+				// Use the same timezone as parseNaturalTime to avoid CI/CD timezone issues
+				loc, _ := time.LoadLocation("America/New_York")
+				now := time.Now().In(loc)
 				if result.Day() != now.AddDate(0, 0, 1).Day() || result.Hour() != 15 {
 					t.Errorf("Expected tomorrow at 15:00, got %v at %02d:00", result.Day(), result.Hour())
 				}
@@ -750,7 +752,9 @@ func TestParseNaturalTime(t *testing.T) {
 			tz:    "America/New_York",
 			checkTime: func(t *testing.T, result time.Time) {
 				// Check it's today at 2:30pm
-				now := time.Now()
+				// Use the same timezone as parseNaturalTime to avoid CI/CD timezone issues
+				loc, _ := time.LoadLocation("America/New_York")
+				now := time.Now().In(loc)
 				if result.Day() != now.Day() || result.Hour() != 14 || result.Minute() != 30 {
 					t.Errorf("Expected today at 14:30, got %v at %02d:%02d", result.Day(), result.Hour(), result.Minute())
 				}
