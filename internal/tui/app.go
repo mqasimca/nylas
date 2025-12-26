@@ -28,16 +28,20 @@ type App struct {
 	*tview.Application
 
 	// Layout components (k9s style)
-	main   *tview.Flex
-	header *tview.Flex
-	logo   *Logo
-	status *StatusIndicator
-	crumbs *Crumbs
-	menu   *Menu
-	prompt *Prompt
+	main    *tview.Flex
+	header  *tview.Flex
+	logo    *Logo
+	status  *StatusIndicator
+	crumbs  *Crumbs
+	menu    *Menu
+	prompt  *Prompt          // For filter mode (/)
+	palette *CommandPalette  // For command mode (:) with autocomplete
 
 	// Content area with page stack (like k9s)
 	content *PageStack
+
+	// Command registry for help and autocomplete
+	cmdRegistry *CommandRegistry
 
 	// State
 	config      Config
@@ -75,12 +79,16 @@ func NewApp(cfg Config) *App {
 }
 
 func (a *App) init() {
+	// Create command registry
+	a.cmdRegistry = NewCommandRegistry()
+
 	// Create components (k9s style)
 	a.logo = NewLogo(a.styles)
 	a.status = NewStatusIndicator(a.styles, a.config)
 	a.crumbs = NewCrumbs(a.styles)
 	a.menu = NewMenu(a.styles)
 	a.prompt = NewPrompt(a.styles, a.onCommand, a.onFilter)
+	a.palette = NewCommandPalette(a, a.cmdRegistry, a.onPaletteExecute, a.onPaletteCancel)
 	a.content = NewPageStack()
 
 	// Header: Logo on left, Status on right (like k9s)
@@ -113,8 +121,14 @@ func (a *App) init() {
 
 func (a *App) setupKeys() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// If prompt is active, let it handle input
-		if a.cmdActive || a.filterMode {
+		// If palette is active (command mode), let it handle input
+		if a.cmdActive && a.palette.IsVisible() {
+			// Palette handles its own input via SetInputCapture
+			return event
+		}
+
+		// If filter mode is active, let prompt handle input
+		if a.filterMode {
 			return a.prompt.HandleKey(event)
 		}
 
@@ -185,10 +199,8 @@ func (a *App) setupKeys() {
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case ':':
-				// Enter command mode
-				a.cmdActive = true
-				a.prompt.Activate(PromptCommand)
-				a.showPrompt()
+				// Enter command mode with palette (autocomplete)
+				a.showPalette()
 				return nil
 
 			case '/':
@@ -290,6 +302,37 @@ func (a *App) hidePrompt() {
 	}
 }
 
+func (a *App) showPalette() {
+	// Add palette to layout (before menu)
+	a.main.RemoveItem(a.menu)
+	a.main.AddItem(a.palette, 12, 0, true) // Give palette more height for dropdown
+	a.main.AddItem(a.menu, 1, 0, false)
+	a.palette.Show()
+	a.cmdActive = true
+}
+
+func (a *App) hidePalette() {
+	a.main.RemoveItem(a.palette)
+	a.palette.Hide()
+	a.cmdActive = false
+
+	// Refocus current view
+	if view := a.getCurrentView(); view != nil {
+		a.SetFocus(view.Primitive())
+	}
+}
+
+func (a *App) onPaletteExecute(cmd string) {
+	a.hidePalette()
+	if cmd != "" {
+		a.onCommand(cmd)
+	}
+}
+
+func (a *App) onPaletteCancel() {
+	a.hidePalette()
+}
+
 func (a *App) onCommand(cmd string) {
 	a.hidePrompt()
 
@@ -307,8 +350,12 @@ func (a *App) onCommand(cmd string) {
 	// Navigation - vim style
 	case "m", "messages", "msg":
 		a.navigateTo("messages")
+	case "dr", "drafts":
+		a.navigateTo("drafts")
 	case "e", "events", "ev", "cal", "calendar":
 		a.navigateTo("events")
+	case "av", "avail", "availability":
+		a.navigateTo("availability")
 	case "c", "contacts", "ct":
 		a.navigateTo("contacts")
 	case "w", "webhooks", "wh":
@@ -377,8 +424,12 @@ func (a *App) onCommand(cmd string) {
 			switch viewName {
 			case "messages", "m":
 				a.navigateTo("messages")
+			case "drafts", "dr":
+				a.navigateTo("drafts")
 			case "events", "ev", "cal":
 				a.navigateTo("events")
+			case "availability", "av", "avail":
+				a.navigateTo("availability")
 			case "contacts", "c":
 				a.navigateTo("contacts")
 			case "webhooks", "w":
@@ -447,8 +498,12 @@ func (a *App) createView(name string) ResourceView {
 	switch name {
 	case "messages":
 		return NewMessagesView(a)
+	case "drafts":
+		return NewDraftsView(a)
 	case "events":
 		return NewEventsView(a)
+	case "availability":
+		return NewAvailabilityView(a)
 	case "contacts":
 		return NewContactsView(a)
 	case "webhooks":
@@ -465,20 +520,22 @@ func (a *App) createView(name string) ResourceView {
 }
 
 func (a *App) showHelp() {
-	help := NewHelpView(a.styles)
-
-	// Push help as a page
-	a.content.Push("help", help)
-	a.SetFocus(help)
-
-	// Close on any key
-	help.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	// Create help view with callbacks
+	onClose := func() {
 		a.content.Pop()
 		if view := a.getCurrentView(); view != nil {
 			a.SetFocus(view.Primitive())
 		}
-		return nil
-	})
+	}
+	onExecute := func(cmd string) {
+		a.executeCommand(cmd)
+	}
+
+	help := NewHelpView(a, a.cmdRegistry, onClose, onExecute)
+
+	// Push help as a page
+	a.content.Push("help", help)
+	a.SetFocus(help)
 }
 
 // PushDetail pushes a detail view onto the stack (for message detail, etc.)

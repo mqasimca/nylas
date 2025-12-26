@@ -19,6 +19,7 @@ const (
 	ComposeModeReply
 	ComposeModeReplyAll
 	ComposeModeForward
+	ComposeModeDraft // Editing an existing draft
 )
 
 // ComposeView provides an email compose form.
@@ -32,8 +33,10 @@ type ComposeView struct {
 	subjectInput *tview.InputField
 	mode         ComposeMode
 	replyToMsg   *domain.Message
+	draft        *domain.Draft // Existing draft being edited
 	onSent       func()
 	onCancel     func()
+	onSave       func() // Callback when draft is saved
 }
 
 // NewComposeView creates a new compose email view.
@@ -58,12 +61,38 @@ func NewComposeView(app *App, mode ComposeMode, replyTo *domain.Message) *Compos
 		c.SetTitle(" Reply All ")
 	case ComposeModeForward:
 		c.SetTitle(" Forward ")
+	case ComposeModeDraft:
+		c.SetTitle(" Edit Draft ")
 	default:
 		c.SetTitle(" New Message ")
 	}
 	c.SetTitleColor(app.styles.TitleFg)
 
 	c.buildForm()
+	return c
+}
+
+// NewComposeViewForDraft creates a compose view for editing an existing draft.
+func NewComposeViewForDraft(app *App, draft *domain.Draft) *ComposeView {
+	c := &ComposeView{
+		Flex:  tview.NewFlex(),
+		app:   app,
+		mode:  ComposeModeDraft,
+		draft: draft,
+	}
+
+	c.SetDirection(tview.FlexRow)
+	c.SetBackgroundColor(app.styles.BgColor)
+	c.SetBorder(true)
+	c.SetBorderColor(app.styles.FocusColor)
+	c.SetTitle(" Edit Draft ")
+	c.SetTitleColor(app.styles.TitleFg)
+
+	c.buildForm()
+
+	// Pre-fill with draft content
+	c.prefillFromDraft()
+
 	return c
 }
 
@@ -108,7 +137,7 @@ func (c *ComposeView) buildForm() {
 	c.bodyInput.SetTextStyle(tcell.StyleDefault.Foreground(c.app.styles.FgColor).Background(tcell.ColorDarkSlateGray))
 	c.bodyInput.SetBorder(true)
 	c.bodyInput.SetBorderColor(c.app.styles.BorderColor)
-	c.bodyInput.SetTitle(" Message Body (Ctrl+S to send, Esc to cancel) ")
+	c.bodyInput.SetTitle(" Message Body (Ctrl+S=send, Ctrl+D=save draft, Esc=cancel) ")
 	c.bodyInput.SetTitleColor(c.app.styles.InfoSectionFg)
 	c.bodyInput.SetPlaceholder("Type your message here...")
 
@@ -145,6 +174,11 @@ func (c *ComposeView) buildForm() {
 	sendBtn.SetLabelColor(tcell.ColorBlack)
 	sendBtn.SetSelectedFunc(c.send)
 
+	saveBtn := tview.NewButton("Save Draft (Ctrl+D)")
+	saveBtn.SetBackgroundColor(c.app.styles.InfoColor)
+	saveBtn.SetLabelColor(tcell.ColorBlack)
+	saveBtn.SetSelectedFunc(c.saveDraft)
+
 	cancelBtn := tview.NewButton("Cancel (Esc)")
 	cancelBtn.SetBackgroundColor(c.app.styles.BorderColor)
 	cancelBtn.SetLabelColor(c.app.styles.FgColor)
@@ -153,6 +187,8 @@ func (c *ComposeView) buildForm() {
 	spacer := tview.NewBox().SetBackgroundColor(c.app.styles.BgColor)
 	buttonBar.AddItem(spacer, 0, 1, false)
 	buttonBar.AddItem(sendBtn, 16, 0, false)
+	buttonBar.AddItem(spacer, 2, 0, false)
+	buttonBar.AddItem(saveBtn, 20, 0, false)
 	buttonBar.AddItem(spacer, 2, 0, false)
 	buttonBar.AddItem(cancelBtn, 16, 0, false)
 	buttonBar.AddItem(spacer, 0, 1, false)
@@ -269,6 +305,10 @@ func (c *ComposeView) handleKey(event *tcell.EventKey) *tcell.EventKey {
 		c.send()
 		return nil
 
+	case tcell.KeyCtrlD:
+		c.saveDraft()
+		return nil
+
 	case tcell.KeyTab:
 		// Cycle focus between fields
 		c.cycleFocus()
@@ -327,6 +367,11 @@ func (c *ComposeView) SetOnCancel(handler func()) {
 	c.onCancel = handler
 }
 
+// SetOnSave sets the callback for when a draft is saved.
+func (c *ComposeView) SetOnSave(handler func()) {
+	c.onSave = handler
+}
+
 // Focus sets focus to the To field.
 func (c *ComposeView) Focus(delegate func(p tview.Primitive)) {
 	c.app.SetFocus(c.toInput)
@@ -360,19 +405,6 @@ func (c *ComposeView) send() {
 		ccRecipients = parseRecipients(cc)
 	}
 
-	// Build request
-	req := &domain.SendMessageRequest{
-		To:      toRecipients,
-		Cc:      ccRecipients,
-		Subject: subject,
-		Body:    htmlBody,
-	}
-
-	// If replying, include the reply-to message ID for threading
-	if c.replyToMsg != nil && (c.mode == ComposeModeReply || c.mode == ComposeModeReplyAll) {
-		req.ReplyToMsgID = c.replyToMsg.ID
-	}
-
 	// Send asynchronously
 	c.app.Flash(FlashInfo, "Sending message...")
 
@@ -380,7 +412,43 @@ func (c *ComposeView) send() {
 		// Email send operations should complete within 30 seconds
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		_, err := c.app.config.Client.SendMessage(ctx, c.app.config.GrantID, req)
+
+		var err error
+
+		if c.mode == ComposeModeDraft && c.draft != nil {
+			// For draft mode, first update the draft then send it
+			updateReq := &domain.CreateDraftRequest{
+				To:      toRecipients,
+				Cc:      ccRecipients,
+				Subject: subject,
+				Body:    htmlBody,
+			}
+			_, err = c.app.config.Client.UpdateDraft(ctx, c.app.config.GrantID, c.draft.ID, updateReq)
+			if err != nil {
+				c.app.QueueUpdateDraw(func() {
+					c.app.Flash(FlashError, "Failed to update draft: %v", err)
+				})
+				return
+			}
+			// Then send the draft
+			_, err = c.app.config.Client.SendDraft(ctx, c.app.config.GrantID, c.draft.ID)
+		} else {
+			// Normal send flow
+			req := &domain.SendMessageRequest{
+				To:      toRecipients,
+				Cc:      ccRecipients,
+				Subject: subject,
+				Body:    htmlBody,
+			}
+
+			// If replying, include the reply-to message ID for threading
+			if c.replyToMsg != nil && (c.mode == ComposeModeReply || c.mode == ComposeModeReplyAll) {
+				req.ReplyToMsgID = c.replyToMsg.ID
+			}
+
+			_, err = c.app.config.Client.SendMessage(ctx, c.app.config.GrantID, req)
+		}
+
 		if err != nil {
 			c.app.QueueUpdateDraw(func() {
 				c.app.Flash(FlashError, "Failed to send: %v", err)
@@ -454,4 +522,93 @@ func convertToHTML(text string) string {
 
 	// Wrap in basic HTML structure
 	return fmt.Sprintf(`<div style="font-family: Arial, sans-serif; font-size: 14px;">%s</div>`, escaped)
+}
+
+// prefillFromDraft populates the form with draft content.
+func (c *ComposeView) prefillFromDraft() {
+	if c.draft == nil {
+		return
+	}
+
+	// Set To field
+	if len(c.draft.To) > 0 {
+		c.toInput.SetText(formatParticipants(c.draft.To))
+	}
+
+	// Set Cc field
+	if len(c.draft.Cc) > 0 {
+		c.ccInput.SetText(formatParticipants(c.draft.Cc))
+	}
+
+	// Set Subject
+	c.subjectInput.SetText(c.draft.Subject)
+
+	// Set Body - strip HTML for editing
+	body := c.draft.Body
+	body = stripHTMLForTUI(body)
+	c.bodyInput.SetText(body, false)
+}
+
+// saveDraft saves the current compose as a draft.
+func (c *ComposeView) saveDraft() {
+	subject := strings.TrimSpace(c.subjectInput.GetText())
+	body := c.bodyInput.GetText()
+	htmlBody := convertToHTML(body)
+
+	// Parse recipients
+	to := strings.TrimSpace(c.toInput.GetText())
+	var toRecipients []domain.EmailParticipant
+	if to != "" {
+		toRecipients = parseRecipients(to)
+	}
+
+	// Parse CC
+	var ccRecipients []domain.EmailParticipant
+	cc := strings.TrimSpace(c.ccInput.GetText())
+	if cc != "" {
+		ccRecipients = parseRecipients(cc)
+	}
+
+	// Build request
+	req := &domain.CreateDraftRequest{
+		To:      toRecipients,
+		Cc:      ccRecipients,
+		Subject: subject,
+		Body:    htmlBody,
+	}
+
+	// If replying, include the reply-to message ID
+	if c.replyToMsg != nil {
+		req.ReplyToMsgID = c.replyToMsg.ID
+	}
+
+	c.app.Flash(FlashInfo, "Saving draft...")
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		var err error
+		if c.mode == ComposeModeDraft && c.draft != nil {
+			// Update existing draft
+			_, err = c.app.config.Client.UpdateDraft(ctx, c.app.config.GrantID, c.draft.ID, req)
+		} else {
+			// Create new draft
+			_, err = c.app.config.Client.CreateDraft(ctx, c.app.config.GrantID, req)
+		}
+
+		if err != nil {
+			c.app.QueueUpdateDraw(func() {
+				c.app.Flash(FlashError, "Failed to save draft: %v", err)
+			})
+			return
+		}
+
+		c.app.QueueUpdateDraw(func() {
+			c.app.Flash(FlashInfo, "Draft saved!")
+			if c.onSave != nil {
+				c.onSave()
+			}
+		})
+	}()
 }

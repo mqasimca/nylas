@@ -126,6 +126,62 @@ func (c *CalendarView) GetCurrentCalendarID() string {
 	return c.calendarID
 }
 
+// getCalendarColor returns the color for the current calendar.
+func (c *CalendarView) getCalendarColor() tcell.Color {
+	cal := c.GetCurrentCalendar()
+	if cal == nil || cal.HexColor == "" {
+		return tcell.ColorDefault
+	}
+	return parseHexColor(cal.HexColor)
+}
+
+// parseHexColor parses a hex color string and returns a tcell.Color.
+func parseHexColor(hex string) tcell.Color {
+	if hex == "" {
+		return tcell.ColorDefault
+	}
+
+	// Remove # prefix if present
+	if len(hex) > 0 && hex[0] == '#' {
+		hex = hex[1:]
+	}
+
+	// Parse 6-character hex color
+	if len(hex) != 6 {
+		return tcell.ColorDefault
+	}
+
+	r := parseHexDigits(hex[0:2])
+	g := parseHexDigits(hex[2:4])
+	b := parseHexDigits(hex[4:6])
+
+	return tcell.NewRGBColor(int32(r), int32(g), int32(b))
+}
+
+// parseHexDigits converts a 2-character hex string to int.
+func parseHexDigits(hex string) int {
+	if len(hex) != 2 {
+		return 0
+	}
+	high := hexCharToInt(hex[0])
+	low := hexCharToInt(hex[1])
+	return high*16 + low
+}
+
+// hexCharToInt converts a single hex digit to int.
+func hexCharToInt(c byte) int {
+	switch {
+	case c >= '0' && c <= '9':
+		return int(c - '0')
+	case c >= 'a' && c <= 'f':
+		return int(c - 'a' + 10)
+	case c >= 'A' && c <= 'F':
+		return int(c - 'A' + 10)
+	default:
+		return 0
+	}
+}
+
 // NextCalendar switches to the next calendar.
 func (c *CalendarView) NextCalendar() {
 	if len(c.calendars) == 0 {
@@ -421,8 +477,12 @@ func (c *CalendarView) drawMonthView(screen tcell.Screen, x, y, width, height in
 					evtStyle = tcell.StyleDefault.Foreground(mutedColor)
 				}
 
-				// Draw event dot and title
-				screen.SetContent(cellX+1, cellY+i+1, '•', nil, tcell.StyleDefault.Foreground(c.styles.InfoColor))
+				// Draw event dot and title with calendar color
+				dotColor := c.getCalendarColor()
+				if dotColor == tcell.ColorDefault {
+					dotColor = c.styles.InfoColor
+				}
+				screen.SetContent(cellX+1, cellY+i+1, '•', nil, tcell.StyleDefault.Foreground(dotColor))
 				for j, ch := range title {
 					if cellX+2+j < cellX+c.cellWidth-1 {
 						screen.SetContent(cellX+2+j, cellY+i+1, ch, nil, evtStyle)
