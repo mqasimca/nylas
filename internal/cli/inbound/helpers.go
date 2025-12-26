@@ -79,12 +79,12 @@ func createContext() (context.Context, context.CancelFunc) {
 }
 
 // printError prints an error message in red.
-func printError(format string, args ...interface{}) {
+func printError(format string, args ...any) {
 	red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
 }
 
 // printSuccess prints a success message in green.
-func printSuccess(format string, args ...interface{}) {
+func printSuccess(format string, args ...any) {
 	green.Printf(format+"\n", args...)
 }
 

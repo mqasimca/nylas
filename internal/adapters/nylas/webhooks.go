@@ -211,7 +211,7 @@ func (c *HTTPClient) SendWebhookTestEvent(ctx context.Context, webhookURL string
 }
 
 // GetWebhookMockPayload gets a mock payload for a trigger type.
-func (c *HTTPClient) GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]interface{}, error) {
+func (c *HTTPClient) GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]any, error) {
 	queryURL := fmt.Sprintf("%s/v3/webhooks/mock-payload", c.baseURL)
 
 	payload := map[string]string{"trigger_type": triggerType}
@@ -234,7 +234,7 @@ func (c *HTTPClient) GetWebhookMockPayload(ctx context.Context, triggerType stri
 		return nil, c.parseError(resp)
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}

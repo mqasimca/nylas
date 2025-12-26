@@ -1,9 +1,10 @@
 package analytics
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -525,8 +526,8 @@ func (p *PatternLearner) generateInsights(patterns *domain.MeetingPattern, event
 		for tz, count := range patterns.Timezone.Distribution {
 			tzCounts = append(tzCounts, tzCount{tz, count})
 		}
-		sort.Slice(tzCounts, func(i, j int) bool {
-			return tzCounts[i].count > tzCounts[j].count
+		slices.SortFunc(tzCounts, func(a, b tzCount) int {
+			return cmp.Compare(b.count, a.count) // Descending order
 		})
 		if len(tzCounts) > 0 {
 			insights = append(insights, fmt.Sprintf("Most meetings in %s timezone (%d meetings)", tzCounts[0].tz, tzCounts[0].count))
@@ -600,8 +601,8 @@ func (p *participantAccumulator) toPattern() domain.ParticipantPattern {
 	for day, count := range p.dayCount {
 		days = append(days, dayCount{day, count})
 	}
-	sort.Slice(days, func(i, j int) bool {
-		return days[i].count > days[j].count
+	slices.SortFunc(days, func(a, b dayCount) int {
+		return cmp.Compare(b.count, a.count) // Descending order
 	})
 
 	preferredDays := make([]string, 0, 2)
@@ -618,8 +619,8 @@ func (p *participantAccumulator) toPattern() domain.ParticipantPattern {
 	for hour, count := range p.hourCount {
 		hours = append(hours, hourCount{hour, count})
 	}
-	sort.Slice(hours, func(i, j int) bool {
-		return hours[i].count > hours[j].count
+	slices.SortFunc(hours, func(a, b hourCount) int {
+		return cmp.Compare(b.count, a.count) // Descending order
 	})
 
 	preferredTimes := make([]string, 0, 2)
@@ -636,11 +637,4 @@ func (p *participantAccumulator) toPattern() domain.ParticipantPattern {
 		AverageDuration: avgDuration,
 		Timezone:        p.timezone,
 	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

@@ -1,10 +1,11 @@
 package ai
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
@@ -286,8 +287,8 @@ func (p *PatternLearner) analyzeAcceptancePatterns(events []domain.Event) []Acce
 	}
 
 	// Sort by accept rate (highest first)
-	sort.Slice(patterns, func(i, j int) bool {
-		return patterns[i].AcceptRate > patterns[j].AcceptRate
+	slices.SortFunc(patterns, func(a, b AcceptancePattern) int {
+		return cmp.Compare(b.AcceptRate, a.AcceptRate) // Descending order
 	})
 
 	return patterns
@@ -409,8 +410,8 @@ func (p *PatternLearner) analyzeTimezonePatterns(events []domain.Event) []Timezo
 	}
 
 	// Sort by event count (most common first)
-	sort.Slice(patterns, func(i, j int) bool {
-		return patterns[i].EventCount > patterns[j].EventCount
+	slices.SortFunc(patterns, func(a, b TimezonePattern) int {
+		return cmp.Compare(b.EventCount, a.EventCount) // Descending order
 	})
 
 	return patterns

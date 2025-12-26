@@ -286,15 +286,15 @@ func printInboundEvent(event *ports.WebhookEvent, quiet bool) {
 	if !quiet {
 		// Print message details
 		if event.Body != nil {
-			if data, ok := event.Body["data"].(map[string]interface{}); ok {
-				if obj, ok := data["object"].(map[string]interface{}); ok {
+			if data, ok := event.Body["data"].(map[string]any); ok {
+				if obj, ok := data["object"].(map[string]any); ok {
 					// Print subject
 					if subject, ok := obj["subject"].(string); ok {
 						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), truncate(subject, 60))
 					}
 					// Print from
-					if from, ok := obj["from"].([]interface{}); ok && len(from) > 0 {
-						if fromObj, ok := from[0].(map[string]interface{}); ok {
+					if from, ok := obj["from"].([]any); ok && len(from) > 0 {
+						if fromObj, ok := from[0].(map[string]any); ok {
 							email := ""
 							name := ""
 							if e, ok := fromObj["email"].(string); ok {
