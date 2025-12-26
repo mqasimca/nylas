@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/rivo/tview"
 )
 
 // createTestApp creates an App instance for testing
@@ -292,7 +293,17 @@ func TestComposeView(t *testing.T) {
 
 func TestHelpView(t *testing.T) {
 	styles := DefaultStyles()
-	help := NewHelpView(styles)
+	registry := NewCommandRegistry()
+
+	// Create a minimal app for testing
+	app := &App{
+		Application: tview.NewApplication(),
+		styles:      styles,
+		cmdRegistry: registry,
+	}
+
+	// Create help view with nil callbacks (for testing)
+	help := NewHelpView(app, registry, nil, nil)
 
 	if help == nil {
 		t.Fatal("NewHelpView() returned nil")
@@ -618,4 +629,574 @@ func TestGrantsViewSwitching(t *testing.T) {
 			t.Error("GrantsView should return Escape event for app navigation")
 		}
 	})
+}
+
+func TestApp_GetCurrentView(t *testing.T) {
+	app := createTestApp(t)
+
+	// Initially should have dashboard view
+	view := app.getCurrentView()
+	if view == nil {
+		t.Fatal("getCurrentView() returned nil")
+	}
+
+	// Default initial view is dashboard
+	if view.Name() != "dashboard" {
+		t.Errorf("getCurrentView().Name() = %q, want %q", view.Name(), "dashboard")
+	}
+}
+
+func TestApp_Flash(t *testing.T) {
+	app := createTestApp(t)
+
+	// Test all flash levels
+	flashLevels := []FlashLevel{FlashInfo, FlashWarn, FlashError}
+
+	for _, fl := range flashLevels {
+		// Should not panic
+		app.Flash(fl, "Test message %s", "arg")
+	}
+}
+
+func TestApp_ShowConfirmDialog(t *testing.T) {
+	app := createTestApp(t)
+
+	called := false
+	app.ShowConfirmDialog("Test Title", "Test message", func() {
+		called = true
+	})
+
+	// Dialog should be shown (pushed to content stack)
+	// We can't easily test the callback without simulating UI interaction
+	// but we can verify it doesn't panic
+	if called {
+		t.Error("callback should not be called immediately")
+	}
+}
+
+func TestApp_PopDetail(t *testing.T) {
+	app := createTestApp(t)
+
+	// Pop on empty detail should not panic
+	app.PopDetail()
+
+	// Push something to content stack first using PushDetail
+	box := tview.NewBox()
+	app.PushDetail("test-detail", box)
+
+	// Now pop should work
+	app.PopDetail()
+}
+
+func TestApp_GoBack(t *testing.T) {
+	app := createTestApp(t)
+
+	// goBack is unexported, but we can test the exported PopDetail
+	// which internally handles going back in detail views
+
+	// Push a detail view first
+	box := tview.NewBox()
+	app.PushDetail("test-detail", box)
+
+	// PopDetail should work
+	app.PopDetail()
+}
+
+func TestApp_PageNavigation(t *testing.T) {
+	// pageMove, goToTop, goToBottom, goToRow are unexported methods
+	// They work on the internal table selection
+	// We can only test that table navigation works via exported methods
+
+	styles := DefaultStyles()
+	table := NewTable(styles)
+
+	table.SetColumns([]Column{{Title: "Name", Expand: true}})
+	table.SetData(
+		[][]string{{"Item 1"}, {"Item 2"}, {"Item 3"}},
+		[]RowMeta{{ID: "id-1"}, {ID: "id-2"}, {ID: "id-3"}},
+	)
+
+	// Test table selection
+	table.Select(1, 0)
+	row, _ := table.GetSelection()
+	if row != 1 {
+		t.Errorf("After Select(1, 0), row = %d, want 1", row)
+	}
+
+	table.Select(2, 0)
+	row, _ = table.GetSelection()
+	if row != 2 {
+		t.Errorf("After Select(2, 0), row = %d, want 2", row)
+	}
+}
+
+func TestApp_NavigateView(t *testing.T) {
+	// navigateTo is unexported, but we can test views creation directly
+	views := []string{"messages", "events", "contacts", "webhooks", "grants", "dashboard", "drafts", "availability"}
+
+	for _, viewName := range views {
+		t.Run(viewName, func(t *testing.T) {
+			app := createTestApp(t)
+
+			// createView is unexported, but views are created automatically
+			// via command processing. Test that getCurrentView works after init.
+			view := app.getCurrentView()
+			if view == nil {
+				t.Fatal("getCurrentView() returned nil")
+			}
+
+			// Verify default is dashboard
+			if view.Name() != "dashboard" {
+				t.Errorf("Default view = %q, want dashboard", view.Name())
+			}
+		})
+	}
+}
+
+func TestApp_SetFocus(t *testing.T) {
+	app := createTestApp(t)
+
+	// SetFocus on a primitive should not panic
+	box := tview.NewBox()
+	app.SetFocus(box)
+}
+
+func TestApp_Styles(t *testing.T) {
+	app := createTestApp(t)
+
+	// Styles should return the styles
+	styles := app.Styles()
+	if styles == nil {
+		t.Error("Styles() returned nil")
+	}
+}
+
+func TestPageStack_PushPop(t *testing.T) {
+	stack := NewPageStack()
+
+	// Create dummy primitives
+	box1 := tview.NewBox()
+	box2 := tview.NewBox()
+	box3 := tview.NewBox()
+
+	// Push items
+	stack.Push("page1", box1)
+	stack.Push("page2", box2)
+	stack.Push("page3", box3)
+
+	if stack.Len() != 3 {
+		t.Errorf("Len() = %d, want 3", stack.Len())
+	}
+
+	if stack.Top() != "page3" {
+		t.Errorf("Top() = %q, want %q", stack.Top(), "page3")
+	}
+
+	// Pop items
+	popped := stack.Pop()
+	if popped != "page3" {
+		t.Errorf("Pop() = %q, want %q", popped, "page3")
+	}
+
+	if stack.Len() != 2 {
+		t.Errorf("After pop, Len() = %d, want 2", stack.Len())
+	}
+
+	// Pop remaining
+	stack.Pop()
+	stack.Pop()
+
+	// Pop on empty should return empty string
+	popped = stack.Pop()
+	if popped != "" {
+		t.Errorf("Pop() on empty stack = %q, want empty string", popped)
+	}
+}
+
+func TestPageStack_HasPage(t *testing.T) {
+	stack := NewPageStack()
+
+	box1 := tview.NewBox()
+	box2 := tview.NewBox()
+
+	stack.Push("page1", box1)
+	stack.Push("page2", box2)
+
+	// PageStack embeds tview.Pages which has HasPage method
+	if !stack.HasPage("page1") {
+		t.Error("HasPage(page1) = false, want true")
+	}
+
+	if !stack.HasPage("page2") {
+		t.Error("HasPage(page2) = false, want true")
+	}
+
+	if stack.HasPage("page3") {
+		t.Error("HasPage(page3) = true, want false")
+	}
+}
+
+func TestPageStack_SwitchTo(t *testing.T) {
+	stack := NewPageStack()
+
+	// Push pages
+	box1 := tview.NewBox()
+	box2 := tview.NewBox()
+
+	stack.Push("page1", box1)
+	stack.Push("page2", box2)
+
+	if stack.Len() != 2 {
+		t.Errorf("Len() = %d, want 2", stack.Len())
+	}
+
+	// Top should return current page name
+	if stack.Top() != "page2" {
+		t.Errorf("Top() = %q, want %q", stack.Top(), "page2")
+	}
+
+	// SwitchTo an existing page
+	stack.SwitchTo("page1", box1)
+	if stack.Top() != "page1" {
+		t.Errorf("After SwitchTo(page1), Top() = %q, want page1", stack.Top())
+	}
+
+	// SwitchTo a new page
+	box3 := tview.NewBox()
+	stack.SwitchTo("page3", box3)
+	if stack.Top() != "page3" {
+		t.Errorf("After SwitchTo(page3), Top() = %q, want page3", stack.Top())
+	}
+
+	// Pop
+	stack.Pop()
+	if stack.Top() != "page1" {
+		t.Errorf("After pop, Top() = %q, want page1", stack.Top())
+	}
+}
+
+func TestTable_SelectedMeta(t *testing.T) {
+	styles := DefaultStyles()
+	table := NewTable(styles)
+
+	table.SetColumns([]Column{{Title: "Name", Expand: true}})
+	table.SetData(
+		[][]string{{"Item 1"}, {"Item 2"}},
+		[]RowMeta{{ID: "id-1"}, {ID: "id-2"}},
+	)
+
+	// Select first row (row 1, since row 0 is header)
+	table.Select(1, 0)
+
+	meta := table.SelectedMeta()
+	if meta == nil {
+		t.Fatal("SelectedMeta() returned nil")
+	}
+	if meta.ID != "id-1" {
+		t.Errorf("SelectedMeta().ID = %q, want %q", meta.ID, "id-1")
+	}
+}
+
+func TestTable_SetData(t *testing.T) {
+	styles := DefaultStyles()
+	table := NewTable(styles)
+
+	table.SetColumns([]Column{{Title: "Name", Expand: true}})
+
+	// Verify initial state
+	initialCount := table.GetRowCount()
+
+	// Set data
+	table.SetData(
+		[][]string{{"Item 1"}, {"Item 2"}},
+		[]RowMeta{{ID: "id-1"}, {ID: "id-2"}},
+	)
+
+	// Verify data was set
+	afterCount := table.GetRowCount()
+	if afterCount <= initialCount {
+		t.Errorf("After SetData(), GetRowCount() = %d, should be > %d", afterCount, initialCount)
+	}
+}
+
+func TestTable_GetRowCount(t *testing.T) {
+	styles := DefaultStyles()
+	table := NewTable(styles)
+
+	table.SetColumns([]Column{{Title: "Name", Expand: true}})
+	table.SetData(
+		[][]string{{"Item 1"}, {"Item 2"}, {"Item 3"}},
+		[]RowMeta{{ID: "id-1"}, {ID: "id-2"}, {ID: "id-3"}},
+	)
+
+	// GetRowCount should return the count including header
+	count := table.GetRowCount()
+	if count < 3 {
+		t.Errorf("GetRowCount() = %d, want >= 3", count)
+	}
+}
+
+func TestCommandRegistry(t *testing.T) {
+	registry := NewCommandRegistry()
+
+	if registry == nil {
+		t.Fatal("NewCommandRegistry() returned nil")
+	}
+
+	// Get all commands
+	commands := registry.GetAll()
+	if len(commands) == 0 {
+		t.Error("GetAll() returned empty list")
+	}
+
+	// Get specific command
+	cmd := registry.Get("q")
+	if cmd == nil {
+		t.Error("Get('q') should find quit command")
+	} else if cmd.Name != "quit" {
+		t.Errorf("Get('q').Name = %q, want %q", cmd.Name, "quit")
+	}
+
+	// Get non-existent command
+	cmd = registry.Get("nonexistent")
+	if cmd != nil {
+		t.Error("Get('nonexistent') should return nil")
+	}
+
+	// Test Search
+	results := registry.Search("quit")
+	if len(results) == 0 {
+		t.Error("Search('quit') returned empty list")
+	}
+}
+
+func TestStyles_DefaultStyles(t *testing.T) {
+	styles := DefaultStyles()
+
+	if styles == nil {
+		t.Fatal("DefaultStyles() returned nil")
+	}
+
+	// Verify some key colors are set
+	if styles.BgColor == 0 {
+		t.Error("BgColor not set")
+	}
+	if styles.FgColor == 0 {
+		t.Error("FgColor not set")
+	}
+}
+
+func TestCalendarView_Focus(t *testing.T) {
+	app := createTestApp(t)
+	view := NewCalendarView(app)
+
+	// Focus should not panic
+	view.Focus(nil)
+
+	// HasFocus may return true or false depending on initialization
+	// Just verify it doesn't panic
+	_ = view.HasFocus()
+}
+
+func TestCalendarView_SetOnEventSelect(t *testing.T) {
+	app := createTestApp(t)
+	view := NewCalendarView(app)
+
+	view.SetOnEventSelect(func(event *domain.Event) {
+		// callback set
+	})
+
+	if view.onEventSelect == nil {
+		t.Error("SetOnEventSelect did not set callback")
+	}
+}
+
+func TestCalendarView_InputHandler(t *testing.T) {
+	app := createTestApp(t)
+	view := NewCalendarView(app)
+
+	// Test various keys
+	keys := []struct {
+		key  tcell.Key
+		rune rune
+		desc string
+	}{
+		{tcell.KeyLeft, 0, "left arrow"},
+		{tcell.KeyRight, 0, "right arrow"},
+		{tcell.KeyUp, 0, "up arrow"},
+		{tcell.KeyDown, 0, "down arrow"},
+		{tcell.KeyRune, 'h', "h key"},
+		{tcell.KeyRune, 'l', "l key"},
+		{tcell.KeyRune, 'j', "j key"},
+		{tcell.KeyRune, 'k', "k key"},
+		{tcell.KeyRune, 'H', "H key (prev month)"},
+		{tcell.KeyRune, 'L', "L key (next month)"},
+		{tcell.KeyRune, 't', "t key (today)"},
+		{tcell.KeyRune, 'v', "v key (toggle view)"},
+		{tcell.KeyRune, 'm', "m key (month view)"},
+		{tcell.KeyRune, 'w', "w key (week view)"},
+		{tcell.KeyRune, 'a', "a key (agenda view)"},
+		{tcell.KeyRune, ']', "] key (next calendar)"},
+		{tcell.KeyRune, '[', "[ key (prev calendar)"},
+		{tcell.KeyEnter, 0, "enter key"},
+	}
+
+	handler := view.InputHandler()
+	if handler == nil {
+		t.Fatal("InputHandler() returned nil")
+	}
+
+	for _, k := range keys {
+		t.Run(k.desc, func(t *testing.T) {
+			event := tcell.NewEventKey(k.key, k.rune, tcell.ModNone)
+			// Should not panic
+			handler(event, nil)
+		})
+	}
+}
+
+func TestDashboardView(t *testing.T) {
+	app := createTestApp(t)
+	view := NewDashboardView(app)
+
+	if view == nil {
+		t.Fatal("NewDashboardView() returned nil")
+	}
+
+	if view.Name() != "dashboard" {
+		t.Errorf("Name() = %q, want %q", view.Name(), "dashboard")
+	}
+
+	if view.Title() != "Dashboard" {
+		t.Errorf("Title() = %q, want %q", view.Title(), "Dashboard")
+	}
+
+	// Load should not panic
+	view.Load()
+
+	// Filter should not panic
+	view.Filter("test")
+
+	// Refresh should not panic
+	view.Refresh()
+}
+
+func TestContactsView(t *testing.T) {
+	app := createTestApp(t)
+	view := NewContactsView(app)
+
+	if view == nil {
+		t.Fatal("NewContactsView() returned nil")
+	}
+
+	if view.Name() != "contacts" {
+		t.Errorf("Name() = %q, want %q", view.Name(), "contacts")
+	}
+
+	// Test keys
+	keys := []struct {
+		key  tcell.Key
+		rune rune
+	}{
+		{tcell.KeyRune, 'n'}, // New contact
+		{tcell.KeyRune, 'e'}, // Edit
+		{tcell.KeyRune, 'd'}, // Delete
+		{tcell.KeyEnter, 0},  // View
+		{tcell.KeyRune, 'r'}, // Refresh
+	}
+
+	for _, k := range keys {
+		event := tcell.NewEventKey(k.key, k.rune, tcell.ModNone)
+		// Should not panic
+		_ = view.HandleKey(event)
+	}
+}
+
+func TestWebhooksView(t *testing.T) {
+	app := createTestApp(t)
+	view := NewWebhooksView(app)
+
+	if view == nil {
+		t.Fatal("NewWebhooksView() returned nil")
+	}
+
+	if view.Name() != "webhooks" {
+		t.Errorf("Name() = %q, want %q", view.Name(), "webhooks")
+	}
+
+	// Test keys
+	keys := []struct {
+		key  tcell.Key
+		rune rune
+	}{
+		{tcell.KeyRune, 'n'}, // New webhook
+		{tcell.KeyRune, 'e'}, // Edit
+		{tcell.KeyRune, 'd'}, // Delete
+		{tcell.KeyEnter, 0},  // View
+		{tcell.KeyRune, 'r'}, // Refresh
+	}
+
+	for _, k := range keys {
+		event := tcell.NewEventKey(k.key, k.rune, tcell.ModNone)
+		_ = view.HandleKey(event)
+	}
+}
+
+func TestAvailabilityView_FullInterface(t *testing.T) {
+	app := createTestApp(t)
+	view := NewAvailabilityView(app)
+
+	// Test ResourceView interface
+	if view.Name() != "availability" {
+		t.Errorf("Name() = %q, want %q", view.Name(), "availability")
+	}
+
+	if view.Title() != "Availability" {
+		t.Errorf("Title() = %q, want %q", view.Title(), "Availability")
+	}
+
+	if view.Primitive() == nil {
+		t.Error("Primitive() returned nil")
+	}
+
+	hints := view.Hints()
+	if len(hints) == 0 {
+		t.Error("Hints() returned empty")
+	}
+
+	// Filter should not panic
+	view.Filter("test")
+}
+
+func TestDraftsView(t *testing.T) {
+	app := createTestApp(t)
+	view := NewDraftsView(app)
+
+	if view == nil {
+		t.Fatal("NewDraftsView() returned nil")
+	}
+
+	if view.Name() != "drafts" {
+		t.Errorf("Name() = %q, want %q", view.Name(), "drafts")
+	}
+
+	// Load should not panic
+	view.Load()
+
+	// Test keys
+	keys := []struct {
+		key  tcell.Key
+		rune rune
+	}{
+		{tcell.KeyRune, 'n'}, // New draft
+		{tcell.KeyRune, 'e'}, // Edit
+		{tcell.KeyRune, 'd'}, // Delete
+		{tcell.KeyEnter, 0},  // View/Edit
+		{tcell.KeyRune, 'r'}, // Refresh
+	}
+
+	for _, k := range keys {
+		event := tcell.NewEventKey(k.key, k.rune, tcell.ModNone)
+		_ = view.HandleKey(event)
+	}
 }

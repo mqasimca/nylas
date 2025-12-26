@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"html"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -139,20 +142,52 @@ func (v *DashboardView) Load() {
 // Messages View (Thread-based)
 // ============================================================================
 
+// AttachmentInfo holds attachment metadata for download reference.
+type AttachmentInfo struct {
+	MessageID  string
+	Attachment domain.Attachment
+}
+
 // MessagesView displays email threads (conversations).
 type MessagesView struct {
 	*BaseTableView
-	threads        []domain.Thread
-	showingDetail  bool
-	currentThread  *domain.Thread
-	currentMessage *domain.Message // For reply functionality
+	threads         []domain.Thread
+	showingDetail   bool
+	currentThread   *domain.Thread
+	currentMessage  *domain.Message // For reply functionality
+	attachments     []AttachmentInfo // All attachments in current thread
+	folderPanel     *FolderPanel
+	currentFolderID string
+	currentFolder   string // Display name for current folder
+	showingFolders  bool
+	layout          *tview.Flex // Main layout with optional folder panel
 }
 
 // NewMessagesView creates a new messages view.
 func NewMessagesView(app *App) *MessagesView {
 	v := &MessagesView{
-		BaseTableView: newBaseTableView(app, "messages", "Messages"),
+		BaseTableView:   newBaseTableView(app, "messages", "Inbox"),
+		currentFolder:   "Inbox",
+		currentFolderID: "", // Will use INBOX by default in Load()
 	}
+
+	// Create folder panel with callback for folder selection
+	v.folderPanel = NewFolderPanel(app, func(folder *domain.Folder) {
+		v.currentFolderID = folder.ID
+		v.currentFolder = folder.Name
+		if folder.SystemFolder != "" {
+			v.currentFolder = v.folderPanel.getSystemFolderName(folder.SystemFolder)
+		}
+		v.title = v.currentFolder
+		v.showingFolders = false
+		v.updateLayout()
+		app.SetFocus(v.table)
+		v.Load()
+	})
+
+	// Create layout
+	v.layout = tview.NewFlex()
+	v.updateLayout()
 
 	v.hints = []Hint{
 		{Key: "enter", Desc: "view"},
@@ -160,6 +195,7 @@ func NewMessagesView(app *App) *MessagesView {
 		{Key: "R", Desc: "reply"},
 		{Key: "s", Desc: "star"},
 		{Key: "u", Desc: "unread"},
+		{Key: "F", Desc: "folders"},
 		{Key: "r", Desc: "refresh"},
 	}
 
@@ -184,10 +220,23 @@ func NewMessagesView(app *App) *MessagesView {
 func (v *MessagesView) Load() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	// Default to INBOX folder to show only inbox threads
+
+	// Load folders if not already loaded
+	if len(v.folderPanel.folders) == 0 {
+		v.folderPanel.Load()
+	}
+
+	// Build folder filter - use folder ID if set, otherwise default to INBOX
+	var folderFilter []string
+	if v.currentFolderID != "" {
+		folderFilter = []string{v.currentFolderID}
+	} else {
+		folderFilter = []string{"INBOX"}
+	}
+
 	params := &domain.ThreadQueryParams{
 		Limit: 50,
-		In:    []string{"INBOX"},
+		In:    folderFilter,
 	}
 	threads, err := v.app.config.Client.GetThreads(ctx, v.app.config.GrantID, params)
 	if err != nil {
@@ -198,6 +247,22 @@ func (v *MessagesView) Load() {
 	v.render()
 }
 
+// updateLayout rebuilds the layout based on folder panel visibility.
+func (v *MessagesView) updateLayout() {
+	v.layout.Clear()
+	if v.showingFolders {
+		v.layout.AddItem(v.folderPanel, 30, 0, true)
+		v.layout.AddItem(v.table, 0, 1, false)
+	} else {
+		v.layout.AddItem(v.table, 0, 1, true)
+	}
+}
+
+// Primitive returns the root primitive for this view.
+func (v *MessagesView) Primitive() tview.Primitive {
+	return v.layout
+}
+
 func (v *MessagesView) Refresh() {
 	v.Load()
 }
@@ -206,18 +271,16 @@ func (v *MessagesView) render() {
 	var data [][]string
 	var meta []RowMeta
 
+	// Parse search query if filter is set
+	var searchQuery *SearchQuery
+	if v.filter != "" {
+		searchQuery = ParseSearchQuery(v.filter)
+	}
+
 	for _, thread := range v.threads {
-		// Apply filter
-		if v.filter != "" {
-			subject := strings.ToLower(thread.Subject)
-			participants := ""
-			if len(thread.Participants) > 0 {
-				participants = strings.ToLower(thread.Participants[0].Email)
-			}
-			if !strings.Contains(subject, strings.ToLower(v.filter)) &&
-				!strings.Contains(participants, strings.ToLower(v.filter)) {
-				continue
-			}
+		// Apply search filter
+		if searchQuery != nil && !searchQuery.MatchesThread(&thread) {
+			continue
 		}
 
 		// Get the primary participant (first one, typically the sender)
@@ -254,6 +317,24 @@ func (v *MessagesView) render() {
 }
 
 func (v *MessagesView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
+	// If folder panel is showing, delegate to it
+	if v.showingFolders {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			v.showingFolders = false
+			v.updateLayout()
+			v.app.SetFocus(v.table)
+			return nil
+		case tcell.KeyTab:
+			// Tab switches between folder panel and message list
+			v.app.SetFocus(v.table)
+			return nil
+		default:
+			// Let folder panel handle other keys
+			return v.folderPanel.handleInput(event)
+		}
+	}
+
 	switch event.Key() {
 	case tcell.KeyEscape:
 		// If showing detail, close it and return nil to indicate we handled it
@@ -262,6 +343,14 @@ func (v *MessagesView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 		// Otherwise, let app handle the Escape
+		return event
+
+	case tcell.KeyTab:
+		// Tab toggles folder panel when not showing detail
+		if !v.showingDetail && v.showingFolders {
+			v.app.SetFocus(v.folderPanel)
+			return nil
+		}
 		return event
 
 	case tcell.KeyEnter:
@@ -296,6 +385,16 @@ func (v *MessagesView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 			return nil
 		case 'u':
 			v.markUnread()
+			return nil
+		case 'F':
+			// Toggle folder panel
+			v.showingFolders = !v.showingFolders
+			v.updateLayout()
+			if v.showingFolders {
+				v.app.SetFocus(v.folderPanel)
+			} else {
+				v.app.SetFocus(v.table)
+			}
 			return nil
 		}
 	}
@@ -407,6 +506,9 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 		v.app.QueueUpdateDraw(func() {
 			detail.Clear()
 
+			// Clear attachments list
+			v.attachments = nil
+
 			fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
 			fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
 			fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
@@ -425,7 +527,27 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 					}
 
 					fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
-					fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+					fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+
+					// Display attachments if any
+					if len(msg.Attachments) > 0 {
+						fmt.Fprintf(detail, "[%s]Attachments:[-]", key)
+						for _, att := range msg.Attachments {
+							if att.IsInline {
+								continue // Skip inline attachments (images in HTML)
+							}
+							// Track attachment with its message ID
+							attachmentIdx := len(v.attachments)
+							v.attachments = append(v.attachments, AttachmentInfo{
+								MessageID:  msg.ID,
+								Attachment: att,
+							})
+							sizeStr := formatFileSize(att.Size)
+							fmt.Fprintf(detail, " [%s][%d] %s (%s)[-]", hint, attachmentIdx+1, att.Filename, sizeStr)
+						}
+						fmt.Fprintln(detail)
+					}
+					fmt.Fprintln(detail)
 
 					// Use full body, strip HTML for terminal display
 					body := msg.Body
@@ -442,7 +564,13 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 				}
 			}
 
-			fmt.Fprintf(detail, "[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-][%s]Esc[-][%s::d]=back[-::-]", hint, muted, hint, muted, hint, muted)
+			// Build help line based on available actions
+			helpLine := fmt.Sprintf("[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-]", hint, muted, hint, muted)
+			if len(v.attachments) > 0 {
+				helpLine += fmt.Sprintf("[%s]D[-][%s::d]=download  [-::-]", hint, muted)
+			}
+			helpLine += fmt.Sprintf("[%s]Esc[-][%s::d]=back[-::-]", hint, muted)
+			fmt.Fprint(detail, helpLine)
 		})
 	}()
 
@@ -466,6 +594,11 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 					v.showCompose(ComposeModeReplyAll, v.currentMessage)
 				}
 				return nil
+			case 'D':
+				if len(v.attachments) > 0 {
+					v.showDownloadDialog()
+				}
+				return nil
 			}
 		}
 		return event
@@ -481,6 +614,7 @@ func (v *MessagesView) closeDetail() {
 	v.showingDetail = false
 	v.currentThread = nil
 	v.currentMessage = nil
+	v.attachments = nil
 	v.app.SetFocus(v.table)
 }
 
@@ -506,6 +640,146 @@ func (v *MessagesView) showCompose(mode ComposeMode, replyTo *domain.Message) {
 	})
 
 	v.app.PushDetail("compose", compose)
+}
+
+func (v *MessagesView) showDownloadDialog() {
+	if len(v.attachments) == 0 {
+		return
+	}
+
+	styles := v.app.styles
+
+	// Create list for attachment selection
+	list := tview.NewList()
+	list.SetBackgroundColor(styles.BgColor)
+	list.SetMainTextColor(styles.FgColor)
+	list.SetSecondaryTextColor(styles.InfoColor)
+	list.SetSelectedBackgroundColor(styles.FocusColor)
+	list.SetSelectedTextColor(styles.BgColor)
+	list.SetBorder(true)
+	list.SetBorderColor(styles.FocusColor)
+	list.SetTitle(" Download Attachment ")
+	list.SetTitleColor(styles.TitleFg)
+
+	// Add attachments to list
+	for i, attInfo := range v.attachments {
+		idx := i
+		att := attInfo.Attachment
+		msgID := attInfo.MessageID
+		sizeStr := formatFileSize(att.Size)
+		list.AddItem(
+			fmt.Sprintf("%s (%s)", att.Filename, sizeStr),
+			att.ContentType,
+			rune('1'+i),
+			func() {
+				v.downloadAttachment(msgID, att.ID, att.Filename, idx+1)
+			},
+		)
+	}
+
+	// Handle Escape to close
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			v.app.PopDetail()
+			return nil
+		}
+		return event
+	})
+
+	// Center the list
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(nil, 0, 1, false).
+			AddItem(list, 60, 0, true).
+			AddItem(nil, 0, 1, false), 0, 2, true).
+		AddItem(nil, 0, 1, false)
+
+	v.app.PushDetail("download-dialog", flex)
+	v.app.SetFocus(list)
+}
+
+func (v *MessagesView) downloadAttachment(messageID, attachmentID, filename string, displayNum int) {
+	v.app.Flash(FlashInfo, "Downloading %s...", filename)
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+
+		reader, err := v.app.config.Client.DownloadAttachment(ctx, v.app.config.GrantID, messageID, attachmentID)
+		if err != nil {
+			v.app.QueueUpdateDraw(func() {
+				v.app.Flash(FlashError, "Download failed: %v", err)
+			})
+			return
+		}
+		defer reader.Close()
+
+		// Get Downloads directory
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			v.app.QueueUpdateDraw(func() {
+				v.app.Flash(FlashError, "Cannot find home directory: %v", err)
+			})
+			return
+		}
+		downloadDir := filepath.Join(homeDir, "Downloads")
+
+		// Ensure download directory exists
+		if err := os.MkdirAll(downloadDir, 0750); err != nil {
+			v.app.QueueUpdateDraw(func() {
+				v.app.Flash(FlashError, "Cannot create Downloads directory: %v", err)
+			})
+			return
+		}
+
+		// Create file with unique name if exists
+		destPath := filepath.Join(downloadDir, filename)
+		destPath = v.getUniqueFilename(destPath)
+
+		file, err := os.Create(destPath)
+		if err != nil {
+			v.app.QueueUpdateDraw(func() {
+				v.app.Flash(FlashError, "Cannot create file: %v", err)
+			})
+			return
+		}
+		defer file.Close()
+
+		// Copy content
+		written, err := io.Copy(file, reader)
+		if err != nil {
+			v.app.QueueUpdateDraw(func() {
+				v.app.Flash(FlashError, "Download failed: %v", err)
+			})
+			return
+		}
+
+		v.app.QueueUpdateDraw(func() {
+			v.app.PopDetail() // Close download dialog
+			v.app.Flash(FlashInfo, "Downloaded %s (%s) to %s", filename, formatFileSize(written), destPath)
+		})
+	}()
+}
+
+func (v *MessagesView) getUniqueFilename(path string) string {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return path
+	}
+
+	dir := filepath.Dir(path)
+	ext := filepath.Ext(path)
+	name := strings.TrimSuffix(filepath.Base(path), ext)
+
+	for i := 1; i < 1000; i++ {
+		newPath := filepath.Join(dir, fmt.Sprintf("%s (%d)%s", name, i, ext))
+		if _, err := os.Stat(newPath); os.IsNotExist(err) {
+			return newPath
+		}
+	}
+
+	// Fallback: append timestamp
+	return filepath.Join(dir, fmt.Sprintf("%s_%d%s", name, time.Now().Unix(), ext))
 }
 
 // ============================================================================
@@ -564,6 +838,7 @@ func (v *EventsView) Filter(string)              {}
 func (v *EventsView) Hints() []Hint {
 	return []Hint{
 		{Key: "enter", Desc: "view day"},
+		{Key: "n", Desc: "new event"},
 		{Key: "c/C", Desc: "switch/list cal"},
 		{Key: "m", Desc: "month"},
 		{Key: "w", Desc: "week"},
@@ -671,7 +946,13 @@ func (v *EventsView) updateEventsList(date time.Time) {
 
 		// Event entry
 		fmt.Fprintf(v.eventsList, "[%s]%s[-]\n", info, timeStr)
-		fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n", eventColor, evt.Title)
+
+		// Title with recurring indicator
+		title := evt.Title
+		if isRecurringEvent(&evt) {
+			title = "🔁 " + title
+		}
+		fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n", eventColor, title)
 
 		// Location
 		if evt.Location != "" {
@@ -717,6 +998,9 @@ func (v *EventsView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 
 	case tcell.KeyRune:
 		switch event.Rune() {
+		case 'n': // New event
+			v.createNewEvent()
+			return nil
 		case 'C': // Show calendar list
 			v.showCalendarList()
 			return nil
@@ -766,12 +1050,31 @@ func (v *EventsView) showCalendarList() {
 			secondary = secondary[:37] + "..."
 		}
 
+		// Add description if available
+		if cal.Description != "" {
+			desc := cal.Description
+			if len(desc) > 30 {
+				desc = desc[:27] + "..."
+			}
+			secondary = desc + " | " + secondary
+		}
+
+		// Add color indicator
+		if cal.HexColor != "" {
+			name = "■ " + name // Color square (will be colored in custom draw)
+		}
+
 		// Mark primary and current
 		if cal.IsPrimary {
 			name = "★ " + name
 		}
 		if currentCal != nil && cal.ID == currentCal.ID {
 			name = "● " + name
+		}
+
+		// Add read-only indicator
+		if cal.ReadOnly {
+			name = name + " [RO]"
 		}
 
 		idx := i // Capture for closure
@@ -797,89 +1100,553 @@ func (v *EventsView) showCalendarList() {
 	v.app.SetFocus(list)
 }
 
+func (v *EventsView) createNewEvent() {
+	calendarID := v.calendar.GetCurrentCalendarID()
+	if calendarID == "" {
+		v.app.Flash(FlashWarn, "No calendar selected")
+		return
+	}
+
+	v.app.ShowEventForm(calendarID, nil, func(event *domain.Event) {
+		// Refresh events after creation
+		go func() {
+			v.loadEventsForCalendar(calendarID)
+			v.app.QueueUpdateDraw(func() {})
+		}()
+	})
+}
+
 func (v *EventsView) showDayDetail() {
 	date := v.calendar.GetSelectedDate()
 	events := v.calendar.GetEventsForDate(date)
 
 	if len(events) == 0 {
-		v.app.Flash(FlashInfo, "No events on %s", date.Format("Jan 2"))
+		v.app.Flash(FlashInfo, "No events on %s - press 'n' to create one", date.Format("Jan 2"))
 		return
 	}
 
-	// Create detail view
-	detail := tview.NewTextView()
-	detail.SetDynamicColors(true)
-	detail.SetBackgroundColor(v.app.styles.BgColor)
-	detail.SetBorderPadding(1, 1, 2, 2)
-	detail.SetScrollable(true)
+	// Create a list for event selection (supports edit/delete)
+	list := tview.NewList()
+	list.SetBackgroundColor(v.app.styles.BgColor)
+	list.SetBorder(true)
+	list.SetBorderColor(v.app.styles.FocusColor)
+	list.SetTitle(fmt.Sprintf(" %s (%d events) ", date.Format("Jan 2, 2006"), len(events)))
+	list.SetTitleColor(v.app.styles.TitleFg)
+	list.ShowSecondaryText(true)
+	list.SetHighlightFullLine(true)
+	list.SetSelectedBackgroundColor(v.app.styles.TableSelectBg)
+	list.SetSelectedTextColor(v.app.styles.TableSelectFg)
+	list.SetMainTextColor(v.app.styles.FgColor)
+	list.SetSecondaryTextColor(v.app.styles.BorderColor)
 
-	title := colorToHex(v.app.styles.TitleFg)
-	info := colorToHex(v.app.styles.InfoColor)
-	key := colorToHex(v.app.styles.FgColor)
-	value := colorToHex(v.app.styles.InfoSectionFg)
-	muted := colorToHex(v.app.styles.BorderColor)
-
-	dateStr := date.Format("Monday, January 2, 2006")
-	fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, dateStr)
-	fmt.Fprintf(detail, "[%s]%d event(s)[-]\n\n", muted, len(events))
+	calendarID := v.calendar.GetCurrentCalendarID()
 
 	for i, evt := range events {
-		fmt.Fprintf(detail, "[%s::b]%d. %s[-::-]\n", info, i+1, evt.Title)
+		// Build main text
+		title := evt.Title
+		if evt.When.IsAllDay() {
+			title = "📅 " + title
+		}
+		// Add recurring indicator
+		if isRecurringEvent(&evt) {
+			title = "🔁 " + title
+		}
 
-		// Time
+		// Build secondary text with time
 		timeStr := "All day"
 		if !evt.When.IsAllDay() {
 			start := evt.When.StartDateTime()
 			end := evt.When.EndDateTime()
 			timeStr = fmt.Sprintf("%s - %s", start.Format("3:04 PM"), end.Format("3:04 PM"))
 		}
-		fmt.Fprintf(detail, "[%s]Time:[-] [%s]%s[-]\n", key, value, timeStr)
-
-		// Location
+		secondary := timeStr
 		if evt.Location != "" {
-			fmt.Fprintf(detail, "[%s]Location:[-] [%s]%s[-]\n", key, value, evt.Location)
+			secondary += " | 📍 " + evt.Location
 		}
 
-		// Description
-		if evt.Description != "" {
-			desc := evt.Description
-			if len(desc) > 200 {
-				desc = desc[:200] + "..."
-			}
-			fmt.Fprintf(detail, "[%s]Description:[-] [%s]%s[-]\n", key, value, desc)
-		}
+		// Capture event for closure
+		eventCopy := events[i]
 
-		// Participants
-		if len(evt.Participants) > 0 {
-			fmt.Fprintf(detail, "[%s]Participants:[-]\n", key)
-			for _, p := range evt.Participants {
-				name := p.Name
-				if name == "" {
-					name = p.Email
+		list.AddItem(title, secondary, 0, func() {
+			// Show event detail on Enter
+			v.showEventDetail(&eventCopy)
+		})
+	}
+
+	// Handle keyboard events
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			v.app.PopDetail()
+			v.app.SetFocus(v.calendar)
+			return nil
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'e': // Edit selected event
+				idx := list.GetCurrentItem()
+				if idx >= 0 && idx < len(events) {
+					evt := events[idx]
+					if isRecurringEvent(&evt) {
+						// Show dialog for recurring event
+						v.showRecurringEventEditDialog(calendarID, &evt, list)
+					} else {
+						v.app.PopDetail()
+						v.app.ShowEventForm(calendarID, &evt, func(updatedEvent *domain.Event) {
+							go func() {
+								v.loadEventsForCalendar(calendarID)
+								v.app.QueueUpdateDraw(func() {})
+							}()
+						})
+					}
 				}
-				status := p.Status
-				if status == "" {
-					status = "pending"
+				return nil
+			case 'd': // Delete selected event
+				idx := list.GetCurrentItem()
+				if idx >= 0 && idx < len(events) {
+					evt := events[idx]
+					if isRecurringEvent(&evt) {
+						// Show dialog for recurring event
+						v.showRecurringEventDeleteDialog(calendarID, &evt, list)
+					} else {
+						v.app.PopDetail()
+						v.app.DeleteEvent(calendarID, &evt, func() {
+							go func() {
+								v.loadEventsForCalendar(calendarID)
+								v.app.QueueUpdateDraw(func() {})
+							}()
+						})
+					}
 				}
-				fmt.Fprintf(detail, "  [%s]• %s (%s)[-]\n", value, name, status)
+				return nil
+			case 'n': // New event
+				v.app.PopDetail()
+				v.createNewEvent()
+				return nil
 			}
 		}
+		return event
+	})
 
-		// Conferencing
-		if evt.Conferencing != nil && evt.Conferencing.Details != nil && evt.Conferencing.Details.URL != "" {
-			fmt.Fprintf(detail, "[%s]Meeting:[-] [%s]%s[-]\n", key, value, evt.Conferencing.Details.URL)
-		}
+	// Push list onto page stack
+	v.app.PushDetail("day-detail", list)
+	v.app.SetFocus(list)
+}
 
-		if i < len(events)-1 {
-			fmt.Fprintf(detail, "\n[%s]════════════════════════════════════════[-]\n\n", muted)
+func (v *EventsView) showEventDetail(evt *domain.Event) {
+	// Create detailed view of a single event
+	detail := tview.NewTextView()
+	detail.SetDynamicColors(true)
+	detail.SetBackgroundColor(v.app.styles.BgColor)
+	detail.SetBorder(true)
+	detail.SetBorderColor(v.app.styles.FocusColor)
+	detail.SetTitle(fmt.Sprintf(" %s ", evt.Title))
+	detail.SetTitleColor(v.app.styles.TitleFg)
+	detail.SetBorderPadding(1, 1, 2, 2)
+	detail.SetScrollable(true)
+
+	info := colorToHex(v.app.styles.InfoColor)
+	key := colorToHex(v.app.styles.FgColor)
+	value := colorToHex(v.app.styles.InfoSectionFg)
+	muted := colorToHex(v.app.styles.BorderColor)
+
+	// Time
+	var timeStr string
+	if !evt.When.IsAllDay() {
+		start := evt.When.StartDateTime()
+		end := evt.When.EndDateTime()
+		dateStr := start.Format("Monday, January 2, 2006")
+		timeStr = fmt.Sprintf("%s\n%s - %s", dateStr, start.Format("3:04 PM"), end.Format("3:04 PM"))
+	} else {
+		timeStr = evt.When.StartDateTime().Format("Monday, January 2, 2006") + " (All day)"
+	}
+	fmt.Fprintf(detail, "[%s::b]When[-::-]\n[%s]%s[-]\n\n", info, value, timeStr)
+
+	// Location
+	if evt.Location != "" {
+		fmt.Fprintf(detail, "[%s::b]Location[-::-]\n[%s]%s[-]\n\n", info, value, evt.Location)
+	}
+
+	// Description
+	if evt.Description != "" {
+		fmt.Fprintf(detail, "[%s::b]Description[-::-]\n[%s]%s[-]\n\n", info, value, evt.Description)
+	}
+
+	// Participants
+	if len(evt.Participants) > 0 {
+		fmt.Fprintf(detail, "[%s::b]Participants[-::-]\n", info)
+		for _, p := range evt.Participants {
+			name := p.Name
+			if name == "" {
+				name = p.Email
+			}
+			status := p.Status
+			if status == "" {
+				status = "pending"
+			}
+			statusIcon := "⏳"
+			switch status {
+			case "yes":
+				statusIcon = "✓"
+			case "no":
+				statusIcon = "✗"
+			case "maybe":
+				statusIcon = "?"
+			}
+			fmt.Fprintf(detail, "[%s]  %s %s[-]\n", value, statusIcon, name)
 		}
+		fmt.Fprintln(detail)
+	}
+
+	// Conferencing
+	if evt.Conferencing != nil && evt.Conferencing.Details != nil && evt.Conferencing.Details.URL != "" {
+		fmt.Fprintf(detail, "[%s::b]Meeting Link[-::-]\n[%s]%s[-]\n\n", info, value, evt.Conferencing.Details.URL)
+	}
+
+	// Recurrence
+	if isRecurringEvent(evt) {
+		fmt.Fprintf(detail, "[%s::b]Recurrence[-::-]\n", info)
+		if len(evt.Recurrence) > 0 {
+			recurrenceStr := formatRecurrenceRule(evt.Recurrence)
+			if recurrenceStr != "" {
+				fmt.Fprintf(detail, "[%s]🔁 %s[-]\n\n", value, recurrenceStr)
+			} else {
+				fmt.Fprintf(detail, "[%s]🔁 Recurring event[-]\n\n", value)
+			}
+		} else if evt.MasterEventID != "" {
+			fmt.Fprintf(detail, "[%s]🔁 Instance of recurring event[-]\n\n", value)
+		}
+	}
+
+	// Status
+	fmt.Fprintf(detail, "[%s]Status:[-] [%s]%s[-]\n", key, value, evt.Status)
+	if evt.Busy {
+		fmt.Fprintf(detail, "[%s]Availability:[-] [%s]Busy[-]\n", key, value)
+	} else {
+		fmt.Fprintf(detail, "[%s]Availability:[-] [%s]Free[-]\n", key, value)
 	}
 
 	fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back[-::-]", muted)
 
-	// Push detail onto page stack
-	v.app.PushDetail("day-detail", detail)
+	// Handle escape
+	detail.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			v.app.PopDetail()
+			return nil
+		}
+		return event
+	})
+
+	v.app.PushDetail("event-detail", detail)
+	v.app.SetFocus(detail)
 }
+
+func (v *EventsView) showRecurringEventEditDialog(calendarID string, evt *domain.Event, parentList *tview.List) {
+	// Create a simple list for the options
+	optionsList := tview.NewList()
+	optionsList.SetBackgroundColor(v.app.styles.BgColor)
+	optionsList.SetBorder(true)
+	optionsList.SetBorderColor(v.app.styles.FocusColor)
+	optionsList.SetTitle(" Edit Recurring Event ")
+	optionsList.SetTitleColor(v.app.styles.TitleFg)
+	optionsList.ShowSecondaryText(true)
+	optionsList.SetHighlightFullLine(true)
+	optionsList.SetSelectedBackgroundColor(v.app.styles.TableSelectBg)
+	optionsList.SetSelectedTextColor(v.app.styles.TableSelectFg)
+	optionsList.SetMainTextColor(v.app.styles.FgColor)
+	optionsList.SetSecondaryTextColor(v.app.styles.BorderColor)
+
+	eventCopy := *evt
+
+	// Add options
+	optionsList.AddItem("Edit this occurrence", "Only modify this instance", '1', func() {
+		v.app.PopDetail() // Close options dialog
+		v.app.PopDetail() // Close day detail
+		// For editing a single occurrence, we pass the event as-is
+		// The API will handle creating an exception
+		v.app.ShowEventForm(calendarID, &eventCopy, func(updatedEvent *domain.Event) {
+			go func() {
+				v.loadEventsForCalendar(calendarID)
+				v.app.QueueUpdateDraw(func() {})
+			}()
+		})
+	})
+
+	optionsList.AddItem("Edit all occurrences", "Modify the entire series", '2', func() {
+		v.app.PopDetail() // Close options dialog
+		v.app.PopDetail() // Close day detail
+		// For editing the series, we need to use the master event ID if available
+		editEvt := &eventCopy
+		if eventCopy.MasterEventID != "" {
+			// This is an instance - we'd need to fetch the master event
+			// For now, just edit the current event which will prompt the API behavior
+			v.app.Flash(FlashInfo, "Editing series from instance...")
+		}
+		v.app.ShowEventForm(calendarID, editEvt, func(updatedEvent *domain.Event) {
+			go func() {
+				v.loadEventsForCalendar(calendarID)
+				v.app.QueueUpdateDraw(func() {})
+			}()
+		})
+	})
+
+	optionsList.AddItem("Cancel", "Go back", 'c', func() {
+		v.app.PopDetail()
+	})
+
+	// Handle escape
+	optionsList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			v.app.PopDetail()
+			return nil
+		}
+		return event
+	})
+
+	v.app.PushDetail("recurring-edit-options", optionsList)
+	v.app.SetFocus(optionsList)
+}
+
+func (v *EventsView) showRecurringEventDeleteDialog(calendarID string, evt *domain.Event, parentList *tview.List) {
+	// Create a simple list for the options
+	optionsList := tview.NewList()
+	optionsList.SetBackgroundColor(v.app.styles.BgColor)
+	optionsList.SetBorder(true)
+	optionsList.SetBorderColor(v.app.styles.FocusColor)
+	optionsList.SetTitle(" Delete Recurring Event ")
+	optionsList.SetTitleColor(v.app.styles.TitleFg)
+	optionsList.ShowSecondaryText(true)
+	optionsList.SetHighlightFullLine(true)
+	optionsList.SetSelectedBackgroundColor(v.app.styles.TableSelectBg)
+	optionsList.SetSelectedTextColor(v.app.styles.TableSelectFg)
+	optionsList.SetMainTextColor(v.app.styles.FgColor)
+	optionsList.SetSecondaryTextColor(v.app.styles.BorderColor)
+
+	eventCopy := *evt
+
+	// Add options
+	optionsList.AddItem("Delete this occurrence", "Only remove this instance", '1', func() {
+		v.app.PopDetail() // Close options dialog
+		v.app.PopDetail() // Close day detail
+		v.app.ShowConfirmDialog("Delete Occurrence",
+			fmt.Sprintf("Delete this occurrence of '%s'?", eventCopy.Title),
+			func() {
+				v.app.DeleteEvent(calendarID, &eventCopy, func() {
+					go func() {
+						v.loadEventsForCalendar(calendarID)
+						v.app.QueueUpdateDraw(func() {})
+					}()
+				})
+			})
+	})
+
+	optionsList.AddItem("Delete all occurrences", "Remove the entire series", '2', func() {
+		v.app.PopDetail() // Close options dialog
+		v.app.PopDetail() // Close day detail
+		v.app.ShowConfirmDialog("Delete Series",
+			fmt.Sprintf("Delete all occurrences of '%s'? This cannot be undone.", eventCopy.Title),
+			func() {
+				// For deleting the series, we use the master event ID if available
+				deleteEvt := &eventCopy
+				if eventCopy.MasterEventID != "" {
+					deleteEvt = &domain.Event{ID: eventCopy.MasterEventID}
+				}
+				v.app.DeleteEvent(calendarID, deleteEvt, func() {
+					go func() {
+						v.loadEventsForCalendar(calendarID)
+						v.app.QueueUpdateDraw(func() {})
+					}()
+				})
+			})
+	})
+
+	optionsList.AddItem("Cancel", "Go back", 'c', func() {
+		v.app.PopDetail()
+	})
+
+	// Handle escape
+	optionsList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			v.app.PopDetail()
+			return nil
+		}
+		return event
+	})
+
+	v.app.PushDetail("recurring-delete-options", optionsList)
+	v.app.SetFocus(optionsList)
+}
+
+// isRecurringEvent returns true if the event is recurring.
+func isRecurringEvent(evt *domain.Event) bool {
+	return len(evt.Recurrence) > 0 || evt.MasterEventID != ""
+}
+
+// formatRecurrenceRule formats an RRULE string into a human-readable format.
+func formatRecurrenceRule(rules []string) string {
+	if len(rules) == 0 {
+		return ""
+	}
+
+	// Find the first RRULE
+	var rule string
+	for _, r := range rules {
+		if len(r) >= 6 && r[:6] == "RRULE:" {
+			rule = r[6:]
+			break
+		}
+		if len(r) > 0 && r[0] != 'E' { // Not EXDATE
+			rule = r
+			break
+		}
+	}
+
+	if rule == "" {
+		return ""
+	}
+
+	// Parse the RRULE
+	parts := make(map[string]string)
+	for _, part := range splitRRuleParts(rule) {
+		if idx := indexByte(part, '='); idx > 0 {
+			parts[part[:idx]] = part[idx+1:]
+		}
+	}
+
+	freq := parts["FREQ"]
+	interval := parts["INTERVAL"]
+	if interval == "" {
+		interval = "1"
+	}
+	byday := parts["BYDAY"]
+	count := parts["COUNT"]
+	until := parts["UNTIL"]
+
+	// Build human-readable string
+	var result string
+	switch freq {
+	case "DAILY":
+		if interval == "1" {
+			result = "Every day"
+		} else {
+			result = "Every " + interval + " days"
+		}
+	case "WEEKLY":
+		if interval == "1" {
+			result = "Every week"
+		} else {
+			result = "Every " + interval + " weeks"
+		}
+		if byday != "" {
+			result += " on " + formatDays(byday)
+		}
+	case "MONTHLY":
+		if interval == "1" {
+			result = "Every month"
+		} else {
+			result = "Every " + interval + " months"
+		}
+	case "YEARLY":
+		if interval == "1" {
+			result = "Every year"
+		} else {
+			result = "Every " + interval + " years"
+		}
+	default:
+		result = rule
+	}
+
+	// Add end condition
+	if count != "" {
+		result += " (" + count + " times)"
+	} else if until != "" {
+		// Parse UNTIL date (format: YYYYMMDD or YYYYMMDDTHHmmssZ)
+		if len(until) >= 8 {
+			result += " until " + until[:4] + "-" + until[4:6] + "-" + until[6:8]
+		}
+	}
+
+	return result
+}
+
+// splitRRuleParts splits an RRULE into its component parts.
+func splitRRuleParts(rule string) []string {
+	var parts []string
+	start := 0
+	for i := 0; i < len(rule); i++ {
+		if rule[i] == ';' {
+			parts = append(parts, rule[start:i])
+			start = i + 1
+		}
+	}
+	if start < len(rule) {
+		parts = append(parts, rule[start:])
+	}
+	return parts
+}
+
+// indexByte returns the index of the first occurrence of c in s, or -1 if not found.
+func indexByte(s string, c byte) int {
+	for i := 0; i < len(s); i++ {
+		if s[i] == c {
+			return i
+		}
+	}
+	return -1
+}
+
+// formatDays formats BYDAY values into human-readable day names.
+func formatDays(byday string) string {
+	dayMap := map[string]string{
+		"SU": "Sun", "MO": "Mon", "TU": "Tue", "WE": "Wed",
+		"TH": "Thu", "FR": "Fri", "SA": "Sat",
+	}
+
+	var days []string
+	for _, part := range splitByComma(byday) {
+		// Handle numeric prefix (e.g., "1MO" for first Monday)
+		day := part
+		if len(part) > 2 {
+			day = part[len(part)-2:]
+		}
+		if name, ok := dayMap[day]; ok {
+			days = append(days, name)
+		}
+	}
+
+	if len(days) == 0 {
+		return byday
+	}
+	return joinStrings(days, ", ")
+}
+
+// splitByComma splits a string by comma.
+func splitByComma(s string) []string {
+	var parts []string
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == ',' {
+			parts = append(parts, s[start:i])
+			start = i + 1
+		}
+	}
+	if start < len(s) {
+		parts = append(parts, s[start:])
+	}
+	return parts
+}
+
+// joinStrings joins strings with a separator.
+func joinStrings(strs []string, sep string) string {
+	if len(strs) == 0 {
+		return ""
+	}
+	result := strs[0]
+	for i := 1; i < len(strs); i++ {
+		result += sep + strs[i]
+	}
+	return result
+}
+
 
 // ============================================================================
 // Contacts View
@@ -899,6 +1666,9 @@ func NewContactsView(app *App) *ContactsView {
 
 	v.hints = []Hint{
 		{Key: "enter", Desc: "view"},
+		{Key: "n", Desc: "new"},
+		{Key: "e", Desc: "edit"},
+		{Key: "d", Desc: "delete"},
 		{Key: "r", Desc: "refresh"},
 	}
 
@@ -953,6 +1723,154 @@ func (v *ContactsView) render() {
 	v.table.SetData(data, meta)
 }
 
+// HandleKey handles keyboard input for contacts view.
+func (v *ContactsView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyEnter:
+		// View contact detail
+		if idx, _ := v.table.GetSelection(); idx > 0 && idx-1 < len(v.contacts) {
+			v.showContactDetail(&v.contacts[idx-1])
+		}
+		return nil
+
+	case tcell.KeyRune:
+		switch event.Rune() {
+		case 'n': // New contact
+			v.app.ShowContactForm(nil, func(contact *domain.Contact) {
+				v.Refresh()
+			})
+			return nil
+
+		case 'e': // Edit selected contact
+			if idx, _ := v.table.GetSelection(); idx > 0 && idx-1 < len(v.contacts) {
+				contact := v.contacts[idx-1]
+				v.app.ShowContactForm(&contact, func(updatedContact *domain.Contact) {
+					v.Refresh()
+				})
+			}
+			return nil
+
+		case 'd': // Delete selected contact
+			if idx, _ := v.table.GetSelection(); idx > 0 && idx-1 < len(v.contacts) {
+				contact := v.contacts[idx-1]
+				v.app.DeleteContact(&contact, func() {
+					v.Refresh()
+				})
+			}
+			return nil
+		}
+	}
+
+	return event
+}
+
+func (v *ContactsView) showContactDetail(contact *domain.Contact) {
+	detail := tview.NewTextView()
+	detail.SetDynamicColors(true)
+	detail.SetBackgroundColor(v.app.styles.BgColor)
+	detail.SetBorder(true)
+	detail.SetBorderColor(v.app.styles.FocusColor)
+	detail.SetTitle(fmt.Sprintf(" %s ", contact.DisplayName()))
+	detail.SetTitleColor(v.app.styles.TitleFg)
+	detail.SetBorderPadding(1, 1, 2, 2)
+	detail.SetScrollable(true)
+
+	info := colorToHex(v.app.styles.InfoColor)
+	value := colorToHex(v.app.styles.InfoSectionFg)
+	muted := colorToHex(v.app.styles.BorderColor)
+
+	// Name
+	if contact.GivenName != "" || contact.Surname != "" {
+		fmt.Fprintf(detail, "[%s::b]Name[-::-]\n", info)
+		if contact.GivenName != "" {
+			fmt.Fprintf(detail, "[%s]%s[-]", value, contact.GivenName)
+		}
+		if contact.Surname != "" {
+			if contact.GivenName != "" {
+				fmt.Fprintf(detail, "[%s] %s[-]", value, contact.Surname)
+			} else {
+				fmt.Fprintf(detail, "[%s]%s[-]", value, contact.Surname)
+			}
+		}
+		fmt.Fprintln(detail)
+	}
+
+	// Emails
+	if len(contact.Emails) > 0 {
+		fmt.Fprintf(detail, "[%s::b]Email[-::-]\n", info)
+		for _, e := range contact.Emails {
+			typeStr := e.Type
+			if typeStr == "" {
+				typeStr = "other"
+			}
+			fmt.Fprintf(detail, "[%s]%s[-] [%s](%s)[-]\n", value, e.Email, muted, typeStr)
+		}
+		fmt.Fprintln(detail)
+	}
+
+	// Phone numbers
+	if len(contact.PhoneNumbers) > 0 {
+		fmt.Fprintf(detail, "[%s::b]Phone[-::-]\n", info)
+		for _, p := range contact.PhoneNumbers {
+			typeStr := p.Type
+			if typeStr == "" {
+				typeStr = "other"
+			}
+			fmt.Fprintf(detail, "[%s]%s[-] [%s](%s)[-]\n", value, p.Number, muted, typeStr)
+		}
+		fmt.Fprintln(detail)
+	}
+
+	// Company
+	if contact.CompanyName != "" || contact.JobTitle != "" {
+		fmt.Fprintf(detail, "[%s::b]Work[-::-]\n", info)
+		if contact.JobTitle != "" {
+			fmt.Fprintf(detail, "[%s]%s[-]\n", value, contact.JobTitle)
+		}
+		if contact.CompanyName != "" {
+			fmt.Fprintf(detail, "[%s]%s[-]\n", value, contact.CompanyName)
+		}
+		fmt.Fprintln(detail)
+	}
+
+	// Notes
+	if contact.Notes != "" {
+		fmt.Fprintf(detail, "[%s::b]Notes[-::-]\n", info)
+		fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, contact.Notes)
+	}
+
+	fmt.Fprintf(detail, "\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)
+
+	// Handle keyboard
+	contactCopy := contact
+	detail.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			v.app.PopDetail()
+			return nil
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'e':
+				v.app.PopDetail()
+				v.app.ShowContactForm(contactCopy, func(updatedContact *domain.Contact) {
+					v.Refresh()
+				})
+				return nil
+			case 'd':
+				v.app.PopDetail()
+				v.app.DeleteContact(contactCopy, func() {
+					v.Refresh()
+				})
+				return nil
+			}
+		}
+		return event
+	})
+
+	v.app.PushDetail("contact-detail", detail)
+	v.app.SetFocus(detail)
+}
+
 // ============================================================================
 // Webhooks View
 // ============================================================================
@@ -971,6 +1889,9 @@ func NewWebhooksView(app *App) *WebhooksView {
 
 	v.hints = []Hint{
 		{Key: "enter", Desc: "view"},
+		{Key: "n", Desc: "new"},
+		{Key: "e", Desc: "edit"},
+		{Key: "d", Desc: "delete"},
 		{Key: "r", Desc: "refresh"},
 	}
 
@@ -1018,6 +1939,143 @@ func (v *WebhooksView) render() {
 	}
 
 	v.table.SetData(data, meta)
+}
+
+// HandleKey handles keyboard input for webhooks view.
+func (v *WebhooksView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyEnter:
+		// View webhook detail
+		if idx, _ := v.table.GetSelection(); idx > 0 && idx-1 < len(v.webhooks) {
+			v.showWebhookDetail(&v.webhooks[idx-1])
+		}
+		return nil
+
+	case tcell.KeyRune:
+		switch event.Rune() {
+		case 'n': // New webhook
+			v.app.ShowWebhookForm(nil, func(webhook *domain.Webhook) {
+				v.Refresh()
+			})
+			return nil
+
+		case 'e': // Edit selected webhook
+			if idx, _ := v.table.GetSelection(); idx > 0 && idx-1 < len(v.webhooks) {
+				webhook := v.webhooks[idx-1]
+				v.app.ShowWebhookForm(&webhook, func(updatedWebhook *domain.Webhook) {
+					v.Refresh()
+				})
+			}
+			return nil
+
+		case 'd': // Delete selected webhook
+			if idx, _ := v.table.GetSelection(); idx > 0 && idx-1 < len(v.webhooks) {
+				webhook := v.webhooks[idx-1]
+				v.app.DeleteWebhook(&webhook, func() {
+					v.Refresh()
+				})
+			}
+			return nil
+		}
+	}
+
+	return event
+}
+
+func (v *WebhooksView) showWebhookDetail(webhook *domain.Webhook) {
+	detail := tview.NewTextView()
+	detail.SetDynamicColors(true)
+	detail.SetBackgroundColor(v.app.styles.BgColor)
+	detail.SetBorder(true)
+	detail.SetBorderColor(v.app.styles.FocusColor)
+
+	titleStr := webhook.Description
+	if titleStr == "" {
+		titleStr = webhook.ID
+	}
+	detail.SetTitle(fmt.Sprintf(" Webhook: %s ", titleStr))
+	detail.SetTitleColor(v.app.styles.TitleFg)
+	detail.SetBorderPadding(1, 1, 2, 2)
+	detail.SetScrollable(true)
+
+	info := colorToHex(v.app.styles.InfoColor)
+	value := colorToHex(v.app.styles.InfoSectionFg)
+	muted := colorToHex(v.app.styles.BorderColor)
+	success := colorToHex(v.app.styles.SuccessColor)
+	errColor := colorToHex(v.app.styles.ErrorColor)
+
+	// URL
+	fmt.Fprintf(detail, "[%s::b]Webhook URL[-::-]\n", info)
+	fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, webhook.WebhookURL)
+
+	// Status
+	fmt.Fprintf(detail, "[%s::b]Status[-::-]\n", info)
+	statusColor := success
+	if webhook.Status != "active" {
+		statusColor = errColor
+	}
+	fmt.Fprintf(detail, "[%s]%s[-]\n\n", statusColor, webhook.Status)
+
+	// Description
+	if webhook.Description != "" {
+		fmt.Fprintf(detail, "[%s::b]Description[-::-]\n", info)
+		fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, webhook.Description)
+	}
+
+	// Trigger types
+	fmt.Fprintf(detail, "[%s::b]Trigger Types[-::-]\n", info)
+	for _, trigger := range webhook.TriggerTypes {
+		fmt.Fprintf(detail, "[%s]  • %s[-]\n", value, trigger)
+	}
+	fmt.Fprintln(detail)
+
+	// Notification emails
+	if len(webhook.NotificationEmailAddresses) > 0 {
+		fmt.Fprintf(detail, "[%s::b]Notification Emails[-::-]\n", info)
+		for _, email := range webhook.NotificationEmailAddresses {
+			fmt.Fprintf(detail, "[%s]  • %s[-]\n", value, email)
+		}
+		fmt.Fprintln(detail)
+	}
+
+	// Dates
+	if !webhook.CreatedAt.IsZero() {
+		fmt.Fprintf(detail, "[%s]Created:[-] [%s]%s[-]\n", muted, value, webhook.CreatedAt.Format("Jan 2, 2006 3:04 PM"))
+	}
+	if !webhook.UpdatedAt.IsZero() {
+		fmt.Fprintf(detail, "[%s]Updated:[-] [%s]%s[-]\n", muted, value, webhook.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
+	}
+
+	fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)
+
+	// Handle keyboard
+	webhookCopy := webhook
+	detail.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			v.app.PopDetail()
+			return nil
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'e':
+				v.app.PopDetail()
+				v.app.ShowWebhookForm(webhookCopy, func(updatedWebhook *domain.Webhook) {
+					v.Refresh()
+				})
+				return nil
+			case 'd':
+				v.app.PopDetail()
+				v.app.DeleteWebhook(webhookCopy, func() {
+					v.Refresh()
+				})
+				return nil
+			}
+		}
+		return event
+	})
+
+	v.app.PushDetail("webhook-detail", detail)
+	v.app.SetFocus(detail)
 }
 
 // ============================================================================
@@ -1443,81 +2501,6 @@ func (v *InboundView) closeDetail() {
 }
 
 // ============================================================================
-// Help View
-// ============================================================================
-
-// NewHelpView creates a help overlay.
-func NewHelpView(styles *Styles) *tview.TextView {
-	help := tview.NewTextView()
-	help.SetDynamicColors(true)
-	help.SetBackgroundColor(styles.BgColor)
-	help.SetBorder(true)
-	help.SetBorderColor(styles.FocusColor)
-	help.SetTitle(" Help (vim-style) ")
-	help.SetTitleColor(styles.TitleFg)
-	help.SetScrollable(true)
-
-	info := colorToHex(styles.FgColor)
-	warn := colorToHex(styles.InfoColor)
-	muted := colorToHex(styles.BorderColor)
-
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s::b]Vim Navigation[-::-]\n", warn)
-	fmt.Fprintf(help, "  [%s]j/↓[-]       Move down\n", info)
-	fmt.Fprintf(help, "  [%s]k/↑[-]       Move up\n", info)
-	fmt.Fprintf(help, "  [%s]gg[-]        Go to first row\n", info)
-	fmt.Fprintf(help, "  [%s]G[-]         Go to last row\n", info)
-	fmt.Fprintf(help, "  [%s]Ctrl+d[-]    Half page down\n", info)
-	fmt.Fprintf(help, "  [%s]Ctrl+u[-]    Half page up\n", info)
-	fmt.Fprintf(help, "  [%s]Ctrl+f[-]    Full page down\n", info)
-	fmt.Fprintf(help, "  [%s]Ctrl+b[-]    Full page up\n", info)
-	fmt.Fprintf(help, "  [%s]:N[-]        Jump to row N (e.g. :5)\n", info)
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s::b]Vim Commands[-::-]\n", warn)
-	fmt.Fprintf(help, "  [%s]:q[-]        Quit\n", info)
-	fmt.Fprintf(help, "  [%s]:q![-]       Force quit\n", info)
-	fmt.Fprintf(help, "  [%s]:wq[-]       Save and quit\n", info)
-	fmt.Fprintf(help, "  [%s]:h[-]        Show help\n", info)
-	fmt.Fprintf(help, "  [%s]:e <view>[-] Open view (e.g. :e messages)\n", info)
-	fmt.Fprintf(help, "  [%s]/[-]         Filter/search\n", info)
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s::b]Actions[-::-]\n", warn)
-	fmt.Fprintf(help, "  [%s]dd[-]        Delete item\n", info)
-	fmt.Fprintf(help, "  [%s]x[-]         Delete item\n", info)
-	fmt.Fprintf(help, "  [%s]:star[-]     Star message\n", info)
-	fmt.Fprintf(help, "  [%s]:unread[-]   Mark as unread\n", info)
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s::b]Messages[-::-]\n", warn)
-	fmt.Fprintf(help, "  [%s]n[-]         New/compose email\n", info)
-	fmt.Fprintf(help, "  [%s]R[-]         Reply to message\n", info)
-	fmt.Fprintf(help, "  [%s]A[-]         Reply all\n", info)
-	fmt.Fprintf(help, "  [%s]s[-]         Toggle star\n", info)
-	fmt.Fprintf(help, "  [%s]u[-]         Mark as unread\n", info)
-	fmt.Fprintf(help, "  [%s]:reply[-]    Reply (command mode)\n", info)
-	fmt.Fprintf(help, "  [%s]:compose[-]  New message (command mode)\n", info)
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s::b]Resource Navigation[-::-]\n", warn)
-	fmt.Fprintf(help, "  [%s]:m[-]        Messages\n", info)
-	fmt.Fprintf(help, "  [%s]:e[-]        Events/Calendar\n", info)
-	fmt.Fprintf(help, "  [%s]:c[-]        Contacts\n", info)
-	fmt.Fprintf(help, "  [%s]:i[-]        Inbound inboxes\n", info)
-	fmt.Fprintf(help, "  [%s]:w[-]        Webhooks\n", info)
-	fmt.Fprintf(help, "  [%s]:ws[-]       Webhook Server\n", info)
-	fmt.Fprintf(help, "  [%s]:g[-]        Grants\n", info)
-	fmt.Fprintf(help, "  [%s]:d[-]        Dashboard\n", info)
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s::b]General[-::-]\n", warn)
-	fmt.Fprintf(help, "  [%s]r[-]         Refresh\n", info)
-	fmt.Fprintf(help, "  [%s]?[-]         Show help\n", info)
-	fmt.Fprintf(help, "  [%s]Esc[-]       Go back\n", info)
-	fmt.Fprintf(help, "  [%s]Ctrl+C[-]    Quit\n", info)
-	fmt.Fprintf(help, "\n")
-	fmt.Fprintf(help, "  [%s]Press any key to close[-]\n", muted)
-
-	return help
-}
-
-// ============================================================================
 // Helpers
 // ============================================================================
 
@@ -1530,6 +2513,25 @@ func formatDate(t time.Time) string {
 		return t.Format("Jan 2")
 	}
 	return t.Format("Jan 2, 06")
+}
+
+// formatFileSize formats a file size in bytes to a human-readable string.
+func formatFileSize(size int64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+	switch {
+	case size >= GB:
+		return fmt.Sprintf("%.1f GB", float64(size)/float64(GB))
+	case size >= MB:
+		return fmt.Sprintf("%.1f MB", float64(size)/float64(MB))
+	case size >= KB:
+		return fmt.Sprintf("%.1f KB", float64(size)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", size)
+	}
 }
 
 // stripHTMLForTUI removes HTML tags from a string for terminal display.
