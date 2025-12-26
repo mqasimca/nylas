@@ -13,7 +13,7 @@ import (
 
 // Helper to create demo server for handler tests
 func newTestDemoServer() *Server {
-	return NewDemoServer(":3003")
+	return NewDemoServer(":7365")
 }
 
 // ================================

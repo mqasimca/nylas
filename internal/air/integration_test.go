@@ -95,7 +95,7 @@ func testServer(t *testing.T) *Server {
 	}
 
 	return &Server{
-		addr:        ":3003",
+		addr:        ":7365",
 		demoMode:    false,
 		configSvc:   configSvc,
 		configStore: configStore,

@@ -91,10 +91,10 @@ func TestHandleCategorizeEmail(t *testing.T) {
 	server := &Server{demoMode: true}
 
 	testCases := []struct {
-		name       string
-		from       string
-		subject    string
-		wantCat    InboxCategory
+		name    string
+		from    string
+		subject string
+		wantCat InboxCategory
 	}{
 		{"newsletter", "newsletter@example.com", "Weekly Update", CategoryNewsletters},
 		{"social", "notifications@linkedin.com", "New connection", CategorySocial},
@@ -456,9 +456,9 @@ func TestParseNaturalDuration(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		input    string
-		wantErr  bool
-		checkFn  func(int64) bool
+		input   string
+		wantErr bool
+		checkFn func(int64) bool
 	}{
 		{"1h", false, func(ts int64) bool { return ts > now.Unix() && ts <= now.Add(2*time.Hour).Unix() }},
 		{"2d", false, func(ts int64) bool { return ts > now.Add(24*time.Hour).Unix() }},
@@ -1412,9 +1412,9 @@ func TestFilterWorkflow_VIPFilterClientSide(t *testing.T) {
 
 	// Mock emails with sender info
 	mockEmails := []struct {
-		id         string
-		fromEmail  string
-		subject    string
+		id          string
+		fromEmail   string
+		subject     string
 		shouldBeVIP bool
 	}{
 		{"1", "boss@company.com", "Meeting tomorrow", true},
@@ -1513,9 +1513,9 @@ func TestFilterWorkflow_SwitchBetweenFilters(t *testing.T) {
 		fromEmail string
 		unread    bool
 	}{
-		{"1", "boss@company.com", true},  // VIP + Unread
-		{"2", "boss@company.com", false}, // VIP only
-		{"3", "other@example.com", true}, // Unread only
+		{"1", "boss@company.com", true},   // VIP + Unread
+		{"2", "boss@company.com", false},  // VIP only
+		{"3", "other@example.com", true},  // Unread only
 		{"4", "other@example.com", false}, // Neither
 	}
 

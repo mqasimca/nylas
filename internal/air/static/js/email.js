@@ -606,6 +606,18 @@ const EmailListManager = {
                     </svg>
                     Delete
                 </button>
+                <button class="action-btn ai-btn" id="summarizeBtn-${email.id}" onclick="EmailListManager.summarizeWithAI('${email.id}')" title="Summarize with AI">
+                    <svg class="ai-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                    <svg class="ai-spinner" width="16" height="16" viewBox="0 0 24 24" style="display:none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10">
+                            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                        </circle>
+                    </svg>
+                    <span class="ai-btn-text">✨ Summarize</span>
+                </button>
             </div>
             ${email.attachments && email.attachments.length > 0 ? `
                 <div class="email-detail-attachments">
@@ -742,6 +754,162 @@ const EmailListManager = {
             : this.emails.find(e => e.id === emailId);
         if (email && typeof ComposeManager !== 'undefined') {
             ComposeManager.openForward(email);
+        }
+    },
+
+    // Summarize email with AI
+    async summarizeWithAI(emailId) {
+        // Check if AI provider is configured
+        if (typeof settingsState === 'undefined' || !settingsState.aiProvider) {
+            if (typeof showToast === 'function') {
+                showToast('warning', 'AI Not Configured', 'Please select an AI provider in Settings');
+            }
+            // Open settings modal
+            if (typeof toggleSettings === 'function') {
+                toggleSettings();
+            }
+            return;
+        }
+
+        const email = this.selectedEmailFull && this.selectedEmailFull.id === emailId
+            ? this.selectedEmailFull
+            : this.emails.find(e => e.id === emailId);
+
+        if (!email) {
+            if (typeof showToast === 'function') {
+                showToast('error', 'Error', 'Email not found');
+            }
+            return;
+        }
+
+        // Get button and show loading state
+        const btn = document.getElementById(`summarizeBtn-${emailId}`);
+        if (btn) {
+            btn.classList.add('loading');
+            btn.disabled = true;
+            const icon = btn.querySelector('.ai-icon');
+            const spinner = btn.querySelector('.ai-spinner');
+            const text = btn.querySelector('.ai-btn-text');
+            if (icon) icon.style.display = 'none';
+            if (spinner) spinner.style.display = 'block';
+            if (text) text.textContent = 'Summarizing...';
+        }
+
+        // Extract plain text from email body
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = email.body || '';
+        const plainText = tempDiv.textContent || tempDiv.innerText || '';
+
+        // Build prompt for Claude Code
+        const prompt = `Please summarize this email:
+
+From: ${email.from?.map(f => f.name || f.email).join(', ') || 'Unknown'}
+Subject: ${email.subject || '(No Subject)'}
+Date: ${new Date(email.date * 1000).toLocaleString()}
+
+---
+${plainText.substring(0, 3000)}${plainText.length > 3000 ? '...' : ''}
+---
+
+Provide a brief summary with:
+1. Key points
+2. Action items (if any)
+3. Sentiment`;
+
+        try {
+            const response = await fetch('/api/ai/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email_id: emailId, prompt: prompt })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Show summary in a modal
+                this.showAISummaryModal(email.subject, result.summary);
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast('error', 'AI Error', result.error || 'Failed to summarize');
+                }
+            }
+        } catch (err) {
+            console.error('AI summarize error:', err);
+            if (typeof showToast === 'function') {
+                showToast('error', 'Error', 'Failed to connect to Claude Code');
+            }
+        } finally {
+            // Reset button state
+            if (btn) {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                const icon = btn.querySelector('.ai-icon');
+                const spinner = btn.querySelector('.ai-spinner');
+                const text = btn.querySelector('.ai-btn-text');
+                if (icon) icon.style.display = 'block';
+                if (spinner) spinner.style.display = 'none';
+                if (text) text.textContent = '✨ Summarize';
+            }
+        }
+    },
+
+    // Show AI summary in a modal
+    showAISummaryModal(subject, summary) {
+        // Check if modal already exists
+        let modal = document.getElementById('aiSummaryModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'aiSummaryModal';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal ai-summary-modal">
+                    <div class="modal-header">
+                        <h3>✨ AI Summary</h3>
+                        <button class="close-btn" onclick="EmailListManager.closeAISummaryModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="summary-subject"></div>
+                        <div class="summary-content"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="EmailListManager.copyAISummary()">Copy Summary</button>
+                        <button class="btn btn-primary" onclick="EmailListManager.closeAISummaryModal()">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Update content
+        modal.querySelector('.summary-subject').textContent = subject || '(No Subject)';
+        modal.querySelector('.summary-content').textContent = summary;
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+
+        // Store summary for copying
+        this.currentSummary = summary;
+    },
+
+    // Close AI summary modal
+    closeAISummaryModal() {
+        const modal = document.getElementById('aiSummaryModal');
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 200);
+        }
+    },
+
+    // Copy AI summary to clipboard
+    async copyAISummary() {
+        if (this.currentSummary) {
+            try {
+                await navigator.clipboard.writeText(this.currentSummary);
+                if (typeof showToast === 'function') {
+                    showToast('success', 'Copied', 'Summary copied to clipboard');
+                }
+            } catch (err) {
+                console.error('Copy error:', err);
+            }
         }
     }
 };

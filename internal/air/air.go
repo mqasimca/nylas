@@ -39,7 +39,7 @@ Air provides:
   - Optional encryption for cached data
 
 The client runs locally on your machine for privacy and performance.`,
-		Example: `  # Launch Air on default port (3003)
+		Example: `  # Launch Air on default port (7365)
   nylas air
 
   # Launch on custom port
@@ -111,7 +111,7 @@ The client runs locally on your machine for privacy and performance.`,
 		},
 	}
 
-	cmd.Flags().IntVarP(&port, "port", "p", 3003, "Port to run the server on")
+	cmd.Flags().IntVarP(&port, "port", "p", 7365, "Port to run the server on")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Don't open browser automatically")
 	cmd.Flags().BoolVar(&clearCache, "clear-cache", false, "Clear all cached data before starting")
 	cmd.Flags().BoolVar(&encrypted, "encrypted", false, "Enable encryption for cached data (uses system keyring)")

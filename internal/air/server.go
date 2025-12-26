@@ -47,16 +47,16 @@ type Server struct {
 	onlineMu      sync.RWMutex                   // Protects isOnline
 
 	// Productivity features (Phase 6)
-	splitInboxConfig *SplitInboxConfig          // Split inbox configuration
-	splitInboxMu     sync.RWMutex               // Protects splitInboxConfig
-	snoozedEmails    map[string]SnoozedEmail    // Snoozed emails by email ID
-	snoozeMu         sync.RWMutex               // Protects snoozedEmails
-	undoSendConfig   *UndoSendConfig            // Undo send configuration
-	undoSendMu       sync.RWMutex               // Protects undoSendConfig
-	pendingSends     map[string]PendingSend     // Pending sends in grace period
-	pendingSendMu    sync.RWMutex               // Protects pendingSends
-	emailTemplates   map[string]EmailTemplate   // Email templates
-	templatesMu      sync.RWMutex               // Protects emailTemplates
+	splitInboxConfig *SplitInboxConfig        // Split inbox configuration
+	splitInboxMu     sync.RWMutex             // Protects splitInboxConfig
+	snoozedEmails    map[string]SnoozedEmail  // Snoozed emails by email ID
+	snoozeMu         sync.RWMutex             // Protects snoozedEmails
+	undoSendConfig   *UndoSendConfig          // Undo send configuration
+	undoSendMu       sync.RWMutex             // Protects undoSendConfig
+	pendingSends     map[string]PendingSend   // Pending sends in grace period
+	pendingSendMu    sync.RWMutex             // Protects pendingSends
+	emailTemplates   map[string]EmailTemplate // Email templates
+	templatesMu      sync.RWMutex             // Protects emailTemplates
 }
 
 // NewServer creates a new Air server.
@@ -146,12 +146,12 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/send", s.handleSendMessage)  // POST to send directly
 
 	// API routes - Calendar (Phase 4)
-	mux.HandleFunc("/api/calendars", s.handleListCalendars)     // GET calendars
-	mux.HandleFunc("/api/events", s.handleEventsRoute)          // GET list, POST create
-	mux.HandleFunc("/api/events/conflicts", s.handleConflicts)  // GET conflicts for time range
-	mux.HandleFunc("/api/events/", s.handleEventByID)           // GET, PUT, DELETE by ID
-	mux.HandleFunc("/api/availability", s.handleAvailability)   // GET/POST find available times
-	mux.HandleFunc("/api/freebusy", s.handleFreeBusy)           // GET/POST free/busy info
+	mux.HandleFunc("/api/calendars", s.handleListCalendars)    // GET calendars
+	mux.HandleFunc("/api/events", s.handleEventsRoute)         // GET list, POST create
+	mux.HandleFunc("/api/events/conflicts", s.handleConflicts) // GET conflicts for time range
+	mux.HandleFunc("/api/events/", s.handleEventByID)          // GET, PUT, DELETE by ID
+	mux.HandleFunc("/api/availability", s.handleAvailability)  // GET/POST find available times
+	mux.HandleFunc("/api/freebusy", s.handleFreeBusy)          // GET/POST free/busy info
 
 	// API routes - Contacts (Phase 5)
 	mux.HandleFunc("/api/contacts", s.handleContactsRoute)        // GET list, POST create
@@ -171,11 +171,14 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/templates/", s.handleTemplateByID)          // GET/PUT/DELETE/expand template
 
 	// API routes - Cache (Phase 8)
-	mux.HandleFunc("/api/cache/status", s.handleCacheStatus)   // GET cache status
-	mux.HandleFunc("/api/cache/sync", s.handleCacheSync)       // POST trigger sync
-	mux.HandleFunc("/api/cache/clear", s.handleCacheClear)     // POST clear cache
-	mux.HandleFunc("/api/cache/search", s.handleCacheSearch)   // GET search cached data
+	mux.HandleFunc("/api/cache/status", s.handleCacheStatus)     // GET cache status
+	mux.HandleFunc("/api/cache/sync", s.handleCacheSync)         // POST trigger sync
+	mux.HandleFunc("/api/cache/clear", s.handleCacheClear)       // POST clear cache
+	mux.HandleFunc("/api/cache/search", s.handleCacheSearch)     // GET search cached data
 	mux.HandleFunc("/api/cache/settings", s.handleCacheSettings) // GET/PUT cache settings
+
+	// API routes - AI (Claude Code integration)
+	mux.HandleFunc("/api/ai/summarize", s.handleAISummarize) // POST summarize email
 
 	// Static files (CSS, JS, icons)
 	staticFS, _ := fs.Sub(staticFiles, "static")

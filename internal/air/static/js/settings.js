@@ -4,7 +4,7 @@
 
 // Settings state
 const settingsState = {
-    aiProvider: 'nylas',
+    aiProvider: null,  // No default - user must select in Settings
     theme: 'dark',
     accentColor: 'purple',
     threading: true,
@@ -50,7 +50,7 @@ function saveSettings() {
 
 // Reset settings to defaults
 function resetSettings() {
-    settingsState.aiProvider = 'nylas';
+    settingsState.aiProvider = null;  // No default - user must select
     settingsState.theme = 'dark';
     settingsState.accentColor = 'purple';
     settingsState.threading = true;

@@ -10,14 +10,14 @@ import (
 
 // CacheStatusResponse represents the cache status API response.
 type CacheStatusResponse struct {
-	Enabled         bool              `json:"enabled"`
-	Online          bool              `json:"online"`
-	Accounts        []CacheAccountInfo `json:"accounts"`
-	TotalSizeBytes  int64             `json:"total_size_bytes"`
-	PendingActions  int               `json:"pending_actions"`
-	LastSync        *time.Time        `json:"last_sync,omitempty"`
-	SyncInterval    int               `json:"sync_interval_minutes"`
-	EncryptionEnabled bool            `json:"encryption_enabled"`
+	Enabled           bool               `json:"enabled"`
+	Online            bool               `json:"online"`
+	Accounts          []CacheAccountInfo `json:"accounts"`
+	TotalSizeBytes    int64              `json:"total_size_bytes"`
+	PendingActions    int                `json:"pending_actions"`
+	LastSync          *time.Time         `json:"last_sync,omitempty"`
+	SyncInterval      int                `json:"sync_interval_minutes"`
+	EncryptionEnabled bool               `json:"encryption_enabled"`
 }
 
 // CacheAccountInfo contains cache info for a single account.

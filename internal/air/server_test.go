@@ -9,7 +9,7 @@ import (
 func TestNewDemoServer(t *testing.T) {
 	t.Parallel()
 
-	server := NewDemoServer(":3003")
+	server := NewDemoServer(":7365")
 
 	if server == nil {
 		t.Fatal("expected non-nil server")
@@ -19,8 +19,8 @@ func TestNewDemoServer(t *testing.T) {
 		t.Error("expected demoMode to be true")
 	}
 
-	if server.addr != ":3003" {
-		t.Errorf("expected addr :3003, got %s", server.addr)
+	if server.addr != ":7365" {
+		t.Errorf("expected addr :7365, got %s", server.addr)
 	}
 
 	// Demo server should not have Nylas client or stores
@@ -84,7 +84,7 @@ func TestInitials(t *testing.T) {
 func TestHandleIndex_NonRootPath(t *testing.T) {
 	t.Parallel()
 
-	server := NewDemoServer(":3003")
+	server := NewDemoServer(":7365")
 
 	req := httptest.NewRequest(http.MethodGet, "/nonexistent", nil)
 	w := httptest.NewRecorder()
@@ -99,7 +99,7 @@ func TestHandleIndex_NonRootPath(t *testing.T) {
 func TestHandleIndex_RootPath_DemoMode(t *testing.T) {
 	t.Parallel()
 
-	server := NewDemoServer(":3003")
+	server := NewDemoServer(":7365")
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -123,7 +123,7 @@ func TestHandleIndex_RootPath_DemoMode(t *testing.T) {
 func TestBuildPageData_DemoMode(t *testing.T) {
 	t.Parallel()
 
-	server := NewDemoServer(":3003")
+	server := NewDemoServer(":7365")
 	data := server.buildPageData()
 
 	// In demo mode, should have mock data

@@ -41,24 +41,24 @@ type CategoryRule struct {
 
 // CategorizedEmail represents an email with its category.
 type CategorizedEmail struct {
-	EmailID      string        `json:"email_id"`
-	Category     InboxCategory `json:"category"`
-	MatchedRule  string        `json:"matched_rule,omitempty"`
-	CategorizedAt int64        `json:"categorized_at"`
+	EmailID       string        `json:"email_id"`
+	Category      InboxCategory `json:"category"`
+	MatchedRule   string        `json:"matched_rule,omitempty"`
+	CategorizedAt int64         `json:"categorized_at"`
 }
 
 // SplitInboxConfig holds the split inbox configuration.
 type SplitInboxConfig struct {
-	Enabled    bool           `json:"enabled"`
+	Enabled    bool            `json:"enabled"`
 	Categories []InboxCategory `json:"categories"`
-	VIPSenders []string       `json:"vip_senders"` // Email addresses marked as VIP
-	Rules      []CategoryRule `json:"rules"`
+	VIPSenders []string        `json:"vip_senders"` // Email addresses marked as VIP
+	Rules      []CategoryRule  `json:"rules"`
 }
 
 // SplitInboxResponse represents the split inbox API response.
 type SplitInboxResponse struct {
-	Config     SplitInboxConfig            `json:"config"`
-	Categories map[InboxCategory]int       `json:"category_counts"`
+	Config     SplitInboxConfig                  `json:"config"`
+	Categories map[InboxCategory]int             `json:"category_counts"`
 	Recent     map[InboxCategory][]EmailResponse `json:"recent,omitempty"`
 }
 
@@ -148,9 +148,9 @@ func (s *Server) handleCategorizeEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		EmailID string `json:"email_id"`
-		From    string `json:"from"`
-		Subject string `json:"subject"`
+		EmailID string            `json:"email_id"`
+		From    string            `json:"from"`
+		Subject string            `json:"subject"`
 		Headers map[string]string `json:"headers,omitempty"`
 	}
 	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
@@ -378,17 +378,17 @@ func (s *Server) removeVIPSender(email string) {
 
 // SnoozedEmail represents a snoozed email.
 type SnoozedEmail struct {
-	EmailID     string `json:"email_id"`
-	SnoozeUntil int64  `json:"snooze_until"` // Unix timestamp
+	EmailID        string `json:"email_id"`
+	SnoozeUntil    int64  `json:"snooze_until"` // Unix timestamp
 	OriginalFolder string `json:"original_folder,omitempty"`
-	CreatedAt   int64  `json:"created_at"`
+	CreatedAt      int64  `json:"created_at"`
 }
 
 // SnoozeRequest represents a request to snooze an email.
 type SnoozeRequest struct {
 	EmailID     string `json:"email_id"`
-	SnoozeUntil int64  `json:"snooze_until,omitempty"`    // Explicit Unix timestamp
-	Duration    string `json:"duration,omitempty"`        // Natural language: "1h", "2d", "tomorrow 9am"
+	SnoozeUntil int64  `json:"snooze_until,omitempty"` // Explicit Unix timestamp
+	Duration    string `json:"duration,omitempty"`     // Natural language: "1h", "2d", "tomorrow 9am"
 }
 
 // SnoozeResponse represents a snooze operation response.
@@ -846,7 +846,7 @@ func (s *Server) cancelScheduledMessage(w http.ResponseWriter, r *http.Request) 
 
 // UndoSendConfig holds undo send configuration.
 type UndoSendConfig struct {
-	Enabled       bool `json:"enabled"`
+	Enabled        bool `json:"enabled"`
 	GracePeriodSec int  `json:"grace_period_sec"` // Default: 10 seconds
 }
 
@@ -1007,23 +1007,24 @@ func (s *Server) getOrCreateUndoSendConfig() UndoSendConfig {
 		GracePeriodSec: 10,
 	}
 }
+
 // =============================================================================
 // Email Templates Types & Handlers
 // =============================================================================
 
 // EmailTemplate represents a reusable email template.
 type EmailTemplate struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Subject     string            `json:"subject,omitempty"`
-	Body        string            `json:"body"`
-	Shortcut    string            `json:"shortcut,omitempty"` // e.g., "/thanks", "/intro"
-	Variables   []string          `json:"variables,omitempty"` // Placeholders like {{name}}, {{company}}
-	Category    string            `json:"category,omitempty"`  // "greeting", "follow-up", "closing"
-	UsageCount  int               `json:"usage_count"`
-	CreatedAt   int64             `json:"created_at"`
-	UpdatedAt   int64             `json:"updated_at"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	Subject    string            `json:"subject,omitempty"`
+	Body       string            `json:"body"`
+	Shortcut   string            `json:"shortcut,omitempty"`  // e.g., "/thanks", "/intro"
+	Variables  []string          `json:"variables,omitempty"` // Placeholders like {{name}}, {{company}}
+	Category   string            `json:"category,omitempty"`  // "greeting", "follow-up", "closing"
+	UsageCount int               `json:"usage_count"`
+	CreatedAt  int64             `json:"created_at"`
+	UpdatedAt  int64             `json:"updated_at"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
 }
 
 // TemplateListResponse represents a list of templates.
