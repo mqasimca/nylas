@@ -323,7 +323,7 @@ func removeTagWithContent(s, tag string) string {
 }
 
 // printSuccess prints a success message in green.
-func printSuccess(format string, args ...interface{}) {
+func printSuccess(format string, args ...any) {
 	green.Printf(format+"\n", args...)
 }
 

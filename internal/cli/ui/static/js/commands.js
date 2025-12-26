@@ -80,7 +80,21 @@ const emailCommandSections = [
                 ]
             },
             'read': { title: 'Read', cmd: 'email read', desc: 'Read a specific email', param: { name: 'message-id', placeholder: 'Enter message ID...' } },
-            'send': { title: 'Send', cmd: 'email send', desc: 'Send an email' },
+            'send': {
+                title: 'Send',
+                cmd: 'email send',
+                desc: 'Send an email',
+                flags: [
+                    { name: 'to', type: 'text', label: 'To', placeholder: 'recipient@example.com', required: true, short: 't' },
+                    { name: 'subject', type: 'text', label: 'Subject', placeholder: 'Email subject', required: true, short: 's' },
+                    { name: 'body', type: 'textarea', label: 'Body', placeholder: 'Email body content', required: true, short: 'b' },
+                    { name: 'cc', type: 'text', label: 'CC', placeholder: 'cc@example.com', short: 'c' },
+                    { name: 'bcc', type: 'text', label: 'BCC', placeholder: 'bcc@example.com' },
+                    { name: 'schedule', type: 'text', label: 'Schedule', placeholder: '2h or tomorrow 9am' },
+                    { name: 'track-opens', type: 'checkbox', label: 'Track Opens' },
+                    { name: 'track-links', type: 'checkbox', label: 'Track Links' }
+                ]
+            },
             'search': { title: 'Search', cmd: 'email search', desc: 'Search emails', param: { name: 'query', placeholder: 'Enter search query...' } },
             'delete': { title: 'Delete', cmd: 'email delete', desc: 'Delete an email', param: { name: 'message-id', placeholder: 'Enter message ID...' } },
             'mark': { title: 'Mark', cmd: 'email mark', desc: 'Mark as read/unread/starred', param: { name: 'message-id', placeholder: 'Enter message ID...' } }
@@ -98,7 +112,7 @@ const emailCommandSections = [
                 ]
             },
             'folders-show': { title: 'Show', cmd: 'email folders show', desc: 'Show folder details', param: { name: 'folder-id', placeholder: 'Enter folder ID...' } },
-            'folders-create': { title: 'Create', cmd: 'email folders create', desc: 'Create a new folder' },
+            'folders-create': { title: 'Create', cmd: 'email folders create', desc: 'Create a new folder', param: { name: 'folder-name', placeholder: 'Enter folder name...' } },
             'folders-rename': { title: 'Rename', cmd: 'email folders rename', desc: 'Rename a folder', param: { name: 'folder-id', placeholder: 'Enter folder ID...' } },
             'folders-delete': { title: 'Delete', cmd: 'email folders delete', desc: 'Delete a folder', param: { name: 'folder-id', placeholder: 'Enter folder ID...' } }
         }
@@ -166,8 +180,8 @@ const emailCommandSections = [
     {
         title: 'AI Features',
         commands: {
-            'ai': { title: 'AI Assistant', cmd: 'email ai', desc: 'AI-powered email intelligence' },
-            'smart-compose': { title: 'Smart Compose', cmd: 'email smart-compose', desc: 'Generate AI-powered drafts' }
+            'ai-analyze': { title: 'AI Analyze', cmd: 'email ai analyze', desc: 'AI inbox analysis' },
+            'smart-compose': { title: 'Smart Compose', cmd: 'email smart-compose', desc: 'Generate AI-powered drafts', param: { name: 'prompt', placeholder: 'Enter prompt...' } }
         }
     }
 ];
@@ -207,7 +221,22 @@ const calendarCommandSections = [
                 ]
             },
             'events-show': { title: 'Show', cmd: 'calendar events show', desc: 'Show event details', param: { name: 'event-id', placeholder: 'Enter event ID...' } },
-            'events-create': { title: 'Create', cmd: 'calendar events create', desc: 'Create a new event' },
+            'events-create': {
+                title: 'Create',
+                cmd: 'calendar events create',
+                desc: 'Create a new event',
+                flags: [
+                    { name: 'title', type: 'text', label: 'Title', placeholder: 'Event title', required: true, short: 't' },
+                    { name: 'start', type: 'text', label: 'Start', placeholder: '2024-01-15 14:00', required: true, short: 's' },
+                    { name: 'end', type: 'text', label: 'End', placeholder: '2024-01-15 15:00', short: 'e' },
+                    { name: 'description', type: 'textarea', label: 'Description', placeholder: 'Event description', short: 'D' },
+                    { name: 'location', type: 'text', label: 'Location', placeholder: 'Meeting room or address', short: 'l' },
+                    { name: 'participant', type: 'text', label: 'Participants', placeholder: 'email1@example.com', short: 'p' },
+                    { name: 'calendar', type: 'text', label: 'Calendar ID', placeholder: 'primary', short: 'c' },
+                    { name: 'all-day', type: 'checkbox', label: 'All-Day Event' },
+                    { name: 'busy', type: 'checkbox', label: 'Mark as Busy', default: true }
+                ]
+            },
             'events-update': { title: 'Update', cmd: 'calendar events update', desc: 'Update an event', param: { name: 'event-id', placeholder: 'Enter event ID...' } },
             'events-delete': { title: 'Delete', cmd: 'calendar events delete', desc: 'Delete an event', param: { name: 'event-id', placeholder: 'Enter event ID...' } },
             'events-rsvp': { title: 'RSVP', cmd: 'calendar events rsvp', desc: 'RSVP to an event', param: { name: 'event-id', placeholder: 'Enter event ID...' } }
@@ -225,9 +254,33 @@ const calendarCommandSections = [
         commands: {
             'schedule': { title: 'Schedule', cmd: 'calendar schedule', desc: 'Schedule meetings with AI' },
             'find-time': { title: 'Find Time', cmd: 'calendar find-time', desc: 'Find optimal meeting times' },
-            'ai': { title: 'AI Assistant', cmd: 'calendar ai', desc: 'AI calendar intelligence' },
-            'recurring': { title: 'Recurring', cmd: 'calendar recurring', desc: 'Manage recurring events' },
-            'virtual': { title: 'Virtual', cmd: 'calendar virtual', desc: 'Manage virtual calendars' }
+            'ai-analyze': { title: 'AI Analyze', cmd: 'calendar ai analyze', desc: 'AI meeting analysis' },
+            'ai-focus': { title: 'AI Focus', cmd: 'calendar ai focus-time', desc: 'AI focus time protection' },
+            'ai-conflicts': { title: 'AI Conflicts', cmd: 'calendar ai conflicts', desc: 'AI conflict detection' }
+        }
+    },
+    {
+        title: 'Recurring',
+        commands: {
+            'recurring-list': { title: 'List', cmd: 'calendar recurring list', desc: 'List recurring instances', param: { name: 'event-id', placeholder: 'Enter master event ID...' } },
+            'recurring-update': { title: 'Update', cmd: 'calendar recurring update', desc: 'Update instance', param: { name: 'event-id', placeholder: 'Enter event ID...' } },
+            'recurring-delete': { title: 'Delete', cmd: 'calendar recurring delete', desc: 'Delete instance', param: { name: 'event-id', placeholder: 'Enter event ID...' } }
+        }
+    },
+    {
+        title: 'Virtual Calendars',
+        commands: {
+            'virtual-list': { title: 'List', cmd: 'calendar virtual list', desc: 'List virtual calendars' },
+            'virtual-show': { title: 'Show', cmd: 'calendar virtual show', desc: 'Show virtual calendar', param: { name: 'grant-id', placeholder: 'Enter grant ID...' } },
+            'virtual-create': {
+                title: 'Create',
+                cmd: 'calendar virtual create',
+                desc: 'Create virtual calendar',
+                flags: [
+                    { name: 'email', type: 'text', label: 'Email', placeholder: 'Virtual calendar email identifier', required: true }
+                ]
+            },
+            'virtual-delete': { title: 'Delete', cmd: 'calendar virtual delete', desc: 'Delete virtual calendar', param: { name: 'grant-id', placeholder: 'Enter grant ID...' } }
         }
     }
 ];
@@ -1363,7 +1416,20 @@ const contactsCommandSections = [
             },
             'show': { title: 'Show', cmd: 'contacts show', desc: 'Show contact details', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } },
             'search': { title: 'Search', cmd: 'contacts search', desc: 'Search contacts', param: { name: 'query', placeholder: 'Enter search query...' } },
-            'create': { title: 'Create', cmd: 'contacts create', desc: 'Create a new contact' },
+            'create': {
+                title: 'Create',
+                cmd: 'contacts create',
+                desc: 'Create a new contact',
+                flags: [
+                    { name: 'first-name', type: 'text', label: 'First Name', placeholder: 'John', short: 'f' },
+                    { name: 'last-name', type: 'text', label: 'Last Name', placeholder: 'Doe', short: 'l' },
+                    { name: 'email', type: 'text', label: 'Email', placeholder: 'john@example.com', short: 'e' },
+                    { name: 'phone', type: 'text', label: 'Phone', placeholder: '+1-555-123-4567', short: 'p' },
+                    { name: 'company', type: 'text', label: 'Company', placeholder: 'Acme Corp', short: 'c' },
+                    { name: 'job-title', type: 'text', label: 'Job Title', placeholder: 'Engineer', short: 'j' },
+                    { name: 'notes', type: 'textarea', label: 'Notes', placeholder: 'Notes about the contact', short: 'n' }
+                ]
+            },
             'update': { title: 'Update', cmd: 'contacts update', desc: 'Update a contact', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } },
             'delete': { title: 'Delete', cmd: 'contacts delete', desc: 'Delete a contact', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } }
         }
@@ -1371,9 +1437,17 @@ const contactsCommandSections = [
     {
         title: 'Groups',
         commands: {
-            'groups': { title: 'List Groups', cmd: 'contacts groups', desc: 'List contact groups' },
-            'photo': { title: 'Photo', cmd: 'contacts photo', desc: 'Manage contact photos' },
-            'sync': { title: 'Sync', cmd: 'contacts sync', desc: 'Sync contacts with provider' }
+            'groups-list': { title: 'List', cmd: 'contacts groups list', desc: 'List contact groups' },
+            'groups-show': { title: 'Show', cmd: 'contacts groups show', desc: 'Show group details', param: { name: 'group-id', placeholder: 'Enter group ID...' } },
+            'groups-create': { title: 'Create', cmd: 'contacts groups create', desc: 'Create a contact group', param: { name: 'group-name', placeholder: 'Enter group name...' } }
+        }
+    },
+    {
+        title: 'Other',
+        commands: {
+            'photo-info': { title: 'Photo Info', cmd: 'contacts photo info', desc: 'Show photo info', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } },
+            'photo-download': { title: 'Download Photo', cmd: 'contacts photo download', desc: 'Download contact photo', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } },
+            'sync': { title: 'Sync Info', cmd: 'contacts sync', desc: 'Contact sync information' }
         }
     }
 ];
@@ -1591,17 +1665,63 @@ function renderInboundCommands() {
 
 const schedulerCommandSections = [
     {
-        title: 'Configuration',
+        title: 'Configurations',
         commands: {
-            'configurations': { title: 'Configurations', cmd: 'scheduler configurations', desc: 'Manage scheduler configurations' },
-            'pages': { title: 'Pages', cmd: 'scheduler pages', desc: 'Manage scheduling pages' }
+            'config-list': { title: 'List', cmd: 'scheduler configurations list', desc: 'List scheduler configurations' },
+            'config-show': { title: 'Show', cmd: 'scheduler configurations show', desc: 'Show configuration details', param: { name: 'config-id', placeholder: 'Enter configuration ID...' } },
+            'config-create': {
+                title: 'Create',
+                cmd: 'scheduler configurations create',
+                desc: 'Create a scheduler configuration',
+                flags: [
+                    { name: 'name', type: 'text', label: 'Name', placeholder: 'Configuration name', required: true },
+                    { name: 'title', type: 'text', label: 'Title', placeholder: 'Event title', required: true },
+                    { name: 'participants', type: 'text', label: 'Participants', placeholder: 'email1@example.com,email2@example.com', required: true },
+                    { name: 'duration', type: 'number', label: 'Duration (min)', placeholder: '30' },
+                    { name: 'location', type: 'text', label: 'Location', placeholder: 'Meeting location' }
+                ]
+            }
         }
     },
     {
-        title: 'Scheduling',
+        title: 'Pages',
         commands: {
-            'sessions': { title: 'Sessions', cmd: 'scheduler sessions', desc: 'Manage scheduling sessions' },
-            'bookings': { title: 'Bookings', cmd: 'scheduler bookings', desc: 'View and manage bookings' }
+            'page-list': { title: 'List', cmd: 'scheduler pages list', desc: 'List scheduler pages' },
+            'page-show': { title: 'Show', cmd: 'scheduler pages show', desc: 'Show page details', param: { name: 'page-id', placeholder: 'Enter page ID...' } },
+            'page-create': {
+                title: 'Create',
+                cmd: 'scheduler pages create',
+                desc: 'Create a scheduler page',
+                flags: [
+                    { name: 'config-id', type: 'text', label: 'Config ID', placeholder: 'Configuration ID', required: true },
+                    { name: 'name', type: 'text', label: 'Name', placeholder: 'Page name', required: true },
+                    { name: 'slug', type: 'text', label: 'Slug', placeholder: 'URL slug (optional)' }
+                ]
+            }
+        }
+    },
+    {
+        title: 'Sessions',
+        commands: {
+            'session-create': {
+                title: 'Create',
+                cmd: 'scheduler sessions create',
+                desc: 'Create a scheduling session',
+                flags: [
+                    { name: 'config-id', type: 'text', label: 'Config ID', placeholder: 'Configuration ID', required: true },
+                    { name: 'ttl', type: 'number', label: 'TTL (min)', placeholder: '30' }
+                ]
+            },
+            'session-show': { title: 'Show', cmd: 'scheduler sessions show', desc: 'Show session details', param: { name: 'session-id', placeholder: 'Enter session ID...' } }
+        }
+    },
+    {
+        title: 'Bookings',
+        commands: {
+            'booking-list': { title: 'List', cmd: 'scheduler bookings list', desc: 'List scheduler bookings' },
+            'booking-show': { title: 'Show', cmd: 'scheduler bookings show', desc: 'Show booking details', param: { name: 'booking-id', placeholder: 'Enter booking ID...' } },
+            'booking-confirm': { title: 'Confirm', cmd: 'scheduler bookings confirm', desc: 'Confirm a booking', param: { name: 'booking-id', placeholder: 'Enter booking ID...' } },
+            'booking-cancel': { title: 'Cancel', cmd: 'scheduler bookings cancel', desc: 'Cancel a booking', param: { name: 'booking-id', placeholder: 'Enter booking ID...' } }
         }
     }
 ];
@@ -1832,7 +1952,17 @@ const webhookCommandSections = [
         commands: {
             'list': { title: 'List', cmd: 'webhook list', desc: 'List all webhooks' },
             'show': { title: 'Show', cmd: 'webhook show', desc: 'Show webhook details', param: { name: 'webhook-id', placeholder: 'Enter webhook ID...' } },
-            'create': { title: 'Create', cmd: 'webhook create', desc: 'Create a new webhook' },
+            'create': {
+                title: 'Create',
+                cmd: 'webhook create',
+                desc: 'Create a new webhook',
+                flags: [
+                    { name: 'url', type: 'text', label: 'Webhook URL', placeholder: 'https://example.com/webhook', required: true },
+                    { name: 'triggers', type: 'text', label: 'Triggers', placeholder: 'message.created,event.created', required: true },
+                    { name: 'description', type: 'text', label: 'Description', placeholder: 'My webhook description', short: 'd' },
+                    { name: 'notify', type: 'text', label: 'Notify Email', placeholder: 'admin@example.com' }
+                ]
+            },
             'update': { title: 'Update', cmd: 'webhook update', desc: 'Update a webhook', param: { name: 'webhook-id', placeholder: 'Enter webhook ID...' } },
             'delete': { title: 'Delete', cmd: 'webhook delete', desc: 'Delete a webhook', param: { name: 'webhook-id', placeholder: 'Enter webhook ID...' } }
         }
@@ -2045,20 +2175,39 @@ const adminCommandSections = [
     {
         title: 'Applications',
         commands: {
-            'applications': { title: 'Applications', cmd: 'admin applications', desc: 'Manage applications' }
+            'apps-list': { title: 'List', cmd: 'admin applications list', desc: 'List applications' },
+            'apps-show': { title: 'Show', cmd: 'admin applications show', desc: 'Show application details', param: { name: 'app-id', placeholder: 'Enter application ID...' } },
+            'apps-create': {
+                title: 'Create',
+                cmd: 'admin applications create',
+                desc: 'Create an application',
+                flags: [
+                    { name: 'name', type: 'text', label: 'Name', placeholder: 'Application name', required: true },
+                    { name: 'region', type: 'text', label: 'Region', placeholder: 'us or eu' },
+                    { name: 'callback-uris', type: 'text', label: 'Callback URIs', placeholder: 'https://example.com/callback' }
+                ]
+            }
         }
     },
     {
-        title: 'Connectors & Credentials',
+        title: 'Connectors',
         commands: {
-            'connectors': { title: 'Connectors', cmd: 'admin connectors', desc: 'Manage connectors' },
-            'credentials': { title: 'Credentials', cmd: 'admin credentials', desc: 'Manage credentials' }
+            'connectors-list': { title: 'List', cmd: 'admin connectors list', desc: 'List connectors' },
+            'connectors-show': { title: 'Show', cmd: 'admin connectors show', desc: 'Show connector details', param: { name: 'connector-id', placeholder: 'Enter connector ID...' } }
+        }
+    },
+    {
+        title: 'Credentials',
+        commands: {
+            'credentials-list': { title: 'List', cmd: 'admin credentials list', desc: 'List credentials' },
+            'credentials-show': { title: 'Show', cmd: 'admin credentials show', desc: 'Show credential details', param: { name: 'credential-id', placeholder: 'Enter credential ID...' } }
         }
     },
     {
         title: 'Grants',
         commands: {
-            'grants': { title: 'Grants', cmd: 'admin grants', desc: 'Manage grants' }
+            'grants-list': { title: 'List', cmd: 'admin grants list', desc: 'List grants' },
+            'grants-stats': { title: 'Stats', cmd: 'admin grants stats', desc: 'Show grant statistics' }
         }
     }
 ];

@@ -30,7 +30,7 @@ func newConfigCmd() *cobra.Command {
 		Long: `Configure Nylas API credentials.
 
 You can provide credentials via flags or interactively.
-Get your credentials from https://dashboard.nylas.com
+Get your credentials from https://dashboardv3.nylas.com
 
 The CLI only requires your API Key - Client ID is auto-detected.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,7 +53,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			// Interactive mode if API key not provided
 			if apiKey == "" {
 				fmt.Println("Configure Nylas API Credentials")
-				fmt.Println("Get your API key from: https://dashboard.nylas.com")
+				fmt.Println("Get your API key from: https://dashboardv3.nylas.com")
 				fmt.Println()
 
 				fmt.Print("API Key (hidden): ")

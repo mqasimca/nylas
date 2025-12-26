@@ -227,7 +227,7 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse JSON body
-	var payload map[string]interface{}
+	var payload map[string]any
 	if err := json.Unmarshal(body, &payload); err == nil {
 		event.Body = payload
 
@@ -243,8 +243,8 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Extract grant_id from data.object if present
-		if data, ok := payload["data"].(map[string]interface{}); ok {
-			if obj, ok := data["object"].(map[string]interface{}); ok {
+		if data, ok := payload["data"].(map[string]any); ok {
+			if obj, ok := data["object"].(map[string]any); ok {
 				if grantID, ok := obj["grant_id"].(string); ok {
 					event.GrantID = grantID
 				}
@@ -284,7 +284,7 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	stats := s.GetStats()
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":          "healthy",
 		"started_at":      stats.StartedAt,
 		"events_received": stats.EventsReceived,

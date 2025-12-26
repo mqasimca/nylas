@@ -26,7 +26,7 @@ type Table struct {
 // RowMeta holds metadata for a row.
 type RowMeta struct {
 	ID      string
-	Data    interface{}
+	Data    any
 	Unread  bool
 	Starred bool
 	Error   bool

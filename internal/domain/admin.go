@@ -92,26 +92,26 @@ type UpdateConnectorRequest struct {
 
 // ConnectorCredential represents authentication credentials for a connector
 type ConnectorCredential struct {
-	ID             string                 `json:"id,omitempty"`
-	Name           string                 `json:"name"`
-	ConnectorID    string                 `json:"connector_id,omitempty"`
-	CredentialType string                 `json:"credential_type"` // "oauth", "service_account", "connector"
-	CredentialData map[string]interface{} `json:"credential_data,omitempty"`
-	CreatedAt      *UnixTime              `json:"created_at,omitempty"`
-	UpdatedAt      *UnixTime              `json:"updated_at,omitempty"`
+	ID             string         `json:"id,omitempty"`
+	Name           string         `json:"name"`
+	ConnectorID    string         `json:"connector_id,omitempty"`
+	CredentialType string         `json:"credential_type"` // "oauth", "service_account", "connector"
+	CredentialData map[string]any `json:"credential_data,omitempty"`
+	CreatedAt      *UnixTime      `json:"created_at,omitempty"`
+	UpdatedAt      *UnixTime      `json:"updated_at,omitempty"`
 }
 
 // CreateCredentialRequest represents a request to create a credential
 type CreateCredentialRequest struct {
-	Name           string                 `json:"name"`
-	CredentialType string                 `json:"credential_type"` // "oauth", "service_account", "connector"
-	CredentialData map[string]interface{} `json:"credential_data,omitempty"`
+	Name           string         `json:"name"`
+	CredentialType string         `json:"credential_type"` // "oauth", "service_account", "connector"
+	CredentialData map[string]any `json:"credential_data,omitempty"`
 }
 
 // UpdateCredentialRequest represents a request to update a credential
 type UpdateCredentialRequest struct {
-	Name           *string                `json:"name,omitempty"`
-	CredentialData map[string]interface{} `json:"credential_data,omitempty"`
+	Name           *string        `json:"name,omitempty"`
+	CredentialData map[string]any `json:"credential_data,omitempty"`
 }
 
 // GrantsQueryParams represents query parameters for listing grants

@@ -80,17 +80,17 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 	return cmd
 }
 
-func outputJSON(webhooks interface{}) error {
+func outputJSON(webhooks any) error {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	return enc.Encode(webhooks)
 }
 
-func outputYAML(webhooks interface{}) error {
+func outputYAML(webhooks any) error {
 	return yaml.NewEncoder(os.Stdout).Encode(webhooks)
 }
 
-func outputCSV(webhooks interface{}) error {
+func outputCSV(webhooks any) error {
 	w := csv.NewWriter(os.Stdout)
 	defer w.Flush()
 
@@ -99,7 +99,7 @@ func outputCSV(webhooks interface{}) error {
 
 	// Get webhooks as slice
 	data, _ := json.Marshal(webhooks)
-	var items []map[string]interface{}
+	var items []map[string]any
 	_ = json.Unmarshal(data, &items)
 
 	for _, item := range items {
@@ -109,7 +109,7 @@ func outputCSV(webhooks interface{}) error {
 		status, _ := item["status"].(string)
 
 		var triggers []string
-		if triggerList, ok := item["trigger_types"].([]interface{}); ok {
+		if triggerList, ok := item["trigger_types"].([]any); ok {
 			for _, t := range triggerList {
 				triggers = append(triggers, fmt.Sprintf("%v", t))
 			}
@@ -121,9 +121,9 @@ func outputCSV(webhooks interface{}) error {
 	return nil
 }
 
-func outputTable(webhooks interface{}, fullIDs bool) error {
+func outputTable(webhooks any, fullIDs bool) error {
 	data, _ := json.Marshal(webhooks)
-	var items []map[string]interface{}
+	var items []map[string]any
 	_ = json.Unmarshal(data, &items)
 
 	// Calculate column widths
@@ -151,7 +151,7 @@ func outputTable(webhooks interface{}, fullIDs bool) error {
 		}
 
 		var triggers []string
-		if triggerList, ok := item["trigger_types"].([]interface{}); ok {
+		if triggerList, ok := item["trigger_types"].([]any); ok {
 			for _, t := range triggerList {
 				triggers = append(triggers, fmt.Sprintf("%v", t))
 			}

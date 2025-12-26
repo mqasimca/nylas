@@ -298,7 +298,7 @@ func displayAgenda(agenda *domain.MeetingAgenda) {
 }
 
 // createMeetingFromAnalysis creates a calendar event based on the analysis.
-func createMeetingFromAnalysis(ctx context.Context, client interface{}, grantID string, analysis *domain.EmailThreadAnalysis) error {
+func createMeetingFromAnalysis(ctx context.Context, client any, grantID string, analysis *domain.EmailThreadAnalysis) error {
 	fmt.Printf("Creating meeting from analysis...\n\n")
 
 	// Extract required participants

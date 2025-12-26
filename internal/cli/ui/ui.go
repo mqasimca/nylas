@@ -26,7 +26,7 @@ The UI allows you to:
   - Manage email and calendar (coming soon)
 
 The server runs on localhost only for security.`,
-		Example: `  # Start UI on default port (3000)
+		Example: `  # Start UI on default port (7363)
   nylas ui
 
   # Start UI on custom port
@@ -56,7 +56,7 @@ The server runs on localhost only for security.`,
 		},
 	}
 
-	cmd.Flags().IntVarP(&port, "port", "p", 3000, "Port to run the server on")
+	cmd.Flags().IntVarP(&port, "port", "p", 7363, "Port to run the server on")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Don't open browser automatically")
 
 	return cmd

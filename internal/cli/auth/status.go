@@ -47,7 +47,7 @@ func newStatusCmd() *cobra.Command {
 
 			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
 			if jsonOutput {
-				output := map[string]interface{}{
+				output := map[string]any{
 					"configured":    status.IsConfigured,
 					"region":        status.Region,
 					"config_path":   status.ConfigPath,
