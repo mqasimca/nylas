@@ -60,7 +60,7 @@ func (f *Formatter) SetWriter(w io.Writer) *Formatter {
 }
 
 // Format formats and outputs data based on the configured format.
-func (f *Formatter) Format(data interface{}) error {
+func (f *Formatter) Format(data any) error {
 	switch f.format {
 	case FormatJSON:
 		return f.formatJSON(data)
@@ -74,14 +74,14 @@ func (f *Formatter) Format(data interface{}) error {
 }
 
 // formatJSON outputs data as JSON.
-func (f *Formatter) formatJSON(data interface{}) error {
+func (f *Formatter) formatJSON(data any) error {
 	encoder := json.NewEncoder(f.writer)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
 }
 
 // formatYAML outputs data as YAML.
-func (f *Formatter) formatYAML(data interface{}) error {
+func (f *Formatter) formatYAML(data any) error {
 	encoder := yaml.NewEncoder(f.writer)
 	encoder.SetIndent(2)
 	defer encoder.Close()
@@ -89,7 +89,7 @@ func (f *Formatter) formatYAML(data interface{}) error {
 }
 
 // formatCSV outputs data as CSV.
-func (f *Formatter) formatCSV(data interface{}) error {
+func (f *Formatter) formatCSV(data any) error {
 	writer := csv.NewWriter(f.writer)
 	defer writer.Flush()
 
@@ -135,7 +135,7 @@ func (f *Formatter) formatCSV(data interface{}) error {
 }
 
 // formatCSVSingle formats a single item as CSV.
-func (f *Formatter) formatCSVSingle(writer *csv.Writer, data interface{}) error {
+func (f *Formatter) formatCSVSingle(writer *csv.Writer, data any) error {
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -233,7 +233,7 @@ func formatValue(v reflect.Value) string {
 }
 
 // formatTable outputs data as a formatted table.
-func (f *Formatter) formatTable(data interface{}) error {
+func (f *Formatter) formatTable(data any) error {
 	// This is a placeholder - actual table formatting is done by specific commands
 	// for more control over display
 	return f.formatJSON(data)
@@ -341,7 +341,7 @@ func (t *Table) RowCount() int {
 }
 
 // PrintSuccess prints a success message.
-func PrintSuccess(format string, args ...interface{}) {
+func PrintSuccess(format string, args ...any) {
 	if IsQuiet() {
 		return
 	}
@@ -350,13 +350,13 @@ func PrintSuccess(format string, args ...interface{}) {
 }
 
 // PrintError prints an error message.
-func PrintError(format string, args ...interface{}) {
+func PrintError(format string, args ...any) {
 	red := color.New(color.FgRed)
 	red.Fprintf(os.Stderr, "✗ "+format+"\n", args...)
 }
 
 // PrintWarning prints a warning message.
-func PrintWarning(format string, args ...interface{}) {
+func PrintWarning(format string, args ...any) {
 	if IsQuiet() {
 		return
 	}
@@ -365,7 +365,7 @@ func PrintWarning(format string, args ...interface{}) {
 }
 
 // PrintInfo prints an info message.
-func PrintInfo(format string, args ...interface{}) {
+func PrintInfo(format string, args ...any) {
 	if IsQuiet() {
 		return
 	}

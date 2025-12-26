@@ -23,7 +23,7 @@ import (
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
-//go:embed static/*
+//go:embed static/* static/css/* static/js/*
 var staticFiles embed.FS
 
 // Server represents the web UI server.

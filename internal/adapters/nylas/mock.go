@@ -932,14 +932,14 @@ func (m *MockClient) SendWebhookTestEvent(ctx context.Context, webhookURL string
 }
 
 // GetWebhookMockPayload returns a mock payload for a trigger type.
-func (m *MockClient) GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]interface{}, error) {
-	return map[string]interface{}{
+func (m *MockClient) GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]any, error) {
+	return map[string]any{
 		"specversion": "1.0",
 		"type":        triggerType,
 		"source":      "/nylas/test",
 		"id":          "mock-event-id",
-		"data": map[string]interface{}{
-			"object": map[string]interface{}{
+		"data": map[string]any{
+			"object": map[string]any{
 				"id": "mock-object-id",
 			},
 		},

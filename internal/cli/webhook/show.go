@@ -67,9 +67,9 @@ status, and notification settings.`,
 	return cmd
 }
 
-func displayWebhookDetails(webhook interface{}) error {
+func displayWebhookDetails(webhook any) error {
 	data, _ := json.Marshal(webhook)
-	var w map[string]interface{}
+	var w map[string]any
 	_ = json.Unmarshal(data, &w)
 
 	id := getString(w, "id")
@@ -95,14 +95,14 @@ func displayWebhookDetails(webhook interface{}) error {
 
 	// Trigger types
 	fmt.Println("\nTrigger Types:")
-	if triggers, ok := w["trigger_types"].([]interface{}); ok {
+	if triggers, ok := w["trigger_types"].([]any); ok {
 		for _, t := range triggers {
 			fmt.Printf("  • %s\n", t)
 		}
 	}
 
 	// Notification emails
-	if emails, ok := w["notification_email_addresses"].([]interface{}); ok && len(emails) > 0 {
+	if emails, ok := w["notification_email_addresses"].([]any); ok && len(emails) > 0 {
 		fmt.Println("\nNotification Emails:")
 		for _, e := range emails {
 			fmt.Printf("  • %s\n", e)
@@ -124,7 +124,7 @@ func displayWebhookDetails(webhook interface{}) error {
 	return nil
 }
 
-func getString(m map[string]interface{}, key string) string {
+func getString(m map[string]any, key string) string {
 	if v, ok := m[key]; ok {
 		return fmt.Sprintf("%v", v)
 	}

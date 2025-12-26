@@ -346,8 +346,8 @@ func (v *WebhookServerView) renderEvents() {
 
 		// Extract and show key fields from body
 		if event.Body != nil {
-			if data, ok := event.Body["data"].(map[string]interface{}); ok {
-				if obj, ok := data["object"].(map[string]interface{}); ok {
+			if data, ok := event.Body["data"].(map[string]any); ok {
+				if obj, ok := data["object"].(map[string]any); ok {
 					if subject, ok := obj["subject"].(string); ok {
 						fmt.Fprintf(v.eventsPanel, "    [%s]Subject:[-] [%s]%s[-]\n", muted, title, truncateStr(subject, 50))
 					}

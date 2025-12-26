@@ -1777,3 +1777,79 @@ func TestLimitedBody(t *testing.T) {
 		t.Error("Expected data from limited body")
 	}
 }
+
+// =============================================================================
+// Static Files Embedding Tests
+// =============================================================================
+
+func TestStaticFilesEmbedded(t *testing.T) {
+	t.Parallel()
+
+	// Verify that critical static files are embedded
+	expectedFiles := []string{
+		"static/js/commands.js",
+		"static/css/base.css",
+		"static/css/commands.css",
+	}
+
+	for _, path := range expectedFiles {
+		t.Run(path, func(t *testing.T) {
+			data, err := staticFiles.ReadFile(path)
+			if err != nil {
+				t.Errorf("Failed to read embedded file %q: %v", path, err)
+				return
+			}
+			if len(data) == 0 {
+				t.Errorf("Embedded file %q is empty", path)
+			}
+		})
+	}
+}
+
+func TestCommandsJSContainsRequiredFlags(t *testing.T) {
+	t.Parallel()
+
+	data, err := staticFiles.ReadFile("static/js/commands.js")
+	if err != nil {
+		t.Fatalf("Failed to read commands.js: %v", err)
+	}
+
+	content := string(data)
+
+	// Verify key commands have flags defined
+	flagPatterns := []struct {
+		command  string
+		contains string
+	}{
+		{"email send", "required: true"},
+		{"calendar events create", "flags:"},
+		{"webhook create", "flags:"},
+		{"contacts create", "flags:"},
+		{"scheduler configurations create", "flags:"},
+		{"calendar virtual create", "email"},
+	}
+
+	for _, tt := range flagPatterns {
+		t.Run(tt.command, func(t *testing.T) {
+			if !strings.Contains(content, tt.contains) {
+				t.Errorf("commands.js should contain %q for %s", tt.contains, tt.command)
+			}
+		})
+	}
+}
+
+func TestCommandsJSContainsNoDashboardOldURL(t *testing.T) {
+	t.Parallel()
+
+	data, err := staticFiles.ReadFile("static/js/commands.js")
+	if err != nil {
+		t.Fatalf("Failed to read commands.js: %v", err)
+	}
+
+	content := string(data)
+
+	// Verify old dashboard URL is not present
+	if strings.Contains(content, "dashboard.nylas.com") && !strings.Contains(content, "dashboardv3.nylas.com") {
+		t.Error("commands.js contains old dashboard URL (dashboard.nylas.com instead of dashboardv3.nylas.com)")
+	}
+}

@@ -83,14 +83,14 @@ type ConferencingSettings struct {
 
 // SchedulerSettings represents scheduler UI settings
 type SchedulerSettings struct {
-	AvailableDaysInFuture int                    `json:"available_days_in_future,omitempty"`
-	MinBookingNotice      int                    `json:"min_booking_notice,omitempty"`
-	MinCancellationNotice int                    `json:"min_cancellation_notice,omitempty"`
-	ConfirmationMethod    string                 `json:"confirmation_method,omitempty"` // "automatic", "manual"
-	ReschedulingURL       string                 `json:"rescheduling_url,omitempty"`
-	CancellationURL       string                 `json:"cancellation_url,omitempty"`
-	AdditionalFields      map[string]interface{} `json:"additional_fields,omitempty"`
-	CancellationPolicy    string                 `json:"cancellation_policy,omitempty"`
+	AvailableDaysInFuture int            `json:"available_days_in_future,omitempty"`
+	MinBookingNotice      int            `json:"min_booking_notice,omitempty"`
+	MinCancellationNotice int            `json:"min_cancellation_notice,omitempty"`
+	ConfirmationMethod    string         `json:"confirmation_method,omitempty"` // "automatic", "manual"
+	ReschedulingURL       string         `json:"rescheduling_url,omitempty"`
+	CancellationURL       string         `json:"cancellation_url,omitempty"`
+	AdditionalFields      map[string]any `json:"additional_fields,omitempty"`
+	CancellationPolicy    string         `json:"cancellation_policy,omitempty"`
 }
 
 // AppearanceSettings represents UI customization settings
@@ -137,10 +137,10 @@ type SchedulerSession struct {
 
 // CreateSchedulerSessionRequest represents a request to create a scheduler session
 type CreateSchedulerSessionRequest struct {
-	ConfigurationID  string                 `json:"configuration_id"`
-	TimeToLive       int                    `json:"ttl,omitempty"` // Session TTL in minutes
-	Slug             string                 `json:"slug,omitempty"`
-	AdditionalFields map[string]interface{} `json:"additional_fields,omitempty"`
+	ConfigurationID  string         `json:"configuration_id"`
+	TimeToLive       int            `json:"ttl,omitempty"` // Session TTL in minutes
+	Slug             string         `json:"slug,omitempty"`
+	AdditionalFields map[string]any `json:"additional_fields,omitempty"`
 }
 
 // Booking represents a scheduled booking
@@ -157,7 +157,7 @@ type Booking struct {
 	Location         string                 `json:"location,omitempty"`
 	Timezone         string                 `json:"timezone,omitempty"`
 	Conferencing     *ConferencingDetails   `json:"conferencing,omitempty"` // Reuses ConferencingDetails from calendar.go
-	AdditionalFields map[string]interface{} `json:"additional_fields,omitempty"`
+	AdditionalFields map[string]any         `json:"additional_fields,omitempty"`
 	Metadata         map[string]string      `json:"metadata,omitempty"`
 	CreatedAt        time.Time              `json:"created_at,omitempty"`
 	UpdatedAt        time.Time              `json:"updated_at,omitempty"`
@@ -165,9 +165,9 @@ type Booking struct {
 
 // ConfirmBookingRequest represents a request to confirm a booking
 type ConfirmBookingRequest struct {
-	Status         string                 `json:"status"` // "confirmed" or "cancelled"
-	Reason         string                 `json:"reason,omitempty"`
-	AdditionalData map[string]interface{} `json:"additional_data,omitempty"`
+	Status         string         `json:"status"` // "confirmed" or "cancelled"
+	Reason         string         `json:"reason,omitempty"`
+	AdditionalData map[string]any `json:"additional_data,omitempty"`
 }
 
 // SchedulerPage represents a hosted scheduling page

@@ -42,7 +42,7 @@ The demo UI runs on localhost and opens in your default browser.`,
 		},
 	}
 
-	cmd.Flags().IntVar(&port, "port", 3000, "Port to run the server on")
+	cmd.Flags().IntVar(&port, "port", 7363, "Port to run the server on")
 	cmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Don't open browser automatically")
 
 	return cmd

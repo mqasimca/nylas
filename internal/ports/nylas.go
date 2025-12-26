@@ -112,7 +112,7 @@ type NylasClient interface {
 	UpdateWebhook(ctx context.Context, webhookID string, req *domain.UpdateWebhookRequest) (*domain.Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) error
 	SendWebhookTestEvent(ctx context.Context, webhookURL string) error
-	GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]interface{}, error)
+	GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]any, error)
 
 	// Notetaker operations
 	ListNotetakers(ctx context.Context, grantID string, params *domain.NotetakerQueryParams) ([]domain.Notetaker, error)

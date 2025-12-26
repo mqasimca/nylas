@@ -214,7 +214,7 @@ func displayScheduleOptions(response *ai.ScheduleResponse, userTZ string) error 
 }
 
 // createMeetingFromOption creates a calendar event from a selected option.
-func createMeetingFromOption(cmd *cobra.Command, option ai.ScheduleOption, grantID string, client interface{}) error {
+func createMeetingFromOption(cmd *cobra.Command, option ai.ScheduleOption, grantID string, client any) error {
 	fmt.Println("\nCreating event...")
 
 	// Extract title from option or use default

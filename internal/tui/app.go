@@ -538,7 +538,7 @@ func (a *App) Stop() {
 }
 
 // Flash displays a temporary message.
-func (a *App) Flash(level FlashLevel, msg string, args ...interface{}) {
+func (a *App) Flash(level FlashLevel, msg string, args ...any) {
 	a.status.Flash(level, fmt.Sprintf(msg, args...))
 }
 

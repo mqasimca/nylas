@@ -28,7 +28,7 @@ export NYLAS_API_KEY="your-api-key"
 export NYLAS_GRANT_ID="your-grant-id"
 ```
 
-Get credentials from [Nylas Dashboard](https://dashboard.nylas.com).
+Get credentials from [Nylas Dashboard](https://dashboardv3.nylas.com).
 
 ### Running Integration Tests
 

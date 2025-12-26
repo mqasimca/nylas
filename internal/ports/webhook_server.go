@@ -8,17 +8,17 @@ import (
 
 // WebhookEvent represents a received webhook event.
 type WebhookEvent struct {
-	ID         string                 `json:"id"`
-	Type       string                 `json:"type"`
-	Timestamp  time.Time              `json:"timestamp"`
-	Source     string                 `json:"source"`
-	GrantID    string                 `json:"grant_id,omitempty"`
-	Headers    map[string]string      `json:"headers"`
-	Body       map[string]interface{} `json:"body"`
-	RawBody    []byte                 `json:"-"`
-	Signature  string                 `json:"signature,omitempty"`
-	Verified   bool                   `json:"verified"`
-	ReceivedAt time.Time              `json:"received_at"`
+	ID         string            `json:"id"`
+	Type       string            `json:"type"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Source     string            `json:"source"`
+	GrantID    string            `json:"grant_id,omitempty"`
+	Headers    map[string]string `json:"headers"`
+	Body       map[string]any    `json:"body"`
+	RawBody    []byte            `json:"-"`
+	Signature  string            `json:"signature,omitempty"`
+	Verified   bool              `json:"verified"`
+	ReceivedAt time.Time         `json:"received_at"`
 }
 
 // WebhookServerConfig holds configuration for the webhook server.

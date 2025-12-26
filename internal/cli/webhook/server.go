@@ -238,7 +238,7 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 	}
 
 	// Event type coloring
-	var typeColorFn func(a ...interface{}) string
+	var typeColorFn func(a ...any) string
 	switch {
 	case strings.Contains(event.Type, "created"):
 		typeColorFn = green.Sprint
@@ -267,8 +267,8 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 
 		// Print a summary of the payload
 		if event.Body != nil {
-			if data, ok := event.Body["data"].(map[string]interface{}); ok {
-				if obj, ok := data["object"].(map[string]interface{}); ok {
+			if data, ok := event.Body["data"].(map[string]any); ok {
+				if obj, ok := data["object"].(map[string]any); ok {
 					// Print key fields based on event type
 					if subject, ok := obj["subject"].(string); ok {
 						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), truncate(subject, 60))
