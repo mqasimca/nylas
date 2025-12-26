@@ -19,6 +19,7 @@ internal/
     config/          # Configuration
   cli/<feature>/     # CLI commands by feature
   tui/               # Terminal UI
+  air/               # Web UI server
 ```
 
 ---
@@ -81,6 +82,67 @@ internal/cli/<feature>/
   ├── update.go       # Update subcommand
   ├── delete.go       # Delete subcommand
   └── helpers.go      # Shared helpers
+```
+
+---
+
+## Air (Web UI)
+
+**Air** is the web-based UI for Nylas CLI, providing a browser interface for email, calendar, and productivity features.
+
+### Architecture
+
+- **Location:** `internal/air/`
+- **Server:** HTTP server with middleware stack (CORS, compression, security, caching)
+- **Handlers:** Feature-specific HTTP handlers (email, calendar, contacts, AI)
+- **Templates:** Go templates with Tailwind CSS
+- **Port:** Default `:7365` (configurable)
+
+### File Organization
+
+```
+internal/air/
+  ├── server.go              # HTTP server setup
+  ├── handlers_*.go          # Feature handlers (email, calendar, contacts, AI)
+  ├── middleware.go          # Middleware stack
+  ├── data.go               # Data models
+  ├── templates/             # HTML templates
+  └── integration_*.go       # Integration tests (organized by feature)
+```
+
+### Integration Tests
+
+Air integration tests are **split by feature** for better maintainability:
+
+| File | Tests | Purpose |
+|------|-------|---------|
+| `integration_base_test.go` | 0 | Shared `testServer()` helper and utilities |
+| `integration_core_test.go` | 5 | Config, Grants, Folders, Index page |
+| `integration_email_test.go` | 4 | Email listing, filtering, drafts |
+| `integration_calendar_test.go` | 11 | Calendars, events, availability, conflicts |
+| `integration_contacts_test.go` | 4 | Contact operations |
+| `integration_cache_test.go` | 4 | Cache operations |
+| `integration_ai_test.go` | 3 | AI summarization features |
+| `integration_middleware_test.go` | 6 | Middleware (compression, security, CORS) |
+
+**Total:** 37 integration tests across 8 organized files
+
+**Running tests:**
+```bash
+make test-air-integration-clean  # RECOMMENDED: Tests + cleanup
+```
+
+**Why cleanup?** Air tests create real resources (drafts, events, contacts) in the connected Nylas account. The cleanup target automatically removes test data after running tests.
+
+**Pattern:** Air tests use `httptest` to test HTTP handlers directly:
+```go
+func TestIntegration_Feature(t *testing.T) {
+    server := testServer(t)  // Shared helper
+    req := httptest.NewRequest(http.MethodGet, "/api/endpoint", nil)
+    w := httptest.NewRecorder()
+    server.handleEndpoint(w, req)
+    // Assertions...
+}
 ```
 
 ---

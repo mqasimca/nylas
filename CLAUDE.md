@@ -94,6 +94,18 @@ make check   # Runs: fmt → lint → test → security → build
 - `internal/cli/mcp/` - CLI commands (install, serve, status, uninstall)
 - `internal/adapters/mcp/proxy.go` - MCP proxy server
 
+**Air files (Web UI):**
+- `internal/air/` - HTTP server, handlers, templates
+- `internal/air/integration_*.go` - Integration tests organized by feature:
+  - `integration_base_test.go` - Shared `testServer()` helper and utilities
+  - `integration_core_test.go` - Config, Grants, Folders, Index tests
+  - `integration_email_test.go` - Email and draft operations
+  - `integration_calendar_test.go` - Calendar, events, availability, conflicts
+  - `integration_contacts_test.go` - Contact operations
+  - `integration_cache_test.go` - Cache operations
+  - `integration_ai_test.go` - AI features
+  - `integration_middleware_test.go` - Middleware tests
+
 **CLI pattern:**
 ```
 internal/cli/<feature>/
@@ -159,6 +171,20 @@ go test -tags=integration ./internal/cli/integration/...
 ```
 
 **Location:** All integration tests in `internal/cli/integration/`
+
+### Air Integration Tests (Web UI)
+
+**⚠️ CRITICAL: Always use cleanup target for Air tests**
+
+```bash
+make test-air-integration-clean  # Runs tests + cleanup (RECOMMENDED)
+make test-air-integration        # Run tests only
+make test-air-integration-cleanup # Cleanup only
+```
+
+**Why cleanup?** Air tests create real resources (drafts, events, contacts) that must be cleaned up to avoid polluting the account.
+
+**Location:** All Air integration tests in `internal/air/integration_*.go`
 
 **Details:** `.claude/rules/testing.md`
 

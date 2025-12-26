@@ -192,6 +192,12 @@ const EmailListManager = {
 
     // Apply filter to emails
     applyFilter() {
+        console.log('[applyFilter] Before:', {
+            currentFilter: this.currentFilter,
+            totalEmails: this.emails.length,
+            vipSenders: this.vipSenders.length
+        });
+
         switch (this.currentFilter) {
             case 'vip':
                 this.filteredEmails = this.emails.filter(email => {
@@ -206,6 +212,11 @@ const EmailListManager = {
                 this.filteredEmails = [...this.emails];
                 break;
         }
+
+        console.log('[applyFilter] After:', {
+            currentFilter: this.currentFilter,
+            filteredCount: this.filteredEmails.length
+        });
     },
 
     setupEventListeners() {
@@ -408,14 +419,22 @@ const EmailListManager = {
         if (this.isLoading) return;
         this.isLoading = true;
 
+        console.log('[loadEmails] Starting...', { folder, limit: 50 });
+
         try {
-            const options = { limit: 10 };
+            const options = { limit: 50 }; // Increased from 10 to 50 to fill viewport
             if (folder) {
                 this.currentFolder = folder;
                 options.folder = folder;
             }
 
             const data = await AirAPI.getEmails(options);
+            console.log('[loadEmails] API response:', {
+                emailCount: data.emails?.length || 0,
+                hasMore: data.has_more,
+                nextCursor: data.next_cursor
+            });
+
             this.emails = data.emails || [];
             this.nextCursor = data.next_cursor;
             this.hasMore = data.has_more;
@@ -424,12 +443,16 @@ const EmailListManager = {
             this.applyFilter();
             this.renderEmails();
         } catch (error) {
-            console.error('Failed to load emails:', error);
+            console.error('[loadEmails] Failed to load emails:', error);
             if (typeof showToast === 'function') {
                 showToast('error', 'Error', 'Failed to load emails');
             }
         } finally {
             this.isLoading = false;
+            console.log('[loadEmails] Complete. Triggering ensureScrollable...');
+            // Auto-load more AFTER isLoading is set to false
+            // Use setTimeout to ensure DOM has updated
+            setTimeout(() => this.ensureScrollable(), 100);
         }
     },
 
@@ -454,6 +477,57 @@ const EmailListManager = {
             console.error('Failed to load more emails:', error);
         } finally {
             this.isLoading = false;
+            // Auto-load more AFTER isLoading is set to false
+            // Use setTimeout to ensure DOM has updated
+            setTimeout(() => this.ensureScrollable(), 100);
+        }
+    },
+
+    // Ensure the email list has enough content to be scrollable
+    // Auto-loads more emails if content doesn't fill viewport
+    ensureScrollable() {
+        const emailList = document.querySelector('.email-list');
+
+        console.log('[ensureScrollable] Starting check...', {
+            hasEmailList: !!emailList,
+            hasMore: this.hasMore,
+            isLoading: this.isLoading,
+            emailCount: this.emails.length,
+            nextCursor: this.nextCursor
+        });
+
+        if (!emailList) {
+            console.warn('[ensureScrollable] Email list element not found');
+            return;
+        }
+
+        if (!this.hasMore) {
+            console.log('[ensureScrollable] No more emails to load (hasMore=false)');
+            return;
+        }
+
+        if (this.isLoading) {
+            console.log('[ensureScrollable] Already loading, skipping');
+            return;
+        }
+
+        // Check if content fills viewport (has scrollbar)
+        const scrollHeight = emailList.scrollHeight;
+        const clientHeight = emailList.clientHeight;
+        const needsMore = scrollHeight <= clientHeight;
+
+        console.log('[ensureScrollable] Viewport check:', {
+            scrollHeight,
+            clientHeight,
+            needsMore,
+            hasScrollbar: scrollHeight > clientHeight
+        });
+
+        if (needsMore) {
+            console.log('[ensureScrollable] Loading more emails to fill viewport...');
+            setTimeout(() => this.loadMore(), 100);
+        } else {
+            console.log('[ensureScrollable] Viewport is full, stopping auto-load');
         }
     },
 
@@ -469,6 +543,14 @@ const EmailListManager = {
         const displayEmails = this.filteredEmails.length > 0 || this.currentFilter !== 'all'
             ? this.filteredEmails
             : this.emails;
+
+        console.log('[renderEmails]', {
+            totalEmails: this.emails.length,
+            filteredEmails: this.filteredEmails.length,
+            currentFilter: this.currentFilter,
+            displayCount: displayEmails.length,
+            append
+        });
 
         if (displayEmails.length === 0 && !append) {
             const emptyMessages = {

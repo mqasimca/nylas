@@ -6,6 +6,8 @@
 
         .calendar-view.active, .contacts-view.active {
             display: flex;
+            flex: 1;
+            overflow: hidden;
         }
 
         .email-view {
@@ -14,7 +16,10 @@
         }
 
         .email-view.active {
-            display: flex;
+            display: grid;
+            grid-template-columns: 240px 420px 1fr;
+            height: 100%;
+            overflow: hidden;
         }
 
         /* Scrollbar */

@@ -1,8 +1,10 @@
 package air
 
 import (
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -149,5 +151,119 @@ func TestBuildPageData_DemoMode(t *testing.T) {
 
 	if data.UserName == "" {
 		t.Error("expected non-empty UserName in demo mode")
+	}
+}
+
+// =============================================================================
+// CSS Layout Regression Tests
+// =============================================================================
+
+// TestCSS_EmailListNoMaxHeight verifies that the accessibility CSS
+// does not constrain the email list to 300px (regression test for layout bug).
+func TestCSS_EmailListNoMaxHeight(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodGet, "/css/accessibility.css", nil)
+	w := httptest.NewRecorder()
+
+	// Get the CSS file handler
+	staticFS, _ := fs.Sub(staticFiles, "static")
+	fileServer := http.FileServer(http.FS(staticFS))
+	fileServer.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+
+	css := w.Body.String()
+
+	// Verify the [role="listbox"] selector excludes .email-list
+	if !strings.Contains(css, `:not(.email-list)`) {
+		t.Error("accessibility.css must use [role=\"listbox\"]:not(.email-list) to exclude email list from max-height constraint")
+	}
+
+	// Verify max-height: 300px exists but NOT for email-list
+	if strings.Contains(css, `max-height: 300px`) {
+		// This is OK as long as it's in the :not(.email-list) rule
+		if !strings.Contains(css, `[role="listbox"]:not(.email-list)`) {
+			t.Error("max-height: 300px found without :not(.email-list) exclusion")
+		}
+	}
+}
+
+// TestCSS_EmailListGrid verifies that email-list-container uses CSS Grid.
+func TestCSS_EmailListGrid(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodGet, "/css/email-list.css", nil)
+	w := httptest.NewRecorder()
+
+	staticFS, _ := fs.Sub(staticFiles, "static")
+	fileServer := http.FileServer(http.FS(staticFS))
+	fileServer.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+
+	css := w.Body.String()
+
+	// Verify CSS Grid layout
+	if !strings.Contains(css, "display: grid") {
+		t.Error("email-list.css must use 'display: grid' for email-list-container")
+	}
+
+	if !strings.Contains(css, "grid-template-rows: auto 1fr") {
+		t.Error("email-list.css must use 'grid-template-rows: auto 1fr' for proper layout")
+	}
+}
+
+// TestCSS_EmailViewGrid verifies that email-view uses CSS Grid.
+func TestCSS_EmailViewGrid(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodGet, "/css/calendar.css", nil)
+	w := httptest.NewRecorder()
+
+	staticFS, _ := fs.Sub(staticFiles, "static")
+	fileServer := http.FileServer(http.FS(staticFS))
+	fileServer.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+
+	css := w.Body.String()
+
+	// Verify email-view.active uses Grid
+	if !strings.Contains(css, ".email-view.active") {
+		t.Error("calendar.css must define .email-view.active")
+	}
+
+	if !strings.Contains(css, "grid-template-columns") {
+		t.Error("email-view.active must use grid-template-columns for layout")
+	}
+}
+
+// TestCSS_MainLayoutHeight verifies explicit height calculation.
+func TestCSS_MainLayoutHeight(t *testing.T) {
+	t.Parallel()
+
+	req := httptest.NewRequest(http.MethodGet, "/css/layout.css", nil)
+	w := httptest.NewRecorder()
+
+	staticFS, _ := fs.Sub(staticFiles, "static")
+	fileServer := http.FileServer(http.FS(staticFS))
+	fileServer.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+
+	css := w.Body.String()
+
+	// Verify explicit height calculation
+	if !strings.Contains(css, "calc(100vh") {
+		t.Error("layout.css must use calc(100vh - ...) for explicit height")
 	}
 }

@@ -193,6 +193,43 @@ nylas ui --no-browser            # Don't auto-open browser
 
 ---
 
+## Air (Modern Email Client)
+
+Launch **Nylas Air** - a modern, keyboard-driven email client that runs in your browser:
+
+```bash
+nylas air                        # Start on default port (7365)
+nylas air --port 8080            # Custom port
+nylas air --no-browser           # Don't auto-open browser
+nylas air --clear-cache          # Clear all cached data before starting
+nylas air --encrypted            # Enable encryption for cached data
+```
+
+**Features:**
+- **Three-pane interface:** Folders, message list, preview
+- **Calendar & Contacts:** Full calendar and contact management
+- **Keyboard shortcuts:** J/K navigate, C compose, E archive
+- **Command palette:** Cmd+K for quick actions
+- **Dark mode:** Customizable themes
+- **AI-powered:** Email summaries, smart replies
+- **Local caching:** Full-text search with offline support
+- **Action queuing:** Queue actions when offline
+- **Encryption:** Optional encryption for cached data (system keyring)
+
+**Security:**
+- Runs on localhost only (not accessible externally)
+- All data stored locally on your machine
+- Optional encryption for cached data using system keyring
+
+**URL:** `http://localhost:7365` (default)
+
+**Testing:**
+```bash
+make test-air-integration-clean  # Run tests with automatic cleanup
+```
+
+---
+
 ## MCP (Model Context Protocol)
 
 Enable AI assistants (Claude Desktop, Cursor, Windsurf, VS Code) to interact with your email and calendar.

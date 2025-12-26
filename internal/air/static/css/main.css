@@ -3,6 +3,7 @@
 
 @import url('variables.css');
 @import url('base.css');
+@import url('animations.css');
 @import url('layout.css');
 @import url('navigation.css');
 @import url('sidebar.css');
@@ -16,5 +17,6 @@
 @import url('components.css');
 @import url('features.css');
 @import url('settings.css');
+@import url('productivity.css');
 @import url('accessibility.css');
 @import url('responsive.css');
