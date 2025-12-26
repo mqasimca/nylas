@@ -37,6 +37,7 @@ func TestCLI_OTPWatchHelp(t *testing.T) {
 
 func TestCLI_OTPWatch_InvalidInterval(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	// Test with invalid interval
 	_, stderr, err := runCLI("otp", "watch", "--interval", "-1")
@@ -93,6 +94,7 @@ func TestCLI_OTPMessagesHelp(t *testing.T) {
 
 func TestCLI_OTPMessages(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "messages", testGrantID, "--limit", "5")
 	skipIfProviderNotSupported(t, stderr)
@@ -117,6 +119,7 @@ func TestCLI_OTPMessages(t *testing.T) {
 
 func TestCLI_OTPMessagesWithLimit(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "messages", testGrantID, "--limit", "3")
 	skipIfProviderNotSupported(t, stderr)
@@ -133,6 +136,7 @@ func TestCLI_OTPMessagesWithLimit(t *testing.T) {
 
 func TestCLI_OTPMessagesJSON(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "messages", testGrantID, "--limit", "3", "--json")
 	skipIfProviderNotSupported(t, stderr)
@@ -179,6 +183,7 @@ func TestCLI_OTPGetHelp(t *testing.T) {
 
 func TestCLI_OTPGetWithGrantID(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "get", testGrantID)
 	skipIfProviderNotSupported(t, stderr)
@@ -223,6 +228,7 @@ func TestCLI_OTPListHelp(t *testing.T) {
 
 func TestCLI_OTPListJSON(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "list", "--json")
 

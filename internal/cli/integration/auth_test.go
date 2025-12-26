@@ -34,6 +34,7 @@ func TestCLI_AuthStatus(t *testing.T) {
 
 func TestCLI_AuthList(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("auth", "list")
 
@@ -48,6 +49,7 @@ func TestCLI_AuthList(t *testing.T) {
 
 func TestCLI_AuthWhoami(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("auth", "whoami")
 
@@ -69,6 +71,7 @@ func TestCLI_AuthWhoami(t *testing.T) {
 
 func TestCLI_AuthAdd(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	// Test adding with auto-detection (no --email or --provider flags)
 	stdout, stderr, err := runCLI("auth", "add", testGrantID, "--default")
@@ -108,6 +111,7 @@ func TestCLI_AuthAdd(t *testing.T) {
 
 func TestCLI_AuthAdd_AutoDetect(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	// Test that auto-detection gets correct info from Nylas API
 	stdout, stderr, err := runCLI("auth", "add", testGrantID)
@@ -131,6 +135,7 @@ func TestCLI_AuthAdd_AutoDetect(t *testing.T) {
 
 func TestCLI_AuthAdd_OverrideAutoDetect(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	// Test that flags can override auto-detected values
 	stdout, stderr, err := runCLI("auth", "add", testGrantID,
@@ -155,6 +160,7 @@ func TestCLI_AuthAdd_OverrideAutoDetect(t *testing.T) {
 
 func TestCLI_AuthAdd_InvalidGrant(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	// Test adding a non-existent grant - should fail when fetching from API
 	_, stderr, err := runCLI("auth", "add", "invalid-grant-id-12345")
@@ -171,6 +177,7 @@ func TestCLI_AuthAdd_InvalidGrant(t *testing.T) {
 
 func TestCLI_AuthAdd_ProviderOverride(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	// Test that provider flag can override auto-detected provider
 	providers := []string{"google", "microsoft"}
@@ -247,6 +254,7 @@ func TestCLI_AuthShowHelp(t *testing.T) {
 
 func TestCLI_AuthShow(t *testing.T) {
 	skipIfMissingCreds(t)
+	// Note: auth show with explicit grant ID works with env vars (no keyring needed)
 
 	stdout, stderr, err := runCLI("auth", "show", testGrantID)
 
@@ -273,6 +281,7 @@ func TestCLI_AuthShow(t *testing.T) {
 
 func TestCLI_AuthShow_InvalidGrant(t *testing.T) {
 	skipIfMissingCreds(t)
+	// Note: auth show with explicit grant ID works with env vars (no keyring needed)
 
 	_, stderr, err := runCLI("auth", "show", "invalid-grant-id-12345")
 

@@ -14,6 +14,7 @@ import (
 
 func TestCLI_OTPList(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "list")
 
@@ -35,6 +36,7 @@ func TestCLI_OTPList(t *testing.T) {
 
 func TestCLI_OTPGet(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("otp", "get")
 	skipIfProviderNotSupported(t, stderr)
@@ -272,6 +274,7 @@ func TestCLI_NewFeaturesWorkflow(t *testing.T) {
 
 func TestCLI_Doctor(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("doctor")
 
@@ -319,6 +322,7 @@ func TestCLI_Doctor(t *testing.T) {
 
 func TestCLI_Doctor_Verbose(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfKeyringDisabled(t)
 
 	stdout, stderr, err := runCLI("doctor", "--verbose")
 
