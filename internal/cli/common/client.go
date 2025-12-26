@@ -11,17 +11,17 @@ import (
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
-// GetNylasClient creates a Nylas API client with credentials from keyring or environment variables.
+// GetNylasClient creates a Nylas API client with credentials from environment variables or keyring.
 // It checks credentials in this order:
-// 1. System keyring (if available)
-// 2. Encrypted file store (if keyring unavailable)
-// 3. Environment variables (NYLAS_API_KEY, NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET)
+// 1. Environment variables (NYLAS_API_KEY, NYLAS_CLIENT_ID, NYLAS_CLIENT_SECRET) - highest priority
+// 2. System keyring (if available and env vars not set)
+// 3. Encrypted file store (if keyring unavailable)
 //
 // This allows the CLI to work in multiple environments:
-// - Local development (keyring)
 // - CI/CD pipelines (environment variables)
 // - Docker containers (environment variables)
 // - Integration tests (environment variables with NYLAS_DISABLE_KEYRING=true)
+// - Local development (keyring)
 func GetNylasClient() (ports.NylasClient, error) {
 	// Load configuration
 	configStore := config.NewDefaultFileStore()
@@ -30,26 +30,23 @@ func GetNylasClient() (ports.NylasClient, error) {
 		cfg = &domain.Config{Region: "us"}
 	}
 
-	var apiKey, clientID, clientSecret string
+	// First, check environment variables (highest priority)
+	apiKey := os.Getenv("NYLAS_API_KEY")
+	clientID := os.Getenv("NYLAS_CLIENT_ID")
+	clientSecret := os.Getenv("NYLAS_CLIENT_SECRET")
 
-	// Try to get credentials from keyring/file store
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err == nil {
-		// Successfully created secret store, try to get credentials
-		apiKey, _ = secretStore.Get(ports.KeyAPIKey)
-		clientID, _ = secretStore.Get(ports.KeyClientID)
-		clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
-	}
-
-	// Fall back to environment variables if not found in keyring
+	// If API key not in env, try keyring/file store
 	if apiKey == "" {
-		apiKey = os.Getenv("NYLAS_API_KEY")
-	}
-	if clientID == "" {
-		clientID = os.Getenv("NYLAS_CLIENT_ID")
-	}
-	if clientSecret == "" {
-		clientSecret = os.Getenv("NYLAS_CLIENT_SECRET")
+		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+		if err == nil {
+			apiKey, _ = secretStore.Get(ports.KeyAPIKey)
+			if clientID == "" {
+				clientID, _ = secretStore.Get(ports.KeyClientID)
+			}
+			if clientSecret == "" {
+				clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
+			}
+		}
 	}
 
 	// Validate that we have at least the API key
@@ -65,23 +62,21 @@ func GetNylasClient() (ports.NylasClient, error) {
 	return c, nil
 }
 
-// GetAPIKey returns the API key from keyring or environment variable.
+// GetAPIKey returns the API key from environment variable or keyring.
 // It checks in this order:
-// 1. System keyring (if available)
-// 2. Encrypted file store (if keyring unavailable)
-// 3. Environment variable (NYLAS_API_KEY)
+// 1. Environment variable (NYLAS_API_KEY) - highest priority
+// 2. System keyring (if available)
+// 3. Encrypted file store (if keyring unavailable)
 func GetAPIKey() (string, error) {
-	var apiKey string
+	// First check environment variable (highest priority)
+	apiKey := os.Getenv("NYLAS_API_KEY")
 
-	// Try to get from keyring/file store
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err == nil {
-		apiKey, _ = secretStore.Get(ports.KeyAPIKey)
-	}
-
-	// Fall back to environment variable
+	// If not in env, try keyring/file store
 	if apiKey == "" {
-		apiKey = os.Getenv("NYLAS_API_KEY")
+		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+		if err == nil {
+			apiKey, _ = secretStore.Get(ports.KeyAPIKey)
+		}
 	}
 
 	if apiKey == "" {
@@ -91,29 +86,27 @@ func GetAPIKey() (string, error) {
 	return apiKey, nil
 }
 
-// GetGrantID returns the grant ID from arguments, keyring, or environment variable.
+// GetGrantID returns the grant ID from arguments, environment variable, or keyring.
 // It checks in this order:
 // 1. Command line argument (if provided)
-// 2. Stored default grant (from keyring/file)
-// 3. Environment variable (NYLAS_GRANT_ID)
+// 2. Environment variable (NYLAS_GRANT_ID) - highest priority after arg
+// 3. Stored default grant (from keyring/file)
 func GetGrantID(args []string) (string, error) {
 	// If provided as argument, use it
 	if len(args) > 0 && args[0] != "" {
 		return args[0], nil
 	}
 
-	var grantID string
+	// Check environment variable first (highest priority after arg)
+	grantID := os.Getenv("NYLAS_GRANT_ID")
 
-	// Try to get from keyring/file store
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err == nil {
-		grantStore := keyring.NewGrantStore(secretStore)
-		grantID, _ = grantStore.GetDefaultGrant()
-	}
-
-	// Fall back to environment variable
+	// If not in env, try keyring/file store
 	if grantID == "" {
-		grantID = os.Getenv("NYLAS_GRANT_ID")
+		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+		if err == nil {
+			grantStore := keyring.NewGrantStore(secretStore)
+			grantID, _ = grantStore.GetDefaultGrant()
+		}
 	}
 
 	if grantID == "" {

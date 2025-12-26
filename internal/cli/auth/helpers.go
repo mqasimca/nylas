@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"os"
+
 	"github.com/mqasimca/nylas/internal/adapters/browser"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
@@ -33,6 +35,32 @@ func createConfigService() (*authapp.ConfigService, ports.ConfigStore, ports.Sec
 	return authapp.NewConfigService(configStore, secretStore), configStore, secretStore, nil
 }
 
+// getCredentialsFromEnv gets credentials from environment variables only.
+func getCredentialsFromEnv() (apiKey, clientID, clientSecret string) {
+	apiKey = os.Getenv("NYLAS_API_KEY")
+	clientID = os.Getenv("NYLAS_CLIENT_ID")
+	clientSecret = os.Getenv("NYLAS_CLIENT_SECRET")
+	return
+}
+
+// getCredentialsWithEnvFallback gets credentials from env vars first, then keyring.
+func getCredentialsWithEnvFallback(secretStore ports.SecretStore) (apiKey, clientID, clientSecret string) {
+	// Check environment variables first (highest priority)
+	apiKey, clientID, clientSecret = getCredentialsFromEnv()
+
+	// If API key not in env, try keyring/file store
+	if apiKey == "" && secretStore != nil {
+		apiKey, _ = secretStore.Get(ports.KeyAPIKey)
+		if clientID == "" {
+			clientID, _ = secretStore.Get(ports.KeyClientID)
+		}
+		if clientSecret == "" {
+			clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
+		}
+	}
+	return
+}
+
 // createGrantService creates the grant service.
 func createGrantService() (*authapp.GrantService, *authapp.ConfigService, error) {
 	configStore, secretStore, grantStore, err := createDependencies()
@@ -49,9 +77,7 @@ func createGrantService() (*authapp.GrantService, *authapp.ConfigService, error)
 	cfg, _ := configStore.Load()
 	client.SetRegion(cfg.Region)
 
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
-	apiKey, _ := secretStore.Get(ports.KeyAPIKey)
+	apiKey, clientID, clientSecret := getCredentialsWithEnvFallback(secretStore)
 	client.SetCredentials(clientID, clientSecret, apiKey)
 
 	return authapp.NewGrantService(client, grantStore, configStore), configSvc, nil
@@ -82,9 +108,7 @@ func createAuthService() (*authapp.Service, *authapp.ConfigService, error) {
 	cfg, _ := configStore.Load()
 	client.SetRegion(cfg.Region)
 
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
-	apiKey, _ := secretStore.Get(ports.KeyAPIKey)
+	apiKey, clientID, clientSecret := getCredentialsWithEnvFallback(secretStore)
 	client.SetCredentials(clientID, clientSecret, apiKey)
 
 	// Create OAuth server

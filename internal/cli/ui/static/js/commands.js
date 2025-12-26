@@ -253,6 +253,10 @@ let cachedThreadIds = [];    // [{id: "thread-id", label: "participants - subjec
 let cachedCalendarIds = [];  // [{id: "calendar-id", label: "Calendar Name"}, ...]
 let cachedEventIds = [];     // [{id: "event-id", label: "Event Title"}, ...]
 let cachedGrantIds = [];     // [{id: "grant-id", label: "email@example.com (Provider)"}, ...]
+let cachedContactIds = [];   // [{id: "contact-id", label: "John Doe (john@example.com)"}, ...]
+let cachedInboxIds = [];     // [{id: "inbox-id", label: "support@app.nylas.email"}, ...]
+let cachedWebhookIds = [];   // [{id: "webhook-id", label: "https://example.com/webhook"}, ...]
+let cachedNotetakerIds = []; // [{id: "notetaker-id", label: "Team Standup"}, ...]
 
 /**
  * Parse email list output to extract message IDs.
@@ -566,6 +570,200 @@ function parseGrantIdsFromOutput(output) {
 }
 
 /**
+ * Parse contacts list output to extract contact IDs.
+ * Format when --id flag is used (table format):
+ *   Found X contact(s):
+ *
+ *   ID                                     NAME           EMAIL             PHONE    COMPANY
+ *   abc123-def456-789...                   John Doe       john@example.com  +1234    Acme Inc
+ */
+function parseContactIdsFromOutput(output) {
+    const ids = [];
+    const lines = output.split('\n');
+
+    // Skip until we find the header line with ID column
+    let dataStarted = false;
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // Look for header line starting with ID
+        if (trimmed.startsWith('ID') && trimmed.includes('NAME')) {
+            dataStarted = true;
+            continue;
+        }
+
+        if (!dataStarted) continue;
+
+        // Skip separator lines
+        if (trimmed.includes('───') || trimmed.includes('---')) continue;
+
+        // Parse data rows - split by multiple spaces
+        // Format: ID (36+ chars), NAME, EMAIL, PHONE, COMPANY
+        const parts = trimmed.split(/\s{2,}/);
+        if (parts.length >= 2) {
+            const id = parts[0].trim();
+            const name = parts[1].trim();
+            const email = parts.length > 2 ? parts[2].trim() : '';
+
+            // Validate it looks like a contact ID (alphanumeric string, at least 10 chars)
+            if (id && id.length >= 10 && !id.includes('ID') && /^[a-zA-Z0-9_-]+$/.test(id)) {
+                let label = name;
+                if (email && email.includes('@')) {
+                    label = `${name} (${email})`;
+                }
+                ids.push({
+                    id: id,
+                    label: label.length > 50 ? label.substring(0, 47) + '...' : label
+                });
+            }
+        }
+    }
+
+    return ids;
+}
+
+/**
+ * Parse inbound list output to extract inbox IDs.
+ * Format:
+ *   ID                     ADDRESS                           STATUS
+ *   inbox-001              support@yourapp.nylas.email       Active
+ */
+function parseInboxIdsFromOutput(output) {
+    const ids = [];
+    const lines = output.split('\n');
+
+    let dataStarted = false;
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // Look for header line with ID column
+        if (trimmed.startsWith('ID') && trimmed.includes('ADDRESS')) {
+            dataStarted = true;
+            continue;
+        }
+
+        if (!dataStarted) continue;
+
+        // Skip separator lines and summary lines
+        if (trimmed.includes('───') || trimmed.includes('---') || trimmed.includes('inboxes')) continue;
+
+        // Parse data rows
+        const parts = trimmed.split(/\s{2,}/);
+        if (parts.length >= 2) {
+            const id = parts[0].trim();
+            const address = parts[1].trim();
+
+            // Validate it looks like an inbox ID
+            if (id && id.length >= 5 && !id.includes('ID') && address.includes('@')) {
+                ids.push({
+                    id: id,
+                    label: address
+                });
+            }
+        }
+    }
+
+    return ids;
+}
+
+/**
+ * Parse webhook list output to extract webhook IDs.
+ * Format:
+ *   ID                     CALLBACK URL                           TRIGGERS        STATUS
+ *   wh-001                 https://example.com/webhook/events     message.*       Active
+ */
+function parseWebhookIdsFromOutput(output) {
+    const ids = [];
+    const lines = output.split('\n');
+
+    let dataStarted = false;
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // Look for header line with ID column
+        if (trimmed.startsWith('ID') && (trimmed.includes('CALLBACK') || trimmed.includes('URL'))) {
+            dataStarted = true;
+            continue;
+        }
+
+        if (!dataStarted) continue;
+
+        // Skip separator lines and summary lines
+        if (trimmed.includes('───') || trimmed.includes('---') || trimmed.includes('webhooks')) continue;
+
+        // Parse data rows
+        const parts = trimmed.split(/\s{2,}/);
+        if (parts.length >= 2) {
+            const id = parts[0].trim();
+            const url = parts[1].trim();
+
+            // Validate it looks like a webhook ID
+            if (id && id.length >= 3 && !id.includes('ID')) {
+                const label = url.length > 40 ? url.substring(0, 37) + '...' : url;
+                ids.push({
+                    id: id,
+                    label: label
+                });
+            }
+        }
+    }
+
+    return ids;
+}
+
+/**
+ * Parse notetaker list output to extract notetaker IDs.
+ * Format:
+ *   ID                     MEETING                          STATUS        CREATED
+ *   nt-001                 Team Standup                     Completed     Dec 24
+ */
+function parseNotetakerIdsFromOutput(output) {
+    const ids = [];
+    const lines = output.split('\n');
+
+    let dataStarted = false;
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // Look for header line with ID column
+        if (trimmed.startsWith('ID') && trimmed.includes('MEETING')) {
+            dataStarted = true;
+            continue;
+        }
+
+        if (!dataStarted) continue;
+
+        // Skip separator lines and summary lines
+        if (trimmed.includes('───') || trimmed.includes('---') || trimmed.includes('notetakers')) continue;
+
+        // Parse data rows
+        const parts = trimmed.split(/\s{2,}/);
+        if (parts.length >= 2) {
+            const id = parts[0].trim();
+            const meeting = parts[1].trim();
+
+            // Validate it looks like a notetaker ID
+            if (id && id.length >= 3 && !id.includes('ID')) {
+                ids.push({
+                    id: id,
+                    label: meeting.length > 40 ? meeting.substring(0, 37) + '...' : meeting
+                });
+            }
+        }
+    }
+
+    return ids;
+}
+
+/**
  * Get cached IDs by type.
  */
 function getCachedMessageIds() {
@@ -596,6 +794,22 @@ function getCachedGrantIds() {
     return cachedGrantIds;
 }
 
+function getCachedContactIds() {
+    return cachedContactIds;
+}
+
+function getCachedInboxIds() {
+    return cachedInboxIds;
+}
+
+function getCachedWebhookIds() {
+    return cachedWebhookIds;
+}
+
+function getCachedNotetakerIds() {
+    return cachedNotetakerIds;
+}
+
 /**
  * Clear all cached IDs.
  */
@@ -607,6 +821,10 @@ function clearAllCachedIds() {
     cachedCalendarIds = [];
     cachedEventIds = [];
     cachedGrantIds = [];
+    cachedContactIds = [];
+    cachedInboxIds = [];
+    cachedWebhookIds = [];
+    cachedNotetakerIds = [];
 }
 
 /**
@@ -615,7 +833,8 @@ function clearAllCachedIds() {
 function getTotalCachedCount() {
     return cachedMessageIds.length + cachedFolderIds.length + cachedScheduleIds.length +
            cachedThreadIds.length + cachedCalendarIds.length + cachedEventIds.length +
-           cachedGrantIds.length;
+           cachedGrantIds.length + cachedContactIds.length + cachedInboxIds.length +
+           cachedWebhookIds.length + cachedNotetakerIds.length;
 }
 
 /**
@@ -656,6 +875,50 @@ function updateCacheCountBadge() {
             authBadge.style.display = 'none';
         }
     }
+
+    // Update contacts badge
+    const contactsBadge = document.getElementById('contacts-cache-count-badge');
+    if (contactsBadge) {
+        if (count > 0) {
+            contactsBadge.textContent = count;
+            contactsBadge.style.display = 'inline-flex';
+        } else {
+            contactsBadge.style.display = 'none';
+        }
+    }
+
+    // Update inbound badge
+    const inboundBadge = document.getElementById('inbound-cache-count-badge');
+    if (inboundBadge) {
+        if (count > 0) {
+            inboundBadge.textContent = count;
+            inboundBadge.style.display = 'inline-flex';
+        } else {
+            inboundBadge.style.display = 'none';
+        }
+    }
+
+    // Update webhook badge
+    const webhookBadge = document.getElementById('webhook-cache-count-badge');
+    if (webhookBadge) {
+        if (count > 0) {
+            webhookBadge.textContent = count;
+            webhookBadge.style.display = 'inline-flex';
+        } else {
+            webhookBadge.style.display = 'none';
+        }
+    }
+
+    // Update notetaker badge
+    const notetakerBadge = document.getElementById('notetaker-cache-count-badge');
+    if (notetakerBadge) {
+        if (count > 0) {
+            notetakerBadge.textContent = count;
+            notetakerBadge.style.display = 'inline-flex';
+        } else {
+            notetakerBadge.style.display = 'none';
+        }
+    }
 }
 
 /**
@@ -689,6 +952,30 @@ function clearCacheAndNotify() {
         const data = authCommands[currentAuthCmd];
         if (data && data.param) {
             showParamInput('auth', data.param, data.flags);
+        }
+    }
+    if (currentContactsCmd) {
+        const data = contactsCommands[currentContactsCmd];
+        if (data && data.param) {
+            showParamInput('contacts', data.param, data.flags);
+        }
+    }
+    if (currentInboundCmd) {
+        const data = inboundCommands[currentInboundCmd];
+        if (data && data.param) {
+            showParamInput('inbound', data.param, data.flags);
+        }
+    }
+    if (currentWebhookCmd) {
+        const data = webhookCommands[currentWebhookCmd];
+        if (data && data.param) {
+            showParamInput('webhook', data.param, data.flags);
+        }
+    }
+    if (currentNotetakerCmd) {
+        const data = notetakerCommands[currentNotetakerCmd];
+        if (data && data.param) {
+            showParamInput('notetaker', data.param, data.flags);
         }
     }
 }
@@ -937,6 +1224,14 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAuthCommands();
     renderEmailCommands();
     renderCalendarCommands();
+    renderContactsCommands();
+    renderInboundCommands();
+    renderSchedulerCommands();
+    renderTimezoneCommands();
+    renderWebhookCommands();
+    renderOtpCommands();
+    renderAdminCommands();
+    renderNotetakerCommands();
 });
 
 function showCalendarCmd(cmd) {
@@ -1048,4 +1343,918 @@ function refreshEmailCmd() {
 
 function refreshCalendarCmd() {
     if (currentCalendarCmd) runCalendarCmd();
+}
+
+// =============================================================================
+// Contacts Commands
+// =============================================================================
+
+const contactsCommandSections = [
+    {
+        title: 'Contacts',
+        commands: {
+            'list': {
+                title: 'List',
+                cmd: 'contacts list',
+                desc: 'List all contacts',
+                flags: [
+                    { name: 'id', type: 'checkbox', label: 'Show IDs', default: true }
+                ]
+            },
+            'show': { title: 'Show', cmd: 'contacts show', desc: 'Show contact details', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } },
+            'search': { title: 'Search', cmd: 'contacts search', desc: 'Search contacts', param: { name: 'query', placeholder: 'Enter search query...' } },
+            'create': { title: 'Create', cmd: 'contacts create', desc: 'Create a new contact' },
+            'update': { title: 'Update', cmd: 'contacts update', desc: 'Update a contact', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } },
+            'delete': { title: 'Delete', cmd: 'contacts delete', desc: 'Delete a contact', param: { name: 'contact-id', placeholder: 'Enter contact ID...' } }
+        }
+    },
+    {
+        title: 'Groups',
+        commands: {
+            'groups': { title: 'List Groups', cmd: 'contacts groups', desc: 'List contact groups' },
+            'photo': { title: 'Photo', cmd: 'contacts photo', desc: 'Manage contact photos' },
+            'sync': { title: 'Sync', cmd: 'contacts sync', desc: 'Sync contacts with provider' }
+        }
+    }
+];
+
+const contactsCommands = {};
+contactsCommandSections.forEach(section => {
+    Object.assign(contactsCommands, section.commands);
+});
+
+let currentContactsCmd = '';
+
+function showContactsCmd(cmd) {
+    const data = contactsCommands[cmd];
+    if (!data) return;
+
+    currentContactsCmd = cmd;
+
+    document.querySelectorAll('#page-contacts .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('contacts-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('contacts-detail-title').textContent = data.title;
+    document.getElementById('contacts-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('contacts-detail-desc').textContent = data.desc || '';
+    document.getElementById('contacts-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('contacts-output').className = 'output-pre';
+
+    showParamInput('contacts', data.param, data.flags);
+}
+
+async function runContactsCmd() {
+    if (!currentContactsCmd) return;
+
+    const data = contactsCommands[currentContactsCmd];
+    const output = document.getElementById('contacts-output');
+    const btn = document.getElementById('contacts-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'contacts', data.flags);
+
+    document.getElementById('contacts-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+
+            // Cache IDs from list command for suggestions
+            if (result.output && currentContactsCmd === 'list') {
+                const ids = parseContactIdsFromOutput(result.output);
+                if (ids.length > 0) {
+                    cachedContactIds = ids;
+                    showToast(`Cached ${ids.length} contact IDs for quick access`, 'info');
+                    updateCacheCountBadge();
+                }
+            }
+        }
+
+        updateTimestamp('contacts');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshContactsCmd() {
+    if (currentContactsCmd) runContactsCmd();
+}
+
+function renderContactsCommands() {
+    renderCommandSections('contacts-cmd-list', contactsCommandSections, 'showContactsCmd');
+}
+
+// =============================================================================
+// Inbound Commands
+// =============================================================================
+
+const inboundCommandSections = [
+    {
+        title: 'Inboxes',
+        commands: {
+            'list': { title: 'List', cmd: 'inbound list', desc: 'List all inbound inboxes' },
+            'show': { title: 'Show', cmd: 'inbound show', desc: 'Show inbox details', param: { name: 'inbox-id', placeholder: 'Enter inbox ID...' } },
+            'create': { title: 'Create', cmd: 'inbound create', desc: 'Create a new inbox', param: { name: 'name', placeholder: 'Enter inbox name (e.g., support)...' } },
+            'delete': { title: 'Delete', cmd: 'inbound delete', desc: 'Delete an inbox', param: { name: 'inbox-id', placeholder: 'Enter inbox ID...' } }
+        }
+    },
+    {
+        title: 'Messages',
+        commands: {
+            'messages': { title: 'Messages', cmd: 'inbound messages', desc: 'View inbox messages', param: { name: 'inbox-id', placeholder: 'Enter inbox ID...' } },
+            'monitor': { title: 'Monitor', cmd: 'inbound monitor', desc: 'Monitor for new messages', param: { name: 'inbox-id', placeholder: 'Enter inbox ID...' } }
+        }
+    }
+];
+
+const inboundCommands = {};
+inboundCommandSections.forEach(section => {
+    Object.assign(inboundCommands, section.commands);
+});
+
+let currentInboundCmd = '';
+
+function showInboundCmd(cmd) {
+    const data = inboundCommands[cmd];
+    if (!data) return;
+
+    currentInboundCmd = cmd;
+
+    document.querySelectorAll('#page-inbound .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('inbound-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('inbound-detail-title').textContent = data.title;
+    document.getElementById('inbound-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('inbound-detail-desc').textContent = data.desc || '';
+    document.getElementById('inbound-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('inbound-output').className = 'output-pre';
+
+    showParamInput('inbound', data.param, data.flags);
+}
+
+async function runInboundCmd() {
+    if (!currentInboundCmd) return;
+
+    const data = inboundCommands[currentInboundCmd];
+    const output = document.getElementById('inbound-output');
+    const btn = document.getElementById('inbound-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'inbound', data.flags);
+
+    document.getElementById('inbound-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+
+            // Cache IDs from list command for suggestions
+            if (result.output && currentInboundCmd === 'list') {
+                const ids = parseInboxIdsFromOutput(result.output);
+                if (ids.length > 0) {
+                    cachedInboxIds = ids;
+                    showToast(`Cached ${ids.length} inbox IDs for quick access`, 'info');
+                    updateCacheCountBadge();
+                }
+            }
+        }
+
+        updateTimestamp('inbound');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshInboundCmd() {
+    if (currentInboundCmd) runInboundCmd();
+}
+
+function renderInboundCommands() {
+    renderCommandSections('inbound-cmd-list', inboundCommandSections, 'showInboundCmd');
+}
+
+// =============================================================================
+// Scheduler Commands
+// =============================================================================
+
+const schedulerCommandSections = [
+    {
+        title: 'Configuration',
+        commands: {
+            'configurations': { title: 'Configurations', cmd: 'scheduler configurations', desc: 'Manage scheduler configurations' },
+            'pages': { title: 'Pages', cmd: 'scheduler pages', desc: 'Manage scheduling pages' }
+        }
+    },
+    {
+        title: 'Scheduling',
+        commands: {
+            'sessions': { title: 'Sessions', cmd: 'scheduler sessions', desc: 'Manage scheduling sessions' },
+            'bookings': { title: 'Bookings', cmd: 'scheduler bookings', desc: 'View and manage bookings' }
+        }
+    }
+];
+
+const schedulerCommands = {};
+schedulerCommandSections.forEach(section => {
+    Object.assign(schedulerCommands, section.commands);
+});
+
+let currentSchedulerCmd = '';
+
+function showSchedulerCmd(cmd) {
+    const data = schedulerCommands[cmd];
+    if (!data) return;
+
+    currentSchedulerCmd = cmd;
+
+    document.querySelectorAll('#page-scheduler .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('scheduler-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('scheduler-detail-title').textContent = data.title;
+    document.getElementById('scheduler-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('scheduler-detail-desc').textContent = data.desc || '';
+    document.getElementById('scheduler-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('scheduler-output').className = 'output-pre';
+
+    showParamInput('scheduler', data.param, data.flags);
+}
+
+async function runSchedulerCmd() {
+    if (!currentSchedulerCmd) return;
+
+    const data = schedulerCommands[currentSchedulerCmd];
+    const output = document.getElementById('scheduler-output');
+    const btn = document.getElementById('scheduler-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'scheduler', data.flags);
+
+    document.getElementById('scheduler-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+        }
+
+        updateTimestamp('scheduler');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshSchedulerCmd() {
+    if (currentSchedulerCmd) runSchedulerCmd();
+}
+
+function renderSchedulerCommands() {
+    renderCommandSections('scheduler-cmd-list', schedulerCommandSections, 'showSchedulerCmd');
+}
+
+// =============================================================================
+// Timezone Commands
+// =============================================================================
+
+const timezoneCommandSections = [
+    {
+        title: 'Information',
+        commands: {
+            'list': { title: 'List', cmd: 'timezone list', desc: 'List all time zones' },
+            'info': { title: 'Info', cmd: 'timezone info', desc: 'Get time zone info', param: { name: 'zone', placeholder: 'e.g., America/New_York' } }
+        }
+    },
+    {
+        title: 'Conversion',
+        commands: {
+            'convert': {
+                title: 'Convert',
+                cmd: 'timezone convert',
+                desc: 'Convert time between zones',
+                flags: [
+                    { name: 'from', type: 'text', label: 'From Zone', placeholder: 'America/New_York', short: 'f' },
+                    { name: 'to', type: 'text', label: 'To Zone', placeholder: 'Asia/Tokyo', short: 't' },
+                    { name: 'time', type: 'text', label: 'Time', placeholder: '2024-01-15 10:00' }
+                ]
+            },
+            'find-meeting': {
+                title: 'Find Meeting',
+                cmd: 'timezone find-meeting',
+                desc: 'Find meeting times across zones',
+                flags: [
+                    { name: 'zones', type: 'text', label: 'Zones', placeholder: 'America/New_York,Europe/London,Asia/Tokyo', short: 'z' },
+                    { name: 'duration', type: 'text', label: 'Duration', placeholder: '1h', short: 'd' }
+                ]
+            }
+        }
+    },
+    {
+        title: 'DST',
+        commands: {
+            'dst': {
+                title: 'DST Transitions',
+                cmd: 'timezone dst',
+                desc: 'Check DST transitions',
+                flags: [
+                    { name: 'zone', type: 'text', label: 'Zone', placeholder: 'America/New_York', short: 'z' },
+                    { name: 'year', type: 'number', label: 'Year', placeholder: '2025', short: 'y' }
+                ]
+            }
+        }
+    }
+];
+
+const timezoneCommands = {};
+timezoneCommandSections.forEach(section => {
+    Object.assign(timezoneCommands, section.commands);
+});
+
+let currentTimezoneCmd = '';
+
+function showTimezoneCmd(cmd) {
+    const data = timezoneCommands[cmd];
+    if (!data) return;
+
+    currentTimezoneCmd = cmd;
+
+    document.querySelectorAll('#page-timezone .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('timezone-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('timezone-detail-title').textContent = data.title;
+    document.getElementById('timezone-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('timezone-detail-desc').textContent = data.desc || '';
+    document.getElementById('timezone-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('timezone-output').className = 'output-pre';
+
+    showParamInput('timezone', data.param, data.flags);
+}
+
+async function runTimezoneCmd() {
+    if (!currentTimezoneCmd) return;
+
+    const data = timezoneCommands[currentTimezoneCmd];
+    const output = document.getElementById('timezone-output');
+    const btn = document.getElementById('timezone-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'timezone', data.flags);
+
+    document.getElementById('timezone-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+        }
+
+        updateTimestamp('timezone');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshTimezoneCmd() {
+    if (currentTimezoneCmd) runTimezoneCmd();
+}
+
+function renderTimezoneCommands() {
+    renderCommandSections('timezone-cmd-list', timezoneCommandSections, 'showTimezoneCmd');
+}
+
+// =============================================================================
+// Webhook Commands
+// =============================================================================
+
+const webhookCommandSections = [
+    {
+        title: 'Webhooks',
+        commands: {
+            'list': { title: 'List', cmd: 'webhook list', desc: 'List all webhooks' },
+            'show': { title: 'Show', cmd: 'webhook show', desc: 'Show webhook details', param: { name: 'webhook-id', placeholder: 'Enter webhook ID...' } },
+            'create': { title: 'Create', cmd: 'webhook create', desc: 'Create a new webhook' },
+            'update': { title: 'Update', cmd: 'webhook update', desc: 'Update a webhook', param: { name: 'webhook-id', placeholder: 'Enter webhook ID...' } },
+            'delete': { title: 'Delete', cmd: 'webhook delete', desc: 'Delete a webhook', param: { name: 'webhook-id', placeholder: 'Enter webhook ID...' } }
+        }
+    },
+    {
+        title: 'Tools',
+        commands: {
+            'triggers': { title: 'Triggers', cmd: 'webhook triggers', desc: 'List available trigger types' },
+            'test': { title: 'Test', cmd: 'webhook test', desc: 'Test webhook functionality' },
+            'server': { title: 'Server', cmd: 'webhook server', desc: 'Start local webhook server' }
+        }
+    }
+];
+
+const webhookCommands = {};
+webhookCommandSections.forEach(section => {
+    Object.assign(webhookCommands, section.commands);
+});
+
+let currentWebhookCmd = '';
+
+function showWebhookCmd(cmd) {
+    const data = webhookCommands[cmd];
+    if (!data) return;
+
+    currentWebhookCmd = cmd;
+
+    document.querySelectorAll('#page-webhook .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('webhook-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('webhook-detail-title').textContent = data.title;
+    document.getElementById('webhook-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('webhook-detail-desc').textContent = data.desc || '';
+    document.getElementById('webhook-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('webhook-output').className = 'output-pre';
+
+    showParamInput('webhook', data.param, data.flags);
+}
+
+async function runWebhookCmd() {
+    if (!currentWebhookCmd) return;
+
+    const data = webhookCommands[currentWebhookCmd];
+    const output = document.getElementById('webhook-output');
+    const btn = document.getElementById('webhook-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'webhook', data.flags);
+
+    document.getElementById('webhook-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+
+            // Cache IDs from list command for suggestions
+            if (result.output && currentWebhookCmd === 'list') {
+                const ids = parseWebhookIdsFromOutput(result.output);
+                if (ids.length > 0) {
+                    cachedWebhookIds = ids;
+                    showToast(`Cached ${ids.length} webhook IDs for quick access`, 'info');
+                    updateCacheCountBadge();
+                }
+            }
+        }
+
+        updateTimestamp('webhook');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshWebhookCmd() {
+    if (currentWebhookCmd) runWebhookCmd();
+}
+
+function renderWebhookCommands() {
+    renderCommandSections('webhook-cmd-list', webhookCommandSections, 'showWebhookCmd');
+}
+
+// =============================================================================
+// OTP Commands
+// =============================================================================
+
+const otpCommandSections = [
+    {
+        title: 'OTP Management',
+        commands: {
+            'get': { title: 'Get', cmd: 'otp get', desc: 'Get the latest OTP code' },
+            'watch': { title: 'Watch', cmd: 'otp watch', desc: 'Watch for new OTP codes' },
+            'list': { title: 'List', cmd: 'otp list', desc: 'List configured accounts' },
+            'messages': { title: 'Messages', cmd: 'otp messages', desc: 'Show recent OTP messages' }
+        }
+    }
+];
+
+const otpCommands = {};
+otpCommandSections.forEach(section => {
+    Object.assign(otpCommands, section.commands);
+});
+
+let currentOtpCmd = '';
+
+function showOtpCmd(cmd) {
+    const data = otpCommands[cmd];
+    if (!data) return;
+
+    currentOtpCmd = cmd;
+
+    document.querySelectorAll('#page-otp .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('otp-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('otp-detail-title').textContent = data.title;
+    document.getElementById('otp-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('otp-detail-desc').textContent = data.desc || '';
+    document.getElementById('otp-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('otp-output').className = 'output-pre';
+
+    showParamInput('otp', data.param, data.flags);
+}
+
+async function runOtpCmd() {
+    if (!currentOtpCmd) return;
+
+    const data = otpCommands[currentOtpCmd];
+    const output = document.getElementById('otp-output');
+    const btn = document.getElementById('otp-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'otp', data.flags);
+
+    document.getElementById('otp-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+        }
+
+        updateTimestamp('otp');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshOtpCmd() {
+    if (currentOtpCmd) runOtpCmd();
+}
+
+function renderOtpCommands() {
+    renderCommandSections('otp-cmd-list', otpCommandSections, 'showOtpCmd');
+}
+
+// =============================================================================
+// Admin Commands
+// =============================================================================
+
+const adminCommandSections = [
+    {
+        title: 'Applications',
+        commands: {
+            'applications': { title: 'Applications', cmd: 'admin applications', desc: 'Manage applications' }
+        }
+    },
+    {
+        title: 'Connectors & Credentials',
+        commands: {
+            'connectors': { title: 'Connectors', cmd: 'admin connectors', desc: 'Manage connectors' },
+            'credentials': { title: 'Credentials', cmd: 'admin credentials', desc: 'Manage credentials' }
+        }
+    },
+    {
+        title: 'Grants',
+        commands: {
+            'grants': { title: 'Grants', cmd: 'admin grants', desc: 'Manage grants' }
+        }
+    }
+];
+
+const adminCommands = {};
+adminCommandSections.forEach(section => {
+    Object.assign(adminCommands, section.commands);
+});
+
+let currentAdminCmd = '';
+
+function showAdminCmd(cmd) {
+    const data = adminCommands[cmd];
+    if (!data) return;
+
+    currentAdminCmd = cmd;
+
+    document.querySelectorAll('#page-admin .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('admin-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('admin-detail-title').textContent = data.title;
+    document.getElementById('admin-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('admin-detail-desc').textContent = data.desc || '';
+    document.getElementById('admin-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('admin-output').className = 'output-pre';
+
+    showParamInput('admin', data.param, data.flags);
+}
+
+async function runAdminCmd() {
+    if (!currentAdminCmd) return;
+
+    const data = adminCommands[currentAdminCmd];
+    const output = document.getElementById('admin-output');
+    const btn = document.getElementById('admin-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'admin', data.flags);
+
+    document.getElementById('admin-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+        }
+
+        updateTimestamp('admin');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshAdminCmd() {
+    if (currentAdminCmd) runAdminCmd();
+}
+
+function renderAdminCommands() {
+    renderCommandSections('admin-cmd-list', adminCommandSections, 'showAdminCmd');
+}
+
+// =============================================================================
+// Notetaker Commands
+// =============================================================================
+
+const notetakerCommandSections = [
+    {
+        title: 'Notetakers',
+        commands: {
+            'list': { title: 'List', cmd: 'notetaker list', desc: 'List all notetakers' },
+            'show': { title: 'Show', cmd: 'notetaker show', desc: 'Show notetaker details', param: { name: 'notetaker-id', placeholder: 'Enter notetaker ID...' } },
+            'create': { title: 'Create', cmd: 'notetaker create', desc: 'Create a new notetaker' },
+            'delete': { title: 'Delete', cmd: 'notetaker delete', desc: 'Delete a notetaker', param: { name: 'notetaker-id', placeholder: 'Enter notetaker ID...' } }
+        }
+    },
+    {
+        title: 'Media',
+        commands: {
+            'media': { title: 'Media', cmd: 'notetaker media', desc: 'Get recording/transcript', param: { name: 'notetaker-id', placeholder: 'Enter notetaker ID...' } }
+        }
+    }
+];
+
+const notetakerCommands = {};
+notetakerCommandSections.forEach(section => {
+    Object.assign(notetakerCommands, section.commands);
+});
+
+let currentNotetakerCmd = '';
+
+function showNotetakerCmd(cmd) {
+    const data = notetakerCommands[cmd];
+    if (!data) return;
+
+    currentNotetakerCmd = cmd;
+
+    document.querySelectorAll('#page-notetaker .cmd-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.cmd === cmd);
+    });
+
+    const detail = document.getElementById('notetaker-detail');
+    detail.querySelector('.detail-placeholder').style.display = 'none';
+    detail.querySelector('.detail-content').style.display = 'block';
+
+    document.getElementById('notetaker-detail-title').textContent = data.title;
+    document.getElementById('notetaker-detail-cmd').textContent = 'nylas ' + data.cmd;
+    document.getElementById('notetaker-detail-desc').textContent = data.desc || '';
+    document.getElementById('notetaker-output').textContent = 'Click "Run" to execute command...';
+    document.getElementById('notetaker-output').className = 'output-pre';
+
+    showParamInput('notetaker', data.param, data.flags);
+}
+
+async function runNotetakerCmd() {
+    if (!currentNotetakerCmd) return;
+
+    const data = notetakerCommands[currentNotetakerCmd];
+    const output = document.getElementById('notetaker-output');
+    const btn = document.getElementById('notetaker-run-btn');
+    const fullCmd = buildCommand(data.cmd, 'notetaker', data.flags);
+
+    document.getElementById('notetaker-detail-cmd').textContent = 'nylas ' + fullCmd;
+
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+    output.innerHTML = '<span class="ansi-cyan">Running command...</span>';
+    output.className = 'output-pre loading';
+
+    try {
+        const res = await fetch('/api/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: fullCmd })
+        });
+        const result = await res.json();
+
+        if (result.error) {
+            output.innerHTML = '<span class="ansi-red">' + esc(result.error) + '</span>';
+            output.className = 'output-pre error';
+            showToast('Command failed', 'error');
+        } else {
+            output.innerHTML = formatOutput(result.output) || '<span class="ansi-green">Command completed successfully.</span>';
+            output.className = 'output-pre';
+            showToast('Command completed', 'success');
+
+            // Cache IDs from list command for suggestions
+            if (result.output && currentNotetakerCmd === 'list') {
+                const ids = parseNotetakerIdsFromOutput(result.output);
+                if (ids.length > 0) {
+                    cachedNotetakerIds = ids;
+                    showToast(`Cached ${ids.length} notetaker IDs for quick access`, 'info');
+                    updateCacheCountBadge();
+                }
+            }
+        }
+
+        updateTimestamp('notetaker');
+    } catch (err) {
+        output.innerHTML = '<span class="ansi-red">Failed to execute command: ' + esc(err.message) + '</span>';
+        output.className = 'output-pre error';
+        showToast('Connection error', 'error');
+    } finally {
+        btn.classList.remove('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run';
+    }
+}
+
+function refreshNotetakerCmd() {
+    if (currentNotetakerCmd) runNotetakerCmd();
+}
+
+function renderNotetakerCommands() {
+    renderCommandSections('notetaker-cmd-list', notetakerCommandSections, 'showNotetakerCmd');
 }

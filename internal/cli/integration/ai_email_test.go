@@ -107,8 +107,10 @@ func TestCLI_EmailAI_AnalyzeWithProvider(t *testing.T) {
 	if err != nil {
 		if strings.Contains(stderr, "AI is not configured") ||
 			strings.Contains(stderr, "not configured") ||
-			strings.Contains(stderr, "provider") {
-			t.Skip("AI/Ollama not configured, skipping test")
+			strings.Contains(stderr, "provider") ||
+			strings.Contains(stderr, "no default grant") ||
+			strings.Contains(stderr, "no grant ID") {
+			t.Skip("AI/Ollama not configured or no default grant, skipping test")
 		}
 		t.Fatalf("email ai analyze --provider ollama failed: %v\nstderr: %s", err, stderr)
 	}

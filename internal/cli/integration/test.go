@@ -162,6 +162,17 @@ func skipIfMissingCreds(t *testing.T) {
 	}
 }
 
+// skipIfKeyringDisabled skips the test if NYLAS_DISABLE_KEYRING=true.
+// Call this for tests that require local grant store access (auth list, whoami, etc.)
+// These tests can't work when keyring is disabled because they need to read/write
+// local grants which are stored in the encrypted file store.
+func skipIfKeyringDisabled(t *testing.T) {
+	t.Helper()
+	if os.Getenv("NYLAS_DISABLE_KEYRING") == "true" {
+		t.Skip("Test requires keyring access - skipping when NYLAS_DISABLE_KEYRING=true")
+	}
+}
+
 // runCLI executes a CLI command and returns stdout, stderr, and error.
 // NOTE: This does NOT apply rate limiting. For tests that make API calls,
 // either call acquireRateLimit(t) before this, or use runCLIWithRateLimit.

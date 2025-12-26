@@ -40,9 +40,11 @@ test-short:
 
 # Integration tests (requires NYLAS_API_KEY and NYLAS_GRANT_ID env vars)
 # Uses 10 minute timeout to prevent hanging on slow LLM calls
+# Output saved to test-integration.txt
+# NYLAS_DISABLE_KEYRING=true prevents keychain popup and skips tests that need local grant store
 test-integration:
 	@go clean -testcache
-	go test ./... -tags=integration -v -timeout 10m
+	NYLAS_DISABLE_KEYRING=true NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas go test ./... -tags=integration -v -timeout 10m 2>&1 | tee test-integration.txt
 
 # Integration tests excluding slow LLM-dependent tests (for when Ollama is slow/unavailable)
 # Runs: Admin, Timezone, AIConfig, CalendarAI (Basic, Adapt, Analyze working hours)
@@ -57,6 +59,14 @@ test-integration-clean: test-integration test-cleanup
 # Clean up test resources (virtual calendars, test grants, test events, test emails, etc.)
 test-cleanup:
 	@echo "=== Cleaning up test resources ==="
+	@echo ""
+	@echo "0. Killing any leftover test processes and freeing ports..."
+	@-pkill -f "nylas.*webhook.*server" 2>/dev/null || true
+	@-pkill -f "nylas.*ui" 2>/dev/null || true
+	@-lsof -ti :3099 | xargs kill -9 2>/dev/null || true
+	@-lsof -ti :8080 | xargs kill -9 2>/dev/null || true
+	@-lsof -ti :9000 | xargs kill -9 2>/dev/null || true
+	@echo "  ✓ Processes cleaned up"
 	@echo ""
 	@echo "1. Cleaning test emails (messages and drafts)..."
 	@./bin/nylas email list --limit 100 --id 2>/dev/null | \

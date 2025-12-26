@@ -1,6 +1,8 @@
 package otp
 
 import (
+	"os"
+
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	nylasadapter "github.com/mqasimca/nylas/internal/adapters/nylas"
@@ -22,13 +24,25 @@ func createOTPService() (*otpapp.Service, error) {
 	// Create Nylas client
 	client := nylasadapter.NewHTTPClient()
 
-	// Set credentials
+	// Set credentials - check env vars first
 	cfg, _ := configStore.Load()
 	client.SetRegion(cfg.Region)
 
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
-	apiKey, _ := secretStore.Get(ports.KeyAPIKey)
+	apiKey := os.Getenv("NYLAS_API_KEY")
+	clientID := os.Getenv("NYLAS_CLIENT_ID")
+	clientSecret := os.Getenv("NYLAS_CLIENT_SECRET")
+
+	// If API key not in env, try keyring/file store
+	if apiKey == "" {
+		apiKey, _ = secretStore.Get(ports.KeyAPIKey)
+		if clientID == "" {
+			clientID, _ = secretStore.Get(ports.KeyClientID)
+		}
+		if clientSecret == "" {
+			clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
+		}
+	}
+
 	client.SetCredentials(clientID, clientSecret, apiKey)
 
 	return otpapp.NewService(client, grantStore, configStore), nil
