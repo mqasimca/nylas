@@ -1601,10 +1601,10 @@ func TestIntegration_CreateContact(t *testing.T) {
 		Surname:     "Test",
 		CompanyName: "Test Company",
 		JobTitle:    "Tester",
-		Emails: []ContactEmailInput{
+		Emails: []ContactEmailResponse{
 			{Email: "integration-test@example.com", Type: "work"},
 		},
-		PhoneNumbers: []ContactPhoneInput{
+		PhoneNumbers: []ContactPhoneResponse{
 			{Number: "+1-555-0123", Type: "mobile"},
 		},
 		Notes: "Created by integration test",
@@ -1653,7 +1653,7 @@ func TestIntegration_ContactCRUD(t *testing.T) {
 		GivenName:   "CRUD",
 		Surname:     "Test",
 		CompanyName: "CRUD Company",
-		Emails: []ContactEmailInput{
+		Emails: []ContactEmailResponse{
 			{Email: "crud-test@example.com", Type: "work"},
 		},
 	}
@@ -1701,10 +1701,13 @@ func TestIntegration_ContactCRUD(t *testing.T) {
 	t.Logf("Read contact: %s", readResp.DisplayName)
 
 	// Update the contact
+	updatedGiven := "Updated"
+	updatedSurname := "Name"
+	updatedCompany := "Updated Company"
 	update := UpdateContactRequest{
-		GivenName:   "Updated",
-		Surname:     "Name",
-		CompanyName: "Updated Company",
+		GivenName:   &updatedGiven,
+		Surname:     &updatedSurname,
+		CompanyName: &updatedCompany,
 	}
 	updateBody, _ := json.Marshal(update)
 	req = httptest.NewRequest(http.MethodPut, "/api/contacts/"+contactID, bytes.NewBuffer(updateBody))

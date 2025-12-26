@@ -63,6 +63,51 @@
     </div>
 </div>
 
+<!-- Search Overlay -->
+<div class="search-overlay" id="searchOverlay" onclick="if(event.target === this) closeSearch()">
+    <div class="search-modal" onclick="event.stopPropagation()">
+        <div class="search-input-wrapper">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search emails, events, contacts..."
+                   oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)">
+            <kbd class="search-kbd">ESC</kbd>
+        </div>
+        <div class="search-filters">
+            <button class="search-filter-chip active" onclick="toggleSearchFilter(this)" data-filter="all">
+                All
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="emails">
+                <span>📧</span> Emails
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="events">
+                <span>📅</span> Events
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="contacts">
+                <span>👤</span> Contacts
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="attachments">
+                <span>📎</span> Attachments
+            </button>
+        </div>
+        <div class="search-suggestions" id="searchSuggestions">
+            <!-- Recent searches section - populated by JavaScript -->
+            <div class="search-suggestion-group" id="recentSearchesGroup">
+                <div class="search-suggestion-title">
+                    <span>Recent Searches</span>
+                    <button class="clear-recent-btn" onclick="RecentSearches.clear()" title="Clear recent searches">Clear</button>
+                </div>
+                <div id="recentSearchesList">
+                    <!-- Recent searches will be rendered here -->
+                </div>
+            </div>
+            <!-- Search results section -->
+            <div id="searchResultsSection"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Compose Modal -->
 <div class="compose-modal hidden" id="composeModal" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
     <div class="compose-header">
