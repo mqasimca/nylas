@@ -29,6 +29,22 @@ function getParamSuggestions(section, paramName) {
         'grant-id': 'getCachedGrantIds'        // auth show, switch, remove, revoke, scopes
     };
 
+    const contactsParamMap = {
+        'contact-id': 'getCachedContactIds'    // contacts show, update, delete
+    };
+
+    const inboundParamMap = {
+        'inbox-id': 'getCachedInboxIds'        // inbound show, delete, messages, monitor
+    };
+
+    const webhookParamMap = {
+        'webhook-id': 'getCachedWebhookIds'    // webhook show, update, delete
+    };
+
+    const notetakerParamMap = {
+        'notetaker-id': 'getCachedNotetakerIds' // notetaker show, delete, media
+    };
+
     let getterName = null;
 
     if (section === 'email') {
@@ -37,6 +53,14 @@ function getParamSuggestions(section, paramName) {
         getterName = calendarParamMap[paramName];
     } else if (section === 'auth') {
         getterName = authParamMap[paramName];
+    } else if (section === 'contacts') {
+        getterName = contactsParamMap[paramName];
+    } else if (section === 'inbound') {
+        getterName = inboundParamMap[paramName];
+    } else if (section === 'webhook') {
+        getterName = webhookParamMap[paramName];
+    } else if (section === 'notetaker') {
+        getterName = notetakerParamMap[paramName];
     }
 
     if (getterName && typeof window[getterName] === 'function') {

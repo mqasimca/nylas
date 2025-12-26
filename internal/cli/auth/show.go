@@ -37,18 +37,28 @@ Information includes:
 				cfg = &domain.Config{Region: "us"}
 			}
 
-			secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-			if err != nil {
-				return err
-			}
+			// Check environment variables first (highest priority)
+			apiKey, clientID, clientSecret := getCredentialsFromEnv()
 
-			apiKey, err := secretStore.Get(ports.KeyAPIKey)
-			if err != nil {
-				return fmt.Errorf("not authenticated: run 'nylas auth config' first")
-			}
+			// If API key not in env, try keyring/file store
+			if apiKey == "" {
+				secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+				if err != nil {
+					return fmt.Errorf("not authenticated: run 'nylas auth config' first")
+				}
 
-			clientID, _ := secretStore.Get(ports.KeyClientID)
-			clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
+				apiKey, err = secretStore.Get(ports.KeyAPIKey)
+				if err != nil {
+					return fmt.Errorf("not authenticated: run 'nylas auth config' first")
+				}
+
+				if clientID == "" {
+					clientID, _ = secretStore.Get(ports.KeyClientID)
+				}
+				if clientSecret == "" {
+					clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
+				}
+			}
 
 			client := nylas.NewHTTPClient()
 			client.SetRegion(cfg.Region)
@@ -56,10 +66,16 @@ Information includes:
 
 			// Get grant ID
 			var grantID string
+			var grantStore ports.GrantStore
 			if len(args) > 0 {
 				grantID = args[0]
 			} else {
-				grantStore := keyring.NewGrantStore(secretStore)
+				// Need to access local grant store for default grant
+				secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+				if err != nil {
+					return fmt.Errorf("no default grant set: specify a grant ID or run 'nylas auth login'")
+				}
+				grantStore = keyring.NewGrantStore(secretStore)
 				grantID, err = grantStore.GetDefaultGrant()
 				if err != nil {
 					return fmt.Errorf("no default grant set: specify a grant ID or run 'nylas auth login'")
@@ -115,11 +131,12 @@ Information includes:
 				}
 			}
 
-			// Check if this is the default grant
-			grantStore := keyring.NewGrantStore(secretStore)
-			defaultGrant, _ := grantStore.GetDefaultGrant()
-			if defaultGrant == grant.ID {
-				fmt.Printf("\n%s This is the default grant\n", green.Sprint("★"))
+			// Check if this is the default grant (only if we have access to grant store)
+			if grantStore != nil {
+				defaultGrant, _ := grantStore.GetDefaultGrant()
+				if defaultGrant == grant.ID {
+					fmt.Printf("\n%s This is the default grant\n", green.Sprint("★"))
+				}
 			}
 
 			return nil

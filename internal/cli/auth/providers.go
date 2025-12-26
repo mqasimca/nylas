@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
@@ -91,18 +92,28 @@ func getProvidersClient() (ports.NylasClient, error) {
 		cfg = &domain.Config{Region: "us"}
 	}
 
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err != nil {
-		return nil, err
+	// Check environment variables first (highest priority)
+	apiKey := os.Getenv("NYLAS_API_KEY")
+	clientID := os.Getenv("NYLAS_CLIENT_ID")
+	clientSecret := os.Getenv("NYLAS_CLIENT_SECRET")
+
+	// If API key not in env, try keyring/file store
+	if apiKey == "" {
+		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+		if err == nil {
+			apiKey, _ = secretStore.Get(ports.KeyAPIKey)
+			if clientID == "" {
+				clientID, _ = secretStore.Get(ports.KeyClientID)
+			}
+			if clientSecret == "" {
+				clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
+			}
+		}
 	}
 
-	apiKey, err := secretStore.Get(ports.KeyAPIKey)
-	if err != nil {
-		return nil, fmt.Errorf("API key not configured. Run 'nylas auth config' to set it")
+	if apiKey == "" {
+		return nil, fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
 	}
-
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
 
 	c := nylas.NewHTTPClient()
 	c.SetRegion(cfg.Region)
