@@ -1,4 +1,4 @@
-.PHONY: build test test-short test-integration test-integration-clean test-cleanup test-coverage clean install lint deps check security check-context
+.PHONY: build test test-short test-integration test-integration-clean test-cleanup test-coverage test-air test-air-integration test-air-integration-clean clean install lint deps check security check-context
 
 VERSION ?= dev
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
@@ -37,6 +37,57 @@ deps:
 test-short:
 	@go clean -testcache
 	go test ./... -short
+
+# Nylas Air web UI tests
+test-air:
+	@echo "=== Running Nylas Air Tests ==="
+	@go clean -testcache
+	go test ./internal/air/... -v
+	@echo "✓ All Air tests passed"
+
+# Nylas Air integration tests (requires Google account as default)
+# Skips automatically if no Google account is configured as default
+test-air-integration:
+	@echo "=== Running Nylas Air Integration Tests ==="
+	@echo "Note: Requires a Google account configured as default"
+	@echo ""
+	@go clean -testcache
+	go test -tags=integration ./internal/air/... -v -timeout 5m
+	@echo "✓ All Air integration tests passed"
+
+# Nylas Air integration tests with cleanup
+test-air-integration-clean: test-air-integration test-air-integration-cleanup
+
+# Clean up resources created by Air integration tests
+test-air-integration-cleanup:
+	@echo "=== Cleaning up Air integration test resources ==="
+	@echo ""
+	@echo "1. Cleaning test drafts..."
+	@./bin/nylas email drafts list 2>/dev/null | \
+		grep -E "(Air Test|Integration Test)" | \
+		awk '{print $$1}' | \
+		while read draft_id; do \
+			if [ ! -z "$$draft_id" ]; then \
+				echo "  Deleting test draft: $$draft_id"; \
+				./bin/nylas email drafts delete $$draft_id --force 2>/dev/null && \
+				echo "    ✓ Deleted draft $$draft_id" || echo "    ⚠ Could not delete $$draft_id"; \
+			fi \
+		done || echo "  No test drafts found"
+	@echo ""
+	@echo "2. Cleaning test events..."
+	@./bin/nylas calendar events list --limit 100 2>/dev/null | \
+		grep -E "(Air Test|Air Integration)" | \
+		awk '/ID:/ {print $$2}' | \
+		while read event_id; do \
+			if [ ! -z "$$event_id" ]; then \
+				echo "  Deleting test event: $$event_id"; \
+				./bin/nylas calendar events delete $$event_id --force 2>/dev/null && \
+				echo "    ✓ Deleted event $$event_id" || echo "    ⚠ Could not delete $$event_id"; \
+			fi \
+		done || echo "  No test events found"
+	@echo ""
+	@echo "✓ Air integration test cleanup complete"
+	@echo "Note: Current Air tests are read-only, cleanup is for future tests"
 
 # Integration tests (requires NYLAS_API_KEY and NYLAS_GRANT_ID env vars)
 # Uses 10 minute timeout to prevent hanging on slow LLM calls
@@ -167,6 +218,9 @@ help:
 	@echo "  build                - Build the CLI binary"
 	@echo "  test                 - Run all tests with verbose output"
 	@echo "  test-short           - Run tests (skip slow ones)"
+	@echo "  test-air             - Run Nylas Air web UI tests"
+	@echo "  test-air-integration - Run Nylas Air integration tests (requires Google)"
+	@echo "  test-air-integration-clean - Run Air integration tests + cleanup"
 	@echo "  test-integration     - Run integration tests"
 	@echo "  test-integration-clean - Run integration tests + cleanup"
 	@echo "  test-cleanup         - Clean up test resources (grants, calendars)"

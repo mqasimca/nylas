@@ -1,0 +1,176 @@
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            padding: 16px 12px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 100vh;
+        }
+
+        .compose-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--gradient-accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px var(--accent-glow);
+            margin-bottom: 8px;
+        }
+
+        .compose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .compose-btn:active {
+            transform: translateY(0);
+        }
+
+        .folder-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .folder-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .folder-item:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .folder-item.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+            color: var(--text-primary);
+        }
+
+        .folder-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: var(--gradient-accent);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .folder-icon {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .folder-count {
+            margin-left: auto;
+            padding: 2px 8px;
+            background: var(--bg-surface);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .folder-count.unread {
+            background: var(--accent);
+            color: white;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 12px 0;
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            padding: 8px 14px;
+        }
+
+        .label-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* More Folders Dropdown */
+        .folder-more-container {
+            position: relative;
+        }
+
+        .folder-more-trigger {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .folder-more-trigger .folder-count {
+            margin-left: auto;
+            margin-right: 4px;
+        }
+
+        .folder-more-arrow {
+            transition: transform 0.2s;
+            opacity: 0.5;
+        }
+
+        .folder-more-trigger.expanded .folder-more-arrow {
+            transform: rotate(180deg);
+        }
+
+        .folder-more-dropdown {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 4px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .folder-more-dropdown.hidden {
+            display: none;
+        }
+
+        .folder-dropdown-item {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .folder-dropdown-item .folder-count {
+            font-size: 10px;
+        }
+

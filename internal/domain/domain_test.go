@@ -48,6 +48,27 @@ func TestProvider(t *testing.T) {
 		}
 	})
 
+	t.Run("IsSupportedByAir", func(t *testing.T) {
+		tests := []struct {
+			provider Provider
+			want     bool
+		}{
+			{ProviderGoogle, true},
+			{ProviderMicrosoft, true},
+			{ProviderIMAP, false},
+			{ProviderVirtual, false},
+			{ProviderInbox, false},
+			{Provider("unknown"), false},
+		}
+
+		for _, tt := range tests {
+			got := tt.provider.IsSupportedByAir()
+			if got != tt.want {
+				t.Errorf("Provider(%q).IsSupportedByAir() = %v, want %v", tt.provider, got, tt.want)
+			}
+		}
+	})
+
 	t.Run("ParseProvider", func(t *testing.T) {
 		tests := []struct {
 			input   string

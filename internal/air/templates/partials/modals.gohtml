@@ -1,0 +1,522 @@
+{{define "modals"}}
+<!-- Command Palette -->
+<div class="modal-overlay hidden" id="commandPalette" onclick="toggleCommandPalette()">
+    <div class="command-palette" onclick="event.stopPropagation()">
+        <div class="command-input-wrapper">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" class="command-input" placeholder="Type a command or search..." autofocus>
+        </div>
+        <div class="command-results">
+            <div class="command-section">
+                <div class="command-section-title">Quick Actions</div>
+                <div class="command-item selected">
+                    <div class="command-icon-wrapper">✉️</div>
+                    <div class="command-text">
+                        <div class="command-title">Compose new email</div>
+                        <div class="command-description">Start writing a new message</div>
+                    </div>
+                    <div class="command-shortcut"><kbd>C</kbd></div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">📅</div>
+                    <div class="command-text">
+                        <div class="command-title">Create event</div>
+                        <div class="command-description">Add a new calendar event</div>
+                    </div>
+                    <div class="command-shortcut"><kbd>⇧</kbd><kbd>C</kbd></div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">🎯</div>
+                    <div class="command-text">
+                        <div class="command-title">Find meeting time</div>
+                        <div class="command-description">Find optimal time across timezones</div>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">🧘</div>
+                    <div class="command-text">
+                        <div class="command-title">Block focus time</div>
+                        <div class="command-description">Protect time for deep work</div>
+                    </div>
+                </div>
+            </div>
+            <div class="command-section">
+                <div class="command-section-title">AI Features</div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">✨</div>
+                    <div class="command-text">
+                        <div class="command-title">Smart Compose</div>
+                        <div class="command-description">AI-powered email drafting</div>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">📝</div>
+                    <div class="command-text">
+                        <div class="command-title">Summarize thread</div>
+                        <div class="command-description">Get AI summary of conversation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Overlay -->
+<div class="search-overlay" id="searchOverlay" onclick="if(event.target === this) closeSearch()">
+    <div class="search-modal" onclick="event.stopPropagation()">
+        <div class="search-input-wrapper">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search emails, events, contacts..."
+                   oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)">
+            <kbd class="search-kbd">ESC</kbd>
+        </div>
+        <div class="search-filters">
+            <button class="search-filter-chip active" onclick="toggleSearchFilter(this)" data-filter="all">
+                All
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="emails">
+                <span>📧</span> Emails
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="events">
+                <span>📅</span> Events
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="contacts">
+                <span>👤</span> Contacts
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="attachments">
+                <span>📎</span> Attachments
+            </button>
+        </div>
+        <div class="search-suggestions" id="searchSuggestions">
+            <!-- Recent searches section - populated by JavaScript -->
+            <div class="search-suggestion-group" id="recentSearchesGroup">
+                <div class="search-suggestion-title">
+                    <span>Recent Searches</span>
+                    <button class="clear-recent-btn" onclick="RecentSearches.clear()" title="Clear recent searches">Clear</button>
+                </div>
+                <div id="recentSearchesList">
+                    <!-- Recent searches will be rendered here -->
+                </div>
+            </div>
+            <!-- Search results section -->
+            <div id="searchResultsSection"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Compose Modal -->
+<div class="compose-modal hidden" id="composeModal" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
+    <div class="compose-header">
+        <span class="compose-title" id="composeTitle">New Message</span>
+        <div class="compose-controls">
+            <button class="compose-control" type="button" title="Minimize">−</button>
+            <button class="compose-control modal-close" type="button" title="Close">×</button>
+        </div>
+    </div>
+    <form id="composeForm" class="compose-form">
+        <div class="compose-fields">
+            <div class="compose-field">
+                <label class="compose-label" for="composeTo">To</label>
+                <input type="text" id="composeTo" class="compose-field-input" placeholder="Recipients (comma separated)" autocomplete="email">
+            </div>
+            <div class="compose-field compose-field-collapsed" id="ccBccToggle">
+                <button type="button" class="compose-cc-toggle" onclick="toggleCcBcc()">Cc/Bcc</button>
+            </div>
+            <div class="compose-field compose-field-cc hidden" id="ccField">
+                <label class="compose-label" for="composeCc">Cc</label>
+                <input type="text" id="composeCc" class="compose-field-input" placeholder="Cc recipients">
+            </div>
+            <div class="compose-field compose-field-bcc hidden" id="bccField">
+                <label class="compose-label" for="composeBcc">Bcc</label>
+                <input type="text" id="composeBcc" class="compose-field-input" placeholder="Bcc recipients">
+            </div>
+            <div class="compose-field">
+                <label class="compose-label" for="composeSubject">Subject</label>
+                <input type="text" id="composeSubject" class="compose-field-input" placeholder="Subject">
+            </div>
+        </div>
+        <div class="compose-body">
+            <textarea id="composeBody" class="compose-editor" placeholder="Write your message..."></textarea>
+        </div>
+    </form>
+    <div class="compose-footer">
+        <div class="compose-tools">
+            <button type="button" class="tool-btn" id="composeSave" title="Save draft">💾</button>
+            <button type="button" class="tool-btn" title="Attach file">📎</button>
+            <button type="button" class="tool-btn" title="Insert link">🔗</button>
+            <button type="button" class="tool-btn" title="Insert emoji">😊</button>
+            <!-- Templates button disabled: <button type="button" class="tool-btn" onclick="TemplatesManager.open()" title="Templates">📋</button> -->
+            <button type="button" class="tool-btn ai" title="AI Compose">✨</button>
+            <button type="button" class="tool-btn danger" id="composeDiscard" title="Discard">🗑️</button>
+        </div>
+        <div class="send-group" style="display: flex;">
+            <button type="button" class="send-btn" id="composeSend">
+                Send
+                <span class="send-shortcut">⌘↵</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCcBcc() {
+    const ccField = document.getElementById('ccField');
+    const bccField = document.getElementById('bccField');
+    const toggle = document.getElementById('ccBccToggle');
+    ccField.classList.remove('hidden');
+    bccField.classList.remove('hidden');
+    toggle.classList.add('hidden');
+}
+</script>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Send Animation -->
+<div class="send-animation" id="sendAnimation">
+    <div class="send-animation-icon">✈️</div>
+    <div class="send-animation-text">Message Sent</div>
+</div>
+
+<!-- Focus Mode Toggle -->
+<button class="focus-mode-toggle" id="focusModeToggle" onclick="toggleFocusMode()">
+    <span>🎯</span>
+    <span>Focus Mode</span>
+    <kbd style="font-size: 10px; padding: 2px 6px; background: var(--bg-surface); border-radius: 4px;">F</kbd>
+</button>
+
+<!-- Keyboard Shortcut Overlay -->
+<div class="shortcut-overlay" id="shortcutOverlay" onclick="if(event.target === this) closeShortcutOverlay()">
+    <div class="shortcut-modal">
+        <div class="shortcut-header">
+            <h2 class="shortcut-title">⌨️ Keyboard Shortcuts</h2>
+            <button class="shortcut-close" onclick="closeShortcutOverlay()">✕</button>
+        </div>
+        <div class="shortcut-content">
+            <div class="shortcut-group">
+                <div class="shortcut-group-title">Navigation</div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Next email</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">J</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Previous email</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">K</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Open email</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">O</span> or <span class="shortcut-key">↵</span></div>
+                </div>
+            </div>
+            <div class="shortcut-group">
+                <div class="shortcut-group-title">Actions</div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Compose</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">C</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Reply</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">R</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Archive</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">E</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Delete</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">#</span></div>
+                </div>
+            </div>
+            <div class="shortcut-group">
+                <div class="shortcut-group-title">Application</div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Search</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">⌘</span><span class="shortcut-key">K</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Focus mode</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">⇧</span><span class="shortcut-key">F</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Show shortcuts</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" onclick="handleContextAction('reply')">
+        <span class="context-menu-icon">↩️</span>
+        <span>Reply</span>
+        <span class="context-menu-shortcut">R</span>
+    </div>
+    <div class="context-menu-item" onclick="handleContextAction('forward')">
+        <span class="context-menu-icon">↪️</span>
+        <span>Forward</span>
+        <span class="context-menu-shortcut">F</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <!-- Snooze disabled
+    <div class="context-menu-item" onclick="SnoozeManager.openForEmail(window.contextMenuEmailId)">
+        <span class="context-menu-icon">⏰</span>
+        <span>Snooze</span>
+        <span class="context-menu-shortcut">Z</span>
+    </div>
+    -->
+    <div class="context-menu-item" onclick="handleContextAction('archive')">
+        <span class="context-menu-icon">📥</span>
+        <span>Archive</span>
+        <span class="context-menu-shortcut">E</span>
+    </div>
+    <div class="context-menu-item" onclick="handleContextAction('star')">
+        <span class="context-menu-icon">⭐</span>
+        <span>Star</span>
+        <span class="context-menu-shortcut">S</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="handleContextAction('delete')">
+        <span class="context-menu-icon">🗑️</span>
+        <span>Delete</span>
+        <span class="context-menu-shortcut">#</span>
+    </div>
+</div>
+
+<!-- Event Modal -->
+<div class="event-modal-overlay hidden" id="eventModalOverlay" onclick="if(event.target === this) closeEventModal()">
+    <div class="event-modal" role="dialog" aria-labelledby="eventModalTitle" aria-modal="true">
+        <div class="event-modal-header">
+            <h2 id="eventModalTitle">New Event</h2>
+            <button class="event-modal-close" onclick="closeEventModal()" aria-label="Close">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="eventForm" class="event-form">
+            <input type="hidden" id="eventId" value="">
+            <input type="hidden" id="eventCalendarId" value="">
+
+            <div class="event-form-group">
+                <label for="eventTitle" class="event-label">Title</label>
+                <input type="text" id="eventTitle" class="event-input" placeholder="Add title" required>
+            </div>
+
+            <div class="event-form-row">
+                <div class="event-form-group">
+                    <label for="eventStartDate" class="event-label">Start</label>
+                    <div class="event-datetime-inputs">
+                        <input type="date" id="eventStartDate" class="event-input event-date-input" required>
+                        <input type="time" id="eventStartTime" class="event-input event-time-input" value="09:00">
+                    </div>
+                </div>
+                <div class="event-form-group">
+                    <label for="eventEndDate" class="event-label">End</label>
+                    <div class="event-datetime-inputs">
+                        <input type="date" id="eventEndDate" class="event-input event-date-input" required>
+                        <input type="time" id="eventEndTime" class="event-input event-time-input" value="10:00">
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-form-group event-checkbox-group">
+                <label class="event-checkbox-label">
+                    <input type="checkbox" id="eventAllDay" onchange="toggleAllDay()">
+                    <span>All day</span>
+                </label>
+            </div>
+
+            <div class="event-form-group">
+                <label for="eventLocation" class="event-label">Location</label>
+                <input type="text" id="eventLocation" class="event-input" placeholder="Add location">
+            </div>
+
+            <div class="event-form-group">
+                <label for="eventDescription" class="event-label">Description</label>
+                <textarea id="eventDescription" class="event-textarea" placeholder="Add description" rows="3"></textarea>
+            </div>
+
+            <div class="event-form-group">
+                <label for="eventParticipants" class="event-label">Guests</label>
+                <input type="text" id="eventParticipants" class="event-input" placeholder="Add guests (comma-separated emails)">
+            </div>
+
+            <div class="event-form-group event-checkbox-group">
+                <label class="event-checkbox-label">
+                    <input type="checkbox" id="eventBusy" checked>
+                    <span>Show as busy</span>
+                </label>
+            </div>
+        </form>
+        <div class="event-modal-footer">
+            <button type="button" class="event-btn event-btn-secondary" onclick="closeEventModal()">Cancel</button>
+            <button type="button" class="event-btn event-btn-danger hidden" id="eventDeleteBtn" onclick="deleteEvent()">Delete</button>
+            <button type="button" class="event-btn event-btn-primary" id="eventSaveBtn" onclick="saveEvent()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Modal -->
+<div class="contact-modal-overlay hidden" id="contactModalOverlay" onclick="if(event.target === this) ContactsManager.closeModal()">
+    <div class="contact-modal" role="dialog" aria-labelledby="contactModalTitle" aria-modal="true">
+        <div class="contact-modal-header">
+            <h2 id="contactModalTitle">New Contact</h2>
+            <button class="contact-modal-close" onclick="ContactsManager.closeModal()" aria-label="Close">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="contactForm" class="contact-form">
+            <input type="hidden" id="contactId" value="">
+
+            <div class="contact-form-row">
+                <div class="contact-form-group">
+                    <label for="contactGivenName" class="contact-label">First Name</label>
+                    <input type="text" id="contactGivenName" class="contact-input" placeholder="First name">
+                </div>
+                <div class="contact-form-group">
+                    <label for="contactSurname" class="contact-label">Last Name</label>
+                    <input type="text" id="contactSurname" class="contact-input" placeholder="Last name">
+                </div>
+            </div>
+
+            <div class="contact-form-group">
+                <label for="contactNickname" class="contact-label">Nickname</label>
+                <input type="text" id="contactNickname" class="contact-input" placeholder="Nickname">
+            </div>
+
+            <div class="contact-form-group">
+                <label class="contact-label">Email Addresses</label>
+                <div id="contactEmails" class="contact-multi-input">
+                    <div class="contact-multi-row">
+                        <input type="email" class="contact-input contact-email-input" placeholder="Email address">
+                        <select class="contact-type-select">
+                            <option value="personal">Personal</option>
+                            <option value="work">Work</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <button type="button" class="contact-add-btn" onclick="ContactsManager.addEmailRow()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-form-group">
+                <label class="contact-label">Phone Numbers</label>
+                <div id="contactPhones" class="contact-multi-input">
+                    <div class="contact-multi-row">
+                        <input type="tel" class="contact-input contact-phone-input" placeholder="Phone number">
+                        <select class="contact-type-select">
+                            <option value="mobile">Mobile</option>
+                            <option value="home">Home</option>
+                            <option value="work">Work</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <button type="button" class="contact-add-btn" onclick="ContactsManager.addPhoneRow()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-form-row">
+                <div class="contact-form-group">
+                    <label for="contactCompany" class="contact-label">Company</label>
+                    <input type="text" id="contactCompany" class="contact-input" placeholder="Company">
+                </div>
+                <div class="contact-form-group">
+                    <label for="contactJobTitle" class="contact-label">Job Title</label>
+                    <input type="text" id="contactJobTitle" class="contact-input" placeholder="Job title">
+                </div>
+            </div>
+
+            <div class="contact-form-group">
+                <label for="contactNotes" class="contact-label">Notes</label>
+                <textarea id="contactNotes" class="contact-textarea" placeholder="Add notes" rows="3"></textarea>
+            </div>
+
+            <div class="contact-form-group">
+                <label for="contactBirthday" class="contact-label">Birthday</label>
+                <input type="date" id="contactBirthday" class="contact-input">
+            </div>
+        </form>
+        <div class="contact-modal-footer">
+            <button type="button" class="contact-btn contact-btn-secondary" onclick="ContactsManager.closeModal()">Cancel</button>
+            <button type="button" class="contact-btn contact-btn-primary" id="contactSaveBtn" onclick="ContactsManager.saveContact()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettingsOnOverlay(event)">
+    <div class="settings-modal">
+        <div class="settings-header">
+            <h2>Settings</h2>
+            <button class="settings-close-btn" onclick="toggleSettings()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="settings-content">
+            <!-- AI Provider Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">✨</span>
+                    AI Provider
+                </h3>
+                <p class="settings-section-desc">Choose which AI provider to use for email summaries and smart replies</p>
+                <div class="settings-options">
+                    <label class="settings-option" data-provider="claude-code">
+                        <input type="radio" name="ai-provider" value="claude-code">
+                        <div class="option-content">
+                            <div class="option-icon claude-icon">C</div>
+                            <div class="option-details">
+                                <div class="option-name">Claude Code</div>
+                                <div class="option-desc">Anthropic's Claude via MCP integration</div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <p class="settings-section-hint" style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                    💡 Use Claude Code CLI with the Nylas MCP server for AI-powered email features.
+                </p>
+            </div>
+
+            <!-- Theme Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">🎨</span>
+                    Appearance
+                </h3>
+                <p class="settings-section-desc">Customize the look and feel</p>
+                <div class="settings-subsection">
+                    <div class="settings-label">Theme Mode</div>
+                    <div class="theme-toggle-group">
+                        <button class="theme-btn" data-theme="light" onclick="setTheme('light')">Light</button>
+                        <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')">Dark</button>
+                        <button class="theme-btn" data-theme="system" onclick="setTheme('system')">System</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="settings-footer">
+            <button class="settings-reset-btn" onclick="resetSettings()">Reset to Defaults</button>
+            <button class="settings-save-btn" onclick="saveSettings()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Productivity features disabled for now -->
+<!--
+<div id="snoozePicker"></div>
+<div id="templatesPicker"></div>
+<div id="createTemplateModal"></div>
+<div id="variablesPicker"></div>
+<div id="undoToast"></div>
+-->
+{{end}}
