@@ -103,6 +103,12 @@ release:
     brew install mqasimca/nylas/nylas
     ```
 
+    **macOS (DMG):**
+    - Apple Silicon: Download `Nylas-CLI-{{ .Version }}-apple-silicon.dmg`
+    - Intel: Download `Nylas-CLI-{{ .Version }}-intel.dmg`
+
+    Open the DMG and copy `nylas` to `/usr/local/bin/` or your preferred location.
+
     **Manual Download:**
     Download the appropriate archive for your platform below, extract it, and move the `nylas` binary to your PATH.
 
