@@ -90,22 +90,22 @@ If no grant ID is provided, shows scopes for the currently active grant.`,
 			}
 
 			// Display as formatted text
-			fmt.Fprintf(cmd.OutOrStdout(), "Grant ID:  %s\n", result.GrantID)
-			fmt.Fprintf(cmd.OutOrStdout(), "Email:     %s\n", result.Email)
-			fmt.Fprintf(cmd.OutOrStdout(), "Provider:  %s\n", result.Provider)
-			fmt.Fprintf(cmd.OutOrStdout(), "Status:    %s\n", result.Status)
-			fmt.Fprintln(cmd.OutOrStdout())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Grant ID:  %s\n", result.GrantID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Email:     %s\n", result.Email)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Provider:  %s\n", result.Provider)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Status:    %s\n", result.Status)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 			if len(result.Scopes) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No scopes configured.")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No scopes configured.")
 				return nil
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "OAuth Scopes (%d):\n", len(result.Scopes))
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "OAuth Scopes (%d):\n", len(result.Scopes))
 			for i, scope := range result.Scopes {
-				fmt.Fprintf(cmd.OutOrStdout(), "  %d. %s\n", i+1, scope)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %d. %s\n", i+1, scope)
 				if description := describeScopeCategory(scope); description != "" {
-					fmt.Fprintf(cmd.OutOrStdout(), "     %s\n", description)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "     %s\n", description)
 				}
 			}
 

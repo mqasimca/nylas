@@ -50,7 +50,7 @@ func newListCmd() *cobra.Command {
 			bold := color.New(color.Bold)
 
 			// Print header
-			bold.Printf("  %-38s  %-24s  %-12s  %-12s  %s\n", "GRANT ID", "EMAIL", "PROVIDER", "STATUS", "DEFAULT")
+			_, _ = bold.Printf("  %-38s  %-24s  %-12s  %-12s  %s\n", "GRANT ID", "EMAIL", "PROVIDER", "STATUS", "DEFAULT")
 
 			for _, g := range grants {
 				// Print fixed-width columns first
@@ -60,25 +60,25 @@ func newListCmd() *cobra.Command {
 				// Print status with color (fixed 12 char width)
 				switch g.Status {
 				case "valid":
-					green.Print("✓ valid     ")
+					_, _ = green.Print("✓ valid     ")
 				case "error":
-					red.Print("✗ error     ")
+					_, _ = red.Print("✗ error     ")
 				case "revoked":
-					red.Print("✗ revoked   ")
+					_, _ = red.Print("✗ revoked   ")
 				default:
-					yellow.Printf("%-12s", g.Status)
+					_, _ = yellow.Printf("%-12s", g.Status)
 				}
 
 				// Print default indicator
 				fmt.Print("  ")
 				if g.IsDefault {
-					green.Print("✓")
+					_, _ = green.Print("✓")
 				}
 				fmt.Println()
 
 				// Show error details in verbose mode
 				if verbose && g.Error != "" {
-					dim.Printf("    Error: %s\n", g.Error)
+					_, _ = dim.Printf("    Error: %s\n", g.Error)
 				}
 			}
 

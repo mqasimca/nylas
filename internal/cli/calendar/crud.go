@@ -46,8 +46,7 @@ func newShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			boldWhite.Printf("Calendar: %s\n", cal.Name)
+			_, _ = boldWhite.Printf("Calendar: %s\n", cal.Name)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("ID:          %s\n", cal.ID)
@@ -64,12 +63,10 @@ func newShowCmd() *cobra.Command {
 			}
 
 			if cal.IsPrimary {
-				// #nosec G104 -- color output errors are non-critical, best-effort display
-				cyan.Printf("Primary:     Yes\n")
+				_, _ = cyan.Printf("Primary:     Yes\n")
 			}
 			if cal.ReadOnly {
-				// #nosec G104 -- color output errors are non-critical, best-effort display
-				dim.Printf("Read-only:   Yes\n")
+				_, _ = dim.Printf("Read-only:   Yes\n")
 			}
 			if cal.IsOwner {
 				fmt.Printf("Owner:       Yes\n")
@@ -124,7 +121,7 @@ func newCreateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
+			_, _ = green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
 			return nil
 		},
 	}
@@ -188,7 +185,7 @@ func newUpdateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Updated calendar '%s'\n", cal.Name)
+			_, _ = green.Printf("✓ Updated calendar '%s'\n", cal.Name)
 			return nil
 		},
 	}
@@ -240,7 +237,7 @@ func newDeleteCmd() *cobra.Command {
 				fmt.Printf("  Name: %s\n", cal.Name)
 				fmt.Printf("  ID:   %s\n", cal.ID)
 				if cal.IsPrimary {
-					color.New(color.FgYellow).Printf("  Warning: This is a PRIMARY calendar!\n")
+					_, _ = color.New(color.FgYellow).Printf("  Warning: This is a PRIMARY calendar!\n")
 				}
 				fmt.Print("\n[y/N]: ")
 
@@ -258,7 +255,7 @@ func newDeleteCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Calendar deleted\n")
+			_, _ = green.Printf("✓ Calendar deleted\n")
 			return nil
 		},
 	}

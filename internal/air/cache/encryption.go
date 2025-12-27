@@ -110,7 +110,7 @@ func openEncryptedDB(dbPath string, key []byte) (*sql.DB, error) {
 
 	// Verify the key works by running a simple query
 	if _, err := db.Exec("SELECT 1"); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("verify encryption key: %w", err)
 	}
 
@@ -182,14 +182,14 @@ func (m *EncryptedManager) GetDB(email string) (*sql.DB, error) {
 	}
 	for _, pragma := range pragmas {
 		if _, err := db.Exec(pragma); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, fmt.Errorf("set pragma: %w", err)
 		}
 	}
 
 	// Initialize schema
 	if err := initSchema(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("init schema for %s: %w", email, err)
 	}
 
@@ -230,7 +230,7 @@ func (m *EncryptedManager) MigrateToEncrypted(email string) error {
 	if err != nil {
 		return fmt.Errorf("open unencrypted database: %w", err)
 	}
-	defer unencryptedDB.Close()
+	defer func() { _ = unencryptedDB.Close() }()
 
 	// Get or create encryption key
 	key, err := getOrCreateKey(email)
@@ -244,7 +244,7 @@ func (m *EncryptedManager) MigrateToEncrypted(email string) error {
 	if err != nil {
 		return fmt.Errorf("create encrypted database: %w", err)
 	}
-	defer encryptedDB.Close()
+	defer func() { _ = encryptedDB.Close() }()
 
 	// Initialize schema in encrypted database
 	if err := initSchema(encryptedDB); err != nil {
@@ -255,14 +255,14 @@ func (m *EncryptedManager) MigrateToEncrypted(email string) error {
 	tables := tableNames()
 	for _, table := range tables {
 		if err := copyTable(unencryptedDB, encryptedDB, table); err != nil {
-			os.Remove(encryptedPath)
+			_ = os.Remove(encryptedPath)
 			return fmt.Errorf("copy table %s: %w", table, err)
 		}
 	}
 
 	// Close databases before file operations
-	unencryptedDB.Close()
-	encryptedDB.Close()
+	_ = unencryptedDB.Close()
+	_ = encryptedDB.Close()
 
 	// Backup unencrypted database
 	backupPath := dbPath + ".unencrypted.bak"
@@ -278,9 +278,9 @@ func (m *EncryptedManager) MigrateToEncrypted(email string) error {
 	}
 
 	// Remove backup
-	os.Remove(backupPath)
-	os.Remove(backupPath + "-wal")
-	os.Remove(backupPath + "-shm")
+	_ = os.Remove(backupPath)
+	_ = os.Remove(backupPath + "-wal")
+	_ = os.Remove(backupPath + "-shm")
 
 	return nil
 }
@@ -309,7 +309,7 @@ func (m *EncryptedManager) MigrateToUnencrypted(email string) error {
 	if err != nil {
 		return fmt.Errorf("open encrypted database: %w", err)
 	}
-	defer encryptedDB.Close()
+	defer func() { _ = encryptedDB.Close() }()
 
 	// Create unencrypted database
 	unencryptedPath := dbPath + ".unencrypted"
@@ -317,7 +317,7 @@ func (m *EncryptedManager) MigrateToUnencrypted(email string) error {
 	if err != nil {
 		return fmt.Errorf("create unencrypted database: %w", err)
 	}
-	defer unencryptedDB.Close()
+	defer func() { _ = unencryptedDB.Close() }()
 
 	// Initialize schema
 	if err := initSchema(unencryptedDB); err != nil {
@@ -328,14 +328,14 @@ func (m *EncryptedManager) MigrateToUnencrypted(email string) error {
 	tables := tableNames()
 	for _, table := range tables {
 		if err := copyTable(encryptedDB, unencryptedDB, table); err != nil {
-			os.Remove(unencryptedPath)
+			_ = os.Remove(unencryptedPath)
 			return fmt.Errorf("copy table %s: %w", table, err)
 		}
 	}
 
 	// Close databases
-	encryptedDB.Close()
-	unencryptedDB.Close()
+	_ = encryptedDB.Close()
+	_ = unencryptedDB.Close()
 
 	// Replace encrypted with unencrypted
 	backupPath := dbPath + ".encrypted.bak"
@@ -349,9 +349,9 @@ func (m *EncryptedManager) MigrateToUnencrypted(email string) error {
 	}
 
 	// Remove backup and encryption key
-	os.Remove(backupPath)
-	os.Remove(backupPath + "-wal")
-	os.Remove(backupPath + "-shm")
+	_ = os.Remove(backupPath)
+	_ = os.Remove(backupPath + "-wal")
+	_ = os.Remove(backupPath + "-shm")
 	_ = deleteKey(email)
 	delete(m.keys, email)
 
@@ -371,7 +371,7 @@ func copyTable(src, dst *sql.DB, table string) error {
 		return err
 	}
 	columns, err := rows.Columns()
-	rows.Close()
+	_ = rows.Close()
 	if err != nil {
 		return err
 	}
@@ -392,7 +392,7 @@ func copyTable(src, dst *sql.DB, table string) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	tx, err := dst.Begin()
 	if err != nil {
@@ -408,7 +408,7 @@ func copyTable(src, dst *sql.DB, table string) error {
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	values := make([]any, len(columns))
 	valuePtrs := make([]any, len(columns))
@@ -435,7 +435,7 @@ func IsEncrypted(dbPath string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Try a simple query - will fail if encrypted
 	_, err = db.Exec("SELECT 1")

@@ -60,12 +60,12 @@ func newVirtualListCmd() *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tEMAIL\tSTATUS\tCREATED")
+			_, _ = fmt.Fprintln(w, "ID\tEMAIL\tSTATUS\tCREATED")
 			for _, grant := range grants {
 				created := time.Unix(grant.CreatedAt, 0).Format("2006-01-02 15:04")
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", grant.ID, grant.Email, grant.GrantStatus, created)
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", grant.ID, grant.Email, grant.GrantStatus, created)
 			}
-			w.Flush()
+			_ = w.Flush()
 
 			return nil
 		},

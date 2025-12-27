@@ -26,7 +26,7 @@ func newLogoutCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Println("✓ Successfully logged out")
+			_, _ = green.Println("✓ Successfully logged out")
 
 			return nil
 		},

@@ -233,7 +233,7 @@ func (s *EmailStore) SearchWithQuery(sq *SearchQuery, limit int) ([]*CachedEmail
 	if err != nil {
 		return nil, fmt.Errorf("search emails: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var emails []*CachedEmail
 	for rows.Next() {

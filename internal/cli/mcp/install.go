@@ -106,27 +106,25 @@ func runInstall(assistantID, binaryPath string, installAll bool) error {
 	for _, a := range assistants {
 		configPath := a.GetConfigPath()
 		if configPath == "" {
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			yellow.Printf("  ! %s: unsupported on this platform\n", a.Name)
+			_, _ = yellow.Printf("  ! %s: unsupported on this platform\n", a.Name)
 			continue
 		}
 
 		// Check if app is installed (for non-project configs)
 		if !a.IsProjectConfig() && !a.IsInstalled() {
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			yellow.Printf("  ! %s: application not installed\n", a.Name)
+			_, _ = yellow.Printf("  ! %s: application not installed\n", a.Name)
 			continue
 		}
 
 		err := installForAssistant(a, binaryPath)
 		if err != nil {
-			yellow.Printf("  ! %s: %v\n", a.Name, err)
+			_, _ = yellow.Printf("  ! %s: %v\n", a.Name, err)
 			continue
 		}
 
-		green.Printf("  ✓ %s: configured at %s\n", a.Name, configPath)
+		_, _ = green.Printf("  ✓ %s: configured at %s\n", a.Name, configPath)
 		if a.ID == "claude-code" {
-			green.Printf("  ✓ %s: permissions added to ~/.claude/settings.json\n", a.Name)
+			_, _ = green.Printf("  ✓ %s: permissions added to ~/.claude/settings.json\n", a.Name)
 		}
 		successCount++
 	}

@@ -64,5 +64,5 @@ func (m *Menu) render() {
 		parts = append(parts, part)
 	}
 
-	fmt.Fprintf(m, "%s", strings.Join(parts, fmt.Sprintf(" [%s::d]│[-::-] ", muted)))
+	_, _ = fmt.Fprintf(m, "%s", strings.Join(parts, fmt.Sprintf(" [%s::d]│[-::-] ", muted)))
 }

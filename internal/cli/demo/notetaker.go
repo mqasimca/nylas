@@ -166,7 +166,7 @@ No actual notetaker is created - this is just a demonstration of the command flo
 			fmt.Println(dim.Sprint("🤖 Demo Mode - Simulated Notetaker Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Printf("Name:         %s\n", name)
+			_, _ = boldWhite.Printf("Name:         %s\n", name)
 			fmt.Printf("Meeting Link: %s\n", meetingLink)
 			fmt.Printf("Provider:     %s\n", provider)
 			if joinAt != "" {
@@ -182,8 +182,8 @@ No actual notetaker is created - this is just a demonstration of the command flo
 			fmt.Printf("  Action Items:  %s\n", green.Sprint("Enabled"))
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Notetaker would be created (demo mode - no actual notetaker created)")
-			dim.Printf("  Notetaker ID: notetaker-demo-%d\n", time.Now().Unix())
+			_, _ = green.Println("✓ Notetaker would be created (demo mode - no actual notetaker created)")
+			_, _ = dim.Printf("  Notetaker ID: notetaker-demo-%d\n", time.Now().Unix())
 			fmt.Println()
 			fmt.Println(dim.Sprint("To create real notetakers, connect your account: nylas auth login"))
 
@@ -226,12 +226,12 @@ func newDemoNotetakerDeleteCmd() *cobra.Command {
 			fmt.Println()
 
 			if !force {
-				yellow.Println("⚠ Would prompt for confirmation in real mode")
+				_, _ = yellow.Println("⚠ Would prompt for confirmation in real mode")
 			}
 
 			fmt.Printf("Notetaker ID: %s\n", notetakerID)
 			fmt.Println()
-			green.Println("✓ Notetaker would be cancelled/deleted (demo mode - no actual deletion)")
+			_, _ = green.Println("✓ Notetaker would be cancelled/deleted (demo mode - no actual deletion)")
 			fmt.Println("  If the notetaker was in a meeting, it would leave immediately")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To manage real notetakers, connect your account: nylas auth login"))
@@ -280,7 +280,7 @@ func newDemoMediaShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("🤖 Demo Mode - Notetaker Media"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Printf("Notetaker: %s\n", notetakerID)
+			_, _ = boldWhite.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Println()
 
 			fmt.Println("📁 Available Media:")
@@ -289,13 +289,13 @@ func newDemoMediaShowCmd() *cobra.Command {
 			fmt.Printf("    Format:   MP4\n")
 			fmt.Printf("    Size:     245.6 MB\n")
 			fmt.Printf("    Duration: 45:32\n")
-			dim.Printf("    URL:      https://media.nylas.com/recordings/%s.mp4\n", notetakerID)
+			_, _ = dim.Printf("    URL:      https://media.nylas.com/recordings/%s.mp4\n", notetakerID)
 			fmt.Println()
 
 			fmt.Printf("  %s Transcript\n", green.Sprint("●"))
 			fmt.Printf("    Format:   VTT\n")
 			fmt.Printf("    Size:     128.4 KB\n")
-			dim.Printf("    URL:      https://media.nylas.com/transcripts/%s.vtt\n", notetakerID)
+			_, _ = dim.Printf("    URL:      https://media.nylas.com/transcripts/%s.vtt\n", notetakerID)
 			fmt.Println()
 
 			fmt.Printf("  %s Summary\n", green.Sprint("●"))
@@ -335,7 +335,7 @@ func newDemoMediaDownloadCmd() *cobra.Command {
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Printf("Output:    %s\n", output)
 			fmt.Println()
-			green.Println("✓ Recording would be downloaded (demo mode)")
+			_, _ = green.Println("✓ Recording would be downloaded (demo mode)")
 			fmt.Printf("  Size: 245.6 MB\n")
 			fmt.Printf("  Duration: 45:32\n")
 
@@ -384,7 +384,7 @@ func newDemoMediaTranscriptCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println("[00:00:45] John: Great progress team! Any blockers?")
 			fmt.Println()
-			dim.Println("... (transcript continues)")
+			_, _ = dim.Println("... (transcript continues)")
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 
@@ -413,7 +413,7 @@ func newDemoMediaSummaryCmd() *cobra.Command {
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Meeting Summary")
+			_, _ = boldWhite.Println("Meeting Summary")
 			fmt.Println()
 
 			fmt.Println("📋 Overview:")
@@ -460,7 +460,7 @@ func newDemoMediaActionItemsCmd() *cobra.Command {
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Action Items")
+			_, _ = boldWhite.Println("Action Items")
 			fmt.Println()
 
 			items := []struct {
@@ -527,7 +527,7 @@ func printDemoNotetaker(nt domain.Notetaker) {
 		fmt.Printf("    Join:  %s\n", nt.JoinTime.Format("Jan 2, 2006 3:04 PM"))
 	}
 
-	dim.Printf("    ID:    %s\n", nt.ID)
+	_, _ = dim.Printf("    ID:    %s\n", nt.ID)
 	fmt.Println()
 }
 
@@ -552,7 +552,7 @@ func printDemoNotetakerFull(nt domain.Notetaker, media *domain.MediaData) {
 	}
 
 	fmt.Println("────────────────────────────────────────────────────")
-	boldWhite.Printf("Meeting: %s\n", title)
+	_, _ = boldWhite.Printf("Meeting: %s\n", title)
 	fmt.Printf("State:   %s\n", stateColor.Sprint(string(nt.State)))
 	fmt.Printf("Link:    %s\n", nt.MeetingLink)
 	fmt.Printf("ID:      %s\n", nt.ID)
@@ -570,13 +570,13 @@ func printDemoNotetakerFull(nt domain.Notetaker, media *domain.MediaData) {
 		if media.Recording != nil {
 			fmt.Printf("  Recording:  %s\n", media.Recording.ContentType)
 			fmt.Printf("              Size: %s\n", formatDemoSize(media.Recording.Size))
-			dim.Printf("              URL: %s\n", media.Recording.URL)
+			_, _ = dim.Printf("              URL: %s\n", media.Recording.URL)
 		}
 
 		if media.Transcript != nil {
 			fmt.Printf("  Transcript: %s\n", media.Transcript.ContentType)
 			fmt.Printf("              Size: %s\n", formatDemoSize(media.Transcript.Size))
-			dim.Printf("              URL: %s\n", media.Transcript.URL)
+			_, _ = dim.Printf("              URL: %s\n", media.Transcript.URL)
 		}
 	}
 

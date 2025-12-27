@@ -59,7 +59,7 @@ func (s *FolderStore) PutBatch(folders []*CachedFolder) error {
 	if err != nil {
 		return fmt.Errorf("prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	now := time.Now().Unix()
 	for _, folder := range folders {
@@ -114,7 +114,7 @@ func (s *FolderStore) List() ([]*CachedFolder, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query folders: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var folders []*CachedFolder
 	for rows.Next() {

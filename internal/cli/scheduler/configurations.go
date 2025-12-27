@@ -109,7 +109,7 @@ func newConfigShowCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			bold := color.New(color.Bold)
 
-			bold.Printf("Configuration: %s\n", config.Name)
+			_, _ = bold.Printf("Configuration: %s\n", config.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(config.ID))
 			fmt.Printf("  Slug: %s\n", green.Sprint(config.Slug))
 			fmt.Printf("  Duration: %d minutes\n", config.Availability.DurationMinutes)
@@ -194,7 +194,7 @@ func newConfigCreateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Created configuration: %s\n", config.Name)
+			_, _ = green.Printf("✓ Created configuration: %s\n", config.Name)
 			fmt.Printf("  ID: %s\n", config.ID)
 			if config.Slug != "" {
 				fmt.Printf("  Slug: %s\n", config.Slug)
@@ -265,7 +265,7 @@ func newConfigUpdateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Updated configuration: %s\n", config.Name)
+			_, _ = green.Printf("✓ Updated configuration: %s\n", config.Name)
 
 			return nil
 		},
@@ -311,7 +311,7 @@ func newConfigDeleteCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Deleted configuration: %s\n", args[0])
+			_, _ = green.Printf("✓ Deleted configuration: %s\n", args[0])
 
 			return nil
 		},

@@ -98,7 +98,7 @@ Information includes:
 			dim := color.New(color.Faint)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			boldWhite.Printf("Grant Details\n")
+			_, _ = boldWhite.Printf("Grant Details\n")
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("\n")
@@ -116,11 +116,11 @@ Information includes:
 			fmt.Printf("Status:      %s %s\n", statusIcon, statusColor.Sprint(grant.GrantStatus))
 
 			// Timestamps
-			if !grant.CreatedAt.Time.IsZero() {
-				fmt.Printf("\nCreated:     %s\n", grant.CreatedAt.Time.Format("Jan 2, 2006 3:04 PM"))
+			if !grant.CreatedAt.IsZero() {
+				fmt.Printf("\nCreated:     %s\n", grant.CreatedAt.Format("Jan 2, 2006 3:04 PM"))
 			}
-			if !grant.UpdatedAt.Time.IsZero() {
-				fmt.Printf("Updated:     %s\n", grant.UpdatedAt.Time.Format("Jan 2, 2006 3:04 PM"))
+			if !grant.UpdatedAt.IsZero() {
+				fmt.Printf("Updated:     %s\n", grant.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
 			}
 
 			// Scopes

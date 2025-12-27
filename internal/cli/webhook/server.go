@@ -179,43 +179,43 @@ func runServer(port int, path, tunnelType, webhookSecret string, jsonOutput, qui
 
 func printStartupBanner() {
 	fmt.Println()
-	cyan.Println("╔══════════════════════════════════════════════════════════════╗")
-	cyan.Print("║")
+	_, _ = cyan.Println("╔══════════════════════════════════════════════════════════════╗")
+	_, _ = cyan.Print("║")
 	fmt.Print("              ")
-	bold.Print("Nylas Webhook Server")
+	_, _ = bold.Print("Nylas Webhook Server")
 	fmt.Print("                         ")
-	cyan.Println("║")
-	cyan.Println("╚══════════════════════════════════════════════════════════════╝")
+	_, _ = cyan.Println("║")
+	_, _ = cyan.Println("╚══════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 }
 
 func printServerInfo(stats ports.WebhookServerStats, tunnelType string) {
-	green.Println("✓ Server started successfully")
+	_, _ = green.Println("✓ Server started successfully")
 	fmt.Println()
 
-	bold.Print("  Local URL:    ")
+	_, _ = bold.Print("  Local URL:    ")
 	fmt.Println(stats.LocalURL)
 
 	if stats.PublicURL != "" {
-		bold.Print("  Public URL:   ")
-		green.Println(stats.PublicURL)
+		_, _ = bold.Print("  Public URL:   ")
+		_, _ = green.Println(stats.PublicURL)
 		fmt.Println()
-		bold.Print("  Tunnel:       ")
+		_, _ = bold.Print("  Tunnel:       ")
 		fmt.Printf("%s (%s)\n", tunnelType, stats.TunnelStatus)
 	}
 
 	fmt.Println()
-	yellow.Println("Register this URL with Nylas:")
+	_, _ = yellow.Println("Register this URL with Nylas:")
 	webhookURL := stats.LocalURL
 	if stats.PublicURL != "" {
 		webhookURL = stats.PublicURL
 	}
 	fmt.Printf("  nylas webhooks create --url %s --triggers message.created\n", webhookURL)
 	fmt.Println()
-	dim.Println("Press Ctrl+C to stop")
+	_, _ = dim.Println("Press Ctrl+C to stop")
 	fmt.Println()
-	cyan.Println("─────────────────────────────────────────────────────────────────")
-	bold.Println("Incoming Webhooks:")
+	_, _ = cyan.Println("─────────────────────────────────────────────────────────────────")
+	_, _ = bold.Println("Incoming Webhooks:")
 	fmt.Println()
 }
 

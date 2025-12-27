@@ -80,7 +80,7 @@ func (c *HTTPClient) ListNotetakers(ctx context.Context, grantID string, params 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -110,7 +110,7 @@ func (c *HTTPClient) GetNotetaker(ctx context.Context, grantID, notetakerID stri
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: notetaker not found", domain.ErrAPIError)
@@ -166,7 +166,7 @@ func (c *HTTPClient) CreateNotetaker(ctx context.Context, grantID string, req *d
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -197,7 +197,7 @@ func (c *HTTPClient) DeleteNotetaker(ctx context.Context, grantID, notetakerID s
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -220,7 +220,7 @@ func (c *HTTPClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: notetaker media not found", domain.ErrAPIError)

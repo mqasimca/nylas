@@ -83,7 +83,7 @@ func (s *EmailStore) PutBatch(emails []*CachedEmail) error {
 	if err != nil {
 		return fmt.Errorf("prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	now := time.Now().Unix()
 	for _, email := range emails {
@@ -166,7 +166,7 @@ func (s *EmailStore) List(opts ListOptions) ([]*CachedEmail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query emails: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var emails []*CachedEmail
 	for rows.Next() {
@@ -213,7 +213,7 @@ func (s *EmailStore) Search(query string, limit int) ([]*CachedEmail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("search emails: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var emails []*CachedEmail
 	for rows.Next() {

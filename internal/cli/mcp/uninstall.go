@@ -66,7 +66,7 @@ func runUninstall(assistantID string, uninstallAll bool) error {
 		// Check if config exists
 		if !a.IsConfigured() {
 			if !uninstallAll {
-				yellow.Printf("  ! %s: not configured\n", a.Name)
+				_, _ = yellow.Printf("  ! %s: not configured\n", a.Name)
 			}
 			continue
 		}
@@ -75,18 +75,18 @@ func runUninstall(assistantID string, uninstallAll bool) error {
 		hasNylas, _ := checkNylasInConfig(configPath)
 		if !hasNylas {
 			if !uninstallAll {
-				yellow.Printf("  ! %s: nylas not found in config\n", a.Name)
+				_, _ = yellow.Printf("  ! %s: nylas not found in config\n", a.Name)
 			}
 			continue
 		}
 
 		err := uninstallFromAssistant(a)
 		if err != nil {
-			yellow.Printf("  ! %s: %v\n", a.Name, err)
+			_, _ = yellow.Printf("  ! %s: %v\n", a.Name, err)
 			continue
 		}
 
-		green.Printf("  ✓ %s: removed from %s\n", a.Name, configPath)
+		_, _ = green.Printf("  ✓ %s: removed from %s\n", a.Name, configPath)
 		successCount++
 	}
 

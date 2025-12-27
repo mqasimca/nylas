@@ -234,11 +234,12 @@ func (c *ComposeView) prefillForReply() {
 
 	// Set subject
 	subject := msg.Subject
-	if c.mode == ComposeModeReply || c.mode == ComposeModeReplyAll {
+	switch c.mode {
+	case ComposeModeReply, ComposeModeReplyAll:
 		if !strings.HasPrefix(strings.ToLower(subject), "re:") {
 			subject = "Re: " + subject
 		}
-	} else if c.mode == ComposeModeForward {
+	case ComposeModeForward:
 		if !strings.HasPrefix(strings.ToLower(subject), "fwd:") {
 			subject = "Fwd: " + subject
 		}

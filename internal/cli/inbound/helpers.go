@@ -80,12 +80,12 @@ func createContext() (context.Context, context.CancelFunc) {
 
 // printError prints an error message in red.
 func printError(format string, args ...any) {
-	red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	_, _ = red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
 }
 
 // printSuccess prints a success message in green.
 func printSuccess(format string, args ...any) {
-	green.Printf(format+"\n", args...)
+	_, _ = green.Printf(format+"\n", args...)
 }
 
 // formatTimeAgo formats a time as a relative string.
@@ -155,20 +155,20 @@ func printInboxSummary(inbox domain.InboundInbox, index int) {
 		dim.Sprint(createdStr),
 		status,
 	)
-	dim.Printf("   ID: %s\n", inbox.ID)
+	_, _ = dim.Printf("   ID: %s\n", inbox.ID)
 }
 
 // printInboxDetails prints detailed inbox information.
 func printInboxDetails(inbox domain.InboundInbox) {
 	fmt.Println(strings.Repeat("─", 60))
-	boldWhite.Printf("Inbox: %s\n", inbox.Email)
+	_, _ = boldWhite.Printf("Inbox: %s\n", inbox.Email)
 	fmt.Println(strings.Repeat("─", 60))
 	fmt.Printf("ID:          %s\n", inbox.ID)
 	fmt.Printf("Email:       %s\n", inbox.Email)
 	fmt.Printf("Status:      %s\n", formatStatus(inbox.GrantStatus))
-	fmt.Printf("Created:     %s (%s)\n", inbox.CreatedAt.Time.Format("Jan 2, 2006 3:04 PM"), formatTimeAgo(inbox.CreatedAt.Time))
-	if !inbox.UpdatedAt.Time.IsZero() {
-		fmt.Printf("Updated:     %s (%s)\n", inbox.UpdatedAt.Time.Format("Jan 2, 2006 3:04 PM"), formatTimeAgo(inbox.UpdatedAt.Time))
+	fmt.Printf("Created:     %s (%s)\n", inbox.CreatedAt.Format("Jan 2, 2006 3:04 PM"), formatTimeAgo(inbox.CreatedAt.Time))
+	if !inbox.UpdatedAt.IsZero() {
+		fmt.Printf("Updated:     %s (%s)\n", inbox.UpdatedAt.Format("Jan 2, 2006 3:04 PM"), formatTimeAgo(inbox.UpdatedAt.Time))
 	}
 	fmt.Println()
 }
@@ -213,5 +213,5 @@ func printInboundMessageSummary(msg domain.InboundMessage, _ int) {
 	}
 
 	fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
-	dim.Printf("      ID: %s\n", msg.ID)
+	_, _ = dim.Printf("      ID: %s\n", msg.ID)
 }

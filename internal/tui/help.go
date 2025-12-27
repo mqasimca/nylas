@@ -96,7 +96,7 @@ func (h *HelpView) init() {
 	footer.SetBackgroundColor(styles.BgColor)
 	footerHex := colorToHex(styles.BorderColor)
 	keyHex := colorToHex(styles.MenuKeyFg)
-	fmt.Fprintf(footer, " [%s]j/k[-] navigate  [%s]/[-] search  [%s]Enter[-] execute  [%s]Esc[-] close",
+	_, _ = fmt.Fprintf(footer, " [%s]j/k[-] navigate  [%s]/[-] search  [%s]Enter[-] execute  [%s]Esc[-] close",
 		keyHex, keyHex, keyHex, keyHex)
 	_ = footerHex
 

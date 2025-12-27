@@ -42,7 +42,7 @@ func newTokenCmd() *cobra.Command {
 					return fmt.Errorf("failed to copy to clipboard: %w", err)
 				}
 				green := color.New(color.FgGreen)
-				green.Println("✓ API key copied to clipboard")
+				_, _ = green.Println("✓ API key copied to clipboard")
 			} else {
 				fmt.Println(apiKey)
 			}

@@ -125,7 +125,7 @@ func newBookingShowCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			bold := color.New(color.Bold)
 
-			bold.Printf("Booking: %s\n", booking.Title)
+			_, _ = bold.Printf("Booking: %s\n", booking.Title)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(booking.BookingID))
 			fmt.Printf("  Status: %s\n", getStatusColor(booking.Status).Sprint(booking.Status))
 			fmt.Printf("  Start: %s\n", booking.StartTime.Format(time.RFC1123))
@@ -186,7 +186,7 @@ func newBookingConfirmCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
+			_, _ = green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
 			fmt.Printf("  Status: %s\n", booking.Status)
 
 			return nil
@@ -219,7 +219,7 @@ func newBookingRescheduleCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
+			_, _ = green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
 
 			return nil
 		},
@@ -263,7 +263,7 @@ func newBookingCancelCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Cancelled booking: %s\n", args[0])
+			_, _ = green.Printf("✓ Cancelled booking: %s\n", args[0])
 
 			return nil
 		},

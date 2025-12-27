@@ -254,14 +254,14 @@ func (v *WebhookServerView) renderStatus() {
 		statusText = "Running"
 	}
 
-	fmt.Fprintf(v.statusPanel, "\n  [%s::b]Server Status:[-::-] [%s]%s[-]\n\n", title, statusColor, statusText)
+	_, _ = fmt.Fprintf(v.statusPanel, "\n  [%s::b]Server Status:[-::-] [%s]%s[-]\n\n", title, statusColor, statusText)
 
 	// Port
-	fmt.Fprintf(v.statusPanel, "  [%s]Port:[-]    [%s]%d[-]\n", muted, value, v.port)
+	_, _ = fmt.Fprintf(v.statusPanel, "  [%s]Port:[-]    [%s]%d[-]\n", muted, value, v.port)
 
 	// URLs
 	localURL := fmt.Sprintf("http://localhost:%d/webhook", v.port)
-	fmt.Fprintf(v.statusPanel, "  [%s]Local:[-]   [%s]%s[-]\n", muted, value, localURL)
+	_, _ = fmt.Fprintf(v.statusPanel, "  [%s]Local:[-]   [%s]%s[-]\n", muted, value, localURL)
 
 	// Tunnel status
 	tunnelStatus := "Disabled"
@@ -272,15 +272,15 @@ func (v *WebhookServerView) renderStatus() {
 		if v.serverRunning && v.publicURL != "" {
 			tunnelStatus = "Connected"
 			tunnelColor = success
-			fmt.Fprintf(v.statusPanel, "  [%s]Public:[-]  [%s]%s[-]\n", muted, success, v.publicURL)
+			_, _ = fmt.Fprintf(v.statusPanel, "  [%s]Public:[-]  [%s]%s[-]\n", muted, success, v.publicURL)
 		}
 	}
-	fmt.Fprintf(v.statusPanel, "  [%s]Tunnel:[-]  [%s]%s[-]\n", muted, tunnelColor, tunnelStatus)
+	_, _ = fmt.Fprintf(v.statusPanel, "  [%s]Tunnel:[-]  [%s]%s[-]\n", muted, tunnelColor, tunnelStatus)
 
 	// Event count
 	if v.serverRunning && v.server != nil {
 		stats := v.server.GetStats()
-		fmt.Fprintf(v.statusPanel, "  [%s]Events:[-]  [%s]%d[-]\n", muted, value, stats.EventsReceived)
+		_, _ = fmt.Fprintf(v.statusPanel, "  [%s]Events:[-]  [%s]%d[-]\n", muted, value, stats.EventsReceived)
 	}
 }
 
@@ -289,11 +289,11 @@ func (v *WebhookServerView) renderEvents() {
 
 	if len(v.events) == 0 {
 		muted := colorToHex(v.app.styles.BorderColor)
-		fmt.Fprintf(v.eventsPanel, "\n  [%s]No webhook events received yet.[-]\n", muted)
+		_, _ = fmt.Fprintf(v.eventsPanel, "\n  [%s]No webhook events received yet.[-]\n", muted)
 		if v.serverRunning {
-			fmt.Fprintf(v.eventsPanel, "\n  [%s]Waiting for incoming webhooks...[-]\n", muted)
+			_, _ = fmt.Fprintf(v.eventsPanel, "\n  [%s]Waiting for incoming webhooks...[-]\n", muted)
 		} else {
-			fmt.Fprintf(v.eventsPanel, "\n  [%s]Press 's' to start the server.[-]\n", muted)
+			_, _ = fmt.Fprintf(v.eventsPanel, "\n  [%s]Press 's' to start the server.[-]\n", muted)
 		}
 		return
 	}
@@ -330,7 +330,7 @@ func (v *WebhookServerView) renderEvents() {
 			}
 		}
 
-		fmt.Fprintf(v.eventsPanel, "  [%s][%s][-] [%s::b]%s[-::-]%s\n",
+		_, _ = fmt.Fprintf(v.eventsPanel, "  [%s][%s][-] [%s::b]%s[-::-]%s\n",
 			muted, timestamp,
 			typeColor, event.Type,
 			verifyIcon,
@@ -338,10 +338,10 @@ func (v *WebhookServerView) renderEvents() {
 
 		// Show additional details
 		if event.ID != "" {
-			fmt.Fprintf(v.eventsPanel, "    [%s]ID:[-] [%s]%s[-]\n", muted, value, truncateStr(event.ID, 50))
+			_, _ = fmt.Fprintf(v.eventsPanel, "    [%s]ID:[-] [%s]%s[-]\n", muted, value, truncateStr(event.ID, 50))
 		}
 		if event.GrantID != "" {
-			fmt.Fprintf(v.eventsPanel, "    [%s]Grant:[-] [%s]%s[-]\n", muted, value, event.GrantID)
+			_, _ = fmt.Fprintf(v.eventsPanel, "    [%s]Grant:[-] [%s]%s[-]\n", muted, value, event.GrantID)
 		}
 
 		// Extract and show key fields from body
@@ -349,10 +349,10 @@ func (v *WebhookServerView) renderEvents() {
 			if data, ok := event.Body["data"].(map[string]any); ok {
 				if obj, ok := data["object"].(map[string]any); ok {
 					if subject, ok := obj["subject"].(string); ok {
-						fmt.Fprintf(v.eventsPanel, "    [%s]Subject:[-] [%s]%s[-]\n", muted, title, truncateStr(subject, 50))
+						_, _ = fmt.Fprintf(v.eventsPanel, "    [%s]Subject:[-] [%s]%s[-]\n", muted, title, truncateStr(subject, 50))
 					}
 					if eventTitle, ok := obj["title"].(string); ok {
-						fmt.Fprintf(v.eventsPanel, "    [%s]Title:[-] [%s]%s[-]\n", muted, title, truncateStr(eventTitle, 50))
+						_, _ = fmt.Fprintf(v.eventsPanel, "    [%s]Title:[-] [%s]%s[-]\n", muted, title, truncateStr(eventTitle, 50))
 					}
 				}
 			}
@@ -360,7 +360,7 @@ func (v *WebhookServerView) renderEvents() {
 
 		// Separator between events
 		if i < len(v.events)-1 {
-			fmt.Fprintf(v.eventsPanel, "  [%s]────────────────────────────────[-]\n", muted)
+			_, _ = fmt.Fprintf(v.eventsPanel, "  [%s]────────────────────────────────[-]\n", muted)
 		}
 	}
 }

@@ -20,7 +20,7 @@ func TestOpenSharedDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenSharedDB() error: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if db == nil {
 		t.Fatal("OpenSharedDB() returned nil")
@@ -47,7 +47,7 @@ func TestOpenSharedDB_CreatesDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenSharedDB() error: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Verify nested directory was created
 	if _, err := os.Stat(nestedPath); os.IsNotExist(err) {
@@ -62,7 +62,7 @@ func TestOpenSharedDB_WALMode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenSharedDB() error: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Check journal mode is WAL
 	var journalMode string
@@ -288,10 +288,10 @@ func TestIsEncrypted_UnencryptedDB(t *testing.T) {
 	// Create a simple table
 	_, err = db.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY)")
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		t.Fatalf("Failed to create table: %v", err)
 	}
-	db.Close()
+	_ = db.Close()
 
 	// Check if detected as unencrypted
 	isEnc, err := IsEncrypted(dbPath)
@@ -325,7 +325,7 @@ func TestCopyTable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create source database: %v", err)
 	}
-	defer srcDB.Close()
+	defer func() { _ = srcDB.Close() }()
 
 	// Initialize schema in source
 	if err := initSchema(srcDB); err != nil {
@@ -347,7 +347,7 @@ func TestCopyTable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create destination database: %v", err)
 	}
-	defer dstDB.Close()
+	defer func() { _ = dstDB.Close() }()
 
 	// Initialize schema in destination
 	if err := initSchema(dstDB); err != nil {
@@ -388,14 +388,14 @@ func TestCopyTable_InvalidTable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create source database: %v", err)
 	}
-	defer srcDB.Close()
+	defer func() { _ = srcDB.Close() }()
 
 	dstPath := filepath.Join(tmpDir, "dst.db")
 	dstDB, err := sql.Open(driverName, dstPath)
 	if err != nil {
 		t.Fatalf("Failed to create destination database: %v", err)
 	}
-	defer dstDB.Close()
+	defer func() { _ = dstDB.Close() }()
 
 	// Attempt to copy an invalid table (SQL injection attempt)
 	err = copyTable(srcDB, dstDB, "users; DROP TABLE emails;--")
@@ -413,7 +413,7 @@ func TestCopyTable_EmptyTable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create source database: %v", err)
 	}
-	defer srcDB.Close()
+	defer func() { _ = srcDB.Close() }()
 
 	if err := initSchema(srcDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)
@@ -425,7 +425,7 @@ func TestCopyTable_EmptyTable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create destination database: %v", err)
 	}
-	defer dstDB.Close()
+	defer func() { _ = dstDB.Close() }()
 
 	if err := initSchema(dstDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)
@@ -450,7 +450,7 @@ func TestNewEncryptedManager(t *testing.T) {
 	if mgr == nil {
 		t.Fatal("NewEncryptedManager() returned nil")
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	if mgr.Manager == nil {
 		t.Error("NewEncryptedManager().Manager is nil")
@@ -471,7 +471,7 @@ func TestEncryptedManager_GetDB_EncryptionDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewEncryptedManager() error: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	// With encryption disabled, should use the regular Manager.GetDB
 	db, err := mgr.GetDB("test@example.com")
@@ -500,7 +500,7 @@ func TestEncryptedManager_ClearCache_EncryptionDisabled(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewEncryptedManager() error: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	email := "test@example.com"
 
@@ -533,7 +533,7 @@ func TestMigrateToEncrypted_NonexistentDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewEncryptedManager() error: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	// Migration of nonexistent database should not error
 	err = mgr.MigrateToEncrypted("nonexistent@example.com")
@@ -552,7 +552,7 @@ func TestMigrateToUnencrypted_NonexistentDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewEncryptedManager() error: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	// Migration of nonexistent database should not error
 	err = mgr.MigrateToUnencrypted("nonexistent@example.com")
@@ -569,7 +569,7 @@ func TestCopyTable_AllowedTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create source database: %v", err)
 	}
-	defer srcDB.Close()
+	defer func() { _ = srcDB.Close() }()
 
 	if err := initSchema(srcDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)
@@ -580,7 +580,7 @@ func TestCopyTable_AllowedTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create destination database: %v", err)
 	}
-	defer dstDB.Close()
+	defer func() { _ = dstDB.Close() }()
 
 	if err := initSchema(dstDB); err != nil {
 		t.Fatalf("Failed to init schema: %v", err)

@@ -108,7 +108,7 @@ func newThreadsListCmd() *cobra.Command {
 					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
 
 				if showID {
-					dim.Printf("      ID: %s\n", t.ID)
+					_, _ = dim.Printf("      ID: %s\n", t.ID)
 				}
 			}
 
@@ -158,7 +158,7 @@ func newThreadsShowCmd() *cobra.Command {
 
 			// Print thread details
 			fmt.Println("════════════════════════════════════════════════════════════")
-			boldWhite.Printf("Thread: %s\n", thread.Subject)
+			_, _ = boldWhite.Printf("Thread: %s\n", thread.Subject)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("Participants: %s\n", formatContacts(thread.Participants))
@@ -505,7 +505,7 @@ Examples:
 					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
 
 				if showID {
-					dim.Printf("      ID: %s\n", t.ID)
+					_, _ = dim.Printf("      ID: %s\n", t.ID)
 				}
 			}
 

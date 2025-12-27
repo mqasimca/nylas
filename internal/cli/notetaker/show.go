@@ -53,7 +53,7 @@ func newShowCmd() *cobra.Command {
 			yellow := color.New(color.FgYellow)
 			dim := color.New(color.Faint)
 
-			cyan.Printf("Notetaker: %s\n", notetaker.ID)
+			_, _ = cyan.Printf("Notetaker: %s\n", notetaker.ID)
 			fmt.Printf("State:     %s\n", formatState(notetaker.State))
 
 			if notetaker.MeetingTitle != "" {
@@ -65,7 +65,7 @@ func newShowCmd() *cobra.Command {
 
 			if notetaker.MeetingInfo != nil {
 				if notetaker.MeetingInfo.Provider != "" {
-					green.Printf("Provider:  %s\n", notetaker.MeetingInfo.Provider)
+					_, _ = green.Printf("Provider:  %s\n", notetaker.MeetingInfo.Provider)
 				}
 				if notetaker.MeetingInfo.MeetingCode != "" {
 					fmt.Printf("Code:      %s\n", notetaker.MeetingInfo.MeetingCode)
@@ -79,26 +79,26 @@ func newShowCmd() *cobra.Command {
 			}
 
 			if !notetaker.JoinTime.IsZero() {
-				yellow.Printf("Join Time: %s\n", notetaker.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+				_, _ = yellow.Printf("Join Time: %s\n", notetaker.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
 			}
 
 			// Show media info if available
 			if notetaker.MediaData != nil {
 				fmt.Println("\nMedia:")
 				if notetaker.MediaData.Recording != nil {
-					green.Printf("  Recording: %s\n", notetaker.MediaData.Recording.URL)
-					dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Recording.Size)
+					_, _ = green.Printf("  Recording: %s\n", notetaker.MediaData.Recording.URL)
+					_, _ = dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Recording.Size)
 				}
 				if notetaker.MediaData.Transcript != nil {
-					green.Printf("  Transcript: %s\n", notetaker.MediaData.Transcript.URL)
-					dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Transcript.Size)
+					_, _ = green.Printf("  Transcript: %s\n", notetaker.MediaData.Transcript.URL)
+					_, _ = dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Transcript.Size)
 				}
 			}
 
 			fmt.Println()
-			dim.Printf("Created: %s\n", notetaker.CreatedAt.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+			_, _ = dim.Printf("Created: %s\n", notetaker.CreatedAt.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
 			if !notetaker.UpdatedAt.IsZero() {
-				dim.Printf("Updated: %s\n", notetaker.UpdatedAt.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+				_, _ = dim.Printf("Updated: %s\n", notetaker.UpdatedAt.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
 			}
 
 			return nil

@@ -57,23 +57,23 @@ This command shows connectors configured for your Nylas application.`,
 			}
 
 			// Display as table
-			fmt.Fprintln(cmd.OutOrStdout(), "Available Authentication Providers:")
-			fmt.Fprintln(cmd.OutOrStdout())
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Available Authentication Providers:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 			if len(connectors) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "No providers configured.")
-				fmt.Fprintln(cmd.OutOrStdout(), "\nTo add a provider, use: nylas admin connectors create")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No providers configured.")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nTo add a provider, use: nylas admin connectors create")
 				return nil
 			}
 
 			for _, connector := range connectors {
-				fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", connector.Provider)
-				fmt.Fprintf(cmd.OutOrStdout(), "    Name:       %s\n", connector.Name)
-				fmt.Fprintf(cmd.OutOrStdout(), "    ID:         %s\n", connector.ID)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", connector.Provider)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    Name:       %s\n", connector.Name)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    ID:         %s\n", connector.ID)
 				if len(connector.Scopes) > 0 {
-					fmt.Fprintf(cmd.OutOrStdout(), "    Scopes:     %d configured\n", len(connector.Scopes))
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "    Scopes:     %d configured\n", len(connector.Scopes))
 				}
-				fmt.Fprintln(cmd.OutOrStdout())
+				_, _ = fmt.Fprintln(cmd.OutOrStdout())
 			}
 
 			return nil

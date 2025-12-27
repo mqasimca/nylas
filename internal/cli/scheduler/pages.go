@@ -108,7 +108,7 @@ func newPageShowCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			bold := color.New(color.Bold)
 
-			bold.Printf("Scheduler Page: %s\n", page.Name)
+			_, _ = bold.Printf("Scheduler Page: %s\n", page.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(page.ID))
 			fmt.Printf("  Slug: %s\n", green.Sprint(page.Slug))
 			fmt.Printf("  Configuration ID: %s\n", page.ConfigurationID)
@@ -159,7 +159,7 @@ func newPageCreateCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			cyan := color.New(color.FgCyan)
 
-			green.Printf("✓ Created scheduler page: %s\n", page.Name)
+			_, _ = green.Printf("✓ Created scheduler page: %s\n", page.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(page.ID))
 			if page.Slug != "" {
 				fmt.Printf("  Slug: %s\n", green.Sprint(page.Slug))
@@ -215,7 +215,7 @@ func newPageUpdateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Updated scheduler page: %s\n", page.Name)
+			_, _ = green.Printf("✓ Updated scheduler page: %s\n", page.Name)
 
 			return nil
 		},
@@ -259,7 +259,7 @@ func newPageDeleteCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Deleted scheduler page: %s\n", args[0])
+			_, _ = green.Printf("✓ Deleted scheduler page: %s\n", args[0])
 
 			return nil
 		},

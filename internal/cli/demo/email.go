@@ -170,13 +170,13 @@ No actual email is sent - this is just a demonstration of the command flow.`,
 			fmt.Println(dim.Sprint("📧 Demo Mode - Simulated Send"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Printf("To:      %s\n", to)
-			boldWhite.Printf("Subject: %s\n", subject)
+			_, _ = boldWhite.Printf("To:      %s\n", to)
+			_, _ = boldWhite.Printf("Subject: %s\n", subject)
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println(body)
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Email would be sent (demo mode - no actual email sent)")
+			_, _ = green.Println("✓ Email would be sent (demo mode - no actual email sent)")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To send real emails, connect your account: nylas auth login"))
 
@@ -220,7 +220,7 @@ func printDemoMessageSummary(msg domain.Message, index int, showID bool) {
 
 	if showID {
 		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
-		dim.Printf("      ID: %s\n", msg.ID)
+		_, _ = dim.Printf("      ID: %s\n", msg.ID)
 	} else {
 		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
 	}
@@ -237,7 +237,7 @@ func printDemoMessage(msg domain.Message) {
 	}
 
 	fmt.Println(strings.Repeat("─", 60))
-	boldWhite.Printf("Subject: %s\n", msg.Subject)
+	_, _ = boldWhite.Printf("Subject: %s\n", msg.Subject)
 	fmt.Printf("From:    %s\n", formatDemoContacts(msg.From))
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatDemoContacts(msg.To))
@@ -367,16 +367,16 @@ func newDemoEmailMarkCmd() *cobra.Command {
 			fmt.Println()
 
 			if read {
-				green.Printf("✓ Message %s would be marked as read\n", messageID)
+				_, _ = green.Printf("✓ Message %s would be marked as read\n", messageID)
 			}
 			if unread {
-				green.Printf("✓ Message %s would be marked as unread\n", messageID)
+				_, _ = green.Printf("✓ Message %s would be marked as unread\n", messageID)
 			}
 			if starred {
-				green.Printf("✓ Message %s would be starred\n", messageID)
+				_, _ = green.Printf("✓ Message %s would be starred\n", messageID)
 			}
 			if unstarred {
-				green.Printf("✓ Message %s would be unstarred\n", messageID)
+				_, _ = green.Printf("✓ Message %s would be unstarred\n", messageID)
 			}
 
 			if !read && !unread && !starred && !unstarred {
@@ -415,7 +415,7 @@ func newDemoEmailDeleteCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("📧 Demo Mode - Delete Email (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Message %s would be deleted\n", messageID)
+			_, _ = green.Printf("✓ Message %s would be deleted\n", messageID)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To manage your real emails: nylas auth login"))
 
@@ -485,7 +485,7 @@ func newDemoEmailFoldersCreateCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("📁 Demo Mode - Create Folder (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Folder '%s' would be created\n", name)
+			_, _ = green.Printf("✓ Folder '%s' would be created\n", name)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To create real folders: nylas auth login"))
 
@@ -511,7 +511,7 @@ func newDemoEmailFoldersDeleteCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("📁 Demo Mode - Delete Folder (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Folder '%s' would be deleted\n", folderID)
+			_, _ = green.Printf("✓ Folder '%s' would be deleted\n", folderID)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To manage real folders: nylas auth login"))
 
@@ -604,7 +604,7 @@ func newDemoEmailThreadsReadCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📧 Demo Mode - Sample Thread"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 60))
-			boldWhite.Printf("Subject: %s\n", thread.Subject)
+			_, _ = boldWhite.Printf("Subject: %s\n", thread.Subject)
 			fmt.Printf("Messages: %d\n", len(thread.MessageIDs))
 			fmt.Printf("Participants: %s\n", formatDemoParticipants(thread.Participants))
 			fmt.Println(strings.Repeat("─", 60))
@@ -666,7 +666,7 @@ func newDemoEmailDraftsListCmd() *cobra.Command {
 				}
 				fmt.Printf("  📝 %s\n", boldWhite.Sprint(d.Subject))
 				fmt.Printf("     To: %s\n", to)
-				dim.Printf("     ID: %s\n", d.ID)
+				_, _ = dim.Printf("     ID: %s\n", d.ID)
 				fmt.Println()
 			}
 
@@ -696,7 +696,7 @@ func newDemoEmailDraftsCreateCmd() *cobra.Command {
 				fmt.Println(strings.Repeat("─", 50))
 			}
 			fmt.Println()
-			green.Println("✓ Draft would be created with ID: draft-demo-new")
+			_, _ = green.Println("✓ Draft would be created with ID: draft-demo-new")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To create real drafts: nylas auth login"))
 
@@ -724,7 +724,7 @@ func newDemoEmailDraftsDeleteCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("📝 Demo Mode - Delete Draft (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Draft '%s' would be deleted\n", draftID)
+			_, _ = green.Printf("✓ Draft '%s' would be deleted\n", draftID)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To manage real drafts: nylas auth login"))
 
@@ -746,7 +746,7 @@ func newDemoEmailDraftsSendCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("📝 Demo Mode - Send Draft (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Draft '%s' would be sent\n", draftID)
+			_, _ = green.Printf("✓ Draft '%s' would be sent\n", draftID)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To send real drafts: nylas auth login"))
 
@@ -792,7 +792,7 @@ func newDemoEmailAttachmentsListCmd() *cobra.Command {
 				fmt.Printf("  📎 %s\n", boldWhite.Sprint(a.Filename))
 				fmt.Printf("     Type: %s\n", a.ContentType)
 				fmt.Printf("     Size: %s\n", formatDemoBytes(a.Size))
-				dim.Printf("     ID: %s\n", a.ID)
+				_, _ = dim.Printf("     ID: %s\n", a.ID)
 				fmt.Println()
 			}
 
@@ -816,7 +816,7 @@ func newDemoEmailAttachmentsDownloadCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("📎 Demo Mode - Download Attachment (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Attachment '%s' would be downloaded to current directory\n", attachmentID)
+			_, _ = green.Printf("✓ Attachment '%s' would be downloaded to current directory\n", attachmentID)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To download real attachments: nylas auth login"))
 
@@ -895,7 +895,7 @@ func newDemoEmailScheduledCancelCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(dim.Sprint("⏰ Demo Mode - Cancel Scheduled Message (Simulated)"))
 			fmt.Println()
-			green.Printf("✓ Scheduled message '%s' would be cancelled\n", scheduleID)
+			_, _ = green.Printf("✓ Scheduled message '%s' would be cancelled\n", scheduleID)
 			fmt.Println()
 			fmt.Println(dim.Sprint("To manage scheduled messages: nylas auth login"))
 
@@ -965,7 +965,7 @@ func newDemoEmailAISummarizeCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Email Summary"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 60))
-			boldWhite.Println("Summary:")
+			_, _ = boldWhite.Println("Summary:")
 			fmt.Println("This email discusses the Q4 planning meeting action items.")
 			fmt.Println("Key points:")
 			fmt.Println("  • Review Q4 roadmap by Friday")
@@ -989,7 +989,7 @@ func newDemoEmailAIExtractCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Extract Key Info"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 60))
-			boldWhite.Println("Extracted Information:")
+			_, _ = boldWhite.Println("Extracted Information:")
 			fmt.Println("  Action Items: 3")
 			fmt.Println("  Deadlines: Friday (Q4 roadmap review)")
 			fmt.Println("  People Mentioned: Sarah Chen, team members")

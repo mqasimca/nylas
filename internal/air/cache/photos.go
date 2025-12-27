@@ -85,7 +85,7 @@ func (s *PhotoStore) Put(contactID, contentType string, data []byte) error {
 	)
 	if err != nil {
 		// Clean up file on database error
-		os.Remove(localPath)
+		_ = os.Remove(localPath)
 		return fmt.Errorf("save photo metadata: %w", err)
 	}
 
@@ -152,7 +152,7 @@ func (s *PhotoStore) Delete(contactID string) error {
 	var localPath string
 	err := s.db.QueryRow("SELECT local_path FROM photos WHERE contact_id = ?", contactID).Scan(&localPath)
 	if err == nil && localPath != "" {
-		os.Remove(localPath)
+		_ = os.Remove(localPath)
 	}
 
 	// Delete from database
@@ -169,14 +169,14 @@ func (s *PhotoStore) Prune() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("query expired photos: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var toDelete []string
 	for rows.Next() {
 		var contactID, localPath string
 		if err := rows.Scan(&contactID, &localPath); err == nil {
 			toDelete = append(toDelete, contactID)
-			os.Remove(localPath)
+			_ = os.Remove(localPath)
 		}
 	}
 
@@ -222,7 +222,7 @@ func (s *PhotoStore) RemoveOrphaned() (int, error) {
 			knownIDs[id] = true
 		}
 	}
-	rows.Close()
+	_ = rows.Close()
 
 	// Walk the photos directory and remove unknown files
 	count := 0
@@ -236,7 +236,7 @@ func (s *PhotoStore) RemoveOrphaned() (int, error) {
 			continue
 		}
 		if !knownIDs[entry.Name()] {
-			os.Remove(filepath.Join(s.basePath, entry.Name()))
+			_ = os.Remove(filepath.Join(s.basePath, entry.Name()))
 			count++
 		}
 	}

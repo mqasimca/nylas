@@ -80,8 +80,7 @@ func newDemoCalendarsListCmd() *cobra.Command {
 					primary = green.Sprint(" (primary)")
 				}
 				fmt.Printf("  %s %s%s\n", cal.HexColor, boldWhite.Sprint(cal.Name), primary)
-				// #nosec G104 -- color output errors are non-critical, best-effort display
-				dim.Printf("    ID: %s\n", cal.ID)
+				_, _ = dim.Printf("    ID: %s\n", cal.ID)
 			}
 
 			fmt.Println()
@@ -117,8 +116,7 @@ func newDemoCalendarShowCmd() *cobra.Command {
 			fmt.Println(strings.Repeat("─", 50))
 
 			// Show sample calendar details
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			boldWhite.Println("Work Calendar")
+			_, _ = boldWhite.Println("Work Calendar")
 			fmt.Printf("  ID:          %s\n", calID)
 			fmt.Printf("  Owner:       demo@example.com\n")
 			fmt.Printf("  Timezone:    America/New_York\n")
@@ -226,8 +224,7 @@ No actual event is created - this is just a demonstration of the command flow.`,
 			fmt.Println(dim.Sprint("📅 Demo Mode - Simulated Event Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			boldWhite.Printf("Title:    %s\n", title)
+			_, _ = boldWhite.Printf("Title:    %s\n", title)
 			fmt.Printf("Start:    %s\n", startTime)
 			fmt.Printf("Duration: %d minutes\n", duration)
 			if location != "" {
@@ -238,8 +235,8 @@ No actual event is created - this is just a demonstration of the command flow.`,
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Event would be created (demo mode - no actual event created)")
-			dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
+			_, _ = green.Println("✓ Event would be created (demo mode - no actual event created)")
+			_, _ = dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
 			fmt.Println()
 			fmt.Println(dim.Sprint("To create real events, connect your account: nylas auth login"))
 
@@ -281,9 +278,9 @@ func newDemoCalendarUpdateCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📅 Demo Mode - Simulated Event Update"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			dim.Printf("Event ID: %s\n", eventID)
+			_, _ = dim.Printf("Event ID: %s\n", eventID)
 			fmt.Println()
-			boldWhite.Println("Changes:")
+			_, _ = boldWhite.Println("Changes:")
 			if title != "" {
 				fmt.Printf("  Title:    %s\n", title)
 			}
@@ -295,7 +292,7 @@ func newDemoCalendarUpdateCmd() *cobra.Command {
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Event would be updated (demo mode - no actual changes made)")
+			_, _ = green.Println("✓ Event would be updated (demo mode - no actual changes made)")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To update real events, connect your account: nylas auth login"))
 
@@ -334,12 +331,12 @@ func newDemoCalendarDeleteCmd() *cobra.Command {
 			fmt.Println()
 
 			if !force {
-				yellow.Println("⚠ Would prompt for confirmation in real mode")
+				_, _ = yellow.Println("⚠ Would prompt for confirmation in real mode")
 			}
 
 			fmt.Printf("Event ID: %s\n", eventID)
 			fmt.Println()
-			green.Println("✓ Event would be deleted (demo mode - no actual deletion)")
+			_, _ = green.Println("✓ Event would be deleted (demo mode - no actual deletion)")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To delete real events, connect your account: nylas auth login"))
 
@@ -414,7 +411,7 @@ func newDemoEventsShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📅 Demo Mode - Event Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Team Standup Meeting")
+			_, _ = boldWhite.Println("Team Standup Meeting")
 			fmt.Printf("  ID:          %s\n", eventID)
 			fmt.Printf("  Calendar:    Work Calendar\n")
 			fmt.Printf("  Start:       Tomorrow at 9:00 AM\n")
@@ -437,8 +434,8 @@ func newDemoEventsCreateCmd() *cobra.Command {
 		Short: "Create an event",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			green.Println("✓ Event would be created (demo mode)")
-			dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
+			_, _ = green.Println("✓ Event would be created (demo mode)")
+			_, _ = dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
 			return nil
 		},
 	}
@@ -454,7 +451,7 @@ func newDemoEventsUpdateCmd() *cobra.Command {
 				eventID = args[0]
 			}
 			fmt.Println()
-			green.Printf("✓ Event %s would be updated (demo mode)\n", eventID)
+			_, _ = green.Printf("✓ Event %s would be updated (demo mode)\n", eventID)
 			return nil
 		},
 	}
@@ -470,7 +467,7 @@ func newDemoEventsDeleteCmd() *cobra.Command {
 				eventID = args[0]
 			}
 			fmt.Println()
-			green.Printf("✓ Event %s would be deleted (demo mode)\n", eventID)
+			_, _ = green.Printf("✓ Event %s would be deleted (demo mode)\n", eventID)
 			return nil
 		},
 	}
@@ -496,7 +493,7 @@ func newDemoAvailabilityCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📅 Demo Mode - Sample Availability"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Available Time Slots (Next 7 Days)")
+			_, _ = boldWhite.Println("Available Time Slots (Next 7 Days)")
 			fmt.Println()
 
 			// Sample availability slots
@@ -544,7 +541,7 @@ func newDemoFindTimeCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📅 Demo Mode - Find Meeting Time"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Best Available Times for All Participants")
+			_, _ = boldWhite.Println("Best Available Times for All Participants")
 			fmt.Println()
 
 			now := time.Now()
@@ -581,7 +578,7 @@ func newDemoScheduleCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 
-			boldWhite.Println("Scheduling: Project Review")
+			_, _ = boldWhite.Println("Scheduling: Project Review")
 			fmt.Println()
 			fmt.Println("Checking availability for all participants...")
 			fmt.Println()
@@ -594,7 +591,7 @@ func newDemoScheduleCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Meeting would be scheduled (demo mode)")
+			_, _ = green.Println("✓ Meeting would be scheduled (demo mode)")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To schedule real meetings: nylas auth login"))
 
@@ -629,14 +626,14 @@ func newDemoRecurringCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📅 Demo Mode - Create Recurring Event"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Weekly Team Standup")
+			_, _ = boldWhite.Println("Weekly Team Standup")
 			fmt.Println()
 			fmt.Printf("  Pattern:     Every Monday, Wednesday, Friday\n")
 			fmt.Printf("  Time:        9:00 AM - 9:30 AM\n")
 			fmt.Printf("  Ends:        After 52 occurrences\n")
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Recurring event would be created (demo mode)")
+			_, _ = green.Println("✓ Recurring event would be created (demo mode)")
 			return nil
 		},
 	})
@@ -661,7 +658,7 @@ func newDemoRecurringCmd() *cobra.Command {
 
 			for _, e := range events {
 				fmt.Printf("  %s %s\n", green.Sprint("●"), boldWhite.Sprint(e.title))
-				dim.Printf("    %s\n", e.pattern)
+				_, _ = dim.Printf("    %s\n", e.pattern)
 				fmt.Println()
 			}
 
@@ -699,7 +696,7 @@ func newDemoVirtualCmd() *cobra.Command {
 
 			for _, cal := range calendars {
 				fmt.Printf("  %s %s\n", cyan.Sprint("●"), boldWhite.Sprint(cal.name))
-				dim.Printf("    Source: %s\n", cal.source)
+				_, _ = dim.Printf("    Source: %s\n", cal.source)
 				fmt.Println()
 			}
 
@@ -712,7 +709,7 @@ func newDemoVirtualCmd() *cobra.Command {
 		Short: "Create virtual calendar",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			green.Println("✓ Virtual calendar would be created (demo mode)")
+			_, _ = green.Println("✓ Virtual calendar would be created (demo mode)")
 			return nil
 		},
 	})
@@ -750,7 +747,7 @@ func newDemoAIAnalyzeCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Calendar Analysis"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Weekly Calendar Analysis")
+			_, _ = boldWhite.Println("Weekly Calendar Analysis")
 			fmt.Println()
 
 			fmt.Println("📊 Meeting Statistics:")
@@ -787,12 +784,12 @@ func newDemoAIConflictsCmd() *cobra.Command {
 			fmt.Println("⚠️  Conflicts Found:")
 			fmt.Println()
 			fmt.Printf("  %s %s\n", color.New(color.FgRed).Sprint("●"), boldWhite.Sprint("Double-booked: Project Review + Client Call"))
-			dim.Printf("    %s at 2:00 PM - 3:00 PM\n", now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
+			_, _ = dim.Printf("    %s at 2:00 PM - 3:00 PM\n", now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
 			fmt.Printf("    Suggestion: Move Project Review to 3:30 PM\n")
 			fmt.Println()
 
 			fmt.Printf("  %s %s\n", yellow.Sprint("●"), boldWhite.Sprint("Back-to-back: 4 meetings without break"))
-			dim.Printf("    %s from 9:00 AM - 1:00 PM\n", now.AddDate(0, 0, 3).Format("Mon, Jan 2"))
+			_, _ = dim.Printf("    %s from 9:00 AM - 1:00 PM\n", now.AddDate(0, 0, 3).Format("Mon, Jan 2"))
 			fmt.Printf("    Suggestion: Add 15-min buffer between meetings\n")
 
 			return nil
@@ -838,7 +835,7 @@ func newDemoAIFocusTimeCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Focus Time Finder"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Available Focus Time Blocks This Week")
+			_, _ = boldWhite.Println("Available Focus Time Blocks This Week")
 			fmt.Println()
 
 			now := time.Now()
@@ -949,7 +946,7 @@ func printDemoEvent(event domain.Event, showID bool) {
 	}
 
 	if showID {
-		dim.Printf("    ID: %s\n", event.ID)
+		_, _ = dim.Printf("    ID: %s\n", event.ID)
 	}
 
 	fmt.Println()
