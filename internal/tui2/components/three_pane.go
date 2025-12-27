@@ -249,10 +249,10 @@ func (t *ThreePaneLayout) View() string {
 	// Use the same calculation logic as SetSize
 	folderWidth, messageWidth, previewWidth := t.calculatePaneWidths(availableContentWidth)
 
-	// Render each pane with explicit width
-	folderView := t.renderPaneWithWidth(t.folders.View(), t.focused == FolderPane, "Folders", folderWidth+frameWidth)
-	messageView := t.renderPaneWithWidth(t.messages.View(), t.focused == MessagePane, "Messages", messageWidth+frameWidth)
-	previewView := t.renderPaneWithWidth(t.preview.View(), t.focused == PreviewPane, "Preview", previewWidth+frameWidth)
+	// Render each pane with explicit width and height
+	folderView := t.renderPaneWithWidth(t.folders.View(), t.focused == FolderPane, "Folders", folderWidth+frameWidth, t.height)
+	messageView := t.renderPaneWithWidth(t.messages.View(), t.focused == MessagePane, "Messages", messageWidth+frameWidth, t.height)
+	previewView := t.renderPaneWithWidth(t.preview.View(), t.focused == PreviewPane, "Preview", previewWidth+frameWidth, t.height)
 
 	// Join horizontally - should now use full width
 	return lipgloss.JoinHorizontal(
@@ -278,8 +278,8 @@ func (t *ThreePaneLayout) SelectedFolder() list.Item {
 	return t.folders.SelectedItem()
 }
 
-// renderPaneWithWidth renders a pane with border, title, and explicit width.
-func (t *ThreePaneLayout) renderPaneWithWidth(content string, focused bool, title string, width int) string {
+// renderPaneWithWidth renders a pane with border, title, and explicit width and height.
+func (t *ThreePaneLayout) renderPaneWithWidth(content string, focused bool, title string, totalWidth, totalHeight int) string {
 	borderColor := t.theme.Dimmed.GetForeground()
 	titleColor := t.theme.Secondary
 
@@ -288,20 +288,39 @@ func (t *ThreePaneLayout) renderPaneWithWidth(content string, focused bool, titl
 		titleColor = t.theme.Primary
 	}
 
-	// Set explicit width on border style - Lipgloss best practice for full-width layouts
+	// Create border style WITHOUT .Width() to avoid lipgloss v1.1.0 bug
+	// where .Width() doesn't account for border size (fixed in v2.0.0)
 	borderStyle := lipgloss.NewStyle().
-		Width(width).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
 		Padding(0, 1)
+
+	// Calculate content dimensions manually: total - borders - padding
+	frameWidth, frameHeight := borderStyle.GetFrameSize()
+	contentWidth := totalWidth - frameWidth
+	if contentWidth < 10 {
+		contentWidth = 10 // Minimum content width
+	}
+
+	// Calculate content height: totalHeight - title (1 line) - frame
+	contentHeight := totalHeight - 1 - frameHeight
+	if contentHeight < 5 {
+		contentHeight = 5 // Minimum content height
+	}
 
 	titleStyle := lipgloss.NewStyle().
 		Foreground(titleColor).
 		Bold(true)
 
+	// Pad content to exact width AND height using lipgloss utilities
+	paddedContent := lipgloss.NewStyle().
+		Width(contentWidth).
+		Height(contentHeight).
+		Render(content)
+
 	// Add title
 	titleBar := titleStyle.Render(title)
-	contentWithTitle := lipgloss.JoinVertical(lipgloss.Left, titleBar, content)
+	contentWithTitle := lipgloss.JoinVertical(lipgloss.Left, titleBar, paddedContent)
 
 	return borderStyle.Render(contentWithTitle)
 }
