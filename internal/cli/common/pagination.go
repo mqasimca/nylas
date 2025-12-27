@@ -142,7 +142,7 @@ func (p *PaginatedDisplay) DisplayPage(itemsDisplayed int, hasMore bool) {
 	p.TotalFetched += itemsDisplayed
 
 	if !IsQuiet() && hasMore {
-		fmt.Fprintf(p.Writer, "\n--- Page %d (%d items, %d total) ---\n",
+		_, _ = fmt.Fprintf(p.Writer, "\n--- Page %d (%d items, %d total) ---\n",
 			p.CurrentPage, itemsDisplayed, p.TotalFetched)
 	}
 }
@@ -150,7 +150,7 @@ func (p *PaginatedDisplay) DisplayPage(itemsDisplayed int, hasMore bool) {
 // DisplaySummary shows a final summary.
 func (p *PaginatedDisplay) DisplaySummary() {
 	if !IsQuiet() && p.CurrentPage > 1 {
-		fmt.Fprintf(p.Writer, "\nFetched %d items across %d pages\n",
+		_, _ = fmt.Fprintf(p.Writer, "\nFetched %d items across %d pages\n",
 			p.TotalFetched, p.CurrentPage)
 	}
 }

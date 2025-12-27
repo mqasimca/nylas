@@ -37,19 +37,19 @@ func runStatus() error {
 	for _, a := range Assistants {
 		configPath := a.GetConfigPath()
 		if configPath == "" {
-			gray.Printf("  - %-16s  unsupported on this platform\n", a.Name)
+			_, _ = gray.Printf("  - %-16s  unsupported on this platform\n", a.Name)
 			continue
 		}
 
 		// Check if app is installed
 		if !a.IsProjectConfig() && !a.IsInstalled() {
-			gray.Printf("  - %-16s  application not installed\n", a.Name)
+			_, _ = gray.Printf("  - %-16s  application not installed\n", a.Name)
 			continue
 		}
 
 		// Check if config file exists
 		if !a.IsConfigured() {
-			yellow.Printf("  ○ %-16s  ", a.Name)
+			_, _ = yellow.Printf("  ○ %-16s  ", a.Name)
 			fmt.Printf("not configured  %s\n", configPath)
 			continue
 		}
@@ -57,25 +57,25 @@ func runStatus() error {
 		// Check if nylas is in the config
 		hasNylas, binaryPath := checkNylasInConfig(configPath)
 		if !hasNylas {
-			yellow.Printf("  ○ %-16s  ", a.Name)
+			_, _ = yellow.Printf("  ○ %-16s  ", a.Name)
 			fmt.Printf("config exists, nylas not added  %s\n", configPath)
 			continue
 		}
 
-		green.Printf("  ✓ %-16s  ", a.Name)
+		_, _ = green.Printf("  ✓ %-16s  ", a.Name)
 		fmt.Printf("configured  %s\n", configPath)
 		if binaryPath != "" {
-			gray.Printf("                       binary: %s\n", binaryPath)
+			_, _ = gray.Printf("                       binary: %s\n", binaryPath)
 		}
 	}
 
 	fmt.Println()
 	fmt.Println("Legend:")
-	green.Print("  ✓")
+	_, _ = green.Print("  ✓")
 	fmt.Println(" Nylas MCP configured")
-	yellow.Print("  ○")
+	_, _ = yellow.Print("  ○")
 	fmt.Println(" Available but not configured")
-	gray.Print("  -")
+	_, _ = gray.Print("  -")
 	fmt.Println(" Not available")
 
 	return nil

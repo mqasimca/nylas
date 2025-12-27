@@ -75,7 +75,7 @@ func newDemoConfigListCmd() *cobra.Command {
 				fmt.Printf("  %s %s\n", "📅", boldWhite.Sprint(config.Name))
 				fmt.Printf("    Slug: %s\n", config.Slug)
 				fmt.Printf("    URL:  https://schedule.nylas.com/%s\n", config.Slug)
-				dim.Printf("    ID:   %s\n", config.ID)
+				_, _ = dim.Printf("    ID:   %s\n", config.ID)
 				fmt.Println()
 			}
 
@@ -100,7 +100,7 @@ func newDemoConfigShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📆 Demo Mode - Configuration Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("30-Minute Meeting")
+			_, _ = boldWhite.Println("30-Minute Meeting")
 			fmt.Printf("  ID:              %s\n", configID)
 			fmt.Printf("  Slug:            30-min-meeting\n")
 			fmt.Printf("  Duration:        30 minutes\n")
@@ -147,14 +147,14 @@ func newDemoConfigCreateCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📆 Demo Mode - Create Configuration"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Printf("Name:     %s\n", name)
+			_, _ = boldWhite.Printf("Name:     %s\n", name)
 			fmt.Printf("Duration: %d minutes\n", duration)
 			fmt.Printf("Slug:     %s\n", slug)
 			fmt.Printf("URL:      https://schedule.nylas.com/%s\n", slug)
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Configuration would be created (demo mode)")
-			dim.Printf("  Config ID: config-demo-%d\n", time.Now().Unix())
+			_, _ = green.Println("✓ Configuration would be created (demo mode)")
+			_, _ = dim.Printf("  Config ID: config-demo-%d\n", time.Now().Unix())
 			fmt.Println()
 			fmt.Println(dim.Sprint("To create real configurations: nylas auth login"))
 
@@ -180,7 +180,7 @@ func newDemoConfigUpdateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Configuration %s would be updated (demo mode)\n", configID)
+			_, _ = green.Printf("✓ Configuration %s would be updated (demo mode)\n", configID)
 
 			return nil
 		},
@@ -198,7 +198,7 @@ func newDemoConfigDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Configuration %s would be deleted (demo mode)\n", configID)
+			_, _ = green.Printf("✓ Configuration %s would be deleted (demo mode)\n", configID)
 
 			return nil
 		},
@@ -263,7 +263,7 @@ func newDemoSessionsListCmd() *cobra.Command {
 				fmt.Printf("  %s %s\n", statusColor.Sprint(statusIcon), boldWhite.Sprint(s.config))
 				fmt.Printf("    Status:  %s\n", statusColor.Sprint(s.status))
 				fmt.Printf("    Created: %s\n", s.createdAt)
-				dim.Printf("    ID:      %s\n", s.id)
+				_, _ = dim.Printf("    ID:      %s\n", s.id)
 				fmt.Println()
 			}
 
@@ -286,7 +286,7 @@ func newDemoSessionsShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📆 Demo Mode - Session Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Session: 30-Minute Meeting")
+			_, _ = boldWhite.Println("Session: 30-Minute Meeting")
 			fmt.Printf("  ID:            %s\n", sessionID)
 			fmt.Printf("  Status:        %s\n", green.Sprint("active"))
 			fmt.Printf("  Configuration: config-demo-001\n")
@@ -317,9 +317,9 @@ func newDemoSessionsCreateCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Printf("Configuration: %s\n", configID)
 			fmt.Println()
-			green.Println("✓ Session would be created (demo mode)")
-			dim.Printf("  Session ID:  %s\n", sessionID)
-			dim.Printf("  Booking URL: https://schedule.nylas.com/s/%s\n", sessionID)
+			_, _ = green.Println("✓ Session would be created (demo mode)")
+			_, _ = dim.Printf("  Session ID:  %s\n", sessionID)
+			_, _ = dim.Printf("  Booking URL: https://schedule.nylas.com/s/%s\n", sessionID)
 
 			return nil
 		},
@@ -337,7 +337,7 @@ func newDemoSessionsDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Session %s would be deleted (demo mode)\n", sessionID)
+			_, _ = green.Printf("✓ Session %s would be deleted (demo mode)\n", sessionID)
 
 			return nil
 		},
@@ -391,17 +391,18 @@ func newDemoBookingsListCmd() *cobra.Command {
 				for _, booking := range bookings {
 					statusColor := green
 					statusIcon := "✓"
-					if booking.Status == "cancelled" {
+					switch booking.Status {
+					case "cancelled":
 						statusColor = color.New(color.FgRed)
 						statusIcon = "✗"
-					} else if booking.Status == "pending" {
+					case "pending":
 						statusColor = yellow
 						statusIcon = "○"
 					}
 
 					fmt.Printf("  %s %s\n", statusColor.Sprint(statusIcon), boldWhite.Sprint(booking.Title))
 					fmt.Printf("    Status: %s\n", statusColor.Sprint(booking.Status))
-					dim.Printf("    ID: %s\n", booking.BookingID)
+					_, _ = dim.Printf("    ID: %s\n", booking.BookingID)
 					fmt.Println()
 				}
 			}
@@ -430,7 +431,7 @@ func newDemoBookingsShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📆 Demo Mode - Booking Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("30-Minute Meeting with John Doe")
+			_, _ = boldWhite.Println("30-Minute Meeting with John Doe")
 			fmt.Printf("  ID:        %s\n", bookingID)
 			fmt.Printf("  Status:    %s\n", green.Sprint("confirmed"))
 			fmt.Printf("  Date:      %s\n", now.Format("Monday, January 2, 2006"))
@@ -443,7 +444,7 @@ func newDemoBookingsShowCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println("Location:")
 			fmt.Printf("  Zoom Meeting\n")
-			dim.Printf("  https://zoom.us/j/123456789\n")
+			_, _ = dim.Printf("  https://zoom.us/j/123456789\n")
 			fmt.Println(strings.Repeat("─", 50))
 
 			return nil
@@ -471,7 +472,7 @@ func newDemoBookingsCancelCmd() *cobra.Command {
 				fmt.Printf("Reason: %s\n", reason)
 			}
 			fmt.Println()
-			green.Println("✓ Booking would be cancelled (demo mode)")
+			_, _ = green.Println("✓ Booking would be cancelled (demo mode)")
 			fmt.Println("  Notification would be sent to attendees")
 
 			return nil
@@ -504,7 +505,7 @@ func newDemoBookingsRescheduleCmd() *cobra.Command {
 			fmt.Printf("  2. %s at 2:00 PM\n", now.AddDate(0, 0, 1).Format("Mon, Jan 2"))
 			fmt.Printf("  3. %s at 10:00 AM\n", now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
 			fmt.Println()
-			green.Println("✓ Booking would be rescheduled (demo mode)")
+			_, _ = green.Println("✓ Booking would be rescheduled (demo mode)")
 
 			return nil
 		},
@@ -580,7 +581,7 @@ func newDemoPagesShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("📆 Demo Mode - Page Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Println("Meeting Booking Page")
+			_, _ = boldWhite.Println("Meeting Booking Page")
 			fmt.Printf("  ID:          %s\n", pageID)
 			fmt.Printf("  Slug:        book-a-meeting\n")
 			fmt.Printf("  URL:         https://schedule.nylas.com/book-a-meeting\n")
@@ -604,8 +605,8 @@ func newDemoPagesCreateCmd() *cobra.Command {
 		Short: "Create a scheduler page",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			green.Println("✓ Scheduler page would be created (demo mode)")
-			dim.Printf("  Page ID: page-demo-%d\n", time.Now().Unix())
+			_, _ = green.Println("✓ Scheduler page would be created (demo mode)")
+			_, _ = dim.Printf("  Page ID: page-demo-%d\n", time.Now().Unix())
 
 			return nil
 		},
@@ -623,7 +624,7 @@ func newDemoPagesDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Page %s would be deleted (demo mode)\n", pageID)
+			_, _ = green.Printf("✓ Page %s would be deleted (demo mode)\n", pageID)
 
 			return nil
 		},

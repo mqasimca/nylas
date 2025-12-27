@@ -140,7 +140,7 @@ func newGrantStatsCmd() *cobra.Command {
 			bold := color.New(color.Bold)
 			cyan := color.New(color.FgCyan)
 
-			bold.Println("Grant Statistics")
+			_, _ = bold.Println("Grant Statistics")
 			fmt.Printf("  Total Grants: %s\n", cyan.Sprintf("%d", stats.Total))
 			fmt.Printf("  Valid: %s\n", green.Sprintf("%d", stats.Valid))
 			fmt.Printf("  Invalid: %s\n", red.Sprintf("%d", stats.Invalid))

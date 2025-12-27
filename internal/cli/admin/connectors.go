@@ -110,7 +110,7 @@ func newConnectorShowCmd() *cobra.Command {
 			bold := color.New(color.Bold)
 
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			bold.Printf("Connector: %s\n", connector.Name)
+			_, _ = bold.Printf("Connector: %s\n", connector.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(connector.ID))
 			fmt.Printf("  Provider: %s\n", green.Sprint(connector.Provider))
 
@@ -200,7 +200,7 @@ func newConnectorCreateCmd() *cobra.Command {
 			cyan := color.New(color.FgCyan)
 
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			green.Printf("✓ Created connector: %s\n", connector.Name)
+			_, _ = green.Printf("✓ Created connector: %s\n", connector.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(connector.ID))
 			fmt.Printf("  Provider: %s\n", connector.Provider)
 
@@ -260,7 +260,7 @@ func newConnectorUpdateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Updated connector: %s\n", connector.Name)
+			_, _ = green.Printf("✓ Updated connector: %s\n", connector.Name)
 
 			return nil
 		},
@@ -304,7 +304,7 @@ func newConnectorDeleteCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Deleted connector: %s\n", args[0])
+			_, _ = green.Printf("✓ Deleted connector: %s\n", args[0])
 
 			return nil
 		},

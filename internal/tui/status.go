@@ -83,7 +83,7 @@ func (s *StatusIndicator) render() {
 		default:
 			color = colorToHex(s.styles.InfoColor)
 		}
-		fmt.Fprintf(s, "[%s::b]%s[-::-]", color, s.flashMsg)
+		_, _ = fmt.Fprintf(s, "[%s::b]%s[-::-]", color, s.flashMsg)
 		return
 	}
 
@@ -116,7 +116,7 @@ func (s *StatusIndicator) render() {
 	grantID := s.config.GrantID
 
 	// k9s style: info | section | section   time <refresh> live
-	fmt.Fprintf(s, "[%s]%s[-] [%s::d]│[-::-] [%s]%s[-] [%s::d]│[-::-] [%s::d]%s[-::-]   [%s]%s[-] [%s]%s[-] %s",
+	_, _ = fmt.Fprintf(s, "[%s]%s[-] [%s::d]│[-::-] [%s]%s[-] [%s::d]│[-::-] [%s::d]%s[-::-]   [%s]%s[-] [%s]%s[-] %s",
 		info, email,
 		muted,
 		success, provider,

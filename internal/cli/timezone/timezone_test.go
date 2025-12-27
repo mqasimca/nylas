@@ -23,10 +23,8 @@ func executeCommand(cmd *cobra.Command, args ...string) (stdout string, stderr s
 	cmd.SetArgs(args)
 	err = cmd.Execute()
 
-	// #nosec G104 -- test cleanup, errors don't affect test validity
-	wOut.Close()
-	// #nosec G104 -- test cleanup, errors don't affect test validity
-	wErr.Close()
+	_ = wOut.Close() // test cleanup, errors don't affect test validity
+	_ = wErr.Close() // test cleanup, errors don't affect test validity
 
 	var bufOut, bufErr bytes.Buffer
 	_, _ = bufOut.ReadFrom(rOut)

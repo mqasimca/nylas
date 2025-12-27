@@ -182,7 +182,7 @@ func TestHTTPClient_DownloadAttachment(t *testing.T) {
 		reader, err := client.DownloadAttachment(ctx, "grant-123", "msg-456", "attach-789")
 
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		content, err := io.ReadAll(reader)
 		require.NoError(t, err)
@@ -256,7 +256,7 @@ func TestDemoClient_Attachments(t *testing.T) {
 	t.Run("DownloadAttachment returns demo content", func(t *testing.T) {
 		reader, err := demo.DownloadAttachment(ctx, "grant-123", "msg-456", "attach-123")
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		content, err := io.ReadAll(reader)
 		require.NoError(t, err)

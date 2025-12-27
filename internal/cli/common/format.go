@@ -84,7 +84,7 @@ func (f *Formatter) formatJSON(data any) error {
 func (f *Formatter) formatYAML(data any) error {
 	encoder := yaml.NewEncoder(f.writer)
 	encoder.SetIndent(2)
-	defer encoder.Close()
+	defer func() { _ = encoder.Close() }()
 	return encoder.Encode(data)
 }
 
@@ -305,33 +305,33 @@ func (t *Table) Render() {
 	headerColor := color.New(color.FgCyan, color.Bold)
 	for i, h := range t.headers {
 		if t.alignRight[i] {
-			headerColor.Fprintf(t.writer, "%*s  ", widths[i], h)
+			_, _ = headerColor.Fprintf(t.writer, "%*s  ", widths[i], h)
 		} else {
-			headerColor.Fprintf(t.writer, "%-*s  ", widths[i], h)
+			_, _ = headerColor.Fprintf(t.writer, "%-*s  ", widths[i], h)
 		}
 	}
-	fmt.Fprintln(t.writer)
+	_, _ = fmt.Fprintln(t.writer)
 
 	// Print separator
 	dim := color.New(color.Faint)
 	for i, w := range widths {
-		dim.Fprint(t.writer, strings.Repeat("─", w))
+		_, _ = dim.Fprint(t.writer, strings.Repeat("─", w))
 		if i < len(widths)-1 {
-			dim.Fprint(t.writer, "──")
+			_, _ = dim.Fprint(t.writer, "──")
 		}
 	}
-	fmt.Fprintln(t.writer)
+	_, _ = fmt.Fprintln(t.writer)
 
 	// Print rows
 	for _, row := range t.rows {
 		for i, cell := range row {
 			if t.alignRight[i] {
-				fmt.Fprintf(t.writer, "%*s  ", widths[i], cell)
+				_, _ = fmt.Fprintf(t.writer, "%*s  ", widths[i], cell)
 			} else {
-				fmt.Fprintf(t.writer, "%-*s  ", widths[i], cell)
+				_, _ = fmt.Fprintf(t.writer, "%-*s  ", widths[i], cell)
 			}
 		}
-		fmt.Fprintln(t.writer)
+		_, _ = fmt.Fprintln(t.writer)
 	}
 }
 
@@ -346,13 +346,13 @@ func PrintSuccess(format string, args ...any) {
 		return
 	}
 	green := color.New(color.FgGreen)
-	green.Printf("✓ "+format+"\n", args...)
+	_, _ = green.Printf("✓ "+format+"\n", args...)
 }
 
 // PrintError prints an error message.
 func PrintError(format string, args ...any) {
 	red := color.New(color.FgRed)
-	red.Fprintf(os.Stderr, "✗ "+format+"\n", args...)
+	_, _ = red.Fprintf(os.Stderr, "✗ "+format+"\n", args...)
 }
 
 // PrintWarning prints a warning message.
@@ -361,7 +361,7 @@ func PrintWarning(format string, args ...any) {
 		return
 	}
 	yellow := color.New(color.FgYellow)
-	yellow.Printf("⚠ "+format+"\n", args...)
+	_, _ = yellow.Printf("⚠ "+format+"\n", args...)
 }
 
 // PrintInfo prints an info message.
@@ -370,7 +370,7 @@ func PrintInfo(format string, args ...any) {
 		return
 	}
 	cyan := color.New(color.FgCyan)
-	cyan.Printf("ℹ "+format+"\n", args...)
+	_, _ = cyan.Printf("ℹ "+format+"\n", args...)
 }
 
 // Confirm prompts for user confirmation.

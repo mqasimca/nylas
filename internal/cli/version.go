@@ -18,11 +18,11 @@ func newVersionCmd() *cobra.Command {
 		Use:   "version",
 		Short: "Show version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintf(cmd.OutOrStdout(), "nylas version %s\n", Version)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Commit:     %s\n", Commit)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Built:      %s\n", BuildDate)
-			fmt.Fprintf(cmd.OutOrStdout(), "  Go version: %s\n", runtime.Version())
-			fmt.Fprintf(cmd.OutOrStdout(), "  OS/Arch:    %s/%s\n", runtime.GOOS, runtime.GOARCH)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "nylas version %s\n", Version)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Commit:     %s\n", Commit)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Built:      %s\n", BuildDate)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  Go version: %s\n", runtime.Version())
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  OS/Arch:    %s/%s\n", runtime.GOOS, runtime.GOARCH)
 		},
 	}
 }

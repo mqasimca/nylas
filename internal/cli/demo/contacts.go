@@ -169,7 +169,7 @@ func newDemoContactsCreateCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("👤 Demo Mode - Simulated Contact Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Printf("Name:     %s %s\n", firstName, lastName)
+			_, _ = boldWhite.Printf("Name:     %s %s\n", firstName, lastName)
 			fmt.Printf("Email:    %s\n", email)
 			if phone != "" {
 				fmt.Printf("Phone:    %s\n", phone)
@@ -182,8 +182,8 @@ func newDemoContactsCreateCmd() *cobra.Command {
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Contact would be created (demo mode - no actual contact created)")
-			dim.Printf("  Contact ID: contact-demo-%d\n", time.Now().Unix())
+			_, _ = green.Println("✓ Contact would be created (demo mode - no actual contact created)")
+			_, _ = dim.Printf("  Contact ID: contact-demo-%d\n", time.Now().Unix())
 			fmt.Println()
 			fmt.Println(dim.Sprint("To create real contacts, connect your account: nylas auth login"))
 
@@ -227,9 +227,9 @@ func newDemoContactsUpdateCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("👤 Demo Mode - Simulated Contact Update"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			dim.Printf("Contact ID: %s\n", contactID)
+			_, _ = dim.Printf("Contact ID: %s\n", contactID)
 			fmt.Println()
-			boldWhite.Println("Changes:")
+			_, _ = boldWhite.Println("Changes:")
 			if email != "" {
 				fmt.Printf("  Email:   %s\n", email)
 			}
@@ -244,7 +244,7 @@ func newDemoContactsUpdateCmd() *cobra.Command {
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			green.Println("✓ Contact would be updated (demo mode - no actual changes made)")
+			_, _ = green.Println("✓ Contact would be updated (demo mode - no actual changes made)")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To update real contacts, connect your account: nylas auth login"))
 
@@ -284,12 +284,12 @@ func newDemoContactsDeleteCmd() *cobra.Command {
 			fmt.Println()
 
 			if !force {
-				yellow.Println("⚠ Would prompt for confirmation in real mode")
+				_, _ = yellow.Println("⚠ Would prompt for confirmation in real mode")
 			}
 
 			fmt.Printf("Contact ID: %s\n", contactID)
 			fmt.Println()
-			green.Println("✓ Contact would be deleted (demo mode - no actual deletion)")
+			_, _ = green.Println("✓ Contact would be deleted (demo mode - no actual deletion)")
 			fmt.Println()
 			fmt.Println(dim.Sprint("To delete real contacts, connect your account: nylas auth login"))
 
@@ -428,7 +428,7 @@ func newDemoGroupsShowCmd() *cobra.Command {
 			fmt.Println(dim.Sprint("👥 Demo Mode - Contact Group Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			boldWhite.Printf("Group: %s\n", groupName)
+			_, _ = boldWhite.Printf("Group: %s\n", groupName)
 			fmt.Printf("  Members:     25\n")
 			fmt.Printf("  Created:     Jan 15, 2024\n")
 			fmt.Printf("  Description: Team members and work contacts\n")
@@ -437,7 +437,7 @@ func newDemoGroupsShowCmd() *cobra.Command {
 			fmt.Printf("  • John Smith (john@example.com)\n")
 			fmt.Printf("  • Jane Doe (jane@example.com)\n")
 			fmt.Printf("  • Bob Wilson (bob@example.com)\n")
-			dim.Printf("  ... and 22 more\n")
+			_, _ = dim.Printf("  ... and 22 more\n")
 			fmt.Println(strings.Repeat("─", 50))
 
 			return nil
@@ -456,8 +456,8 @@ func newDemoGroupsCreateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Group '%s' would be created (demo mode)\n", groupName)
-			dim.Printf("  Group ID: group-demo-%d\n", time.Now().Unix())
+			_, _ = green.Printf("✓ Group '%s' would be created (demo mode)\n", groupName)
+			_, _ = dim.Printf("  Group ID: group-demo-%d\n", time.Now().Unix())
 
 			return nil
 		},
@@ -475,7 +475,7 @@ func newDemoGroupsDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Group %s would be deleted (demo mode)\n", groupID)
+			_, _ = green.Printf("✓ Group %s would be deleted (demo mode)\n", groupID)
 
 			return nil
 		},
@@ -497,7 +497,7 @@ func newDemoGroupsAddMemberCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Contact %s would be added to group %s (demo mode)\n", contactID, groupID)
+			_, _ = green.Printf("✓ Contact %s would be added to group %s (demo mode)\n", contactID, groupID)
 
 			return nil
 		},
@@ -519,7 +519,7 @@ func newDemoGroupsRemoveMemberCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Contact %s would be removed from group %s (demo mode)\n", contactID, groupID)
+			_, _ = green.Printf("✓ Contact %s would be removed from group %s (demo mode)\n", contactID, groupID)
 
 			return nil
 		},
@@ -583,7 +583,7 @@ func newDemoPhotoSetCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Photo '%s' would be set for contact %s (demo mode)\n", photoPath, contactID)
+			_, _ = green.Printf("✓ Photo '%s' would be set for contact %s (demo mode)\n", photoPath, contactID)
 
 			return nil
 		},
@@ -601,7 +601,7 @@ func newDemoPhotoRemoveCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			green.Printf("✓ Photo would be removed from contact %s (demo mode)\n", contactID)
+			_, _ = green.Printf("✓ Photo would be removed from contact %s (demo mode)\n", contactID)
 
 			return nil
 		},
@@ -649,7 +649,7 @@ func newDemoContactsSyncCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println("Syncing contacts...")
 			fmt.Println()
-			green.Println("✓ Sync would be triggered (demo mode)")
+			_, _ = green.Println("✓ Sync would be triggered (demo mode)")
 			fmt.Printf("  Estimated time: 30 seconds\n")
 
 			return nil
@@ -668,7 +668,7 @@ func newDemoContactsSyncCmd() *cobra.Command {
 			fmt.Printf("  • VCF  - vCard format\n")
 			fmt.Printf("  • JSON - JSON format\n")
 			fmt.Println()
-			green.Println("✓ Export would be generated (demo mode)")
+			_, _ = green.Println("✓ Export would be generated (demo mode)")
 
 			return nil
 		},
@@ -686,7 +686,7 @@ func newDemoContactsSyncCmd() *cobra.Command {
 			fmt.Printf("  • VCF  - vCard format\n")
 			fmt.Printf("  • JSON - JSON format\n")
 			fmt.Println()
-			green.Println("✓ Import would be processed (demo mode)")
+			_, _ = green.Println("✓ Import would be processed (demo mode)")
 
 			return nil
 		},
@@ -727,7 +727,7 @@ func printDemoContact(contact domain.Contact, showID bool) {
 	}
 
 	if showID {
-		dim.Printf("    ID: %s\n", contact.ID)
+		_, _ = dim.Printf("    ID: %s\n", contact.ID)
 	}
 
 	fmt.Println()
@@ -739,7 +739,7 @@ func printDemoContactFull(contact domain.Contact) {
 	name = strings.TrimSpace(name)
 
 	fmt.Println(strings.Repeat("─", 50))
-	boldWhite.Printf("Name: %s\n", name)
+	_, _ = boldWhite.Printf("Name: %s\n", name)
 
 	if contact.CompanyName != "" {
 		fmt.Printf("Company: %s\n", contact.CompanyName)

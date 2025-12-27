@@ -67,23 +67,23 @@ func newStatusCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			yellow := color.New(color.FgYellow)
 
-			bold.Println("Authentication Status")
+			_, _ = bold.Println("Authentication Status")
 			fmt.Println()
 
 			if grantInfo.ID != "" {
-				bold.Println("Current Account:")
+				_, _ = bold.Println("Current Account:")
 				fmt.Printf("  Email: %s\n", grantInfo.Email)
 				fmt.Printf("  Provider: %s\n", grantInfo.Provider)
 				fmt.Printf("  Grant ID: %s\n", grantInfo.ID)
 				if grantInfo.Status == "valid" {
-					green.Printf("  Status: ✓ Valid\n")
+					_, _ = green.Printf("  Status: ✓ Valid\n")
 				} else {
-					yellow.Printf("  Status: %s\n", grantInfo.Status)
+					_, _ = yellow.Printf("  Status: %s\n", grantInfo.Status)
 				}
 				fmt.Println()
 			}
 
-			bold.Println("Configuration:")
+			_, _ = bold.Println("Configuration:")
 			fmt.Printf("  Region: %s\n", status.Region)
 			fmt.Printf("  Config Path: %s\n", status.ConfigPath)
 			fmt.Printf("  Secret Store: %s\n", status.SecretStore)

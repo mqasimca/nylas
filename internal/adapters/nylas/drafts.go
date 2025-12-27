@@ -71,7 +71,7 @@ func (c *HTTPClient) GetDrafts(ctx context.Context, grantID string, limit int) (
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -101,7 +101,7 @@ func (c *HTTPClient) GetDraft(ctx context.Context, grantID, draftID string) (*do
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: draft not found", domain.ErrAPIError)
@@ -170,7 +170,7 @@ func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, re
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -264,7 +264,7 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -314,8 +314,8 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 	// Write multipart in a goroutine
 	errCh := make(chan error, 1)
 	go func() {
-		defer pw.Close()
-		defer writer.Close()
+		defer func() { _ = pw.Close() }()
+		defer func() { _ = writer.Close() }()
 
 		// Add message as JSON field
 		messageJSON, _ := json.Marshal(message)
@@ -357,7 +357,7 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Wait for writer goroutine to finish
 	if writerErr := <-errCh; writerErr != nil {
@@ -416,7 +416,7 @@ func (c *HTTPClient) UpdateDraft(ctx context.Context, grantID, draftID string, r
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -447,7 +447,7 @@ func (c *HTTPClient) DeleteDraft(ctx context.Context, grantID, draftID string) e
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -470,7 +470,7 @@ func (c *HTTPClient) SendDraft(ctx context.Context, grantID, draftID string) (*d
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)

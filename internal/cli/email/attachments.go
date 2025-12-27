@@ -114,8 +114,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println(strings.Repeat("─", 60))
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			boldWhite.Printf("Filename:     %s\n", attachment.Filename)
+			_, _ = boldWhite.Printf("Filename:     %s\n", attachment.Filename)
 			fmt.Printf("ID:           %s\n", attachment.ID)
 			fmt.Printf("Content Type: %s\n", attachment.ContentType)
 			fmt.Printf("Size:         %s (%d bytes)\n", formatSize(attachment.Size), attachment.Size)
@@ -194,14 +193,14 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to download attachment: %w", err)
 			}
-			defer reader.Close()
+			defer func() { _ = reader.Close() }()
 
 			// Create output file
 			file, err := os.Create(outputPath)
 			if err != nil {
 				return fmt.Errorf("failed to create output file: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			// Copy content
 			written, err := io.Copy(file, reader)

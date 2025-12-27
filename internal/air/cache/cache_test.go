@@ -23,7 +23,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 		t.Fatalf("NewManager failed: %v", err)
 	}
 	t.Cleanup(func() {
-		mgr.Close()
+		_ = mgr.Close()
 	})
 
 	db, err := mgr.GetDB("test@example.com")
@@ -66,7 +66,7 @@ func TestManagerDBPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	email := "qasim.m@nylas.com"
 	expected := filepath.Join(tmpDir, "qasim.m@nylas.com.db")
@@ -81,7 +81,7 @@ func TestManagerGetDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	email := "test@example.com"
 
@@ -116,7 +116,7 @@ func TestManagerClearCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	email := "test@example.com"
 
@@ -149,7 +149,7 @@ func TestManagerListCachedAccounts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	// Create multiple databases
 	emails := []string{"user1@example.com", "user2@example.com", "user3@example.com"}
@@ -176,7 +176,7 @@ func TestEmailStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -260,7 +260,7 @@ func TestEmailStoreSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -307,7 +307,7 @@ func TestSyncStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -370,7 +370,7 @@ func TestEventStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -460,7 +460,7 @@ func TestEventStorePutBatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -501,7 +501,7 @@ func TestContactStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -577,7 +577,7 @@ func TestContactStoreSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -624,7 +624,7 @@ func TestFolderStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -700,7 +700,7 @@ func TestOfflineQueue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -791,7 +791,7 @@ func TestOfflineQueueMultipleActions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1018,7 +1018,7 @@ func TestUnifiedSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1098,7 +1098,7 @@ func TestManagerGetStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	email := "test@example.com"
 	db, err := mgr.GetDB(email)
@@ -1152,7 +1152,7 @@ func TestCalendarStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1228,7 +1228,7 @@ func TestCalendarStorePutBatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1259,7 +1259,7 @@ func TestCalendarStoreList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1319,7 +1319,7 @@ func TestAttachmentStore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1415,7 +1415,7 @@ func TestAttachmentStoreListByEmail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1468,7 +1468,7 @@ func TestAttachmentStoreOpen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1494,7 +1494,7 @@ func TestAttachmentStoreOpen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open failed: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	content, err := io.ReadAll(file)
 	if err != nil {
@@ -1511,7 +1511,7 @@ func TestAttachmentStoreStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1555,7 +1555,7 @@ func TestAttachmentStorePrune(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1589,7 +1589,7 @@ func TestAttachmentStoreLRUEvict(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -1640,7 +1640,7 @@ func TestAttachmentStoreDeduplication(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -2989,7 +2989,7 @@ func TestAttachmentStoreRemoveOrphaned(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	db, err := mgr.GetDB("test@example.com")
 	if err != nil {
@@ -3192,7 +3192,7 @@ func TestManagerClearAllCaches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewManager failed: %v", err)
 	}
-	defer mgr.Close()
+	defer func() { _ = mgr.Close() }()
 
 	// Create multiple databases
 	emails := []string{"user1@example.com", "user2@example.com"}

@@ -57,7 +57,7 @@ Supported providers:
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("\n✓ Successfully authenticated!\n")
+			_, _ = green.Printf("\n✓ Successfully authenticated!\n")
 			fmt.Printf("  Email:    %s\n", grant.Email)
 			fmt.Printf("  Provider: %s\n", grant.Provider.DisplayName())
 			fmt.Printf("  Grant ID: %s\n", grant.ID)

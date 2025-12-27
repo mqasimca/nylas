@@ -92,20 +92,19 @@ func displayOTP(result *domain.OTPResult, copied bool) {
 	boxWidth := len(spaced) + 6
 	border := strings.Repeat("═", boxWidth)
 
-	// #nosec G104 -- color output errors are non-critical, best-effort display
-	cyan.Printf("╔%s╗\n", border)
-	cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
-	cyan.Printf("║   %s   ║\n", spaced)
-	cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
-	cyan.Printf("╚%s╝\n", border)
+	_, _ = cyan.Printf("╔%s╗\n", border)
+	_, _ = cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
+	_, _ = cyan.Printf("║   %s   ║\n", spaced)
+	_, _ = cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
+	_, _ = cyan.Printf("╚%s╝\n", border)
 
 	fmt.Println()
-	dim.Printf("From:        %s\n", result.From)
-	dim.Printf("Subject:     %s\n", result.Subject)
-	dim.Printf("Received:    %s\n", formatTimeAgo(result.Received))
+	_, _ = dim.Printf("From:        %s\n", result.From)
+	_, _ = dim.Printf("Subject:     %s\n", result.Subject)
+	_, _ = dim.Printf("Received:    %s\n", formatTimeAgo(result.Received))
 
 	if copied {
-		green.Println("\n✓ Copied to clipboard")
+		_, _ = green.Println("\n✓ Copied to clipboard")
 	}
 }
 

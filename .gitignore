@@ -12,6 +12,9 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/*.local.*
 
+# Build artifacts
+dist/
+
 # Binaries
 bin/
 /nylas

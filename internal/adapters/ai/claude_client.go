@@ -105,7 +105,7 @@ func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -147,9 +147,10 @@ func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 
 	// Extract content and tool calls
 	for _, content := range claudeResp.Content {
-		if content.Type == "text" {
+		switch content.Type {
+		case "text":
 			response.Content += content.Text
-		} else if content.Type == "tool_use" {
+		case "tool_use":
 			// Convert tool use to map[string]any
 			args, ok := content.Input.(map[string]any)
 			if !ok {
@@ -211,7 +212,7 @@ func (c *ClaudeClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)

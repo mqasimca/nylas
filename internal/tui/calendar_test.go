@@ -58,7 +58,7 @@ func TestCalendarView_GoToToday(t *testing.T) {
 
 	view.GoToToday()
 
-	if view.selectedDate == originalDate {
+	if view.selectedDate.Equal(originalDate) {
 		t.Error("GoToToday() did not change date")
 	}
 }

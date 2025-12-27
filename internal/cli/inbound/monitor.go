@@ -204,45 +204,45 @@ func runMonitor(args []string, port int, tunnelType, webhookSecret string, jsonO
 
 func printMonitorBanner(email string) {
 	fmt.Println()
-	cyan.Println("╔══════════════════════════════════════════════════════════════╗")
-	cyan.Print("║")
+	_, _ = cyan.Println("╔══════════════════════════════════════════════════════════════╗")
+	_, _ = cyan.Print("║")
 	fmt.Print("            ")
-	boldWhite.Print("Nylas Inbound Monitor")
+	_, _ = boldWhite.Print("Nylas Inbound Monitor")
 	fmt.Print("                        ")
-	cyan.Println("║")
-	cyan.Println("╚══════════════════════════════════════════════════════════════╝")
+	_, _ = cyan.Println("║")
+	_, _ = cyan.Println("╚══════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 	fmt.Printf("Monitoring: %s\n", cyan.Sprint(email))
 	fmt.Println()
 }
 
-func printMonitorInfo(stats ports.WebhookServerStats, tunnelType, email string) {
-	green.Println("Monitor started successfully!")
+func printMonitorInfo(stats ports.WebhookServerStats, tunnelType, _ string) {
+	_, _ = green.Println("Monitor started successfully!")
 	fmt.Println()
 
-	boldWhite.Print("  Local URL:    ")
+	_, _ = boldWhite.Print("  Local URL:    ")
 	fmt.Println(stats.LocalURL)
 
 	if stats.PublicURL != "" {
-		boldWhite.Print("  Public URL:   ")
-		green.Println(stats.PublicURL)
+		_, _ = boldWhite.Print("  Public URL:   ")
+		_, _ = green.Println(stats.PublicURL)
 		fmt.Println()
-		boldWhite.Print("  Tunnel:       ")
+		_, _ = boldWhite.Print("  Tunnel:       ")
 		fmt.Printf("%s (%s)\n", tunnelType, stats.TunnelStatus)
 	}
 
 	fmt.Println()
-	yellow.Println("To receive events, register this webhook URL with Nylas:")
+	_, _ = yellow.Println("To receive events, register this webhook URL with Nylas:")
 	webhookURL := stats.LocalURL
 	if stats.PublicURL != "" {
 		webhookURL = stats.PublicURL
 	}
 	fmt.Printf("  nylas webhooks create --url %s --triggers message.created\n", webhookURL)
 	fmt.Println()
-	dim.Println("Press Ctrl+C to stop")
+	_, _ = dim.Println("Press Ctrl+C to stop")
 	fmt.Println()
-	cyan.Println("─────────────────────────────────────────────────────────────────")
-	boldWhite.Println("Incoming Messages:")
+	_, _ = cyan.Println("─────────────────────────────────────────────────────────────────")
+	_, _ = boldWhite.Println("Incoming Messages:")
 	fmt.Println()
 }
 
@@ -316,7 +316,7 @@ func printInboundEvent(event *ports.WebhookEvent, quiet bool) {
 					}
 					// Print message ID
 					if id, ok := obj["id"].(string); ok {
-						dim.Printf("  ID: %s\n", id)
+						_, _ = dim.Printf("  ID: %s\n", id)
 					}
 				}
 			}

@@ -35,7 +35,7 @@ func (c *HTTPClient) GetAttachment(ctx context.Context, grantID, messageID, atta
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: attachment not found", domain.ErrAPIError)
@@ -78,11 +78,11 @@ func (c *HTTPClient) DownloadAttachment(ctx context.Context, grantID, messageID,
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("%w: attachment not found", domain.ErrAPIError)
 	}
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		return nil, c.parseError(resp)
 	}
 

@@ -79,7 +79,7 @@ func newListCmd() *cobra.Command {
 			fmt.Printf("Found %d notetaker(s):\n\n", len(notetakers))
 
 			for _, n := range notetakers {
-				cyan.Printf("ID: %s\n", n.ID)
+				_, _ = cyan.Printf("ID: %s\n", n.ID)
 				fmt.Printf("  State:   %s\n", formatState(n.State))
 				if n.MeetingTitle != "" {
 					fmt.Printf("  Title:   %s\n", n.MeetingTitle)
@@ -89,13 +89,13 @@ func newListCmd() *cobra.Command {
 				}
 				if n.MeetingInfo != nil && n.MeetingInfo.Provider != "" {
 					caser := cases.Title(language.English)
-					green.Printf("  Provider: %s\n", caser.String(n.MeetingInfo.Provider))
+					_, _ = green.Printf("  Provider: %s\n", caser.String(n.MeetingInfo.Provider))
 				}
 				if !n.JoinTime.IsZero() {
-					yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM"))
+					_, _ = yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM"))
 				}
 				if !n.CreatedAt.IsZero() {
-					dim.Printf("  Created: %s\n", formatTimeAgo(n.CreatedAt))
+					_, _ = dim.Printf("  Created: %s\n", formatTimeAgo(n.CreatedAt))
 				}
 				fmt.Println()
 			}

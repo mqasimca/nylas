@@ -109,7 +109,7 @@ func newCredentialShowCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			bold := color.New(color.Bold)
 
-			bold.Printf("Credential: %s\n", credential.Name)
+			_, _ = bold.Printf("Credential: %s\n", credential.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(credential.ID))
 			fmt.Printf("  Connector ID: %s\n", credential.ConnectorID)
 			fmt.Printf("  Type: %s\n", green.Sprint(credential.CredentialType))
@@ -168,7 +168,7 @@ func newCredentialCreateCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			cyan := color.New(color.FgCyan)
 
-			green.Printf("Created credential: %s\n", credential.Name)
+			_, _ = green.Printf("Created credential: %s\n", credential.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(credential.ID))
 			fmt.Printf("  Type: %s\n", credential.CredentialType)
 
@@ -218,7 +218,7 @@ func newCredentialUpdateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("Updated credential: %s\n", credential.Name)
+			_, _ = green.Printf("Updated credential: %s\n", credential.Name)
 
 			return nil
 		},
@@ -261,7 +261,7 @@ func newCredentialDeleteCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("Deleted credential: %s\n", args[0])
+			_, _ = green.Printf("Deleted credential: %s\n", args[0])
 
 			return nil
 		},
@@ -274,8 +274,8 @@ func newCredentialDeleteCmd() *cobra.Command {
 
 // formatUnixTime formats a UnixTime pointer to a human-readable string
 func formatUnixTime(t *domain.UnixTime) string {
-	if t == nil || t.Time.IsZero() {
+	if t == nil || t.IsZero() {
 		return "-"
 	}
-	return t.Time.Format("Jan 2, 2006 3:04 PM")
+	return t.Format("Jan 2, 2006 3:04 PM")
 }

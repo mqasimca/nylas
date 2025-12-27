@@ -276,7 +276,7 @@ func TestCreateDefaultThemeFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	themePath := filepath.Join(tmpDir, "test-theme.yaml")
 
@@ -334,7 +334,7 @@ func TestCustomThemeIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create a custom theme file
 	themePath := filepath.Join(tmpDir, "mytest.yaml")
@@ -427,7 +427,7 @@ func TestCustomThemeViaGetThemeStyles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create a distinguishable custom theme
 	themeName := "testpurple"

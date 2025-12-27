@@ -75,7 +75,7 @@ that haven't been saved will be lost.`,
 			}
 
 			green := color.New(color.FgGreen, color.Bold)
-			green.Printf("✓ Notetaker %s deleted successfully\n", notetakerID)
+			_, _ = green.Printf("✓ Notetaker %s deleted successfully\n", notetakerID)
 
 			return nil
 		},

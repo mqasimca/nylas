@@ -155,9 +155,9 @@ func (t *Table) renderHeader() {
 
 func (t *Table) render() {
 	// Clear existing data rows (keep header)
-	rowCount := t.Table.GetRowCount()
+	rowCount := t.GetRowCount()
 	for i := rowCount - 1; i >= 1; i-- {
-		t.Table.RemoveRow(i)
+		t.RemoveRow(i)
 	}
 
 	// Render data rows

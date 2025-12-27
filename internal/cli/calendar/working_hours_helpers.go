@@ -88,7 +88,7 @@ func confirmWorkingHoursViolation(violation string, eventTime time.Time, schedul
 	yellow := color.New(color.FgYellow, color.Bold)
 
 	fmt.Println()
-	yellow.Println("⚠️  Working Hours Warning")
+	_, _ = yellow.Println("⚠️  Working Hours Warning")
 	fmt.Println()
 
 	fmt.Printf("This event is scheduled outside your working hours:\n")

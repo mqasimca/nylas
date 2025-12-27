@@ -55,7 +55,7 @@ func newSessionCreateCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			cyan := color.New(color.FgCyan)
 
-			green.Println("✓ Created scheduler session")
+			_, _ = green.Println("✓ Created scheduler session")
 			fmt.Printf("  Session ID: %s\n", cyan.Sprint(session.SessionID))
 			fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
 
@@ -100,7 +100,7 @@ func newSessionShowCmd() *cobra.Command {
 			cyan := color.New(color.FgCyan)
 			bold := color.New(color.Bold)
 
-			bold.Println("Scheduler Session")
+			_, _ = bold.Println("Scheduler Session")
 			fmt.Printf("  Session ID: %s\n", cyan.Sprint(session.SessionID))
 			fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
 

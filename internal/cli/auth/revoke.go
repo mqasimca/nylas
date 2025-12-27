@@ -29,7 +29,7 @@ func newRevokeCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Grant %s revoked\n", grantID)
+			_, _ = green.Printf("✓ Grant %s revoked\n", grantID)
 
 			return nil
 		},
