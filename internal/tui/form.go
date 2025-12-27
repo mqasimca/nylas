@@ -23,26 +23,26 @@ const (
 
 // FormField defines a field in a form.
 type FormField struct {
-	Key         string            // Unique key for the field
-	Label       string            // Display label
-	Type        FieldType         // Field type
-	Placeholder string            // Placeholder text
-	Value       string            // Initial value
-	Options     []string          // Options for dropdown
-	Required    bool              // Whether field is required
+	Key         string             // Unique key for the field
+	Label       string             // Display label
+	Type        FieldType          // Field type
+	Placeholder string             // Placeholder text
+	Value       string             // Initial value
+	Options     []string           // Options for dropdown
+	Required    bool               // Whether field is required
 	Validator   func(string) error // Optional validation function
 }
 
 // Form provides a modal form for creating/editing resources.
 type Form struct {
 	*tview.Flex
-	app        *App
-	form       *tview.Form
-	title      string
-	fields     []FormField
-	values     map[string]string
-	onSubmit   func(values map[string]string)
-	onCancel   func()
+	app      *App
+	form     *tview.Form
+	title    string
+	fields   []FormField
+	values   map[string]string
+	onSubmit func(values map[string]string)
+	onCancel func()
 }
 
 // NewForm creates a new form with the given fields.

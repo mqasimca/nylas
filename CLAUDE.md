@@ -117,6 +117,26 @@ internal/cli/<feature>/
   └── helpers.go      # Shared helpers
 ```
 
+**TUI (Terminal UI) implementations:**
+```
+internal/tui/        # Current tview-based TUI (k9s-style)
+internal/tui2/       # New Bubble Tea TUI (experimental)
+  ├── models/        # Screen models (Dashboard, Messages, etc.)
+  ├── components/    # Custom Bubble Tea components
+  ├── styles/        # Lip Gloss themes and styling
+  ├── state/         # State management (GlobalState)
+  ├── utils/         # Utilities
+  ├── app.go         # Root application (Model Stack pattern)
+  ├── messages.go    # Message types for Elm Architecture
+  └── app_test.go    # Tests
+```
+
+**Switch between TUI engines:**
+```bash
+nylas tui                      # Default: tview
+nylas tui --engine bubbletea   # Experimental: Bubble Tea
+```
+
 ---
 
 ## Adding a New Feature

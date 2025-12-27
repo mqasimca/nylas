@@ -158,7 +158,6 @@ func TestAvailabilityView_CalendarFields(t *testing.T) {
 	}
 }
 
-
 func TestAvailabilityView_SlotsWithData(t *testing.T) {
 	app := createTestApp(t)
 	view := NewAvailabilityView(app)

@@ -154,7 +154,7 @@ type MessagesView struct {
 	threads         []domain.Thread
 	showingDetail   bool
 	currentThread   *domain.Thread
-	currentMessage  *domain.Message // For reply functionality
+	currentMessage  *domain.Message  // For reply functionality
 	attachments     []AttachmentInfo // All attachments in current thread
 	folderPanel     *FolderPanel
 	currentFolderID string
@@ -1646,7 +1646,6 @@ func joinStrings(strs []string, sep string) string {
 	}
 	return result
 }
-
 
 // ============================================================================
 // Contacts View

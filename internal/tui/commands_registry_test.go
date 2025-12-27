@@ -136,9 +136,9 @@ func TestCommandRegistry_GetSubCommands(t *testing.T) {
 		parent  string
 		wantLen int
 	}{
-		{"folder subcommands", "folder", 3},  // list, create, delete
-		{"event subcommands", "event", 3},    // new, edit, delete
-		{"rsvp subcommands", "rsvp", 3},      // yes, no, maybe
+		{"folder subcommands", "folder", 3},   // list, create, delete
+		{"event subcommands", "event", 3},     // new, edit, delete
+		{"rsvp subcommands", "rsvp", 3},       // yes, no, maybe
 		{"webhook subcommands", "webhook", 4}, // new, edit, delete, test
 		{"no subcommands", "messages", 0},
 		{"nonexistent", "nonexistent", 0},
@@ -158,8 +158,8 @@ func TestCommandRegistry_HasSubCommands(t *testing.T) {
 	registry := NewCommandRegistry()
 
 	tests := []struct {
-		name   string
-		cmd    string
+		name    string
+		cmd     string
 		wantHas bool
 	}{
 		{"folder has subcommands", "folder", true},

@@ -159,3 +159,4 @@ test_results/
 # End Security Section
 # ===========================================
 .mcp.json
+*phase*.md
