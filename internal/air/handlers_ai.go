@@ -77,6 +77,7 @@ func runClaudeCommand(prompt string) (string, error) {
 	}
 
 	// Create command: echo "prompt" | claude -p
+	// #nosec G204 -- claudePath verified via exec.LookPath from system PATH, user prompt only in stdin (not in command path)
 	cmd := exec.CommandContext(ctx, claudePath, "-p")
 	cmd.Stdin = strings.NewReader(prompt)
 

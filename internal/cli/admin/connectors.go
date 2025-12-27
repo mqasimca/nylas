@@ -109,6 +109,7 @@ func newConnectorShowCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			bold := color.New(color.Bold)
 
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			bold.Printf("Connector: %s\n", connector.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(connector.ID))
 			fmt.Printf("  Provider: %s\n", green.Sprint(connector.Provider))
@@ -198,6 +199,7 @@ func newConnectorCreateCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			cyan := color.New(color.FgCyan)
 
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			green.Printf("✓ Created connector: %s\n", connector.Name)
 			fmt.Printf("  ID: %s\n", cyan.Sprint(connector.ID))
 			fmt.Printf("  Provider: %s\n", connector.Provider)

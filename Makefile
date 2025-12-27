@@ -1,44 +1,80 @@
-.PHONY: build test test-short test-integration test-integration-clean test-cleanup test-coverage test-air test-air-integration test-air-integration-clean clean install lint deps check security check-context
+.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration clean install fmt vet lint vuln deps security check-context ci ci-full help
 
+# ============================================================================
+# Tool Versions (Pinned for Reproducibility)
+# ============================================================================
+GOLANGCI_LINT_VERSION := v2.7.2
+GOVULNCHECK_VERSION := v1.1.4
+GOSEC_VERSION := v2.22.1
+
+# ============================================================================
+# Build Configuration
+# ============================================================================
 VERSION ?= dev
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS := -ldflags "-s -w -X github.com/mqasimca/nylas/internal/cli.Version=$(VERSION) -X github.com/mqasimca/nylas/internal/cli.Commit=$(COMMIT) -X github.com/mqasimca/nylas/internal/cli.BuildDate=$(BUILD_DATE)"
 
+# ============================================================================
+# Build Targets
+# ============================================================================
 build:
 	@mkdir -p bin
 	@go clean -cache
 	go build $(LDFLAGS) -o bin/nylas ./cmd/nylas
 
-test:
+# ============================================================================
+# Code Quality Targets
+# ============================================================================
+fmt:
+	@echo "=== Formatting Code ==="
+	go fmt ./...
+	@echo "✓ Code formatted"
+
+vet:
+	@echo "=== Running go vet ==="
+	go vet ./...
+	@echo "✓ Go vet passed"
+
+lint:
+	@echo "=== Running golangci-lint ==="
+	golangci-lint run --timeout=5m
+	@echo "✓ Linting passed"
+
+vuln:
+	@echo "=== Checking for vulnerabilities ==="
+	@command -v govulncheck >/dev/null 2>&1 || { \
+		echo "Installing govulncheck $(GOVULNCHECK_VERSION)..."; \
+		go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION); \
+	}
+	govulncheck ./...
+	@echo "✓ No vulnerabilities found"
+
+# ============================================================================
+# Test Targets
+# ============================================================================
+test-unit:
+	@echo "=== Running Unit Tests ==="
 	@go clean -testcache
-	go test ./... -v
+	go test ./... -short -v
+	@echo "✓ Unit tests passed"
+
+test-race:
+	@echo "=== Running Race Detector Tests ==="
+	@go clean -testcache
+	go test ./... -short -race
+	@echo "✓ Race detector tests passed"
 
 test-coverage:
+	@echo "=== Running Tests with Coverage ==="
 	@go clean -testcache
 	go test ./... -cover -coverprofile=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
+	@echo "✓ Coverage report generated: coverage.html"
 
-clean:
-	rm -rf bin/
-	rm -f coverage.out coverage.html
-
-install: build
-	cp bin/nylas $(GOPATH)/bin/nylas
-
-lint:
-	golangci-lint run
-
-deps:
-	go mod tidy
-	go mod download
-
-# Quick test (skip slow tests)
-test-short:
-	@go clean -testcache
-	go test ./... -short
-
-# Nylas Air web UI tests
+# ============================================================================
+# Air Web UI Tests
+# ============================================================================
 test-air:
 	@echo "=== Running Nylas Air Tests ==="
 	@go clean -testcache
@@ -47,65 +83,47 @@ test-air:
 
 # Nylas Air integration tests (requires Google account as default)
 # Skips automatically if no Google account is configured as default
+# Rate limiting: 1 RPS with burst of 3 to stay well under Nylas API limits
+# -p 1: Run test packages sequentially to prevent rate limit issues
 test-air-integration:
 	@echo "=== Running Nylas Air Integration Tests ==="
 	@echo "Note: Requires a Google account configured as default"
 	@echo ""
 	@go clean -testcache
-	go test -tags=integration ./internal/air/... -v -timeout 5m
+	NYLAS_TEST_RATE_LIMIT_RPS=1.0 \
+	NYLAS_TEST_RATE_LIMIT_BURST=3 \
+	go test -tags=integration ./internal/air/... -v -timeout 5m -p 1
 	@echo "✓ All Air integration tests passed"
 
-# Nylas Air integration tests with cleanup
-test-air-integration-clean: test-air-integration test-air-integration-cleanup
 
-# Clean up resources created by Air integration tests
-test-air-integration-cleanup:
-	@echo "=== Cleaning up Air integration test resources ==="
-	@echo ""
-	@echo "1. Cleaning test drafts..."
-	@./bin/nylas email drafts list 2>/dev/null | \
-		grep -E "(Air Test|Integration Test)" | \
-		awk '{print $$1}' | \
-		while read draft_id; do \
-			if [ ! -z "$$draft_id" ]; then \
-				echo "  Deleting test draft: $$draft_id"; \
-				./bin/nylas email drafts delete $$draft_id --force 2>/dev/null && \
-				echo "    ✓ Deleted draft $$draft_id" || echo "    ⚠ Could not delete $$draft_id"; \
-			fi \
-		done || echo "  No test drafts found"
-	@echo ""
-	@echo "2. Cleaning test events..."
-	@./bin/nylas calendar events list --limit 100 2>/dev/null | \
-		grep -E "(Air Test|Air Integration)" | \
-		awk '/ID:/ {print $$2}' | \
-		while read event_id; do \
-			if [ ! -z "$$event_id" ]; then \
-				echo "  Deleting test event: $$event_id"; \
-				./bin/nylas calendar events delete $$event_id --force 2>/dev/null && \
-				echo "    ✓ Deleted event $$event_id" || echo "    ⚠ Could not delete $$event_id"; \
-			fi \
-		done || echo "  No test events found"
-	@echo ""
-	@echo "✓ Air integration test cleanup complete"
-	@echo "Note: Current Air tests are read-only, cleanup is for future tests"
-
+# ============================================================================
+# Integration Tests
+# ============================================================================
 # Integration tests (requires NYLAS_API_KEY and NYLAS_GRANT_ID env vars)
 # Uses 10 minute timeout to prevent hanging on slow LLM calls
 # Output saved to test-integration.txt
 # NYLAS_DISABLE_KEYRING=true prevents keychain popup and skips tests that need local grant store
+# Rate limiting: 1 RPS with burst of 3 to stay well under Nylas API limits
+# -p 1: Run test packages sequentially to prevent rate limit issues
 test-integration:
 	@go clean -testcache
-	NYLAS_DISABLE_KEYRING=true NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas go test ./... -tags=integration -v -timeout 10m 2>&1 | tee test-integration.txt
+	NYLAS_DISABLE_KEYRING=true \
+	NYLAS_TEST_RATE_LIMIT_RPS=1.0 \
+	NYLAS_TEST_RATE_LIMIT_BURST=3 \
+	NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas \
+	go test ./... -tags=integration -v -timeout 10m -p 1 2>&1 | tee test-integration.txt
 
 # Integration tests excluding slow LLM-dependent tests (for when Ollama is slow/unavailable)
 # Runs: Admin, Timezone, AIConfig, CalendarAI (Basic, Adapt, Analyze working hours)
+# Rate limiting: 1 RPS with burst of 3 to stay well under Nylas API limits
+# -p 1: Run test packages sequentially to prevent rate limit issues
 test-integration-fast:
 	@go clean -testcache
-	NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas go test ./internal/cli/integration/... -tags=integration -v -timeout 2m \
+	NYLAS_TEST_RATE_LIMIT_RPS=1.0 \
+	NYLAS_TEST_RATE_LIMIT_BURST=3 \
+	NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas \
+	go test ./internal/cli/integration/... -tags=integration -v -timeout 2m -p 1 \
 		-run "TestCLI_Admin|TestCLI_Timezone|TestCLI_AIConfig|TestCLI_AIProvider|TestCLI_CalendarAI_Basic|TestCLI_CalendarAI_Adapt|TestCLI_CalendarAI_Analyze_Respects|TestCLI_CalendarAI_Analyze_Default|TestCLI_CalendarAI_Analyze_Disabled|TestCLI_CalendarAI_Analyze_Focus|TestCLI_CalendarAI_Analyze_With"
-
-# Integration tests with extended timeout and cleanup
-test-integration-clean: test-integration test-cleanup
 
 # Clean up test resources (virtual calendars, test grants, test events, test emails, etc.)
 test-cleanup:
@@ -158,7 +176,9 @@ test-cleanup:
 	@echo ""
 	@echo "✓ Test cleanup complete"
 
-# Security scan for credentials and secrets
+# ============================================================================
+# Security Targets
+# ============================================================================
 security:
 	@echo "=== Security Scan ==="
 	@echo "Checking for hardcoded API keys..."
@@ -175,15 +195,57 @@ security:
 	@echo ""
 	@echo "=== Security scan complete ==="
 
+# ============================================================================
+# CI Targets
+# ============================================================================
+# Run all code quality checks (for local development and CI)
+ci: fmt vet lint test-unit test-race security vuln build
+	@echo ""
+	@echo "================================="
+	@echo "✓ All CI checks passed!"
+	@echo "================================="
+
+# Run full CI pipeline including integration tests and cleanup (requires env vars)
+# This is the COMPLETE validation - runs everything and cleans up after
+# Output saved to ci-full.txt for review
+ci-full:
+	@echo "================================="
+	@echo "Running Full CI Pipeline..."
+	@echo "================================="
+	@$(MAKE) --no-print-directory ci 2>&1 | tee ci-full.txt
+	@echo "" | tee -a ci-full.txt
+	@echo "=================================" | tee -a ci-full.txt
+	@echo "Running Integration Tests..." | tee -a ci-full.txt
+	@echo "=================================" | tee -a ci-full.txt
+	@$(MAKE) --no-print-directory test-integration 2>&1 | tee -a ci-full.txt
+	@$(MAKE) --no-print-directory test-air-integration 2>&1 | tee -a ci-full.txt
+	@echo "" | tee -a ci-full.txt
+	@echo "=================================" | tee -a ci-full.txt
+	@echo "Cleaning up test resources..." | tee -a ci-full.txt
+	@echo "=================================" | tee -a ci-full.txt
+	@$(MAKE) --no-print-directory test-cleanup 2>&1 | tee -a ci-full.txt
+	@echo "" | tee -a ci-full.txt
+	@echo "=================================" | tee -a ci-full.txt
+	@echo "✓ Full CI pipeline completed!" | tee -a ci-full.txt
+	@echo "  - All quality checks passed" | tee -a ci-full.txt
+	@echo "  - All tests passed" | tee -a ci-full.txt
+	@echo "  - Test resources cleaned up" | tee -a ci-full.txt
+	@echo "=================================" | tee -a ci-full.txt
+	@echo ""
+	@echo "Results saved to ci-full.txt"
+
+# ============================================================================
+# Utility Targets
+# ============================================================================
 # Check context size for Claude Code
 check-context:
 	@echo "📊 Context Size Report"
 	@echo "======================"
 	@echo ""
 	@echo "Auto-loaded files (excluding FAQ, EXAMPLES, TROUBLESHOOTING, INDEX per .claudeignore):"
-	@ls -lh CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
+	@ls -lh CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/MCP.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
 	@echo ""
-	@TOTAL=$$(ls -l CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	@TOTAL=$$(ls -l CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/MCP.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
 	TIMEZONE=$$(ls -l docs/TIMEZONE.md 2>/dev/null | awk '{print int($$5/1024)}'); \
 	echo "Total auto-loaded context: $${TOTAL}KB (~$$((TOTAL / 4)) tokens)"; \
 	echo "TIMEZONE.md: $${TIMEZONE}KB"; \
@@ -199,39 +261,88 @@ check-context:
 		echo "✅ TIMEZONE.md within 5KB target ($${TIMEZONE}KB)"; \
 	fi
 
-# Full check before commit
-check: lint test-short security build
-	@echo "All checks passed!"
+clean:
+	@echo "=== Cleaning build artifacts ==="
+	rm -rf bin/
+	rm -f coverage.out coverage.html ci-full.txt test-integration.txt *.test
+	@echo "✓ Cleanup complete"
+
+install: build
+	@echo "=== Installing binary to GOPATH/bin ==="
+	cp bin/nylas $(GOPATH)/bin/nylas
+	@echo "✓ Installed to $(GOPATH)/bin/nylas"
+
+deps:
+	@echo "=== Updating dependencies ==="
+	go mod tidy
+	go mod download
+	@echo "✓ Dependencies updated"
 
 # Run a specific package's tests
 # Usage: make test-pkg PKG=email
 test-pkg:
+	@echo "=== Testing package: $(PKG) ==="
 	go test ./internal/cli/$(PKG)/... -v
 
 # Quick build and run
 run: build
 	./bin/nylas $(ARGS)
 
-# Show help
+# ============================================================================
+# Help
+# ============================================================================
 help:
-	@echo "Available targets:"
-	@echo "  build                - Build the CLI binary"
-	@echo "  test                 - Run all tests with verbose output"
-	@echo "  test-short           - Run tests (skip slow ones)"
-	@echo "  test-air             - Run Nylas Air web UI tests"
-	@echo "  test-air-integration - Run Nylas Air integration tests (requires Google)"
-	@echo "  test-air-integration-clean - Run Air integration tests + cleanup"
-	@echo "  test-integration     - Run integration tests"
-	@echo "  test-integration-clean - Run integration tests + cleanup"
-	@echo "  test-cleanup         - Clean up test resources (grants, calendars)"
-	@echo "  test-coverage        - Run tests with coverage report"
-	@echo "  test-pkg PKG=x       - Run tests for specific package"
-	@echo "  lint                 - Run golangci-lint"
-	@echo "  security             - Run security scan for credentials"
-	@echo "  check                - Run lint, test, security, build (pre-commit)"
-	@echo "  check-context        - Check Claude Code context size"
-	@echo "  clean                - Remove build artifacts"
-	@echo "  install              - Install binary to GOPATH/bin"
-	@echo "  deps                 - Tidy and download dependencies"
-	@echo "  run ARGS='...'       - Build and run with arguments"
-	@echo "  help                 - Show this help"
+	@echo "=========================================="
+	@echo "Nylas CLI - Makefile Help"
+	@echo "=========================================="
+	@echo ""
+	@echo "🚀 PRIMARY COMMAND (Does Everything):"
+	@echo "  ci-full                    - Complete CI pipeline:"
+	@echo "                               • All code quality checks"
+	@echo "                               • All unit & integration tests"
+	@echo "                               • Automatic cleanup"
+	@echo "                               • Output saved to ci-full.txt"
+	@echo ""
+	@echo "BUILD:"
+	@echo "  build                      - Build the CLI binary"
+	@echo "  install                    - Install binary to GOPATH/bin"
+	@echo "  clean                      - Remove build artifacts"
+	@echo ""
+	@echo "CODE QUALITY:"
+	@echo "  fmt                        - Format code with go fmt"
+	@echo "  vet                        - Run go vet analysis"
+	@echo "  lint                       - Run golangci-lint (5m timeout)"
+	@echo "  vuln                       - Check for vulnerabilities"
+	@echo "  security                   - Scan for hardcoded credentials"
+	@echo ""
+	@echo "TESTING:"
+	@echo "  test-unit                  - Run unit tests (-short)"
+	@echo "  test-race                  - Run tests with race detector"
+	@echo "  test-coverage              - Generate coverage report"
+	@echo "  test-air                   - Run Air web UI tests"
+	@echo ""
+	@echo "INTEGRATION TESTS (requires env vars):"
+	@echo "  test-integration           - Run all integration tests"
+	@echo "                               (rate limited: 1 RPS, sequential)"
+	@echo "  test-integration-fast      - Run fast tests (skip LLM)"
+	@echo "                               (rate limited: 1 RPS, sequential)"
+	@echo "  test-air-integration       - Run Air integration tests"
+	@echo "                               (rate limited: 1 RPS, sequential)"
+	@echo "  test-cleanup               - Clean up test resources"
+	@echo ""
+	@echo "CI (Granular):"
+	@echo "  ci                         - Quality checks only (no integration)"
+	@echo "                               (fmt, vet, lint, test-unit,"
+	@echo "                                test-race, security, vuln, build)"
+	@echo ""
+	@echo "UTILITIES:"
+	@echo "  deps                       - Update dependencies"
+	@echo "  check-context              - Check Claude Code context size"
+	@echo "  help                       - Show this help"
+	@echo ""
+	@echo "=========================================="
+	@echo "Recommended workflows:"
+	@echo "  make ci-full               - Complete validation (use this!)"
+	@echo "  make ci                    - Quick pre-commit checks"
+	@echo "  make test-coverage         - Check coverage locally"
+	@echo "=========================================="

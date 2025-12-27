@@ -563,7 +563,7 @@ go test ./... -short
 make test-integration
 
 # Full check
-make check
+make ci
 ```
 
 ---

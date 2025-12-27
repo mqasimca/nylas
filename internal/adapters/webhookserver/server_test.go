@@ -191,6 +191,7 @@ func TestServer_EventsChannel(t *testing.T) {
 }
 
 func TestServer_SignatureVerification(t *testing.T) {
+	// #nosec G101 -- This is a test secret, not a real credential
 	secret := "test-webhook-secret"
 	server := NewServer(ports.WebhookServerConfig{
 		Port:          3006,

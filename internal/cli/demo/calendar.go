@@ -80,6 +80,7 @@ func newDemoCalendarsListCmd() *cobra.Command {
 					primary = green.Sprint(" (primary)")
 				}
 				fmt.Printf("  %s %s%s\n", cal.HexColor, boldWhite.Sprint(cal.Name), primary)
+				// #nosec G104 -- color output errors are non-critical, best-effort display
 				dim.Printf("    ID: %s\n", cal.ID)
 			}
 
@@ -116,6 +117,7 @@ func newDemoCalendarShowCmd() *cobra.Command {
 			fmt.Println(strings.Repeat("─", 50))
 
 			// Show sample calendar details
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			boldWhite.Println("Work Calendar")
 			fmt.Printf("  ID:          %s\n", calID)
 			fmt.Printf("  Owner:       demo@example.com\n")
@@ -224,6 +226,7 @@ No actual event is created - this is just a demonstration of the command flow.`,
 			fmt.Println(dim.Sprint("📅 Demo Mode - Simulated Event Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			boldWhite.Printf("Title:    %s\n", title)
 			fmt.Printf("Start:    %s\n", startTime)
 			fmt.Printf("Duration: %d minutes\n", duration)

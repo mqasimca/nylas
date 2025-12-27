@@ -16,7 +16,9 @@ Quick reference for AI assistants working on this codebase.
 ### ALWAYS DO (every code change):
 
 ```bash
-make check   # Runs: fmt → lint → test → security → build
+make ci-full   # Complete CI: quality checks → tests → cleanup
+# OR for quick checks without integration tests:
+make ci        # Runs: fmt → vet → lint → test-unit → test-race → security → vuln → build
 ```
 
 **⚠️ CRITICAL: Never skip linting. Fix ALL linting errors in code you wrote.**
@@ -40,7 +42,7 @@ make check   # Runs: fmt → lint → test → security → build
 | CLI Commands | 50% | 70%+ |
 | Utilities | 90% | 100% |
 
-**Check coverage:** `go test ./... -short -coverprofile=coverage.out && go tool cover -html=coverage.out`
+**Check coverage:** `make test-coverage` (opens coverage.html in browser)
 
 ### Docs to Update:
 - `docs/COMMANDS.md` → New/changed commands or flags
@@ -177,34 +179,42 @@ nylas tui --engine bubbletea   # Experimental: Bubble Tea
 
 ## Testing
 
-### Unit Tests
+### 🚀 Primary Command (Recommended)
 ```bash
-go test ./... -short              # Run all tests
-go test ./internal/cli/email/...  # Test specific package
+make ci-full   # Complete CI pipeline:
+               # • All code quality checks (fmt, vet, lint, vuln, security)
+               # • All unit tests (test-unit, test-race)
+               # • All integration tests (CLI + Air)
+               # • Automatic cleanup of test resources
+               # • Output saved to ci-full.txt
 ```
 
-### Integration Tests
+### Granular Testing (When Needed)
+
+**Unit Tests:**
 ```bash
-export NYLAS_API_KEY="your-key"
-export NYLAS_GRANT_ID="your-grant"
-go test -tags=integration ./internal/cli/integration/...
+make test-unit                   # Run unit tests (-short)
+make test-race                   # Run with race detector
+make test-coverage               # Generate coverage report
+go test ./internal/cli/email/... # Test specific package
 ```
 
-**Location:** All integration tests in `internal/cli/integration/`
-
-### Air Integration Tests (Web UI)
-
-**⚠️ CRITICAL: Always use cleanup target for Air tests**
-
+**Integration Tests:**
 ```bash
-make test-air-integration-clean  # Runs tests + cleanup (RECOMMENDED)
-make test-air-integration        # Run tests only
-make test-air-integration-cleanup # Cleanup only
+make test-integration            # CLI integration tests
+make test-integration-fast       # Fast tests (skip LLM)
+make test-air-integration        # Air web UI integration tests
 ```
 
-**Why cleanup?** Air tests create real resources (drafts, events, contacts) that must be cleaned up to avoid polluting the account.
+**Cleanup:**
+```bash
+make test-cleanup                # Clean up test resources
+                                 # (emails, events, grants)
+```
 
-**Location:** All Air integration tests in `internal/air/integration_*.go`
+**Location:**
+- CLI integration tests: `internal/cli/integration/`
+- Air integration tests: `internal/air/integration_*.go`
 
 **Details:** `.claude/rules/testing.md`
 
@@ -244,12 +254,34 @@ make test-air-integration-cleanup # Cleanup only
 
 ## Quick Reference
 
-**Common tasks:**
+### Essential Make Targets
+
+| Target | Description | When to Use |
+|--------|-------------|-------------|
+| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) | Before PRs, releases |
+| `make ci` | Quality checks only (no integration) | Quick pre-commit |
+| `make build` | Build binary | Development |
+| `make test-unit` | Unit tests only | Fast feedback |
+| `make test-coverage` | Coverage report | Check test coverage |
+| `make clean` | Remove artifacts | Clean workspace |
+
+**Run `make help` for all available targets**
+
+### Common Workflows
+
 ```bash
-make build          # Build binary
-make test           # Run tests
-make check          # Full verification (lint + test + security + build)
-./bin/nylas --help  # Test CLI
+# Before committing code
+make ci-full
+
+# Quick pre-commit check
+make ci
+
+# Build and test locally
+make build
+./bin/nylas --help
+
+# Check test coverage
+make test-coverage
 ```
 
 **Debugging:**

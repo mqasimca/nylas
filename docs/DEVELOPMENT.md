@@ -25,9 +25,10 @@ make clean                   # Clean artifacts
 ## Test
 
 ```bash
-make test                    # Run all tests
-make lint                    # Run linter
-make check                   # Run lint + test + security + build
+make ci                      # Quick quality checks (no integration tests)
+make ci-full                 # Complete CI pipeline (quality + tests + cleanup)
+make lint                    # Run linter only
+make test-unit               # Run unit tests only
 ```
 
 ---

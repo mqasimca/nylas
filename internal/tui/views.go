@@ -737,6 +737,7 @@ func (v *MessagesView) downloadAttachment(messageID, attachmentID, filename stri
 		destPath := filepath.Join(downloadDir, filename)
 		destPath = v.getUniqueFilename(destPath)
 
+		// #nosec G304 -- destPath is validated through getUniqueFilename() and constrained to downloadDir
 		file, err := os.Create(destPath)
 		if err != nil {
 			v.app.QueueUpdateDraw(func() {

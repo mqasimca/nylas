@@ -265,7 +265,7 @@ go test ./... -short
 
 ## ⛔ MANDATORY - Before Committing:
 ```bash
-make check
+make ci-full
 git diff --cached | grep -iE "(api_key|password|secret|token|nyk_v0)" && echo "STOP!" || echo "✓ OK"
 # ⛔ NEVER run git push
 ```

@@ -102,6 +102,7 @@ func uninstallFromAssistant(a Assistant) error {
 	configPath := a.GetConfigPath()
 
 	// Read existing config
+	// #nosec G304 -- configPath from Assistant.GetConfigPath() returns validated AI assistant config paths
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return fmt.Errorf("reading config: %w", err)

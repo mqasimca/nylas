@@ -81,7 +81,8 @@ if obj == nil {
 ## Quality Checks (REQUIRED)
 
 ```bash
-make check   # Runs: fmt → lint → test → security → build
+make ci        # Runs: fmt → vet → lint → test-unit → test-race → security → vuln → build
+make ci-full   # Complete CI: all quality checks + integration tests + cleanup
 ```
 
 **Never skip linting.** Fix ALL issues in code you wrote.

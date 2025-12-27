@@ -83,6 +83,7 @@ func runStatus() error {
 
 // checkNylasInConfig checks if nylas is configured in the MCP config file.
 func checkNylasInConfig(configPath string) (bool, string) {
+	// #nosec G304 -- configPath from Assistant.GetConfigPath() returns validated AI assistant config paths
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return false, ""

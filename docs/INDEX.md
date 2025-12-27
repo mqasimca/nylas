@@ -21,13 +21,12 @@ Quick navigation guide to find the right documentation for your needs.
 ### Development
 
 - **Set up development environment** → [DEVELOPMENT.md](DEVELOPMENT.md)
-- **Run tests** → [.claude/workflows/testing.md](../.claude/workflows/testing.md)
-- **Code quality checklist** → [.claude/workflows/code-quality-checklist.md](../.claude/workflows/code-quality-checklist.md)
+- **Testing guidelines** → [.claude/rules/testing.md](../.claude/rules/testing.md)
+- **Linting rules** → [.claude/rules/linting.md](../.claude/rules/linting.md)
 - **Contributing guidelines** → [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ### Add Features
 
-- **Add a new feature** → [.claude/commands/add-feature.md](../.claude/commands/add-feature.md)
 - **Add a CLI command** → [.claude/commands/add-command.md](../.claude/commands/add-command.md)
 - **Add an API method** → [.claude/commands/add-api-method.md](../.claude/commands/add-api-method.md)
 - **Add a domain type** → [.claude/commands/add-domain-type.md](../.claude/commands/add-domain-type.md)
@@ -44,8 +43,8 @@ Quick navigation guide to find the right documentation for your needs.
 
 ### Fix Issues
 
-- **Fix a bug** → [.claude/commands/fix-bug.md](../.claude/commands/fix-bug.md)
 - **Fix build errors** → [.claude/commands/fix-build.md](../.claude/commands/fix-build.md)
+- **Debug test failure** → [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md)
 - **Troubleshooting guide** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md) or [troubleshooting/](troubleshooting/)
 
 ### Quality & Security
@@ -58,11 +57,9 @@ Quick navigation guide to find the right documentation for your needs.
 
 ### Maintenance
 
-- **Smart commit** → [.claude/commands/smart-commit.md](../.claude/commands/smart-commit.md)
 - **Update documentation** → [.claude/commands/update-docs.md](../.claude/commands/update-docs.md)
-- **Modernize Go code** → [.claude/commands/go-modernize.md](../.claude/commands/go-modernize.md)
-- **Sync mock implementations** → [.claude/commands/sync-mock-implementations.md](../.claude/commands/sync-mock-implementations.md)
-- **Validate API signatures** → [.claude/commands/validate-api-signatures.md](../.claude/commands/validate-api-signatures.md)
+- **Documentation rules** → [.claude/rules/documentation-maintenance.md](../.claude/rules/documentation-maintenance.md)
+- **Go best practices** → [.claude/rules/go-best-practices.md](../.claude/rules/go-best-practices.md)
 
 ### Specific Features
 
@@ -89,10 +86,9 @@ docs/
 └── troubleshooting/       # Debug guides (load on-demand)
 
 .claude/
-├── commands/              # 22 actionable skills/workflows
-├── rules/                 # Development rules
-├── workflows/             # Multi-step workflows
-└── agents/                # Specialized agents
+├── commands/              # 13 actionable skills
+├── rules/                 # 4 development rules (auto-loaded)
+└── agents/                # 3 specialized agents
 ```
 
 ---
@@ -107,19 +103,19 @@ docs/
 
 ### **Developers Adding Features**
 1. [ARCHITECTURE.md](ARCHITECTURE.md) - Understand the design
-2. [.claude/commands/add-feature.md](../.claude/commands/add-feature.md) - Feature workflow
+2. [.claude/commands/add-command.md](../.claude/commands/add-command.md) - Add CLI commands
 3. [.claude/rules/testing.md](../.claude/rules/testing.md) - Testing requirements
 4. [.claude/rules/documentation-maintenance.md](../.claude/rules/documentation-maintenance.md) - Doc updates
 
 ### **Bug Fixers**
-1. [.claude/commands/fix-bug.md](../.claude/commands/fix-bug.md) - Bug fix workflow
+1. [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md) - Test debugging
 2. [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
-3. [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md) - Test debugging
+3. [.claude/commands/fix-build.md](../.claude/commands/fix-build.md) - Fix build errors
 
 ### **Maintainers**
 1. [.claude/commands/security-scan.md](../.claude/commands/security-scan.md) - Security checks
 2. [.claude/commands/review-pr.md](../.claude/commands/review-pr.md) - PR review
-3. [.claude/commands/smart-commit.md](../.claude/commands/smart-commit.md) - Commit workflow
+3. [.claude/rules/linting.md](../.claude/rules/linting.md) - Linting workflow
 
 ### **Users**
 1. [README.md](../README.md) - Getting started
@@ -139,4 +135,4 @@ docs/
 
 ---
 
-**Last Updated:** December 23, 2024
+**Last Updated:** December 27, 2024

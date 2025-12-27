@@ -116,6 +116,7 @@ func newAppShowCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			bold := color.New(color.Bold)
 
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			bold.Println("Application Details")
 			fmt.Printf("  ID: %s\n", cyan.Sprint(app.ID))
 			fmt.Printf("  Application ID: %s\n", app.ApplicationID)
@@ -195,6 +196,7 @@ func newAppCreateCmd() *cobra.Command {
 			green := color.New(color.FgGreen)
 			cyan := color.New(color.FgCyan)
 
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			green.Printf("✓ Created application\n")
 			fmt.Printf("  ID: %s\n", cyan.Sprint(app.ID))
 			fmt.Printf("  Application ID: %s\n", app.ApplicationID)
@@ -255,6 +257,7 @@ func newAppUpdateCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			green.Printf("✓ Updated application: %s\n", app.ID)
 
 			return nil
@@ -300,6 +303,7 @@ func newAppDeleteCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			green.Printf("✓ Deleted application: %s\n", args[0])
 
 			return nil
