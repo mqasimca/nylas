@@ -52,7 +52,11 @@ func NewMessageList(global *state.GlobalState) *MessageList {
 
 	// Initialize layout with current window size if available
 	if global.WindowSize.Width > 0 && global.WindowSize.Height > 0 {
-		layout.SetSize(global.WindowSize.Width, global.WindowSize.Height-4)
+		layoutHeight := global.WindowSize.Height - 4
+		if layoutHeight < 10 {
+			layoutHeight = 10
+		}
+		layout.SetSize(global.WindowSize.Width, layoutHeight)
 	}
 
 	return &MessageList{
@@ -159,9 +163,13 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		// Update layout size
 		m.global.SetWindowSize(msg.Width, msg.Height)
-		// Pass full height minus header (2 lines: text + newline) and footer (2 lines: newline + text)
-		// The layout's SetSize will handle borders and titles
-		m.layout.SetSize(msg.Width, msg.Height-4)
+		// Reserve space for header (2 lines) and footer (2 lines) = 4 lines
+		// Layout height: terminal height - 4 lines for header/footer
+		layoutHeight := msg.Height - 4
+		if layoutHeight < 10 {
+			layoutHeight = 10 // Minimum height
+		}
+		m.layout.SetSize(msg.Width, layoutHeight)
 		return m, nil
 
 	case messagesLoadedMsg:

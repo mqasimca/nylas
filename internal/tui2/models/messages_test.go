@@ -6,10 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/tui2/components"
 	"github.com/mqasimca/nylas/internal/tui2/state"
 	"github.com/mqasimca/nylas/internal/tui2/styles"
 )
@@ -292,4 +294,367 @@ func TestMessageList_ShowMessagePreview_NotFound(t *testing.T) {
 	ml.showMessagePreview("nonexistent")
 
 	// Should not panic
+}
+
+// Keyboard Navigation Tests
+
+func TestMessageList_KeyboardNavigation_Esc(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false // Set to not loading
+	ml.layout.SetSize(120, 40)
+
+	// Test ESC key - should return BackMsg
+	msg := tea.KeyMsg{Type: tea.KeyEsc}
+	_, cmd := ml.Update(msg)
+
+	if cmd == nil {
+		t.Fatal("ESC should return a command")
+	}
+
+	result := cmd()
+	if _, ok := result.(BackMsg); !ok {
+		t.Errorf("ESC should return BackMsg, got %T", result)
+	}
+}
+
+func TestMessageList_KeyboardNavigation_CtrlC(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Test Ctrl+C - should return tea.Quit
+	msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+	_, cmd := ml.Update(msg)
+
+	if cmd == nil {
+		t.Fatal("Ctrl+C should return a command")
+	}
+
+	result := cmd()
+	if result != tea.Quit() {
+		t.Error("Ctrl+C should return tea.Quit message")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_Tab(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Get initial focused pane
+	initialPane := ml.layout.GetFocused()
+
+	// Test Tab key - should focus next pane
+	msg := tea.KeyMsg{Type: tea.KeyTab}
+	updated, _ := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+	newPane := updatedML.layout.GetFocused()
+
+	if newPane == initialPane {
+		t.Error("Tab should change focused pane")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_ShiftTab(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Get initial focused pane
+	initialPane := ml.layout.GetFocused()
+
+	// Test Shift+Tab key - should focus previous pane
+	msg := tea.KeyMsg{Type: tea.KeyShiftTab}
+	updated, _ := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+	newPane := updatedML.layout.GetFocused()
+
+	if newPane == initialPane {
+		t.Error("Shift+Tab should change focused pane")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_H(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Get initial focused pane
+	initialPane := ml.layout.GetFocused()
+
+	// Test 'h' key - should focus previous pane
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("h")}
+	updated, _ := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+	newPane := updatedML.layout.GetFocused()
+
+	if newPane == initialPane {
+		t.Error("'h' key should change focused pane")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_L(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Get initial focused pane
+	initialPane := ml.layout.GetFocused()
+
+	// Test 'l' key - should focus next pane
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l")}
+	updated, _ := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+	newPane := updatedML.layout.GetFocused()
+
+	if newPane == initialPane {
+		t.Error("'l' key should change focused pane")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_Refresh(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Test 'r' key - should set loading and return fetch command
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("r")}
+	updated, cmd := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+	if !updatedML.loading {
+		t.Error("'r' key should set loading to true")
+	}
+
+	if cmd == nil {
+		t.Error("'r' key should return a fetch command")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_EnterOnMessagePane(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Set up test messages
+	ml.messages = []domain.Message{
+		{ID: "msg1", Subject: "Test 1"},
+		{ID: "msg2", Subject: "Test 2"},
+	}
+	ml.updateMessageTable()
+
+	// Focus on message pane
+	ml.layout.FocusPane(components.MessagePane)
+
+	// Test Enter key - should navigate to message detail
+	msg := tea.KeyMsg{Type: tea.KeyEnter}
+	_, cmd := ml.Update(msg)
+
+	if cmd == nil {
+		t.Fatal("Enter on MessagePane should return a command")
+	}
+
+	result := cmd()
+	navMsg, ok := result.(NavigateMsg)
+	if !ok {
+		t.Fatalf("Enter should return NavigateMsg, got %T", result)
+	}
+
+	if navMsg.Screen != ScreenMessageDetail {
+		t.Errorf("Navigate screen = %v, want ScreenMessageDetail", navMsg.Screen)
+	}
+
+	if navMsg.Data != "msg1" {
+		t.Errorf("Navigate data = %v, want 'msg1'", navMsg.Data)
+	}
+}
+
+func TestMessageList_KeyboardNavigation_EnterOnFolderPane(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Set folders to loaded
+	ml.foldersLoaded = true
+
+	// Create a test folder item (not the special "show all" folder)
+	testFolder := domain.Folder{
+		ID:         "folder123",
+		Name:       "Sent",
+		TotalCount: 5,
+	}
+
+	ml.layout.SetFolders([]list.Item{
+		components.FolderItem{Folder: testFolder},
+	})
+
+	// Focus on folder pane
+	ml.layout.FocusPane(components.FolderPane)
+
+	// Test Enter key - should set selectedFolderID and trigger fetch
+	msg := tea.KeyMsg{Type: tea.KeyEnter}
+	updated, cmd := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+	if updatedML.selectedFolderID != "folder123" {
+		t.Errorf("selectedFolderID = %q, want 'folder123'", updatedML.selectedFolderID)
+	}
+
+	if !updatedML.loading {
+		t.Error("Enter on folder should set loading to true")
+	}
+
+	if cmd == nil {
+		t.Error("Enter on folder should return a fetch command")
+	}
+}
+
+func TestMessageList_KeyboardNavigation_LazyLoadFolders(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Folders not loaded yet
+	if ml.foldersLoaded {
+		t.Fatal("Folders should not be loaded initially")
+	}
+
+	// Focus starts on MessagePane, navigate to FolderPane with Tab
+	// This should trigger lazy loading of folders
+	msg := tea.KeyMsg{Type: tea.KeyTab}
+	updated, cmd := ml.Update(msg)
+
+	updatedML := updated.(*MessageList)
+
+	// If we landed on FolderPane, folders should start loading
+	if updatedML.layout.GetFocused() == components.FolderPane {
+		if !updatedML.loadingFolders {
+			t.Error("Focusing FolderPane should trigger folder loading")
+		}
+
+		if cmd == nil {
+			t.Error("Focusing FolderPane should return fetch folders command")
+		}
+	}
+}
+
+func TestMessageList_KeyboardNavigation_WindowResize(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+
+	// Initial size
+	ml.layout.SetSize(100, 30)
+
+	// Send window resize message
+	msg := tea.WindowSizeMsg{Width: 150, Height: 50}
+	updated, cmd := ml.Update(msg)
+
+	if cmd != nil {
+		t.Error("WindowSizeMsg should not return a command")
+	}
+
+	updatedML := updated.(*MessageList)
+
+	// Verify global state was updated
+	if updatedML.global.WindowSize.Width != 150 {
+		t.Errorf("Window width = %d, want 150", updatedML.global.WindowSize.Width)
+	}
+
+	if updatedML.global.WindowSize.Height != 50 {
+		t.Errorf("Window height = %d, want 50", updatedML.global.WindowSize.Height)
+	}
+}
+
+func TestMessageList_KeyboardNavigation_ArrowKeys(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := keyring.NewGrantStore(keyring.NewMockSecretStore())
+	global := state.NewGlobalState(client, grantStore, "grant123", "test@example.com", "google")
+
+	ml := NewMessageList(global)
+	ml.loading = false
+	ml.layout.SetSize(120, 40)
+
+	// Set up test messages
+	ml.messages = []domain.Message{
+		{ID: "msg1", Subject: "Test 1"},
+		{ID: "msg2", Subject: "Test 2"},
+		{ID: "msg3", Subject: "Test 3"},
+	}
+	ml.updateMessageTable()
+
+	// Focus on message pane
+	ml.layout.FocusPane(components.MessagePane)
+
+	tests := []struct {
+		name string
+		key  tea.KeyType
+	}{
+		{"arrow_up", tea.KeyUp},
+		{"arrow_down", tea.KeyDown},
+		{"page_up", tea.KeyPgUp},
+		{"page_down", tea.KeyPgDown},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			msg := tea.KeyMsg{Type: tt.key}
+			updated, cmd := ml.Update(msg)
+
+			if updated == nil {
+				t.Error("Update should return a model")
+			}
+
+			// Arrow keys should be passed to the layout
+			// cmd may be nil or contain layout update commands
+			_ = cmd
+		})
+	}
 }

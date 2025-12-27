@@ -62,8 +62,8 @@ func (d *Dashboard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return d, tea.Quit
-		case "m":
-			// Navigate to messages
+		case "a":
+			// Navigate to Air (messages)
 			return d, navigateToMessages()
 		case "c":
 			// Navigate to calendar
@@ -143,7 +143,7 @@ func (d *Dashboard) View() string {
 		key  string
 		desc string
 	}{
-		{"m", "Messages - View your inbox"},
+		{"a", "Air - View your inbox"},
 		{"c", "Calendar - Manage events"},
 		{"p", "Contacts - Manage contacts"},
 		{"s", "Settings - Configure preferences"},

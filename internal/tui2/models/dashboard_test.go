@@ -53,7 +53,7 @@ func TestDashboard_Update_KeyNavigation(t *testing.T) {
 		key        string
 		wantScreen ScreenType
 	}{
-		{"messages", "m", ScreenMessages},
+		{"messages", "a", ScreenMessages},
 		{"calendar", "c", ScreenCalendar},
 		{"contacts", "p", ScreenContacts},
 		{"settings", "s", ScreenSettings},
@@ -142,7 +142,7 @@ func TestDashboard_View(t *testing.T) {
 		"test@example.com",
 		"google",
 		"Quick Actions",
-		"Messages",
+		"Air",
 		"Calendar",
 		"Settings",
 	}
