@@ -241,16 +241,28 @@ Config file location: `~/.config/nylas/config.yaml`
 
 ## Development
 
+### Quick Start
+
 ```bash
-# Build
-make build
-
-# Test
-make test
-
-# Lint
-make lint
+make build          # Build the CLI binary
+make ci             # Quick quality checks (fmt, vet, lint, test-unit, test-race, security, vuln)
+make ci-full        # Complete CI pipeline (all checks + integration tests + cleanup)
 ```
+
+### Available Targets
+
+| Target | Description | Use When |
+|--------|-------------|----------|
+| `make ci-full` | **Complete validation** (quality + all tests + cleanup) | Before PRs, releases |
+| `make ci` | Quality checks only (no integration tests) | Quick pre-commit check |
+| `make build` | Build binary to `./bin/nylas` | Development |
+| `make test-unit` | Run unit tests | Fast feedback loop |
+| `make test-coverage` | Generate coverage report | Check test coverage |
+| `make lint` | Run linter only | Fix linting issues |
+| `make clean` | Remove build artifacts | Clean workspace |
+| `make help` | Show all available targets | See all options |
+
+**Run `make help` for complete list of targets**
 
 **[Development Guide](docs/DEVELOPMENT.md)**
 

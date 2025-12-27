@@ -113,6 +113,7 @@ func newGroupsShowCmd() *cobra.Command {
 			dim := color.New(color.Faint)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			boldWhite.Printf("Contact Group: %s\n", group.Name)
 			fmt.Println("════════════════════════════════════════════════════════════")
 

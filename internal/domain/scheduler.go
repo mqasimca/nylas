@@ -145,22 +145,22 @@ type CreateSchedulerSessionRequest struct {
 
 // Booking represents a scheduled booking
 type Booking struct {
-	BookingID        string                 `json:"booking_id"`
-	EventID          string                 `json:"event_id,omitempty"`
-	Title            string                 `json:"title"`
-	Organizer        Participant            `json:"organizer"`              // Reuses Participant from calendar.go
-	Participants     []Participant          `json:"participants,omitempty"` // Reuses Participant from calendar.go
-	StartTime        time.Time              `json:"start_time"`
-	EndTime          time.Time              `json:"end_time"`
-	Status           string                 `json:"status"` // "confirmed", "cancelled", "pending"
-	Description      string                 `json:"description,omitempty"`
-	Location         string                 `json:"location,omitempty"`
-	Timezone         string                 `json:"timezone,omitempty"`
-	Conferencing     *ConferencingDetails   `json:"conferencing,omitempty"` // Reuses ConferencingDetails from calendar.go
-	AdditionalFields map[string]any         `json:"additional_fields,omitempty"`
-	Metadata         map[string]string      `json:"metadata,omitempty"`
-	CreatedAt        time.Time              `json:"created_at,omitempty"`
-	UpdatedAt        time.Time              `json:"updated_at,omitempty"`
+	BookingID        string               `json:"booking_id"`
+	EventID          string               `json:"event_id,omitempty"`
+	Title            string               `json:"title"`
+	Organizer        Participant          `json:"organizer"`              // Reuses Participant from calendar.go
+	Participants     []Participant        `json:"participants,omitempty"` // Reuses Participant from calendar.go
+	StartTime        time.Time            `json:"start_time"`
+	EndTime          time.Time            `json:"end_time"`
+	Status           string               `json:"status"` // "confirmed", "cancelled", "pending"
+	Description      string               `json:"description,omitempty"`
+	Location         string               `json:"location,omitempty"`
+	Timezone         string               `json:"timezone,omitempty"`
+	Conferencing     *ConferencingDetails `json:"conferencing,omitempty"` // Reuses ConferencingDetails from calendar.go
+	AdditionalFields map[string]any       `json:"additional_fields,omitempty"`
+	Metadata         map[string]string    `json:"metadata,omitempty"`
+	CreatedAt        time.Time            `json:"created_at,omitempty"`
+	UpdatedAt        time.Time            `json:"updated_at,omitempty"`
 }
 
 // ConfirmBookingRequest represents a request to confirm a booking

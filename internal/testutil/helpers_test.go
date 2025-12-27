@@ -9,6 +9,7 @@ func TestTempConfig(t *testing.T) {
 	content := "test: value"
 	path := TempConfig(t, content)
 
+	// #nosec G304 -- reading test file created by test helper
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("Failed to read temp config: %v", err)
@@ -23,6 +24,7 @@ func TestTempFile(t *testing.T) {
 	content := "test content"
 	path := TempFile(t, "test.txt", content)
 
+	// #nosec G304 -- reading test file created by test helper
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("Failed to read temp file: %v", err)

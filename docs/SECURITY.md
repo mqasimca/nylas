@@ -28,7 +28,7 @@ export NYLAS_API_KEY="your-api-key"
 export NYLAS_GRANT_ID="your-grant-id"
 
 # Run tests
-make test
+make ci-full   # Complete CI pipeline with tests and cleanup
 ```
 
 ---

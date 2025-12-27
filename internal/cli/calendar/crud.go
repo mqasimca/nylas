@@ -46,6 +46,7 @@ func newShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			boldWhite.Printf("Calendar: %s\n", cal.Name)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
@@ -63,9 +64,11 @@ func newShowCmd() *cobra.Command {
 			}
 
 			if cal.IsPrimary {
+				// #nosec G104 -- color output errors are non-critical, best-effort display
 				cyan.Printf("Primary:     Yes\n")
 			}
 			if cal.ReadOnly {
+				// #nosec G104 -- color output errors are non-critical, best-effort display
 				dim.Printf("Read-only:   Yes\n")
 			}
 			if cal.IsOwner {

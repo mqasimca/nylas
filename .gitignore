@@ -26,6 +26,8 @@ bin/
 coverage.out
 coverage.html
 *.coverprofile
+ci-full.txt
+test-integration.txt
 
 # IDE
 .idea/

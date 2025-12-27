@@ -34,7 +34,7 @@ go test ./... -tags=integration -v
 #### Before ANY Commit:
 ```bash
 # 1. Full check (lint + test + security + build)
-make check
+make ci-full
 
 # 2. Verify no secrets in staged files
 git diff --cached | grep -iE "(api_key|password|secret|token|nyk_v0)" && echo "⛔ SECRETS DETECTED - DO NOT COMMIT" || echo "✓ No secrets found"
@@ -150,7 +150,7 @@ CLI Commands → App Services → Adapters → Ports (interfaces)
 - **Mock implementations**: Every adapter has a `mock.go` file
 - **Integration tests**: Use build tag `//go:build integration`
 - **Table-driven tests**: Use for parameter variations
-- Run `make check` before committing (lint + test + build)
+- Run `make ci-full` before committing (complete validation + tests + cleanup)
 
 ### 4. Security Requirements (MANDATORY)
 - **ALWAYS run security scan after ANY code change**

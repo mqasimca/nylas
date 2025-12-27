@@ -129,10 +129,12 @@ Air integration tests are **split by feature** for better maintainability:
 
 **Running tests:**
 ```bash
-make test-air-integration-clean  # RECOMMENDED: Tests + cleanup
+make ci-full                     # RECOMMENDED: Complete CI with automatic cleanup
+make test-air-integration        # Run Air integration tests only
+make test-cleanup                # Manual cleanup if needed
 ```
 
-**Why cleanup?** Air tests create real resources (drafts, events, contacts) in the connected Nylas account. The cleanup target automatically removes test data after running tests.
+**Why cleanup?** Air tests create real resources (drafts, events, contacts) in the connected Nylas account. The `make ci-full` target automatically runs cleanup after all tests.
 
 **Pattern:** Air tests use `httptest` to test HTTP handlers directly:
 ```go

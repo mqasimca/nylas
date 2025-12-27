@@ -225,7 +225,8 @@ nylas air --encrypted            # Enable encryption for cached data
 
 **Testing:**
 ```bash
-make test-air-integration-clean  # Run tests with automatic cleanup
+make ci-full                     # Complete CI pipeline (includes Air tests + cleanup)
+make test-air-integration        # Run Air integration tests only
 ```
 
 ---

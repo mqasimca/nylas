@@ -92,6 +92,7 @@ func displayOTP(result *domain.OTPResult, copied bool) {
 	boxWidth := len(spaced) + 6
 	border := strings.Repeat("═", boxWidth)
 
+	// #nosec G104 -- color output errors are non-critical, best-effort display
 	cyan.Printf("╔%s╗\n", border)
 	cyan.Printf("║%s║\n", strings.Repeat(" ", boxWidth))
 	cyan.Printf("║   %s   ║\n", spaced)

@@ -13,12 +13,12 @@ import (
 // FolderPanel displays a list of email folders with unread counts.
 type FolderPanel struct {
 	*tview.Flex
-	app           *App
-	list          *tview.List
-	folders       []domain.Folder
-	selectedID    string
-	onSelect      func(folder *domain.Folder)
-	visible       bool
+	app        *App
+	list       *tview.List
+	folders    []domain.Folder
+	selectedID string
+	onSelect   func(folder *domain.Folder)
+	visible    bool
 }
 
 // NewFolderPanel creates a new folder panel.

@@ -141,7 +141,7 @@ func saveBudgetConfig(budget BudgetConfig) error {
 	}
 
 	budgetDir := filepath.Join(configDir, "nylas", "ai-data")
-	if err := os.MkdirAll(budgetDir, 0755); err != nil {
+	if err := os.MkdirAll(budgetDir, 0750); err != nil {
 		return fmt.Errorf("failed to create budget directory: %w", err)
 	}
 
@@ -168,6 +168,7 @@ func loadBudgetConfig() (*BudgetConfig, error) {
 
 	budgetFile := filepath.Join(configDir, "nylas", "ai-data", "budget.json")
 
+	// #nosec G304 -- budgetFile constructed from UserConfigDir + "nylas/ai-data/budget.json"
 	data, err := os.ReadFile(budgetFile)
 	if err != nil {
 		return nil, err

@@ -159,11 +159,12 @@ func (s *Service) MergeContacts(ctx context.Context, contacts []domain.Contact, 
 
 // ImportCSV imports contacts from CSV file.
 func (s *Service) ImportCSV(ctx context.Context, csvFile string, mapping map[string]string) ([]domain.Contact, error) {
+	// #nosec G304 -- csvFile comes from validated CLI argument, user controls their own file system
 	file, err := os.Open(csvFile)
 	if err != nil {
 		return nil, fmt.Errorf("open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()

@@ -183,6 +183,7 @@ func (s *Service) InlineCSS(ctx context.Context, html string) (string, error) {
 
 // ParseEML parses an .eml file into a structured message.
 func (s *Service) ParseEML(ctx context.Context, emlFile string) (*domain.ParsedEmail, error) {
+	// #nosec G304 -- emlFile comes from validated CLI argument, user controls their own file system
 	data, err := os.ReadFile(emlFile)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)

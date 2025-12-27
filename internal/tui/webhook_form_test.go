@@ -33,12 +33,12 @@ func TestNewWebhookFormEdit(t *testing.T) {
 	app := createTestApp(t)
 
 	webhook := &domain.Webhook{
-		ID:                           "webhook-123",
-		WebhookURL:                   "https://example.com/webhook",
-		Description:                  "Test webhook",
-		TriggerTypes:                 []string{domain.TriggerMessageCreated, domain.TriggerMessageUpdated},
-		NotificationEmailAddresses:   []string{"admin@example.com", "alerts@example.com"},
-		Status:                       "inactive",
+		ID:                         "webhook-123",
+		WebhookURL:                 "https://example.com/webhook",
+		Description:                "Test webhook",
+		TriggerTypes:               []string{domain.TriggerMessageCreated, domain.TriggerMessageUpdated},
+		NotificationEmailAddresses: []string{"admin@example.com", "alerts@example.com"},
+		Status:                     "inactive",
 	}
 
 	form := NewWebhookForm(app, webhook, nil, nil)

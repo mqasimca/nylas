@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 )
+
 // EMAILS INTEGRATION TESTS
 // ================================
 
