@@ -13,10 +13,9 @@ func TestNewDefaultBrowser(t *testing.T) {
 }
 
 func TestDefaultBrowser_Open(t *testing.T) {
-	// Skip in short mode to avoid opening actual browser during normal test runs
-	if testing.Short() {
-		t.Skip("skipping browser open test in short mode")
-	}
+	// Skip to avoid opening actual browser during automated test runs
+	// This test is for manual verification only
+	t.Skip("skipping browser open test - use manual testing to verify browser functionality")
 
 	browser := NewDefaultBrowser()
 
