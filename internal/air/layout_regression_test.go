@@ -21,6 +21,7 @@ func TestEmailListNoMaxHeightConstraint(t *testing.T) {
 
 	// Read the accessibility.css file
 	cssPath := filepath.Join("static", "css", "accessibility.css")
+	// #nosec G304 -- test reading project CSS file, path is hardcoded
 	content, err := os.ReadFile(cssPath)
 	if err != nil {
 		t.Fatalf("Failed to read accessibility.css: %v", err)
@@ -46,6 +47,7 @@ func TestEmailListContainerUsesGrid(t *testing.T) {
 
 	// Read the email-list.css file
 	cssPath := filepath.Join("static", "css", "email-list.css")
+	// #nosec G304 -- test reading project CSS file, path is hardcoded
 	content, err := os.ReadFile(cssPath)
 	if err != nil {
 		t.Fatalf("Failed to read email-list.css: %v", err)
@@ -69,6 +71,7 @@ func TestEmailViewUsesGrid(t *testing.T) {
 
 	// Read the calendar.css file (where email-view.active is defined)
 	cssPath := filepath.Join("static", "css", "calendar.css")
+	// #nosec G304 -- test reading project CSS file, path is hardcoded
 	content, err := os.ReadFile(cssPath)
 	if err != nil {
 		t.Fatalf("Failed to read calendar.css: %v", err)
@@ -106,6 +109,7 @@ func TestMainLayoutHasExplicitHeight(t *testing.T) {
 
 	// Read the layout.css file
 	cssPath := filepath.Join("static", "css", "layout.css")
+	// #nosec G304 -- test reading project CSS file, path is hardcoded
 	content, err := os.ReadFile(cssPath)
 	if err != nil {
 		t.Fatalf("Failed to read layout.css: %v", err)

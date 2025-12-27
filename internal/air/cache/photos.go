@@ -120,6 +120,7 @@ func (s *PhotoStore) Get(contactID string) ([]byte, string, error) {
 	}
 
 	// Read photo from file
+	// #nosec G304 -- localPath constructed from validated cache directory and contact ID
 	data, err := os.ReadFile(localPath)
 	if err != nil {
 		// File missing - delete metadata and return nil

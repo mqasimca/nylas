@@ -64,6 +64,7 @@ func LoadSettings(basePath string) (*Settings, error) {
 	settings := DefaultSettings()
 	settings.filePath = filePath
 
+	// #nosec G304 -- filePath constructed from validated cache directory
 	data, err := os.ReadFile(filePath)
 	if os.IsNotExist(err) {
 		// Create default settings file

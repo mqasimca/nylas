@@ -112,11 +112,11 @@ func TestCalendarView_SetOnDateSelect(t *testing.T) {
 
 func TestParseHexColor(t *testing.T) {
 	tests := []struct {
-		name     string
-		hex      string
-		wantR    int32
-		wantG    int32
-		wantB    int32
+		name        string
+		hex         string
+		wantR       int32
+		wantG       int32
+		wantB       int32
 		wantDefault bool
 	}{
 		{

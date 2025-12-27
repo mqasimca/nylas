@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 )
+
 func TestIntegration_Middleware_Compression(t *testing.T) {
 	// Create test server with middleware
 	mux := http.NewServeMux()

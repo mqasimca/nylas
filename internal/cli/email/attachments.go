@@ -114,6 +114,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println(strings.Repeat("─", 60))
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			boldWhite.Printf("Filename:     %s\n", attachment.Filename)
 			fmt.Printf("ID:           %s\n", attachment.ID)
 			fmt.Printf("Content Type: %s\n", attachment.ContentType)

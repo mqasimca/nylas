@@ -49,7 +49,7 @@ func (a *WidgetAdapter) ListWidgets(ctx context.Context) ([]*domain.Widget, erro
 	if err != nil {
 		return nil, fmt.Errorf("execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check status
 	if resp.StatusCode != http.StatusOK {
@@ -78,7 +78,7 @@ func (a *WidgetAdapter) GetWidget(ctx context.Context, id string) (*domain.Widge
 	if err != nil {
 		return nil, fmt.Errorf("execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("widget not found: %s", id)

@@ -75,6 +75,7 @@ Example:
 			}
 
 			green := color.New(color.FgGreen)
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			green.Printf("✓ Added grant %s\n", grantID)
 			fmt.Printf("  Email:    %s\n", grantEmail)
 			fmt.Printf("  Provider: %s\n", grantProvider.DisplayName())

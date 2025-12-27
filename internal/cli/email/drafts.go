@@ -220,7 +220,7 @@ func loadAttachmentsFromFiles(filePaths []string) ([]domain.Attachment, error) {
 		}
 
 		content, err := io.ReadAll(file)
-		file.Close()
+		_ = file.Close()
 		if err != nil {
 			return nil, fmt.Errorf("cannot read file %s: %w", path, err)
 		}
@@ -313,6 +313,7 @@ func newDraftsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			boldWhite.Printf("Draft: %s\n", draft.Subject)
 			fmt.Println("════════════════════════════════════════════════════════════")
 

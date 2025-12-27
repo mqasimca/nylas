@@ -44,6 +44,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					return err
 				}
 				green := color.New(color.FgGreen)
+				// #nosec G104 -- color output errors are non-critical, best-effort display
 				green.Println("✓ Configuration reset")
 				return nil
 			}
@@ -94,6 +95,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 
 				if err != nil {
 					yellow := color.New(color.FgYellow)
+					// #nosec G104 -- color output errors are non-critical, best-effort display
 					yellow.Printf("  Could not auto-detect Client ID: %v\n", err)
 					fmt.Println()
 					fmt.Print("Client ID (manual entry): ")

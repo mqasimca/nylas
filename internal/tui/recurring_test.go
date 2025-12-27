@@ -154,8 +154,8 @@ func TestFormatDays(t *testing.T) {
 		{"SU", "Sun"},
 		{"MO,WE,FR", "Mon, Wed, Fri"},
 		{"MO,TU,WE,TH,FR", "Mon, Tue, Wed, Thu, Fri"},
-		{"1MO", "Mon"}, // First Monday
-		{"2TU", "Tue"}, // Second Tuesday
+		{"1MO", "Mon"},  // First Monday
+		{"2TU", "Tue"},  // Second Tuesday
 		{"-1FR", "Fri"}, // Last Friday
 	}
 

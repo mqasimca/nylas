@@ -97,13 +97,14 @@ Before marking task complete:
 
 ---
 
-## Integration with make check
+## Integration with CI Pipeline
 
 ```bash
-make check   # Runs: lint → test → security → build
+make ci        # Runs: fmt → vet → lint → test-unit → test-race → security → vuln → build
+make ci-full   # Complete CI: all quality checks + integration tests + cleanup
 ```
 
-**Always run before completing a task.**
+**Always run `make ci` or `make ci-full` before completing a task.**
 
 ---
 

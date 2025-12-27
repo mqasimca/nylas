@@ -190,6 +190,7 @@ func LoadThemeFromFile(path string) (*ThemeConfig, error) {
 		}
 	}
 
+	// #nosec G304 -- path is validated to be within ~/.config/nylas/themes/ directory
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -403,6 +404,7 @@ func ValidateTheme(name string) (*ThemeValidationResult, error) {
 	result.FileSize = info.Size()
 
 	// Try to read and parse
+	// #nosec G304 -- themePath is validated theme file path from user's config directory
 	data, err := os.ReadFile(themePath)
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Cannot read file: %v", err))

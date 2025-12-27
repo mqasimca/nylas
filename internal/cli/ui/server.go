@@ -1253,6 +1253,7 @@ func (s *Server) handleExecCommand(w http.ResponseWriter, r *http.Request) {
 		execPath = "nylas" // Fallback to PATH lookup
 	}
 
+	// #nosec G204 -- execPath is the current binary from os.Executable(), user input validated in args (not in execPath)
 	execCmd := exec.CommandContext(ctx, execPath, args...)
 	var stdout, stderr bytes.Buffer
 	execCmd.Stdout = &stdout

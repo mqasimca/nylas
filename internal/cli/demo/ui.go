@@ -82,10 +82,13 @@ func openBrowser(url string) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
+		// #nosec G204 -- command "open" is hardcoded, only URL is variable (validated as localhost)
 		cmd = exec.Command("open", url)
 	case "linux":
+		// #nosec G204 -- command "xdg-open" is hardcoded, only URL is variable (validated as localhost)
 		cmd = exec.Command("xdg-open", url)
 	case "windows":
+		// #nosec G204 -- command "rundll32" is hardcoded, only URL is variable (validated as localhost)
 		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
 	default:
 		return

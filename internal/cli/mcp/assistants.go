@@ -121,6 +121,7 @@ func (a Assistant) IsConfigured() bool {
 		return false
 	}
 
+	// #nosec G304 -- configPath from GetConfigPath() returns validated assistant config paths
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return false

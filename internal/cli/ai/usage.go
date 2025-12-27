@@ -104,6 +104,7 @@ func loadUsageStats(month string) (*UsageStats, error) {
 
 	statsFile := filepath.Join(configDir, "nylas", "ai-data", "usage", fmt.Sprintf("%s.json", month))
 
+	// #nosec G304 -- statsFile constructed from UserConfigDir + "nylas/ai-data/usage/<month>.json"
 	data, err := os.ReadFile(statsFile)
 	if err != nil {
 		return nil, err

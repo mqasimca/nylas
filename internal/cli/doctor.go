@@ -72,6 +72,7 @@ func runDoctor(verbose bool) error {
 	dim := color.New(color.Faint)
 	bold := color.New(color.Bold)
 
+	// #nosec G104 -- color output errors are non-critical, best-effort display
 	bold.Println("Nylas CLI Health Check")
 	fmt.Println()
 
@@ -79,7 +80,9 @@ func runDoctor(verbose bool) error {
 
 	// Show environment info
 	if verbose {
+		// #nosec G104 -- color output errors are non-critical, best-effort display
 		dim.Printf("  Platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		// #nosec G104 -- color output errors are non-critical, best-effort display
 		dim.Printf("  Go Version: %s\n", runtime.Version())
 		dim.Printf("  Config Dir: %s\n", config.DefaultConfigDir())
 		fmt.Println()

@@ -34,12 +34,12 @@ Consolidated testing rules for the Nylas CLI project.
 
 **⚠️ CRITICAL: Always run Air tests with cleanup**
 
-Air tests create real resources (drafts, events, contacts) in the connected account. **Always use the cleanup target** to avoid polluting the account:
+Air tests create real resources (drafts, events, contacts) in the connected account. **Use `make ci-full` which includes automatic cleanup**, or run cleanup manually:
 
 ```bash
-make test-air-integration-clean  # RECOMMENDED: Tests + cleanup
-make test-air-integration        # Tests only (manual cleanup needed)
-make test-air-integration-cleanup # Cleanup only
+make ci-full                     # RECOMMENDED: Complete CI with automatic cleanup
+make test-air-integration        # Air integration tests only
+make test-cleanup                # Manual cleanup if needed
 ```
 
 ---
@@ -126,8 +126,7 @@ t.Cleanup(func() {
 
 **Check coverage:**
 ```bash
-go test ./... -short -coverprofile=coverage.out
-go tool cover -html=coverage.out
+make test-coverage  # Generates coverage.html and opens in browser
 ```
 
 ---
@@ -136,9 +135,11 @@ go tool cover -html=coverage.out
 
 ### Run Tests
 ```bash
-go test ./... -short                      # Unit tests
+make ci-full                               # Complete CI pipeline (RECOMMENDED)
+make test-unit                             # Unit tests only
 make test-integration                      # CLI integration tests
-make test-air-integration-clean            # Air integration tests + cleanup (RECOMMENDED)
+make test-air-integration                  # Air web UI integration tests
+make test-cleanup                          # Clean up test resources
 ```
 
 ### CLI Integration Test Template

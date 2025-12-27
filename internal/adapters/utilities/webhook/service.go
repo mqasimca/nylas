@@ -147,7 +147,7 @@ func (s *Service) ReplayWebhook(ctx context.Context, webhookID string, targetURL
 	if err != nil {
 		return fmt.Errorf("send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("replay failed with status %d", resp.StatusCode)
@@ -173,6 +173,7 @@ func (s *Service) SaveWebhook(ctx context.Context, payload *domain.WebhookPayloa
 
 // LoadWebhook loads a webhook payload from file.
 func (s *Service) LoadWebhook(ctx context.Context, filepath string) (*domain.WebhookPayload, error) {
+	// #nosec G304 -- filepath comes from validated CLI argument, user controls their own file system
 	data, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -198,7 +199,7 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to read body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() { _ = r.Body.Close() }()
 
 	// Extract headers
 	headers := make(map[string]string)

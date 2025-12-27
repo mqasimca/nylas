@@ -84,7 +84,7 @@ func TestDraftsViewRender(t *testing.T) {
 		},
 		{
 			ID:        "draft-3",
-			Subject:   "", // No subject
+			Subject:   "",  // No subject
 			To:        nil, // No recipient
 			UpdatedAt: now.Add(-2 * time.Hour),
 		},

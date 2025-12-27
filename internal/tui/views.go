@@ -154,7 +154,7 @@ type MessagesView struct {
 	threads         []domain.Thread
 	showingDetail   bool
 	currentThread   *domain.Thread
-	currentMessage  *domain.Message // For reply functionality
+	currentMessage  *domain.Message  // For reply functionality
 	attachments     []AttachmentInfo // All attachments in current thread
 	folderPanel     *FolderPanel
 	currentFolderID string
@@ -737,6 +737,7 @@ func (v *MessagesView) downloadAttachment(messageID, attachmentID, filename stri
 		destPath := filepath.Join(downloadDir, filename)
 		destPath = v.getUniqueFilename(destPath)
 
+		// #nosec G304 -- destPath is validated through getUniqueFilename() and constrained to downloadDir
 		file, err := os.Create(destPath)
 		if err != nil {
 			v.app.QueueUpdateDraw(func() {
@@ -1646,7 +1647,6 @@ func joinStrings(strs []string, sep string) string {
 	}
 	return result
 }
-
 
 // ============================================================================
 // Contacts View

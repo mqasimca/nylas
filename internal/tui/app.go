@@ -34,8 +34,8 @@ type App struct {
 	status  *StatusIndicator
 	crumbs  *Crumbs
 	menu    *Menu
-	prompt  *Prompt          // For filter mode (/)
-	palette *CommandPalette  // For command mode (:) with autocomplete
+	prompt  *Prompt         // For filter mode (/)
+	palette *CommandPalette // For command mode (:) with autocomplete
 
 	// Content area with page stack (like k9s)
 	content *PageStack

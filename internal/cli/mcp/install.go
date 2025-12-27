@@ -106,12 +106,14 @@ func runInstall(assistantID, binaryPath string, installAll bool) error {
 	for _, a := range assistants {
 		configPath := a.GetConfigPath()
 		if configPath == "" {
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			yellow.Printf("  ! %s: unsupported on this platform\n", a.Name)
 			continue
 		}
 
 		// Check if app is installed (for non-project configs)
 		if !a.IsProjectConfig() && !a.IsInstalled() {
+			// #nosec G104 -- color output errors are non-critical, best-effort display
 			yellow.Printf("  ! %s: application not installed\n", a.Name)
 			continue
 		}
@@ -184,12 +186,13 @@ func installForAssistant(a Assistant, binaryPath string) error {
 
 	// Ensure parent directory exists
 	dir := filepath.Dir(configPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("creating directory: %w", err)
 	}
 
 	// Read existing config or create new
 	config := make(map[string]any)
+	// #nosec G304 -- configPath from Assistant.GetConfigPath() returns validated AI assistant config paths
 	if data, err := os.ReadFile(configPath); err == nil {
 		if err := json.Unmarshal(data, &config); err != nil {
 			return fmt.Errorf("parsing existing config: %w", err)
@@ -244,12 +247,13 @@ func installClaudeCodePermissions() error {
 	settingsPath := filepath.Join(settingsDir, "settings.json")
 
 	// Ensure directory exists
-	if err := os.MkdirAll(settingsDir, 0755); err != nil {
+	if err := os.MkdirAll(settingsDir, 0750); err != nil {
 		return fmt.Errorf("creating settings directory: %w", err)
 	}
 
 	// Read existing settings or create new
 	settings := make(map[string]any)
+	// #nosec G304 -- settingsPath is constructed from home directory + ".claude/settings.json"
 	if data, err := os.ReadFile(settingsPath); err == nil {
 		if err := json.Unmarshal(data, &settings); err != nil {
 			return fmt.Errorf("parsing existing settings: %w", err)
