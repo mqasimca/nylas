@@ -128,7 +128,7 @@ func printMessage(msg domain.Message, showBody bool) {
 
 	// Print header
 	fmt.Println(strings.Repeat("─", 60))
-	boldWhite.Printf("Subject: %s\n", msg.Subject)
+	_, _ = boldWhite.Printf("Subject: %s\n", msg.Subject)
 	fmt.Printf("From:    %s\n", formatContacts(msg.From))
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatContacts(msg.To))
@@ -140,7 +140,7 @@ func printMessage(msg domain.Message, showBody bool) {
 	if len(msg.Attachments) > 0 {
 		fmt.Printf("Attachments: %d files\n", len(msg.Attachments))
 		for _, a := range msg.Attachments {
-			dim.Printf("  - %s (%s)\n", a.Filename, formatSize(a.Size))
+			_, _ = dim.Printf("  - %s (%s)\n", a.Filename, formatSize(a.Size))
 		}
 	}
 
@@ -161,7 +161,7 @@ func printMessage(msg domain.Message, showBody bool) {
 func printMessageRaw(msg domain.Message) {
 	// Print header
 	fmt.Println(strings.Repeat("─", 60))
-	boldWhite.Printf("Subject: %s\n", msg.Subject)
+	_, _ = boldWhite.Printf("Subject: %s\n", msg.Subject)
 	fmt.Printf("From:    %s\n", formatContacts(msg.From))
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatContacts(msg.To))
@@ -214,7 +214,7 @@ func printMessageSummaryWithID(msg domain.Message, index int, showID bool) {
 	if showID {
 		// Show full ID on its own line for easy copying
 		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
-		dim.Printf("      ID: %s\n", msg.ID)
+		_, _ = dim.Printf("      ID: %s\n", msg.ID)
 	} else {
 		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
 	}
@@ -324,7 +324,7 @@ func removeTagWithContent(s, tag string) string {
 
 // printSuccess prints a success message in green.
 func printSuccess(format string, args ...any) {
-	green.Printf(format+"\n", args...)
+	_, _ = green.Printf(format+"\n", args...)
 }
 
 // createContext creates a context with timeout.

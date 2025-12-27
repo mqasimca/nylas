@@ -101,7 +101,7 @@ func (c *HTTPClient) GetCalendars(ctx context.Context, grantID string) ([]domain
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -131,7 +131,7 @@ func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: calendar not found", domain.ErrAPIError)
@@ -180,7 +180,7 @@ func (c *HTTPClient) CreateCalendar(ctx context.Context, grantID string, req *do
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -230,7 +230,7 @@ func (c *HTTPClient) UpdateCalendar(ctx context.Context, grantID, calendarID str
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -261,7 +261,7 @@ func (c *HTTPClient) DeleteCalendar(ctx context.Context, grantID, calendarID str
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -333,7 +333,7 @@ func (c *HTTPClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -370,7 +370,7 @@ func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: event not found", domain.ErrAPIError)
@@ -437,7 +437,7 @@ func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -502,7 +502,7 @@ func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -533,7 +533,7 @@ func (c *HTTPClient) DeleteEvent(ctx context.Context, grantID, calendarID, event
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -565,7 +565,7 @@ func (c *HTTPClient) SendRSVP(ctx context.Context, grantID, calendarID, eventID 
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return c.parseError(resp)
@@ -590,7 +590,7 @@ func (c *HTTPClient) GetFreeBusy(ctx context.Context, grantID string, freeBusyRe
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -620,7 +620,7 @@ func (c *HTTPClient) GetAvailability(ctx context.Context, availReq *domain.Avail
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -658,7 +658,7 @@ func (c *HTTPClient) CreateVirtualCalendarGrant(ctx context.Context, email strin
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -686,7 +686,7 @@ func (c *HTTPClient) ListVirtualCalendarGrants(ctx context.Context) ([]domain.Vi
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -716,7 +716,7 @@ func (c *HTTPClient) GetVirtualCalendarGrant(ctx context.Context, grantID string
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: virtual calendar grant not found", domain.ErrAPIError)
@@ -749,7 +749,7 @@ func (c *HTTPClient) DeleteVirtualCalendarGrant(ctx context.Context, grantID str
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -795,7 +795,7 @@ func (c *HTTPClient) GetRecurringEventInstances(ctx context.Context, grantID, ca
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)

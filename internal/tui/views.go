@@ -125,17 +125,17 @@ func (v *DashboardView) Load() {
 		{":g", "Grants", "Connected accounts"},
 	}
 
-	fmt.Fprintf(v.view, "[%s::b]Quick Navigation[-::-]\n\n", title)
+	_, _ = fmt.Fprintf(v.view, "[%s::b]Quick Navigation[-::-]\n\n", title)
 
 	for _, r := range resources {
-		fmt.Fprintf(v.view, "  [%s]%-6s[-]  [%s]%-12s[-]  [%s::d]%s[-::-]\n",
+		_, _ = fmt.Fprintf(v.view, "  [%s]%-6s[-]  [%s]%-12s[-]  [%s::d]%s[-::-]\n",
 			key, r.cmd,
 			desc, r.name,
 			muted, r.desc,
 		)
 	}
 
-	fmt.Fprintf(v.view, "\n[%s::d]Press : to enter command mode[-::-]", muted)
+	_, _ = fmt.Fprintf(v.view, "\n[%s::d]Press : to enter command mode[-::-]", muted)
 }
 
 // ============================================================================
@@ -483,11 +483,11 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 	}
 
 	// Show loading state first
-	fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
-	fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
-	fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
-	fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
-	fmt.Fprintf(detail, "[%s]Loading messages...[-]\n\n", muted)
+	_, _ = fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
+	_, _ = fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
+	_, _ = fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
+	_, _ = fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
+	_, _ = fmt.Fprintf(detail, "[%s]Loading messages...[-]\n\n", muted)
 
 	// Fetch all messages in the thread asynchronously
 	go func() {
@@ -509,29 +509,29 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 			// Clear attachments list
 			v.attachments = nil
 
-			fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
-			fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
-			fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
+			_, _ = fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, thread.Subject)
+			_, _ = fmt.Fprintf(detail, "[%s]Participants:[-] [%s]%s[-]\n", key, value, strings.Join(participants, ", "))
+			_, _ = fmt.Fprintf(detail, "[%s]Messages:[-] [%s]%d[-]\n\n", key, value, len(thread.MessageIDs))
 
 			if len(messages) == 0 {
-				fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
-				fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, thread.Snippet)
+				_, _ = fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
+				_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, thread.Snippet)
 			} else {
 				// Display all messages in chronological order
 				for i, msg := range messages {
-					fmt.Fprintf(detail, "[%s]════════════════════════════════════════[-]\n", muted)
+					_, _ = fmt.Fprintf(detail, "[%s]════════════════════════════════════════[-]\n", muted)
 
 					from := ""
 					if len(msg.From) > 0 {
 						from = msg.From[0].String()
 					}
 
-					fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
-					fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+					_, _ = fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
+					_, _ = fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
 
 					// Display attachments if any
 					if len(msg.Attachments) > 0 {
-						fmt.Fprintf(detail, "[%s]Attachments:[-]", key)
+						_, _ = fmt.Fprintf(detail, "[%s]Attachments:[-]", key)
 						for _, att := range msg.Attachments {
 							if att.IsInline {
 								continue // Skip inline attachments (images in HTML)
@@ -543,11 +543,11 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 								Attachment: att,
 							})
 							sizeStr := formatFileSize(att.Size)
-							fmt.Fprintf(detail, " [%s][%d] %s (%s)[-]", hint, attachmentIdx+1, att.Filename, sizeStr)
+							_, _ = fmt.Fprintf(detail, " [%s][%d] %s (%s)[-]", hint, attachmentIdx+1, att.Filename, sizeStr)
 						}
-						fmt.Fprintln(detail)
+						_, _ = fmt.Fprintln(detail)
 					}
-					fmt.Fprintln(detail)
+					_, _ = fmt.Fprintln(detail)
 
 					// Use full body, strip HTML for terminal display
 					body := msg.Body
@@ -555,7 +555,7 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 						body = msg.Snippet
 					}
 					body = stripHTMLForTUI(body)
-					fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
+					_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
 
 					// Store the last message for reply
 					if i == len(messages)-1 {
@@ -570,11 +570,11 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 				helpLine += fmt.Sprintf("[%s]D[-][%s::d]=download  [-::-]", hint, muted)
 			}
 			helpLine += fmt.Sprintf("[%s]Esc[-][%s::d]=back[-::-]", hint, muted)
-			fmt.Fprint(detail, helpLine)
+			_, _ = fmt.Fprint(detail, helpLine)
 		})
 	}()
 
-	fmt.Fprintf(detail, "[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-][%s]Esc[-][%s::d]=back[-::-]", hint, muted, hint, muted, hint, muted)
+	_, _ = fmt.Fprintf(detail, "[%s]R[-][%s::d]=reply  [-::-][%s]A[-][%s::d]=reply all  [-::-][%s]Esc[-][%s::d]=back[-::-]", hint, muted, hint, muted, hint, muted)
 
 	// Handle key events for reply actions in detail view
 	detail.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -713,7 +713,7 @@ func (v *MessagesView) downloadAttachment(messageID, attachmentID, filename stri
 			})
 			return
 		}
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		// Get Downloads directory
 		homeDir, err := os.UserHomeDir()
@@ -745,7 +745,7 @@ func (v *MessagesView) downloadAttachment(messageID, attachmentID, filename stri
 			})
 			return
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		// Copy content
 		written, err := io.Copy(file, reader)
@@ -929,10 +929,10 @@ func (v *EventsView) updateEventsList(date time.Time) {
 
 	// Header with date
 	dateStr := date.Format("Monday, January 2, 2006")
-	fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n\n", title, dateStr)
+	_, _ = fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n\n", title, dateStr)
 
 	if len(events) == 0 {
-		fmt.Fprintf(v.eventsList, "[%s]No events scheduled[-]\n", muted)
+		_, _ = fmt.Fprintf(v.eventsList, "[%s]No events scheduled[-]\n", muted)
 		return
 	}
 
@@ -946,32 +946,33 @@ func (v *EventsView) updateEventsList(date time.Time) {
 		}
 
 		// Event entry
-		fmt.Fprintf(v.eventsList, "[%s]%s[-]\n", info, timeStr)
+		_, _ = fmt.Fprintf(v.eventsList, "[%s]%s[-]\n", info, timeStr)
 
 		// Title with recurring indicator
 		title := evt.Title
 		if isRecurringEvent(&evt) {
 			title = "🔁 " + title
 		}
-		fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n", eventColor, title)
+		_, _ = fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n", eventColor, title)
 
 		// Location
 		if evt.Location != "" {
-			fmt.Fprintf(v.eventsList, "[%s]📍 %s[-]\n", muted, evt.Location)
+			_, _ = fmt.Fprintf(v.eventsList, "[%s]📍 %s[-]\n", muted, evt.Location)
 		}
 
 		// Status
 		statusIcon := "✓"
-		if evt.Status == "tentative" {
+		switch evt.Status {
+		case "tentative":
 			statusIcon = "?"
-		} else if evt.Status == "cancelled" {
+		case "cancelled":
 			statusIcon = "✗"
 		}
-		fmt.Fprintf(v.eventsList, "[%s]%s %s[-]\n", success, statusIcon, evt.Status)
+		_, _ = fmt.Fprintf(v.eventsList, "[%s]%s %s[-]\n", success, statusIcon, evt.Status)
 
 		// Separator between events
 		if i < len(events)-1 {
-			fmt.Fprintf(v.eventsList, "\n[%s]───────────────────[-]\n\n", muted)
+			_, _ = fmt.Fprintf(v.eventsList, "\n[%s]───────────────────[-]\n\n", muted)
 		}
 	}
 }
@@ -1260,21 +1261,21 @@ func (v *EventsView) showEventDetail(evt *domain.Event) {
 	} else {
 		timeStr = evt.When.StartDateTime().Format("Monday, January 2, 2006") + " (All day)"
 	}
-	fmt.Fprintf(detail, "[%s::b]When[-::-]\n[%s]%s[-]\n\n", info, value, timeStr)
+	_, _ = fmt.Fprintf(detail, "[%s::b]When[-::-]\n[%s]%s[-]\n\n", info, value, timeStr)
 
 	// Location
 	if evt.Location != "" {
-		fmt.Fprintf(detail, "[%s::b]Location[-::-]\n[%s]%s[-]\n\n", info, value, evt.Location)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Location[-::-]\n[%s]%s[-]\n\n", info, value, evt.Location)
 	}
 
 	// Description
 	if evt.Description != "" {
-		fmt.Fprintf(detail, "[%s::b]Description[-::-]\n[%s]%s[-]\n\n", info, value, evt.Description)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Description[-::-]\n[%s]%s[-]\n\n", info, value, evt.Description)
 	}
 
 	// Participants
 	if len(evt.Participants) > 0 {
-		fmt.Fprintf(detail, "[%s::b]Participants[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Participants[-::-]\n", info)
 		for _, p := range evt.Participants {
 			name := p.Name
 			if name == "" {
@@ -1293,40 +1294,40 @@ func (v *EventsView) showEventDetail(evt *domain.Event) {
 			case "maybe":
 				statusIcon = "?"
 			}
-			fmt.Fprintf(detail, "[%s]  %s %s[-]\n", value, statusIcon, name)
+			_, _ = fmt.Fprintf(detail, "[%s]  %s %s[-]\n", value, statusIcon, name)
 		}
-		fmt.Fprintln(detail)
+		_, _ = fmt.Fprintln(detail)
 	}
 
 	// Conferencing
 	if evt.Conferencing != nil && evt.Conferencing.Details != nil && evt.Conferencing.Details.URL != "" {
-		fmt.Fprintf(detail, "[%s::b]Meeting Link[-::-]\n[%s]%s[-]\n\n", info, value, evt.Conferencing.Details.URL)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Meeting Link[-::-]\n[%s]%s[-]\n\n", info, value, evt.Conferencing.Details.URL)
 	}
 
 	// Recurrence
 	if isRecurringEvent(evt) {
-		fmt.Fprintf(detail, "[%s::b]Recurrence[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Recurrence[-::-]\n", info)
 		if len(evt.Recurrence) > 0 {
 			recurrenceStr := formatRecurrenceRule(evt.Recurrence)
 			if recurrenceStr != "" {
-				fmt.Fprintf(detail, "[%s]🔁 %s[-]\n\n", value, recurrenceStr)
+				_, _ = fmt.Fprintf(detail, "[%s]🔁 %s[-]\n\n", value, recurrenceStr)
 			} else {
-				fmt.Fprintf(detail, "[%s]🔁 Recurring event[-]\n\n", value)
+				_, _ = fmt.Fprintf(detail, "[%s]🔁 Recurring event[-]\n\n", value)
 			}
 		} else if evt.MasterEventID != "" {
-			fmt.Fprintf(detail, "[%s]🔁 Instance of recurring event[-]\n\n", value)
+			_, _ = fmt.Fprintf(detail, "[%s]🔁 Instance of recurring event[-]\n\n", value)
 		}
 	}
 
 	// Status
-	fmt.Fprintf(detail, "[%s]Status:[-] [%s]%s[-]\n", key, value, evt.Status)
+	_, _ = fmt.Fprintf(detail, "[%s]Status:[-] [%s]%s[-]\n", key, value, evt.Status)
 	if evt.Busy {
-		fmt.Fprintf(detail, "[%s]Availability:[-] [%s]Busy[-]\n", key, value)
+		_, _ = fmt.Fprintf(detail, "[%s]Availability:[-] [%s]Busy[-]\n", key, value)
 	} else {
-		fmt.Fprintf(detail, "[%s]Availability:[-] [%s]Free[-]\n", key, value)
+		_, _ = fmt.Fprintf(detail, "[%s]Availability:[-] [%s]Free[-]\n", key, value)
 	}
 
-	fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back[-::-]", muted)
+	_, _ = fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back[-::-]", muted)
 
 	// Handle escape
 	detail.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -1781,65 +1782,65 @@ func (v *ContactsView) showContactDetail(contact *domain.Contact) {
 
 	// Name
 	if contact.GivenName != "" || contact.Surname != "" {
-		fmt.Fprintf(detail, "[%s::b]Name[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Name[-::-]\n", info)
 		if contact.GivenName != "" {
-			fmt.Fprintf(detail, "[%s]%s[-]", value, contact.GivenName)
+			_, _ = fmt.Fprintf(detail, "[%s]%s[-]", value, contact.GivenName)
 		}
 		if contact.Surname != "" {
 			if contact.GivenName != "" {
-				fmt.Fprintf(detail, "[%s] %s[-]", value, contact.Surname)
+				_, _ = fmt.Fprintf(detail, "[%s] %s[-]", value, contact.Surname)
 			} else {
-				fmt.Fprintf(detail, "[%s]%s[-]", value, contact.Surname)
+				_, _ = fmt.Fprintf(detail, "[%s]%s[-]", value, contact.Surname)
 			}
 		}
-		fmt.Fprintln(detail)
+		_, _ = fmt.Fprintln(detail)
 	}
 
 	// Emails
 	if len(contact.Emails) > 0 {
-		fmt.Fprintf(detail, "[%s::b]Email[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Email[-::-]\n", info)
 		for _, e := range contact.Emails {
 			typeStr := e.Type
 			if typeStr == "" {
 				typeStr = "other"
 			}
-			fmt.Fprintf(detail, "[%s]%s[-] [%s](%s)[-]\n", value, e.Email, muted, typeStr)
+			_, _ = fmt.Fprintf(detail, "[%s]%s[-] [%s](%s)[-]\n", value, e.Email, muted, typeStr)
 		}
-		fmt.Fprintln(detail)
+		_, _ = fmt.Fprintln(detail)
 	}
 
 	// Phone numbers
 	if len(contact.PhoneNumbers) > 0 {
-		fmt.Fprintf(detail, "[%s::b]Phone[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Phone[-::-]\n", info)
 		for _, p := range contact.PhoneNumbers {
 			typeStr := p.Type
 			if typeStr == "" {
 				typeStr = "other"
 			}
-			fmt.Fprintf(detail, "[%s]%s[-] [%s](%s)[-]\n", value, p.Number, muted, typeStr)
+			_, _ = fmt.Fprintf(detail, "[%s]%s[-] [%s](%s)[-]\n", value, p.Number, muted, typeStr)
 		}
-		fmt.Fprintln(detail)
+		_, _ = fmt.Fprintln(detail)
 	}
 
 	// Company
 	if contact.CompanyName != "" || contact.JobTitle != "" {
-		fmt.Fprintf(detail, "[%s::b]Work[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Work[-::-]\n", info)
 		if contact.JobTitle != "" {
-			fmt.Fprintf(detail, "[%s]%s[-]\n", value, contact.JobTitle)
+			_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n", value, contact.JobTitle)
 		}
 		if contact.CompanyName != "" {
-			fmt.Fprintf(detail, "[%s]%s[-]\n", value, contact.CompanyName)
+			_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n", value, contact.CompanyName)
 		}
-		fmt.Fprintln(detail)
+		_, _ = fmt.Fprintln(detail)
 	}
 
 	// Notes
 	if contact.Notes != "" {
-		fmt.Fprintf(detail, "[%s::b]Notes[-::-]\n", info)
-		fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, contact.Notes)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Notes[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, contact.Notes)
 	}
 
-	fmt.Fprintf(detail, "\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)
+	_, _ = fmt.Fprintf(detail, "\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)
 
 	// Handle keyboard
 	contactCopy := contact
@@ -2005,48 +2006,48 @@ func (v *WebhooksView) showWebhookDetail(webhook *domain.Webhook) {
 	errColor := colorToHex(v.app.styles.ErrorColor)
 
 	// URL
-	fmt.Fprintf(detail, "[%s::b]Webhook URL[-::-]\n", info)
-	fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, webhook.WebhookURL)
+	_, _ = fmt.Fprintf(detail, "[%s::b]Webhook URL[-::-]\n", info)
+	_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, webhook.WebhookURL)
 
 	// Status
-	fmt.Fprintf(detail, "[%s::b]Status[-::-]\n", info)
+	_, _ = fmt.Fprintf(detail, "[%s::b]Status[-::-]\n", info)
 	statusColor := success
 	if webhook.Status != "active" {
 		statusColor = errColor
 	}
-	fmt.Fprintf(detail, "[%s]%s[-]\n\n", statusColor, webhook.Status)
+	_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", statusColor, webhook.Status)
 
 	// Description
 	if webhook.Description != "" {
-		fmt.Fprintf(detail, "[%s::b]Description[-::-]\n", info)
-		fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, webhook.Description)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Description[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, webhook.Description)
 	}
 
 	// Trigger types
-	fmt.Fprintf(detail, "[%s::b]Trigger Types[-::-]\n", info)
+	_, _ = fmt.Fprintf(detail, "[%s::b]Trigger Types[-::-]\n", info)
 	for _, trigger := range webhook.TriggerTypes {
-		fmt.Fprintf(detail, "[%s]  • %s[-]\n", value, trigger)
+		_, _ = fmt.Fprintf(detail, "[%s]  • %s[-]\n", value, trigger)
 	}
-	fmt.Fprintln(detail)
+	_, _ = fmt.Fprintln(detail)
 
 	// Notification emails
 	if len(webhook.NotificationEmailAddresses) > 0 {
-		fmt.Fprintf(detail, "[%s::b]Notification Emails[-::-]\n", info)
+		_, _ = fmt.Fprintf(detail, "[%s::b]Notification Emails[-::-]\n", info)
 		for _, email := range webhook.NotificationEmailAddresses {
-			fmt.Fprintf(detail, "[%s]  • %s[-]\n", value, email)
+			_, _ = fmt.Fprintf(detail, "[%s]  • %s[-]\n", value, email)
 		}
-		fmt.Fprintln(detail)
+		_, _ = fmt.Fprintln(detail)
 	}
 
 	// Dates
 	if !webhook.CreatedAt.IsZero() {
-		fmt.Fprintf(detail, "[%s]Created:[-] [%s]%s[-]\n", muted, value, webhook.CreatedAt.Format("Jan 2, 2006 3:04 PM"))
+		_, _ = fmt.Fprintf(detail, "[%s]Created:[-] [%s]%s[-]\n", muted, value, webhook.CreatedAt.Format("Jan 2, 2006 3:04 PM"))
 	}
 	if !webhook.UpdatedAt.IsZero() {
-		fmt.Fprintf(detail, "[%s]Updated:[-] [%s]%s[-]\n", muted, value, webhook.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
+		_, _ = fmt.Fprintf(detail, "[%s]Updated:[-] [%s]%s[-]\n", muted, value, webhook.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
 	}
 
-	fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)
+	_, _ = fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)
 
 	// Handle keyboard
 	webhookCopy := webhook
@@ -2466,15 +2467,15 @@ func (v *InboundView) showMessageDetail(msg *domain.InboundMessage) {
 		to = append(to, t.String())
 	}
 
-	fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, msg.Subject)
-	fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n", muted)
-	fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
+	_, _ = fmt.Fprintf(detail, "[%s::b]%s[-::-]\n", title, msg.Subject)
+	_, _ = fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n", muted)
+	_, _ = fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
 	if len(to) > 0 {
-		fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(to, ", "))
+		_, _ = fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(to, ", "))
 	}
-	fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
-	fmt.Fprintf(detail, "[%s]ID:[-] [%s]%s[-]\n", key, value, msg.ID)
-	fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
+	_, _ = fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+	_, _ = fmt.Fprintf(detail, "[%s]ID:[-] [%s]%s[-]\n", key, value, msg.ID)
+	_, _ = fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
 
 	// Body
 	body := msg.Body
@@ -2482,9 +2483,9 @@ func (v *InboundView) showMessageDetail(msg *domain.InboundMessage) {
 		body = msg.Snippet
 	}
 	body = stripHTMLForTUI(body)
-	fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
+	_, _ = fmt.Fprintf(detail, "[%s]%s[-]\n\n", value, tview.Escape(body))
 
-	fmt.Fprintf(detail, "[%s]Press Esc to go back[-]", muted)
+	_, _ = fmt.Fprintf(detail, "[%s]Press Esc to go back[-]", muted)
 
 	v.app.PushDetail("inbound-message-detail", detail)
 	v.showingDetail = true

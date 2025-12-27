@@ -132,6 +132,8 @@ test-cleanup:
 	@echo "0. Killing any leftover test processes and freeing ports..."
 	@-pkill -f "nylas.*webhook.*server" 2>/dev/null || true
 	@-pkill -f "nylas.*ui" 2>/dev/null || true
+	@-pkill -f "cloudflared.*tunnel" 2>/dev/null || true
+	@-pkill -f "cloudflared" 2>/dev/null || true
 	@-lsof -ti :3099 | xargs kill -9 2>/dev/null || true
 	@-lsof -ti :8080 | xargs kill -9 2>/dev/null || true
 	@-lsof -ti :9000 | xargs kill -9 2>/dev/null || true

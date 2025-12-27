@@ -269,7 +269,17 @@ nylas mcp serve                            # Start MCP server (used by assistant
 ```bash
 nylas version                    # Show version
 nylas doctor                     # System diagnostics
+nylas update                     # Update CLI to latest version
+nylas update --check             # Check for updates without installing
+nylas update --force             # Force update even if on latest
+nylas update --yes               # Skip confirmation prompt
 ```
+
+**Update command features:**
+- Downloads from GitHub releases
+- SHA256 checksum verification
+- Automatic backup and restore on failure
+- Detects Homebrew installs (redirects to `brew upgrade`)
 
 ---
 

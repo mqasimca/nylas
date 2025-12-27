@@ -44,8 +44,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					return err
 				}
 				green := color.New(color.FgGreen)
-				// #nosec G104 -- color output errors are non-critical, best-effort display
-				green.Println("✓ Configuration reset")
+				_, _ = green.Println("✓ Configuration reset")
 				return nil
 			}
 
@@ -95,8 +94,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 
 				if err != nil {
 					yellow := color.New(color.FgYellow)
-					// #nosec G104 -- color output errors are non-critical, best-effort display
-					yellow.Printf("  Could not auto-detect Client ID: %v\n", err)
+					_, _ = yellow.Printf("  Could not auto-detect Client ID: %v\n", err)
 					fmt.Println()
 					fmt.Print("Client ID (manual entry): ")
 					input, _ := reader.ReadString('\n')
@@ -108,7 +106,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					app := apps[0]
 					clientID = getAppClientID(app)
 					green := color.New(color.FgGreen)
-					green.Printf("  ✓ Found application: %s\n", getAppDisplayName(app))
+					_, _ = green.Printf("  ✓ Found application: %s\n", getAppDisplayName(app))
 				} else {
 					// Multiple apps - let user choose
 					fmt.Printf("  Found %d applications:\n\n", len(apps))
@@ -128,7 +126,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					app := apps[selected-1]
 					clientID = getAppClientID(app)
 					green := color.New(color.FgGreen)
-					green.Printf("  ✓ Selected: %s\n", getAppDisplayName(app))
+					_, _ = green.Printf("  ✓ Selected: %s\n", getAppDisplayName(app))
 				}
 			}
 
@@ -141,7 +139,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			}
 
 			green := color.New(color.FgGreen)
-			green.Println("✓ Configuration saved")
+			_, _ = green.Println("✓ Configuration saved")
 
 			// Auto-detect existing grants from Nylas API
 			fmt.Println()
@@ -157,7 +155,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			grants, err := client.ListGrants(ctx)
 			if err != nil {
 				yellow := color.New(color.FgYellow)
-				yellow.Printf("  Could not fetch grants: %v\n", err)
+				_, _ = yellow.Printf("  Could not fetch grants: %v\n", err)
 				fmt.Println()
 				fmt.Println("Next steps:")
 				fmt.Println("  nylas auth login    Authenticate with your email provider")
@@ -176,7 +174,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			grantStore, err := createGrantStore()
 			if err != nil {
 				yellow := color.New(color.FgYellow)
-				yellow.Printf("  Could not save grants locally: %v\n", err)
+				_, _ = yellow.Printf("  Could not save grants locally: %v\n", err)
 				return nil
 			}
 
@@ -204,9 +202,9 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 
 				addedCount++
 				if i == 0 {
-					green.Printf("  ✓ Added %s (%s) [default]\n", grant.Email, grant.Provider.DisplayName())
+					_, _ = green.Printf("  ✓ Added %s (%s) [default]\n", grant.Email, grant.Provider.DisplayName())
 				} else {
-					green.Printf("  ✓ Added %s (%s)\n", grant.Email, grant.Provider.DisplayName())
+					_, _ = green.Printf("  ✓ Added %s (%s)\n", grant.Email, grant.Provider.DisplayName())
 				}
 			}
 

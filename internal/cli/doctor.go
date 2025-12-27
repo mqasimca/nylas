@@ -72,19 +72,16 @@ func runDoctor(verbose bool) error {
 	dim := color.New(color.Faint)
 	bold := color.New(color.Bold)
 
-	// #nosec G104 -- color output errors are non-critical, best-effort display
-	bold.Println("Nylas CLI Health Check")
+	_, _ = bold.Println("Nylas CLI Health Check")
 	fmt.Println()
 
 	results := []CheckResult{}
 
 	// Show environment info
 	if verbose {
-		// #nosec G104 -- color output errors are non-critical, best-effort display
-		dim.Printf("  Platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		// #nosec G104 -- color output errors are non-critical, best-effort display
-		dim.Printf("  Go Version: %s\n", runtime.Version())
-		dim.Printf("  Config Dir: %s\n", config.DefaultConfigDir())
+		_, _ = dim.Printf("  Platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		_, _ = dim.Printf("  Go Version: %s\n", runtime.Version())
+		_, _ = dim.Printf("  Config Dir: %s\n", config.DefaultConfigDir())
 		fmt.Println()
 	}
 
@@ -130,7 +127,7 @@ func runDoctor(verbose bool) error {
 
 	// Summary
 	fmt.Println()
-	bold.Println("Summary")
+	_, _ = bold.Println("Summary")
 	fmt.Println()
 
 	okCount := 0
@@ -149,25 +146,25 @@ func runDoctor(verbose bool) error {
 	}
 
 	if errCount > 0 {
-		red.Printf("  %d error(s), %d warning(s), %d passed\n", errCount, warnCount, okCount)
+		_, _ = red.Printf("  %d error(s), %d warning(s), %d passed\n", errCount, warnCount, okCount)
 		fmt.Println()
-		cyan.Println("  Recommendations:")
+		_, _ = cyan.Println("  Recommendations:")
 		for _, r := range results {
 			if r.Status == CheckStatusError && r.Detail != "" {
 				fmt.Printf("    - %s\n", r.Detail)
 			}
 		}
 	} else if warnCount > 0 {
-		yellow.Printf("  %d warning(s), %d passed\n", warnCount, okCount)
+		_, _ = yellow.Printf("  %d warning(s), %d passed\n", warnCount, okCount)
 		fmt.Println()
-		cyan.Println("  Recommendations:")
+		_, _ = cyan.Println("  Recommendations:")
 		for _, r := range results {
 			if r.Status == CheckStatusWarning && r.Detail != "" {
 				fmt.Printf("    - %s\n", r.Detail)
 			}
 		}
 	} else {
-		green.Printf("  All %d checks passed!\n", okCount)
+		_, _ = green.Printf("  All %d checks passed!\n", okCount)
 	}
 
 	fmt.Println()
@@ -203,14 +200,14 @@ func printCheckResult(r CheckResult, verbose bool) {
 		colorFn = dim
 	}
 
-	colorFn.Printf("  %s %s", icon, r.Name)
+	_, _ = colorFn.Printf("  %s %s", icon, r.Name)
 	if r.Message != "" {
-		dim.Printf(" - %s", r.Message)
+		_, _ = dim.Printf(" - %s", r.Message)
 	}
 	fmt.Println()
 
 	if verbose && r.Detail != "" {
-		dim.Printf("    %s\n", r.Detail)
+		_, _ = dim.Printf("    %s\n", r.Detail)
 	}
 }
 
@@ -379,7 +376,7 @@ func checkNetworkConnectivity() CheckResult {
 			Detail:  "Check your internet connection and firewall settings",
 		}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// API should return 401 without auth, which means it's reachable
 	if resp.StatusCode == 401 || resp.StatusCode == 200 || resp.StatusCode == 404 {

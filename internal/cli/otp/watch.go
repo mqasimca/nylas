@@ -44,7 +44,7 @@ Press Ctrl+C to stop watching.`,
 				fmt.Printf(" for %s", email)
 			}
 			fmt.Printf(" (every %ds)...\n", interval)
-			dim.Println("Press Ctrl+C to stop")
+			_, _ = dim.Println("Press Ctrl+C to stop")
 			fmt.Println()
 
 			var lastCode string
@@ -66,7 +66,7 @@ Press Ctrl+C to stop watching.`,
 
 				if err != nil {
 					if err != domain.ErrOTPNotFound {
-						dim.Printf("[%s] Error: %v\n", time.Now().Format("15:04:05"), err)
+						_, _ = dim.Printf("[%s] Error: %v\n", time.Now().Format("15:04:05"), err)
 					}
 					return
 				}
@@ -78,12 +78,12 @@ Press Ctrl+C to stop watching.`,
 						_ = clipboard.WriteAll(result.Code)
 					}
 
-					cyan.Printf("\n[%s] ", time.Now().Format("15:04:05"))
-					green.Printf("New OTP: %s\n", result.Code)
-					dim.Printf("         From: %s\n", result.From)
-					dim.Printf("         Subject: %s\n", result.Subject)
+					_, _ = cyan.Printf("\n[%s] ", time.Now().Format("15:04:05"))
+					_, _ = green.Printf("New OTP: %s\n", result.Code)
+					_, _ = dim.Printf("         From: %s\n", result.From)
+					_, _ = dim.Printf("         Subject: %s\n", result.Subject)
 					if !noCopy {
-						green.Println("         ✓ Copied to clipboard")
+						_, _ = green.Println("         ✓ Copied to clipboard")
 					}
 				}
 			}

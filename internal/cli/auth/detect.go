@@ -84,16 +84,16 @@ custom domains, verify the provider with your IT administrator.`,
 			}
 
 			// Display as formatted text
-			fmt.Fprintf(cmd.OutOrStdout(), "Email:    %s\n", result.Email)
-			fmt.Fprintf(cmd.OutOrStdout(), "Domain:   %s\n", result.Domain)
-			fmt.Fprintf(cmd.OutOrStdout(), "Provider: %s\n", result.Provider)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Email:    %s\n", result.Email)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Domain:   %s\n", result.Domain)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Provider: %s\n", result.Provider)
 
 			if result.Note != "" {
-				fmt.Fprintf(cmd.OutOrStdout(), "\nNote: %s\n", result.Note)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\nNote: %s\n", result.Note)
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "\nTo authenticate:")
-			fmt.Fprintf(cmd.OutOrStdout(), "  nylas auth login --provider %s\n", result.Provider)
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "\nTo authenticate:")
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  nylas auth login --provider %s\n", result.Provider)
 
 			return nil
 		},

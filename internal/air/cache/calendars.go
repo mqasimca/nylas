@@ -61,7 +61,7 @@ func (s *CalendarStore) PutBatch(calendars []*CachedCalendar) error {
 	if err != nil {
 		return fmt.Errorf("prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	now := time.Now().Unix()
 	for _, calendar := range calendars {
@@ -108,7 +108,7 @@ func (s *CalendarStore) List() ([]*CachedCalendar, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query calendars: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var calendars []*CachedCalendar
 	for rows.Next() {
@@ -133,7 +133,7 @@ func (s *CalendarStore) ListWritable() ([]*CachedCalendar, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query calendars: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var calendars []*CachedCalendar
 	for rows.Next() {

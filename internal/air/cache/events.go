@@ -76,7 +76,7 @@ func (s *EventStore) PutBatch(events []*CachedEvent) error {
 	if err != nil {
 		return fmt.Errorf("prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	now := time.Now().Unix()
 	for _, event := range events {
@@ -154,7 +154,7 @@ func (s *EventStore) List(opts EventListOptions) ([]*CachedEvent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query events: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var events []*CachedEvent
 	for rows.Next() {
@@ -193,7 +193,7 @@ func (s *EventStore) Search(query string, limit int) ([]*CachedEvent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("search events: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var events []*CachedEvent
 	for rows.Next() {

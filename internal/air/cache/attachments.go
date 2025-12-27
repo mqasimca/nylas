@@ -77,17 +77,17 @@ func (s *AttachmentStore) Put(attachment *CachedAttachment, content io.Reader) e
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	hasher := sha256.New()
 	writer := io.MultiWriter(tempFile, hasher)
 
 	size, err := io.Copy(writer, content)
 	if err != nil {
-		tempFile.Close()
+		_ = tempFile.Close()
 		return fmt.Errorf("copy content: %w", err)
 	}
-	tempFile.Close()
+	_ = tempFile.Close()
 
 	hash := hex.EncodeToString(hasher.Sum(nil))
 	attachment.Hash = hash
@@ -177,7 +177,7 @@ func (s *AttachmentStore) ListByEmail(emailID string) ([]*CachedAttachment, erro
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var attachments []*CachedAttachment
 	for rows.Next() {
@@ -213,7 +213,7 @@ func (s *AttachmentStore) Delete(id string) error {
 
 	// Only delete file if no other attachments reference it
 	if count == 0 {
-		os.Remove(attachment.LocalPath)
+		_ = os.Remove(attachment.LocalPath)
 	}
 
 	return nil
@@ -270,7 +270,7 @@ func (s *AttachmentStore) Prune() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var toDelete []*CachedAttachment
 	targetSize := s.maxSize * 80 / 100 // Target 80% of max
@@ -307,7 +307,7 @@ func (s *AttachmentStore) RemoveOrphaned() (int, error) {
 			knownHashes[hash] = true
 		}
 	}
-	rows.Close()
+	_ = rows.Close()
 
 	// Walk the attachments directory and remove unknown files
 	count := 0
@@ -319,7 +319,7 @@ func (s *AttachmentStore) RemoveOrphaned() (int, error) {
 		// Check if file is known
 		hash := filepath.Base(path)
 		if !knownHashes[hash] {
-			os.Remove(path)
+			_ = os.Remove(path)
 			count++
 		}
 
@@ -418,7 +418,7 @@ func (s *AttachmentStore) LRUEvict(bytesToFree int64) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var toDelete []string
 	var freedBytes int64

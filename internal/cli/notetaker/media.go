@@ -65,37 +65,37 @@ Note: Media URLs have an expiration time. Download them promptly.`,
 				return nil
 			}
 
-			cyan.Println("Notetaker Media:")
+			_, _ = cyan.Println("Notetaker Media:")
 			fmt.Println()
 
 			if media.Recording != nil {
-				green.Println("Recording:")
+				_, _ = green.Println("Recording:")
 				fmt.Printf("  URL:  %s\n", media.Recording.URL)
 				if media.Recording.ContentType != "" {
-					dim.Printf("  Type: %s\n", media.Recording.ContentType)
+					_, _ = dim.Printf("  Type: %s\n", media.Recording.ContentType)
 				}
 				if media.Recording.Size > 0 {
-					dim.Printf("  Size: %s\n", formatBytes(media.Recording.Size))
+					_, _ = dim.Printf("  Size: %s\n", formatBytes(media.Recording.Size))
 				}
 				if media.Recording.ExpiresAt > 0 {
 					expires := time.Unix(media.Recording.ExpiresAt, 0)
-					dim.Printf("  Expires: %s\n", expires.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+					_, _ = dim.Printf("  Expires: %s\n", expires.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
 				}
 				fmt.Println()
 			}
 
 			if media.Transcript != nil {
-				green.Println("Transcript:")
+				_, _ = green.Println("Transcript:")
 				fmt.Printf("  URL:  %s\n", media.Transcript.URL)
 				if media.Transcript.ContentType != "" {
-					dim.Printf("  Type: %s\n", media.Transcript.ContentType)
+					_, _ = dim.Printf("  Type: %s\n", media.Transcript.ContentType)
 				}
 				if media.Transcript.Size > 0 {
-					dim.Printf("  Size: %s\n", formatBytes(media.Transcript.Size))
+					_, _ = dim.Printf("  Size: %s\n", formatBytes(media.Transcript.Size))
 				}
 				if media.Transcript.ExpiresAt > 0 {
 					expires := time.Unix(media.Transcript.ExpiresAt, 0)
-					dim.Printf("  Expires: %s\n", expires.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+					_, _ = dim.Printf("  Expires: %s\n", expires.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
 				}
 			}
 

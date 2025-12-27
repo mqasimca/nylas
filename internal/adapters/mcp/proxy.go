@@ -204,7 +204,7 @@ func (p *Proxy) forward(ctx context.Context, request []byte, parsed *rpcRequest)
 	if err != nil {
 		return nil, fmt.Errorf("sending request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Store session ID if provided
 	if sessionID := resp.Header.Get("Mcp-Session-Id"); sessionID != "" {

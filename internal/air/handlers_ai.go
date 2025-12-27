@@ -73,7 +73,7 @@ func runClaudeCommand(prompt string) (string, error) {
 	// Find claude binary
 	claudePath, err := exec.LookPath("claude")
 	if err != nil {
-		return "", fmt.Errorf("Claude Code CLI not found. Please install it from https://claude.ai/code")
+		return "", fmt.Errorf("claude code CLI not found: please install it from https://claude.ai/code")
 	}
 
 	// Create command: echo "prompt" | claude -p
@@ -89,13 +89,13 @@ func runClaudeCommand(prompt string) (string, error) {
 	if err != nil {
 		// Check if it's a timeout
 		if ctx.Err() == context.DeadlineExceeded {
-			return "", fmt.Errorf("Claude Code timed out after 30 seconds")
+			return "", fmt.Errorf("claude code timed out after 30 seconds")
 		}
 		// Return stderr if available
 		if stderr.Len() > 0 {
-			return "", fmt.Errorf("Claude Code error: %s", stderr.String())
+			return "", fmt.Errorf("claude code error: %s", stderr.String())
 		}
-		return "", fmt.Errorf("Claude Code error: %v", err)
+		return "", fmt.Errorf("claude code error: %w", err)
 	}
 
 	return strings.TrimSpace(stdout.String()), nil

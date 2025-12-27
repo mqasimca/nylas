@@ -264,7 +264,7 @@ func TestHTTPClient_CreateDraftWithAttachmentFromReader(t *testing.T) {
 		// Verify file was uploaded
 		file, header, err := r.FormFile("file")
 		require.NoError(t, err)
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		assert.Equal(t, "stream.txt", header.Filename)
 

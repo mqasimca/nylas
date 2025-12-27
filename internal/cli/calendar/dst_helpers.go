@@ -99,9 +99,9 @@ func confirmDSTConflict(warning *domain.DSTWarning) bool {
 
 	fmt.Println()
 	if warning.InTransitionGap {
-		red.Println("⚠️  DST Conflict Detected!")
+		_, _ = red.Println("⚠️  DST Conflict Detected!")
 	} else {
-		yellow.Println("⚠️  DST Conflict Detected!")
+		_, _ = yellow.Println("⚠️  DST Conflict Detected!")
 	}
 	fmt.Println()
 

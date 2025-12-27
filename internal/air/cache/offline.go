@@ -171,7 +171,7 @@ func (q *OfflineQueue) List() ([]*QueuedAction, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var actions []*QueuedAction
 	for rows.Next() {

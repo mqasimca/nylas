@@ -32,7 +32,7 @@ func newSwitchCmd() *cobra.Command {
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Switched to %s\n", identifier)
+			_, _ = green.Printf("✓ Switched to %s\n", identifier)
 
 			return nil
 		},

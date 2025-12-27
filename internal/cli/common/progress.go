@@ -87,11 +87,11 @@ func (s *Spinner) Start() {
 			select {
 			case <-s.stop:
 				// Clear the spinner line
-				fmt.Fprintf(s.writer, "\r%s\r", strings.Repeat(" ", len(s.message)+4))
+				_, _ = fmt.Fprintf(s.writer, "\r%s\r", strings.Repeat(" ", len(s.message)+4))
 				return
 			default:
 				frame := s.frames[frameIdx%len(s.frames)]
-				fmt.Fprintf(s.writer, "\r%s %s", cyan.Sprint(frame), s.message)
+				_, _ = fmt.Fprintf(s.writer, "\r%s %s", cyan.Sprint(frame), s.message)
 				frameIdx++
 				time.Sleep(s.interval)
 			}
@@ -117,7 +117,7 @@ func (s *Spinner) Stop() {
 func (s *Spinner) StopWithMessage(message string) {
 	s.Stop()
 	if !IsQuiet() {
-		fmt.Fprintln(s.writer, message)
+		_, _ = fmt.Fprintln(s.writer, message)
 	}
 }
 
@@ -126,7 +126,7 @@ func (s *Spinner) StopWithSuccess(message string) {
 	s.Stop()
 	if !IsQuiet() {
 		green := color.New(color.FgGreen)
-		fmt.Fprintf(s.writer, "%s %s\n", green.Sprint("✓"), message)
+		_, _ = fmt.Fprintf(s.writer, "%s %s\n", green.Sprint("✓"), message)
 	}
 }
 
@@ -135,7 +135,7 @@ func (s *Spinner) StopWithError(message string) {
 	s.Stop()
 	if !IsQuiet() {
 		red := color.New(color.FgRed)
-		fmt.Fprintf(s.writer, "%s %s\n", red.Sprint("✗"), message)
+		_, _ = fmt.Fprintf(s.writer, "%s %s\n", red.Sprint("✗"), message)
 	}
 }
 
@@ -228,7 +228,7 @@ func (p *ProgressBar) render() {
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", empty)
 	cyan := color.New(color.FgCyan)
 
-	fmt.Fprintf(p.writer, "\r%s %s %s %d/%d (%.0f%%)%s",
+	_, _ = fmt.Fprintf(p.writer, "\r%s %s %s %d/%d (%.0f%%)%s",
 		p.message,
 		cyan.Sprint("["),
 		bar,
@@ -239,7 +239,7 @@ func (p *ProgressBar) render() {
 	)
 
 	if p.current >= p.total {
-		fmt.Fprintln(p.writer)
+		_, _ = fmt.Fprintln(p.writer)
 	}
 }
 
@@ -287,14 +287,14 @@ func (c *Counter) Increment() {
 
 	c.count++
 	if !IsQuiet() {
-		fmt.Fprintf(c.writer, "\r%s: %d", c.message, c.count)
+		_, _ = fmt.Fprintf(c.writer, "\r%s: %d", c.message, c.count)
 	}
 }
 
 // Finish completes the counter display.
 func (c *Counter) Finish() {
 	if !IsQuiet() {
-		fmt.Fprintln(c.writer)
+		_, _ = fmt.Fprintln(c.writer)
 	}
 }
 

@@ -58,11 +58,11 @@ If no email is specified, uses the default account.`,
 			bold := color.New(color.Bold)
 			green := color.New(color.FgGreen)
 
-			cyan.Printf("Recent Messages (%d)\n", len(messages))
+			_, _ = cyan.Printf("Recent Messages (%d)\n", len(messages))
 			fmt.Println()
 
 			// Print header
-			bold.Printf("  %-3s  %-24s  %-24s  %-14s  %-5s\n", "#", "FROM", "SUBJECT", "DATE", "OTP?")
+			_, _ = bold.Printf("  %-3s  %-24s  %-24s  %-14s  %-5s\n", "#", "FROM", "SUBJECT", "DATE", "OTP?")
 
 			for i, msg := range messages {
 				from := ""

@@ -56,7 +56,7 @@ func runDemoUI(port int, noBrowser bool) error {
 	if err != nil {
 		return fmt.Errorf("port %d is already in use", port)
 	}
-	listener.Close()
+	_ = listener.Close()
 
 	// Create demo UI server (uses same templates as real UI)
 	server := ui.NewDemoServer(addr)

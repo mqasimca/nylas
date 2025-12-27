@@ -294,7 +294,7 @@ func (c *CalendarView) updateCurrentMonth() {
 
 // Draw renders the calendar.
 func (c *CalendarView) Draw(screen tcell.Screen) {
-	c.Box.DrawForSubclass(screen, c)
+	c.DrawForSubclass(screen, c)
 	x, y, width, height := c.GetInnerRect()
 
 	switch c.viewMode {

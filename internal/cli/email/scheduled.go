@@ -58,9 +58,10 @@ func newScheduledListCmd() *cobra.Command {
 				timeUntil := time.Until(closeTime)
 
 				statusIcon := "⏳"
-				if s.Status == "cancelled" {
+				switch s.Status {
+				case "cancelled":
 					statusIcon = "❌"
-				} else if s.Status == "sent" {
+				case "sent":
 					statusIcon = "✅"
 				}
 
@@ -115,7 +116,7 @@ func newScheduledShowCmd() *cobra.Command {
 			timeUntil := time.Until(closeTime)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			boldWhite.Printf("Scheduled Message: %s\n", scheduled.ScheduleID)
+			_, _ = boldWhite.Printf("Scheduled Message: %s\n", scheduled.ScheduleID)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("Status:      %s\n", scheduled.Status)

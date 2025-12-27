@@ -94,9 +94,9 @@ record the meeting, and generate a transcript when complete.`,
 			green := color.New(color.FgGreen, color.Bold)
 			cyan := color.New(color.FgCyan)
 
-			green.Println("✓ Notetaker created successfully!")
+			_, _ = green.Println("✓ Notetaker created successfully!")
 			fmt.Println()
-			cyan.Printf("ID:    %s\n", notetaker.ID)
+			_, _ = cyan.Printf("ID:    %s\n", notetaker.ID)
 			fmt.Printf("State: %s\n", formatState(notetaker.State))
 			fmt.Printf("Link:  %s\n", notetaker.MeetingLink)
 			if !notetaker.JoinTime.IsZero() {

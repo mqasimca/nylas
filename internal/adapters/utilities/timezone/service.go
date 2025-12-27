@@ -274,7 +274,8 @@ func (s *Service) CheckDSTWarning(ctx context.Context, t time.Time, zone string,
 			}
 
 			// Check if time falls during transition (spring forward gap or fall back duplicate)
-			if transition.Direction == "forward" {
+			switch transition.Direction {
+			case "forward":
 				// Spring forward: 2:00 AM -> 3:00 AM (2:00-2:59 doesn't exist)
 				warning.InTransitionGap = s.isInSpringForwardGap(timeInZone, transition.Date)
 				if warning.InTransitionGap {
@@ -284,7 +285,7 @@ func (s *Service) CheckDSTWarning(ctx context.Context, t time.Time, zone string,
 					warning.Warning = fmt.Sprintf("Daylight Saving Time begins in %d days (clocks spring forward 1 hour)", warning.DaysUntil)
 					warning.Severity = "warning"
 				}
-			} else if transition.Direction == "backward" {
+			case "backward":
 				// Fall back: 2:00 AM -> 1:00 AM (1:00-1:59 occurs twice)
 				warning.InDuplicateHour = s.isInFallBackDuplicate(timeInZone, transition.Date)
 				if warning.InDuplicateHour {

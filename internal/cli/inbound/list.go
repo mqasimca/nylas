@@ -59,18 +59,18 @@ func runList(jsonOutput bool) error {
 	if len(inboxes) == 0 {
 		fmt.Println("No inbound inboxes found.")
 		fmt.Println()
-		dim.Println("Create one with: nylas inbound create <email-prefix>")
+		_, _ = dim.Println("Create one with: nylas inbound create <email-prefix>")
 		return nil
 	}
 
-	boldWhite.Printf("Inbound Inboxes (%d)\n\n", len(inboxes))
+	_, _ = boldWhite.Printf("Inbound Inboxes (%d)\n\n", len(inboxes))
 
 	for i, inbox := range inboxes {
 		printInboxSummary(inbox, i)
 	}
 
 	fmt.Println()
-	dim.Println("Use 'nylas inbound messages [inbox-id]' to view messages")
+	_, _ = dim.Println("Use 'nylas inbound messages [inbox-id]' to view messages")
 
 	return nil
 }

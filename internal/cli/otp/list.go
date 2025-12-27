@@ -40,11 +40,11 @@ func newListCmd() *cobra.Command {
 			cyan := color.New(color.FgCyan, color.Bold)
 			bold := color.New(color.Bold)
 
-			cyan.Println("Configured Accounts")
+			_, _ = cyan.Println("Configured Accounts")
 			fmt.Println()
 
 			// Print header
-			bold.Printf("  %-3s  %-28s  %-12s\n", "#", "EMAIL", "PROVIDER")
+			_, _ = bold.Printf("  %-3s  %-28s  %-12s\n", "#", "EMAIL", "PROVIDER")
 
 			for i, acc := range accounts {
 				fmt.Printf("  %-3d  %-28s  %-12s\n",

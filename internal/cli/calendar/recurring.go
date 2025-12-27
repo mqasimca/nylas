@@ -101,12 +101,12 @@ The master event ID is the ID of the parent recurring event.`,
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "INSTANCE ID\tTITLE\tSTART TIME\tSTATUS")
+			_, _ = fmt.Fprintln(w, "INSTANCE ID\tTITLE\tSTART TIME\tSTATUS")
 			for _, event := range instances {
 				startTime := time.Unix(event.When.StartTime, 0).Format("2006-01-02 15:04")
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", event.ID, event.Title, startTime, event.Status)
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", event.ID, event.Title, startTime, event.Status)
 			}
-			w.Flush()
+			_ = w.Flush()
 
 			fmt.Printf("\nTotal instances: %d\n", len(instances))
 			if len(instances) > 0 && instances[0].MasterEventID != "" {

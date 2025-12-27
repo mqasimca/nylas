@@ -200,9 +200,10 @@ Examples:
 
 				// Status
 				statusColor := green
-				if event.Status == "cancelled" {
+				switch event.Status {
+				case "cancelled":
 					statusColor = color.New(color.FgRed)
-				} else if event.Status == "tentative" {
+				case "tentative":
 					statusColor = yellow
 				}
 				if event.Status != "" {
@@ -560,7 +561,7 @@ Examples:
 					breakViolation := checkBreakViolation(eventStart, cfg)
 					if breakViolation != "" {
 						red := color.New(color.FgRed, color.Bold)
-						red.Println("\n⛔ Break Time Conflict")
+						_, _ = red.Println("\n⛔ Break Time Conflict")
 						fmt.Printf("\n%s\n\n", breakViolation)
 						fmt.Println("Tip: Schedule the event outside of break times, or update your")
 						fmt.Println("     break configuration in ~/.nylas/config.yaml")

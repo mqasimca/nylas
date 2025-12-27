@@ -32,7 +32,7 @@ func NewLogo(styles *Styles) *Logo {
 func (l *Logo) render() {
 	l.Clear()
 	color := colorToHex(l.styles.LogoColor)
-	fmt.Fprintf(l, "[%s::b] NYLAS [-::-]", color)
+	_, _ = fmt.Fprintf(l, "[%s::b] NYLAS [-::-]", color)
 }
 
 // colorToHex converts a tcell.Color to a hex string for tview tags.

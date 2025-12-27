@@ -220,9 +220,10 @@ func displayAnalysis(analysis *domain.MeetingAnalysis, workingHours *domain.DayS
 		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 		for i, rec := range analysis.Recommendations {
 			priorityIcon := "🔵"
-			if rec.Priority == "high" {
+			switch rec.Priority {
+			case "high":
 				priorityIcon = "🔴"
-			} else if rec.Priority == "medium" {
+			case "medium":
 				priorityIcon = "🟡"
 			}
 

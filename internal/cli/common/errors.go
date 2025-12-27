@@ -200,21 +200,21 @@ func FormatError(err error) string {
 	dim := color.New(color.Faint)
 
 	// Error message
-	red.Fprintf(&sb, "Error: %s\n", cliErr.Message)
+	_, _ = red.Fprintf(&sb, "Error: %s\n", cliErr.Message)
 
 	// Error code (if available)
 	if cliErr.Code != "" {
-		dim.Fprintf(&sb, "  Code: %s\n", cliErr.Code)
+		_, _ = dim.Fprintf(&sb, "  Code: %s\n", cliErr.Code)
 	}
 
 	// Suggestion (if available)
 	if cliErr.Suggestion != "" {
-		yellow.Fprintf(&sb, "  Hint: %s\n", cliErr.Suggestion)
+		_, _ = yellow.Fprintf(&sb, "  Hint: %s\n", cliErr.Suggestion)
 	}
 
 	// Original error in debug mode
 	if IsDebug() && cliErr.Err != nil && cliErr.Err.Error() != cliErr.Message {
-		dim.Fprintf(&sb, "  Details: %s\n", cliErr.Err.Error())
+		_, _ = dim.Fprintf(&sb, "  Details: %s\n", cliErr.Err.Error())
 	}
 
 	return sb.String()
@@ -222,7 +222,7 @@ func FormatError(err error) string {
 
 // PrintFormattedError prints a formatted error to stderr.
 func PrintFormattedError(err error) {
-	fmt.Fprint(color.Error, FormatError(err))
+	_, _ = fmt.Fprint(color.Error, FormatError(err))
 }
 
 // NewUserError creates a user-facing error with a suggestion.

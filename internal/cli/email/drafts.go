@@ -313,8 +313,7 @@ func newDraftsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			boldWhite.Printf("Draft: %s\n", draft.Subject)
+			_, _ = boldWhite.Printf("Draft: %s\n", draft.Subject)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("ID:      %s\n", draft.ID)

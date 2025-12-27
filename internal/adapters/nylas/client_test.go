@@ -345,7 +345,7 @@ func TestMockClient_Attachments(t *testing.T) {
 	t.Run("DownloadAttachment", func(t *testing.T) {
 		reader, err := mock.DownloadAttachment(ctx, "grant-123", "msg-789", "attach-456")
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		content, err := io.ReadAll(reader)
 		require.NoError(t, err)

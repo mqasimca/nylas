@@ -73,7 +73,7 @@ func (s *ContactStore) PutBatch(contacts []*CachedContact) error {
 	if err != nil {
 		return fmt.Errorf("prepare statement: %w", err)
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	now := time.Now().Unix()
 	for _, contact := range contacts {
@@ -151,7 +151,7 @@ func (s *ContactStore) List(opts ContactListOptions) ([]*CachedContact, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query contacts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var contacts []*CachedContact
 	for rows.Next() {
@@ -185,7 +185,7 @@ func (s *ContactStore) Search(query string, limit int) ([]*CachedContact, error)
 	if err != nil {
 		return nil, fmt.Errorf("search contacts: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var contacts []*CachedContact
 	for rows.Next() {
@@ -218,7 +218,7 @@ func (s *ContactStore) ListGroups() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	groupSet := make(map[string]bool)
 	for rows.Next() {

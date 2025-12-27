@@ -52,7 +52,7 @@ func (c *HTTPClient) ExchangeCode(ctx context.Context, code, redirectURI string)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -91,7 +91,7 @@ func (c *HTTPClient) ListGrants(ctx context.Context) ([]domain.Grant, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -119,7 +119,7 @@ func (c *HTTPClient) GetGrant(ctx context.Context, grantID string) (*domain.Gran
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, domain.ErrGrantNotFound
@@ -150,7 +150,7 @@ func (c *HTTPClient) RevokeGrant(ctx context.Context, grantID string) error {
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return domain.ErrGrantNotFound

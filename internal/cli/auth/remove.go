@@ -37,10 +37,10 @@ on the Nylas server.`,
 			}
 
 			green := color.New(color.FgGreen)
-			green.Printf("✓ Grant %s removed from local config\n", grantID)
+			_, _ = green.Printf("✓ Grant %s removed from local config\n", grantID)
 			yellow := color.New(color.FgYellow)
-			yellow.Println("  Note: Grant is still valid on Nylas server")
-			yellow.Println("  Use 'nylas auth add' to re-add it, or 'nylas auth revoke' to permanently revoke")
+			_, _ = yellow.Println("  Note: Grant is still valid on Nylas server")
+			_, _ = yellow.Println("  Use 'nylas auth add' to re-add it, or 'nylas auth revoke' to permanently revoke")
 
 			return nil
 		},

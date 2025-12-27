@@ -64,18 +64,18 @@ func NewPageStack() *PageStack {
 // Push adds a page and shows it.
 func (p *PageStack) Push(name string, page tview.Primitive) {
 	p.stack.Push(name)
-	p.Pages.AddPage(name, page, true, true)
+	p.AddPage(name, page, true, true)
 }
 
 // Pop removes the top page and shows the previous one.
 func (p *PageStack) Pop() string {
 	name := p.stack.Pop()
 	if name != "" {
-		p.Pages.RemovePage(name)
+		p.RemovePage(name)
 	}
 	// Show the new top
 	if top := p.stack.Top(); top != "" {
-		p.Pages.SwitchToPage(top)
+		p.SwitchToPage(top)
 	}
 	return name
 }
@@ -93,8 +93,8 @@ func (p *PageStack) Len() int {
 // SwitchTo shows a page (adds to stack if not top).
 func (p *PageStack) SwitchTo(name string, page tview.Primitive) {
 	// If already exists, just switch
-	if p.Pages.HasPage(name) {
-		p.Pages.SwitchToPage(name)
+	if p.HasPage(name) {
+		p.SwitchToPage(name)
 		// Update stack - remove if exists and push to top
 		newItems := make([]string, 0)
 		for _, item := range p.stack.items {

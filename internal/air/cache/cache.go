@@ -132,14 +132,14 @@ func (m *Manager) GetDB(email string) (*sql.DB, error) {
 	}
 	for _, pragma := range pragmas {
 		if _, err := db.Exec(pragma); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, fmt.Errorf("set pragma: %w", err)
 		}
 	}
 
 	// Initialize schema
 	if err := initSchema(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("init schema for %s: %w", email, err)
 	}
 

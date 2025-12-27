@@ -27,7 +27,7 @@ func (c *HTTPClient) ListApplications(ctx context.Context) ([]domain.Application
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -76,7 +76,7 @@ func (c *HTTPClient) GetApplication(ctx context.Context, appID string) (*domain.
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: application not found", domain.ErrAPIError)
@@ -110,7 +110,7 @@ func (c *HTTPClient) CreateApplication(ctx context.Context, req *domain.CreateAp
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -141,7 +141,7 @@ func (c *HTTPClient) UpdateApplication(ctx context.Context, appID string, req *d
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -170,7 +170,7 @@ func (c *HTTPClient) DeleteApplication(ctx context.Context, appID string) error 
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -194,7 +194,7 @@ func (c *HTTPClient) ListConnectors(ctx context.Context) ([]domain.Connector, er
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -223,7 +223,7 @@ func (c *HTTPClient) GetConnector(ctx context.Context, connectorID string) (*dom
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: connector not found", domain.ErrAPIError)
@@ -257,7 +257,7 @@ func (c *HTTPClient) CreateConnector(ctx context.Context, req *domain.CreateConn
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -288,7 +288,7 @@ func (c *HTTPClient) UpdateConnector(ctx context.Context, connectorID string, re
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -317,7 +317,7 @@ func (c *HTTPClient) DeleteConnector(ctx context.Context, connectorID string) er
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -341,7 +341,7 @@ func (c *HTTPClient) ListCredentials(ctx context.Context, connectorID string) ([
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -370,7 +370,7 @@ func (c *HTTPClient) GetCredential(ctx context.Context, credentialID string) (*d
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: credential not found", domain.ErrAPIError)
@@ -404,7 +404,7 @@ func (c *HTTPClient) CreateCredential(ctx context.Context, connectorID string, r
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, c.parseError(resp)
@@ -435,7 +435,7 @@ func (c *HTTPClient) UpdateCredential(ctx context.Context, credentialID string, 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -464,7 +464,7 @@ func (c *HTTPClient) DeleteCredential(ctx context.Context, credentialID string) 
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -507,7 +507,7 @@ func (c *HTTPClient) ListAllGrants(ctx context.Context, params *domain.GrantsQue
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)

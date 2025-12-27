@@ -147,7 +147,7 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -185,7 +185,7 @@ func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: message not found", domain.ErrAPIError)
@@ -252,7 +252,7 @@ func (c *HTTPClient) SendMessage(ctx context.Context, grantID string, req *domai
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
 		return nil, c.parseError(resp)
@@ -296,7 +296,7 @@ func (c *HTTPClient) UpdateMessage(ctx context.Context, grantID, messageID strin
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -327,7 +327,7 @@ func (c *HTTPClient) DeleteMessage(ctx context.Context, grantID, messageID strin
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		return c.parseError(resp)
@@ -350,7 +350,7 @@ func (c *HTTPClient) ListScheduledMessages(ctx context.Context, grantID string) 
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -396,7 +396,7 @@ func (c *HTTPClient) GetScheduledMessage(ctx context.Context, grantID, scheduleI
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, fmt.Errorf("%w: scheduled message not found", domain.ErrAPIError)
@@ -440,7 +440,7 @@ func (c *HTTPClient) CancelScheduledMessage(ctx context.Context, grantID, schedu
 	if err != nil {
 		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusAccepted {
 		return c.parseError(resp)
@@ -536,7 +536,7 @@ func (c *HTTPClient) SmartCompose(ctx context.Context, grantID string, req *doma
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
@@ -578,7 +578,7 @@ func (c *HTTPClient) SmartComposeReply(ctx context.Context, grantID, messageID s
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)
