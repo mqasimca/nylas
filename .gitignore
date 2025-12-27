@@ -26,7 +26,7 @@ bin/
 *.dylib
 
 # Test coverage
-coverage.out
+*coverage*.out
 coverage.html
 *.coverprofile
 ci-full.txt
@@ -164,3 +164,4 @@ test_results/
 # End Security Section
 # ===========================================
 .mcp.json
+*phase*.md
