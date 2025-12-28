@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
+	browserpkg "github.com/mqasimca/nylas/internal/adapters/browser"
 	"github.com/mqasimca/nylas/internal/air/cache"
 )
 
@@ -105,7 +105,8 @@ The client runs locally on your machine for privacy and performance.`,
 
 			// Open browser unless disabled
 			if !noBrowser {
-				if err := browser.OpenURL(browserURL); err != nil {
+				b := browserpkg.NewDefaultBrowser()
+				if err := b.Open(browserURL); err != nil {
 					fmt.Printf("Could not open browser: %v\n", err)
 					fmt.Printf("Please open %s manually\n", url)
 				}

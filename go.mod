@@ -11,7 +11,6 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/gdamore/tcell/v2 v2.13.4
 	github.com/ncruces/go-sqlite3 v0.30.4
-	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/rivo/tview v0.42.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.11.1

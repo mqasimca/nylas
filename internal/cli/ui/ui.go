@@ -4,8 +4,9 @@ package ui
 import (
 	"fmt"
 
-	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
+
+	browserpkg "github.com/mqasimca/nylas/internal/adapters/browser"
 )
 
 // NewUICmd creates the ui command.
@@ -44,7 +45,8 @@ The server runs on localhost only for security.`,
 
 			// Open browser unless disabled
 			if !noBrowser {
-				if err := browser.OpenURL(url); err != nil {
+				b := browserpkg.NewDefaultBrowser()
+				if err := b.Open(url); err != nil {
 					fmt.Printf("Could not open browser: %v\n", err)
 					fmt.Printf("Please open %s manually\n", url)
 				}

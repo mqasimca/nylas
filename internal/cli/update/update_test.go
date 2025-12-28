@@ -1,6 +1,7 @@
 package update
 
 import (
+	"runtime"
 	"testing"
 )
 
@@ -121,12 +122,11 @@ func TestGetAssetName(t *testing.T) {
 
 // Helper functions for platform-specific expected values
 func testGOOS() string {
-	// This will use runtime.GOOS at test time
-	return "darwin" // Assuming tests run on macOS; adjust as needed
+	return runtime.GOOS
 }
 
 func testGOARCH() string {
-	return "arm64" // Assuming tests run on ARM64; adjust as needed
+	return runtime.GOARCH
 }
 
 func testExt() string {

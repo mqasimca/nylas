@@ -35,6 +35,9 @@ test-integration.txt
 # IDE
 .idea/
 .vscode/
+
+# Playwright MCP artifacts
+.playwright*
 *.swp
 *.swo
 *~

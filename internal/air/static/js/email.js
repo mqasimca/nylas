@@ -112,6 +112,8 @@ const EmailListManager = {
     currentFilter: 'all', // 'all', 'primary', 'vip', 'newsletters', 'updates', 'unread'
     emails: [],
     filteredEmails: [], // Emails after applying filter
+    folders: [], // All folders from API
+    inboxFolderId: null, // Actual inbox folder ID (varies by provider)
     vipSenders: [], // List of VIP email addresses
     selectedEmailId: null,
     selectedEmailFull: null, // Store full email data for reply/forward
@@ -159,15 +161,17 @@ const EmailListManager = {
         this.loadVIPSenders().catch(err => console.error('Failed to load VIP senders:', err));
 
         try {
-            // Load inbox emails by default with limit 10
-            await this.loadEmails('INBOX');
+            // Load inbox emails by default - use actual folder ID if available
+            const inboxId = this.inboxFolderId || 'INBOX';
+            await this.loadEmails(inboxId);
         } catch (error) {
             console.error('Failed to load emails:', error);
             if (typeof showToast === 'function') {
                 showToast('error', 'Error', 'Failed to load emails. Will retry...');
             }
             // Retry after delay
-            setTimeout(() => this.loadEmails('INBOX'), 3000);
+            const inboxId = this.inboxFolderId || 'INBOX';
+            setTimeout(() => this.loadEmails(inboxId), 3000);
         }
 
         console.log('%c📧 Email module loaded', 'color: #22c55e;');
@@ -431,25 +435,70 @@ const EmailListManager = {
     async loadFolders() {
         try {
             const data = await AirAPI.getFolders();
-            this.renderFolders(data.folders || []);
+            this.folders = data.folders || [];
+            this.renderFolders(this.folders);
+            // Find and store inbox folder ID for initial load
+            const inboxFolder = this.findFolderByName('Inbox') || this.findFolderByName('INBOX');
+            if (inboxFolder) {
+                this.inboxFolderId = inboxFolder.id;
+            }
         } catch (error) {
             console.error('Failed to load folders:', error);
             // Keep using template-rendered folders
         }
     },
 
+    // Find folder by name (case-insensitive) - works with both Google and Microsoft
+    findFolderByName(name) {
+        if (!this.folders) return null;
+        const lowerName = name.toLowerCase();
+        return this.folders.find(f => (f.name || '').toLowerCase() === lowerName);
+    },
+
     renderFolders(folders) {
         const folderList = document.getElementById('folderList') || document.querySelector('.folder-group');
         if (!folderList || folders.length === 0) return;
 
-        // Primary folders to show directly (in order)
-        const primaryFolderIds = ['INBOX', 'STARRED', 'SENT', 'DRAFT', 'TRASH', 'SPAM'];
+        // Primary folder names to show directly (in order)
+        // Use names instead of IDs to support both Google (ID=INBOX) and Microsoft (ID=long-string, name=Inbox)
+        const primaryFolderNames = ['inbox', 'starred', 'sent', 'sent items', 'draft', 'drafts', 'trash', 'deleted items', 'spam', 'junk email'];
+
+        // Helper to get normalized folder name for comparison
+        const getNormalizedName = (folder) => {
+            const name = (folder.name || folder.id || '').toLowerCase();
+            return name;
+        };
+
+        // Helper to check if folder is a primary folder
+        const isPrimaryFolder = (folder) => {
+            const name = getNormalizedName(folder);
+            const id = (folder.id || '').toLowerCase();
+            // Check both name and ID (Google uses ID as name)
+            return primaryFolderNames.includes(name) || primaryFolderNames.includes(id);
+        };
+
+        // Helper to get sort order for primary folders
+        const getPrimarySortOrder = (folder) => {
+            const name = getNormalizedName(folder);
+            const id = (folder.id || '').toLowerCase();
+            // Map variations to canonical order
+            if (name === 'inbox' || id === 'inbox') return 0;
+            if (name === 'starred' || id === 'starred') return 1;
+            if (name === 'sent' || name === 'sent items' || id === 'sent') return 2;
+            if (name === 'draft' || name === 'drafts' || id === 'draft') return 3;
+            if (name === 'trash' || name === 'deleted items' || id === 'trash') return 4;
+            if (name === 'spam' || name === 'junk email' || id === 'spam') return 5;
+            return 99;
+        };
 
         // Filter out Gmail category folders and system folders
         const filteredFolders = folders.filter(f => {
             const id = (f.id || '').toUpperCase();
+            const name = (f.name || '').toLowerCase();
             if (id.startsWith('CATEGORY_')) return false;
             if (id === 'UNREAD' || id === 'CHAT' || id === 'IMPORTANT' || id === 'SNOOZED' || id === 'SCHEDULED') return false;
+            // Microsoft: filter out some system folders
+            if (name === 'conversation history' || name === 'outbox' || name === 'scheduled') return false;
             return true;
         });
 
@@ -458,8 +507,7 @@ const EmailListManager = {
         const otherFolders = [];
 
         filteredFolders.forEach(f => {
-            const id = (f.id || '').toUpperCase();
-            if (primaryFolderIds.includes(id)) {
+            if (isPrimaryFolder(f)) {
                 primaryFolders.push(f);
             } else {
                 otherFolders.push(f);
@@ -468,9 +516,7 @@ const EmailListManager = {
 
         // Sort primary folders by predefined order
         primaryFolders.sort((a, b) => {
-            const aIdx = primaryFolderIds.indexOf((a.id || '').toUpperCase());
-            const bIdx = primaryFolderIds.indexOf((b.id || '').toUpperCase());
-            return aIdx - bIdx;
+            return getPrimarySortOrder(a) - getPrimarySortOrder(b);
         });
 
         // Sort other folders alphabetically
@@ -480,7 +526,11 @@ const EmailListManager = {
 
         // Render primary folders
         primaryFolders.forEach(folder => {
-            const isActive = folder.id === this.currentFolder || (folder.id.toUpperCase() === 'INBOX' && !this.currentFolder);
+            const folderName = (folder.name || '').toLowerCase();
+            const folderId = (folder.id || '').toLowerCase();
+            // Check if this folder is the current one, or if it's inbox and no folder is selected yet
+            const isInbox = folderName === 'inbox' || folderId === 'inbox';
+            const isActive = folder.id === this.currentFolder || (isInbox && !this.currentFolder);
             const item = this.createFolderElement(folder, isActive);
             folderList.appendChild(item);
         });
@@ -536,21 +586,27 @@ const EmailListManager = {
     },
 
     createFolderElement(folder, isActive = false) {
-        const icons = {
-            'INBOX': '📥',
-            'SENT': '📤',
-            'DRAFT': '📝',
-            'DRAFTS': '📝',
-            'TRASH': '🗑️',
-            'SPAM': '⚠️',
-            'STARRED': '⭐',
-            'SNOOZED': '🕐',
-            'SCHEDULED': '📅',
-            'ARCHIVE': '📦'
+        // Icon mapping by name (normalized) - works with both Google and Microsoft
+        const iconsByName = {
+            'inbox': '📥',
+            'sent': '📤',
+            'sent items': '📤',
+            'draft': '📝',
+            'drafts': '📝',
+            'trash': '🗑️',
+            'deleted items': '🗑️',
+            'spam': '⚠️',
+            'junk email': '⚠️',
+            'starred': '⭐',
+            'snoozed': '🕐',
+            'scheduled': '📅',
+            'archive': '📦'
         };
 
-        const folderId = (folder.id || '').toUpperCase();
-        const icon = icons[folderId] || '📁';
+        const folderName = (folder.name || '').toLowerCase();
+        const folderId = (folder.id || '').toLowerCase();
+        // Check both name and ID for icon lookup
+        const icon = iconsByName[folderName] || iconsByName[folderId] || '📁';
 
         // Clean up display name
         let displayName = folder.name || folder.id;
@@ -718,7 +774,9 @@ const EmailListManager = {
             // Clear spacers for empty state
             emailList.innerHTML = '';
 
-            const isInbox = this.currentFolder === 'INBOX' || this.currentFolder === 'inbox';
+            const isInbox = this.currentFolder === this.inboxFolderId ||
+                           this.currentFolder === 'INBOX' ||
+                           this.currentFolder === 'inbox';
             const emptyMessages = {
                 'vip': { icon: '⭐', title: 'No VIP emails', message: 'Add VIP senders to see their emails here' },
                 'unread': { icon: '✓', title: 'All caught up!', message: 'No unread emails', celebrate: isInbox },

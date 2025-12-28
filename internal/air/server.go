@@ -20,7 +20,7 @@ import (
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
-//go:embed static/css/*.css static/js/*.js static/icons/*
+//go:embed static/css/*.css static/js/*.js static/icons/* static/sw.js static/favicon.svg
 var staticFiles embed.FS
 
 //go:embed templates/*.gohtml templates/partials/*.gohtml templates/pages/*.gohtml
@@ -217,6 +217,38 @@ func (s *Server) Start() error {
 	mux.Handle("/css/", fileServer)
 	mux.Handle("/js/", noCacheJS)
 	mux.Handle("/icons/", fileServer)
+
+	// Service worker (must be served from root for proper scope)
+	mux.HandleFunc("/sw.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		data, err := staticFiles.ReadFile("static/sw.js")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write(data)
+	})
+
+	// Favicon
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/svg+xml")
+		data, err := staticFiles.ReadFile("static/favicon.svg")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write(data)
+	})
+	mux.HandleFunc("/favicon.svg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/svg+xml")
+		data, err := staticFiles.ReadFile("static/favicon.svg")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write(data)
+	})
 
 	// Template-rendered index page
 	mux.HandleFunc("/", s.handleIndex)

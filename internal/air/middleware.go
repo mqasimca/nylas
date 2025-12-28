@@ -181,9 +181,9 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; "+
 				"script-src 'self' 'unsafe-inline' 'unsafe-eval'; "+
-				"style-src 'self' 'unsafe-inline'; "+
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "+
 				"img-src 'self' data: https:; "+
-				"font-src 'self' data:; "+
+				"font-src 'self' data: https://fonts.gstatic.com; "+
 				"connect-src 'self' https://api.us.nylas.com https://api.eu.nylas.com;")
 
 		next.ServeHTTP(w, r)

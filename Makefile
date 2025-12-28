@@ -1,4 +1,4 @@
-.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration clean install fmt vet lint vuln deps security check-context ci ci-full help
+.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
 # ============================================================================
 # Tool Versions (Pinned for Reproducibility)
@@ -268,6 +268,12 @@ clean:
 	rm -rf bin/
 	rm -f coverage.out coverage.html ci-full.txt test-integration.txt *.test
 	@echo "✓ Cleanup complete"
+
+clean-cache:
+	@echo "=== Cleaning Go caches (use when cache is corrupted) ==="
+	go clean -cache -modcache -testcache
+	go mod download
+	@echo "✓ Go caches cleaned and modules re-downloaded"
 
 install: build
 	@echo "=== Installing binary to GOPATH/bin ==="
