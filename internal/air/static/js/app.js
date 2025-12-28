@@ -1,24 +1,55 @@
-        // Toast System
-        function showToast(type, title, message, action) {
+        // Toast System with action button support
+        function showToast(type, title, message, options = null) {
             const container = document.getElementById('toastContainer');
+            if (!container) return;
+
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
 
             const icons = { success: '✅', info: '💡', warning: '⏰', error: '❌' };
 
-            toast.innerHTML = `
-                <span class="toast-icon">${icons[type]}</span>
-                <div class="toast-message"><strong>${title}</strong> — ${message}</div>
-                ${action ? `<button class="toast-action" onclick="${action.onclick}">${action.label}</button>` : ''}
-            `;
+            // Build toast content
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'toast-icon';
+            iconSpan.textContent = icons[type] || '💬';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'toast-message';
+            messageDiv.innerHTML = `<strong>${title}</strong> — ${message}`;
+
+            toast.appendChild(iconSpan);
+            toast.appendChild(messageDiv);
+
+            // Add action button if provided
+            if (options && options.action && options.onAction) {
+                const actionBtn = document.createElement('button');
+                actionBtn.className = 'toast-action';
+                actionBtn.textContent = options.action;
+                actionBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    options.onAction();
+                    toast.remove();
+                });
+                toast.appendChild(actionBtn);
+            }
 
             container.appendChild(toast);
 
-            setTimeout(() => {
+            // Auto-dismiss after duration (longer if has action)
+            const duration = options && options.action ? 6000 : 4000;
+            const dismissTimeout = setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(20px)';
                 setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            }, duration);
+
+            // Allow manual dismiss by clicking
+            toast.addEventListener('click', () => {
+                clearTimeout(dismissTimeout);
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                setTimeout(() => toast.remove(), 300);
+            });
         }
 
         // Send Animation

@@ -195,7 +195,9 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/cache/settings", s.handleCacheSettings) // GET/PUT cache settings
 
 	// API routes - AI (Claude Code integration)
-	mux.HandleFunc("/api/ai/summarize", s.handleAISummarize) // POST summarize email
+	mux.HandleFunc("/api/ai/summarize", s.handleAISummarize)              // POST summarize email
+	mux.HandleFunc("/api/ai/smart-replies", s.handleAISmartReplies)       // POST smart reply suggestions
+	mux.HandleFunc("/api/ai/enhanced-summary", s.handleAIEnhancedSummary) // POST enhanced summary with action items
 
 	// Static files (CSS, JS, icons)
 	staticFS, _ := fs.Sub(staticFiles, "static")

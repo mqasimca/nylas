@@ -2605,27 +2605,34 @@ func TestEmailBodyCSS_HasLightBackground(t *testing.T) {
 
 	css := string(cssContent)
 
-	// Verify email-detail-body has white/light background for readability
-	// This ensures HTML emails with inline styles (designed for light backgrounds) are readable
+	// Verify email iframe container has white/light background for readability
+	// Email content is now rendered in a sandboxed iframe for security
+	// The iframe container provides the light background, while the iframe's
+	// internal stylesheet (in email.js) handles text styling
 	tests := []struct {
 		name     string
 		contains string
 		reason   string
 	}{
 		{
-			"email body has light background",
+			"email iframe container has light background",
 			"background: #ffffff",
 			"HTML emails have inline styles for light backgrounds - need white bg for readability",
-		},
-		{
-			"email body has dark text",
-			"color: #1a1a1a",
-			"Text must be dark on light background for contrast",
 		},
 		{
 			"email body selector exists",
 			".email-detail-body",
 			"Email body styling must be defined",
+		},
+		{
+			"email iframe container selector exists",
+			".email-iframe-container",
+			"Email iframe container styling must be defined for sandboxed email rendering",
+		},
+		{
+			"email iframe styling exists",
+			".email-body-iframe",
+			"Sandboxed iframe styling must be defined for security",
 		},
 	}
 

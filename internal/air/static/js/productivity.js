@@ -7,101 +7,40 @@
 // SPLIT INBOX MANAGER
 // =============================================================================
 
+// Split Inbox Manager - DISABLED (using simplified filters in EmailListManager)
+// Filter tabs are now: All, VIP, Unread - handled directly by EmailListManager
 const SplitInboxManager = {
     config: null,
-    categories: ['primary', 'vip', 'newsletters', 'updates', 'social', 'promotions'],
-    currentCategory: 'primary',
 
     async init() {
+        // Filter handling is now done by EmailListManager
+        // This module just loads the VIP config
         try {
             const response = await AirAPI.getSplitInboxConfig();
             this.config = response.config || response || {};
-            this.setupCategoryTabs();
-            console.log('%c📬 Split Inbox loaded', 'color: #22c55e;');
+            console.log('%c📬 Inbox filters ready', 'color: #22c55e;');
         } catch (error) {
-            // Silently fail - split inbox config is optional
-            console.log('%c📬 Split Inbox: using defaults', 'color: #a1a1aa;');
+            console.log('%c📬 Inbox filters: using defaults', 'color: #a1a1aa;');
             this.config = { enabled: true };
-        }
-    },
-
-    setupCategoryTabs() {
-        const tabsContainer = document.querySelector('.filter-tabs');
-        if (!tabsContainer) return;
-
-        // Check if category tabs already exist
-        if (tabsContainer.querySelector('[data-category]')) return;
-
-        // Clear existing tabs and add category tabs
-        tabsContainer.innerHTML = `
-            <button class="filter-tab active" data-category="primary">Primary</button>
-            <button class="filter-tab" data-category="vip">VIP</button>
-            <button class="filter-tab" data-category="newsletters">Newsletters</button>
-            <button class="filter-tab" data-category="updates">Updates</button>
-        `;
-
-        // Add click handlers
-        tabsContainer.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                this.setCategory(tab.dataset.category);
-            });
-        });
-    },
-
-    async setCategory(category) {
-        this.currentCategory = category;
-
-        // Update tab UI
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.category === category);
-        });
-
-        // Reload emails with category filter
-        if (typeof EmailListManager !== 'undefined') {
-            await this.loadCategorizedEmails(category);
-        }
-    },
-
-    async loadCategorizedEmails(category) {
-        // For VIP, use the existing filter
-        if (category === 'vip') {
-            if (typeof EmailListManager !== 'undefined') {
-                EmailListManager.setFilter('vip');
-            }
-            return;
-        }
-
-        // For other categories, we need to categorize emails client-side
-        if (typeof EmailListManager !== 'undefined') {
-            EmailListManager.setFilter('all');
-
-            // Filter displayed emails by category
-            const emails = EmailListManager.emails;
-            const filtered = [];
-
-            for (const email of emails) {
-                const from = email.from?.[0]?.email || '';
-                const subject = email.subject || '';
-
-                try {
-                    const result = await AirAPI.categorizeEmail(email.id, from, subject);
-                    if (result.category === category ||
-                        (category === 'primary' && result.category === 'primary')) {
-                        filtered.push(email);
-                    }
-                } catch (e) {
-                    // On error, include in primary
-                    if (category === 'primary') {
-                        filtered.push(email);
-                    }
-                }
-            }
-
-            EmailListManager.filteredEmails = filtered;
-            EmailListManager.renderEmails();
         }
     }
 };
+
+// Legacy compatibility - do not use
+const _legacySplitInbox = {
+    async loadCategorizedEmails(category) {
+        // Redirect to EmailListManager
+        if (typeof EmailListManager !== 'undefined') {
+            EmailListManager.setFilter(category);
+        }
+    }
+};
+
+// REMOVED: Complex category tab system
+// The simplified filter system (All, VIP, Unread) is now in the HTML template
+// and handled by EmailListManager.setFilter()
+
+// Note: Complex category filtering was removed in favor of simplified All/VIP/Unread tabs
 
 // =============================================================================
 // SNOOZE MANAGER

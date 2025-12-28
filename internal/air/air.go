@@ -90,6 +90,12 @@ The client runs locally on your machine for privacy and performance.`,
 			addr := fmt.Sprintf("localhost:%d", port)
 			url := fmt.Sprintf("http://%s", addr)
 
+			// Add init flag when cache was just cleared (triggers loading overlay)
+			browserURL := url
+			if clearCache {
+				browserURL = fmt.Sprintf("%s?init=1", url)
+			}
+
 			fmt.Printf("Starting Nylas Air at %s\n", url)
 			if settings.IsEncryptionEnabled() {
 				fmt.Println("Encryption: enabled (keys stored in system keyring)")
@@ -99,7 +105,7 @@ The client runs locally on your machine for privacy and performance.`,
 
 			// Open browser unless disabled
 			if !noBrowser {
-				if err := browser.OpenURL(url); err != nil {
+				if err := browser.OpenURL(browserURL); err != nil {
 					fmt.Printf("Could not open browser: %v\n", err)
 					fmt.Printf("Please open %s manually\n", url)
 				}
