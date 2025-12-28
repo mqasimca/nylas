@@ -3,7 +3,8 @@
             position: fixed;
             bottom: 24px;
             right: 24px;
-            width: 580px;
+            width: 680px;
+            max-width: calc(100vw - 48px);
             background: var(--bg-elevated);
             border: 1px solid var(--border);
             border-radius: 20px;
@@ -16,9 +17,7 @@
         }
 
         .compose-modal.hidden {
-            transform: translateY(20px) scale(0.95);
-            opacity: 0;
-            pointer-events: none;
+            display: none;
         }
 
         .compose-header {
@@ -96,7 +95,7 @@
         }
 
         .compose-editor {
-            min-height: 180px;
+            min-height: 280px;
             padding: 16px 0;
             font-size: 14px;
             line-height: 1.6;
@@ -112,8 +111,8 @@
         /* Textarea version of compose editor */
         textarea.compose-editor {
             width: 100%;
-            min-height: 180px;
-            max-height: 400px;
+            min-height: 280px;
+            max-height: 500px;
             padding: 16px 0;
             background: none;
             border: none;

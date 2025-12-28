@@ -250,6 +250,13 @@
     }
 }
 
+/* Generic spin animation (used by productivity features) */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Pulse loader */
 .pulse-loader {
     display: inline-flex;

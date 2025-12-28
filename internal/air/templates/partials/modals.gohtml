@@ -109,7 +109,7 @@
 </div>
 
 <!-- Compose Modal -->
-<div class="compose-modal hidden" id="composeModal" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
+<div class="compose-modal hidden" id="composeModal" style="display:none" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
     <div class="compose-header">
         <span class="compose-title" id="composeTitle">New Message</span>
         <div class="compose-controls">
@@ -511,12 +511,171 @@ function toggleCcBcc() {
     </div>
 </div>
 
-<!-- Productivity features disabled for now -->
-<!--
-<div id="snoozePicker"></div>
-<div id="templatesPicker"></div>
-<div id="createTemplateModal"></div>
-<div id="variablesPicker"></div>
-<div id="undoToast"></div>
--->
+<!-- Snooze Picker Modal -->
+<div class="snooze-picker-overlay hidden" id="snoozePickerOverlay" onclick="if(event.target === this) closeSnoozeModal()">
+    <div class="snooze-picker-modal">
+        <div class="snooze-picker-header">
+            <h3>Snooze until...</h3>
+            <button class="snooze-picker-close" onclick="closeSnoozeModal()">×</button>
+        </div>
+        <div class="snooze-options">
+            <button class="snooze-option" onclick="snoozeEmail('later_today')">
+                <span class="snooze-option-icon">🌆</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">Later today</span>
+                    <span class="snooze-option-time" id="snoozeLaterToday">6:00 PM</span>
+                </div>
+            </button>
+            <button class="snooze-option" onclick="snoozeEmail('tomorrow')">
+                <span class="snooze-option-icon">🌅</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">Tomorrow</span>
+                    <span class="snooze-option-time" id="snoozeTomorrow">9:00 AM</span>
+                </div>
+            </button>
+            <button class="snooze-option" onclick="snoozeEmail('next_week')">
+                <span class="snooze-option-icon">📅</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">Next week</span>
+                    <span class="snooze-option-time" id="snoozeNextWeek">Monday 9:00 AM</span>
+                </div>
+            </button>
+            <button class="snooze-option" onclick="snoozeEmail('weekend')">
+                <span class="snooze-option-icon">🏖️</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">This weekend</span>
+                    <span class="snooze-option-time" id="snoozeWeekend">Saturday 10:00 AM</span>
+                </div>
+            </button>
+        </div>
+        <div class="snooze-custom">
+            <button class="snooze-custom-btn" onclick="openCustomSnooze()">
+                <span>📆</span> Pick date & time
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Send Later Picker Modal -->
+<div class="send-later-overlay hidden" id="sendLaterOverlay" onclick="if(event.target === this) closeSendLaterModal()">
+    <div class="send-later-modal">
+        <div class="send-later-header">
+            <h3>Schedule send</h3>
+            <button class="send-later-close" onclick="closeSendLaterModal()">×</button>
+        </div>
+        <div class="send-later-options">
+            <button class="send-later-option" onclick="scheduleSend('tomorrow_morning')">
+                <span class="send-later-icon">🌅</span>
+                <div class="send-later-text">
+                    <span class="send-later-label">Tomorrow morning</span>
+                    <span class="send-later-time">8:00 AM</span>
+                </div>
+            </button>
+            <button class="send-later-option" onclick="scheduleSend('tomorrow_afternoon')">
+                <span class="send-later-icon">🌇</span>
+                <div class="send-later-text">
+                    <span class="send-later-label">Tomorrow afternoon</span>
+                    <span class="send-later-time">1:00 PM</span>
+                </div>
+            </button>
+            <button class="send-later-option" onclick="scheduleSend('next_monday')">
+                <span class="send-later-icon">📅</span>
+                <div class="send-later-text">
+                    <span class="send-later-label">Monday morning</span>
+                    <span class="send-later-time">8:00 AM</span>
+                </div>
+            </button>
+        </div>
+        <div class="send-later-custom">
+            <label class="send-later-custom-label">Custom date & time</label>
+            <div class="send-later-custom-inputs">
+                <input type="date" id="sendLaterDate" class="send-later-date-input">
+                <input type="time" id="sendLaterTime" class="send-later-time-input" value="09:00">
+            </div>
+            <button class="send-later-schedule-btn" onclick="scheduleCustomSend()">
+                Schedule
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Snooze Modal Functions
+function closeSnoozeModal() {
+    document.getElementById('snoozePickerOverlay').classList.add('hidden');
+}
+
+function openSnoozeModal(emailId) {
+    window.snoozeEmailId = emailId;
+    updateSnoozeTimes();
+    document.getElementById('snoozePickerOverlay').classList.remove('hidden');
+}
+
+function updateSnoozeTimes() {
+    const now = new Date();
+
+    // Later today (6 PM)
+    const laterToday = new Date(now);
+    laterToday.setHours(18, 0, 0, 0);
+    if (laterToday <= now) laterToday.setDate(laterToday.getDate() + 1);
+    document.getElementById('snoozeLaterToday').textContent = laterToday.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Tomorrow (9 AM)
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    document.getElementById('snoozeTomorrow').textContent = 'Tomorrow ' + tomorrow.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Next week (Monday 9 AM)
+    const nextWeek = new Date(now);
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+    nextWeek.setDate(nextWeek.getDate() + daysUntilMonday);
+    nextWeek.setHours(9, 0, 0, 0);
+    document.getElementById('snoozeNextWeek').textContent = 'Monday ' + nextWeek.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Weekend (Saturday 10 AM)
+    const weekend = new Date(now);
+    const daysUntilSat = (6 - now.getDay() + 7) % 7 || 7;
+    weekend.setDate(weekend.getDate() + daysUntilSat);
+    weekend.setHours(10, 0, 0, 0);
+    document.getElementById('snoozeWeekend').textContent = 'Sat ' + weekend.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function snoozeEmail(option) {
+    console.log('Snoozing email:', window.snoozeEmailId, 'until:', option);
+    showToast('Email snoozed', 'success');
+    closeSnoozeModal();
+}
+
+function openCustomSnooze() {
+    console.log('Opening custom snooze picker');
+}
+
+// Send Later Modal Functions
+function closeSendLaterModal() {
+    document.getElementById('sendLaterOverlay').classList.add('hidden');
+}
+
+function openSendLaterModal() {
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('sendLaterDate').value = tomorrow.toISOString().split('T')[0];
+    document.getElementById('sendLaterOverlay').classList.remove('hidden');
+}
+
+function scheduleSend(option) {
+    console.log('Scheduling send:', option);
+    showToast('Email scheduled', 'success');
+    closeSendLaterModal();
+}
+
+function scheduleCustomSend() {
+    const date = document.getElementById('sendLaterDate').value;
+    const time = document.getElementById('sendLaterTime').value;
+    console.log('Scheduling custom send:', date, time);
+    showToast('Email scheduled for ' + new Date(date + 'T' + time).toLocaleString(), 'success');
+    closeSendLaterModal();
+}
+</script>
 {{end}}

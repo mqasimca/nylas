@@ -84,6 +84,9 @@ const ComposeManager = {
         this.isOpen = true;
         this.currentDraftId = null;
 
+        // Remove hidden state (class and inline style)
+        els.modal.classList.remove('hidden');
+        els.modal.style.display = '';
         els.modal.classList.add('active');
         els.modal.setAttribute('aria-hidden', 'false');
 
@@ -137,6 +140,7 @@ const ComposeManager = {
 
         this.isOpen = false;
         els.modal.classList.remove('active');
+        els.modal.classList.add('hidden');
         els.modal.setAttribute('aria-hidden', 'true');
 
         // Reset form

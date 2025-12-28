@@ -106,10 +106,10 @@ const EmailRenderer = {
     }
 };
 
-// Email List Manager
+// Email List Manager with Virtual Scrolling & Optimistic Updates
 const EmailListManager = {
     currentFolder: 'INBOX',
-    currentFilter: 'all', // 'all', 'vip', 'unread'
+    currentFilter: 'all', // 'all', 'primary', 'vip', 'newsletters', 'updates', 'unread'
     emails: [],
     filteredEmails: [], // Emails after applying filter
     vipSenders: [], // List of VIP email addresses
@@ -118,6 +118,30 @@ const EmailListManager = {
     nextCursor: null,
     hasMore: false,
     isLoading: false,
+
+    // Virtual scrolling state
+    virtualScroll: {
+        enabled: true,
+        itemHeight: 76,           // Height of each email item in pixels
+        bufferSize: 5,            // Extra items to render above/below viewport
+        visibleStart: 0,
+        visibleEnd: 0,
+        scrollContainer: null,
+        totalHeight: 0
+    },
+
+    // Request cache for performance
+    cache: {
+        emails: new Map(),        // emailId -> full email data
+        folders: null,
+        foldersTimestamp: 0,
+        cacheDuration: 60000      // 1 minute cache
+    },
+
+    // Pending operations for optimistic updates
+    pendingOperations: new Map(), // operationId -> { type, emailId, originalState }
+
+    // Simplified filters: All, VIP, Unread
 
     async init() {
         // Set up event listeners first (UI is ready immediately)
@@ -190,20 +214,17 @@ const EmailListManager = {
         this.renderEmails();
     },
 
-    // Apply filter to emails
-    applyFilter() {
-        console.log('[applyFilter] Before:', {
-            currentFilter: this.currentFilter,
-            totalEmails: this.emails.length,
-            vipSenders: this.vipSenders.length
-        });
+    // Check if email is from a VIP sender
+    isVIP(email) {
+        const senderEmail = email.from && email.from[0] ? email.from[0].email.toLowerCase() : '';
+        return this.vipSenders.some(vip => senderEmail.includes(vip.toLowerCase()));
+    },
 
+    // Apply filter to emails (simplified: All, VIP, Unread)
+    applyFilter() {
         switch (this.currentFilter) {
             case 'vip':
-                this.filteredEmails = this.emails.filter(email => {
-                    const senderEmail = email.from && email.from[0] ? email.from[0].email.toLowerCase() : '';
-                    return this.vipSenders.some(vip => senderEmail.includes(vip.toLowerCase()));
-                });
+                this.filteredEmails = this.emails.filter(email => this.isVIP(email));
                 break;
             case 'unread':
                 this.filteredEmails = this.emails.filter(email => email.unread);
@@ -213,9 +234,35 @@ const EmailListManager = {
                 break;
         }
 
-        console.log('[applyFilter] After:', {
-            currentFilter: this.currentFilter,
-            filteredCount: this.filteredEmails.length
+        // Update filter tab counts
+        this.updateFilterCounts();
+    },
+
+    // Update counts on filter tabs
+    updateFilterCounts() {
+        const counts = {
+            all: this.emails.length,
+            vip: this.emails.filter(e => this.isVIP(e)).length,
+            unread: this.emails.filter(e => e.unread).length
+        };
+
+        // Update DOM
+        const tabs = document.querySelectorAll('.filter-tab');
+        tabs.forEach(tab => {
+            const filter = tab.dataset.filter || tab.textContent.toLowerCase().trim();
+            const count = counts[filter];
+            let countBadge = tab.querySelector('.filter-count');
+
+            if (count > 0 && filter !== 'all') {
+                if (!countBadge) {
+                    countBadge = document.createElement('span');
+                    countBadge.className = 'filter-count';
+                    tab.appendChild(countBadge);
+                }
+                countBadge.textContent = count > 99 ? '99+' : count;
+            } else if (countBadge) {
+                countBadge.remove();
+            }
         });
     },
 
@@ -247,18 +294,138 @@ const EmailListManager = {
             });
         }
 
-        // Infinite scroll
+        // Virtual scroll + infinite scroll handling
         const emailListContainer = document.querySelector('.email-list');
         if (emailListContainer) {
+            this.virtualScroll.scrollContainer = emailListContainer;
+
+            // Debounced scroll handler for performance
+            let scrollTimeout = null;
             emailListContainer.addEventListener('scroll', () => {
-                if (this.hasMore && !this.isLoading) {
-                    const { scrollTop, scrollHeight, clientHeight } = emailListContainer;
-                    if (scrollTop + clientHeight >= scrollHeight - 200) {
-                        this.loadMore();
+                // Cancel previous timeout
+                if (scrollTimeout) cancelAnimationFrame(scrollTimeout);
+
+                // Use requestAnimationFrame for smooth scrolling
+                scrollTimeout = requestAnimationFrame(() => {
+                    // Virtual scroll update
+                    if (this.virtualScroll.enabled) {
+                        this.updateVirtualScroll();
                     }
-                }
+
+                    // Infinite scroll - load more when near bottom
+                    if (this.hasMore && !this.isLoading) {
+                        const { scrollTop, scrollHeight, clientHeight } = emailListContainer;
+                        if (scrollTop + clientHeight >= scrollHeight - 200) {
+                            this.loadMore();
+                        }
+                    }
+                });
             });
         }
+    },
+
+    // Initialize virtual scroll container
+    initVirtualScroll() {
+        const container = this.virtualScroll.scrollContainer;
+        if (!container) return;
+
+        // Create spacer elements for virtual scroll
+        let topSpacer = container.querySelector('.virtual-spacer-top');
+        let bottomSpacer = container.querySelector('.virtual-spacer-bottom');
+
+        if (!topSpacer) {
+            topSpacer = document.createElement('div');
+            topSpacer.className = 'virtual-spacer-top';
+            container.prepend(topSpacer);
+        }
+
+        if (!bottomSpacer) {
+            bottomSpacer = document.createElement('div');
+            bottomSpacer.className = 'virtual-spacer-bottom';
+            container.append(bottomSpacer);
+        }
+    },
+
+    // Update virtual scroll visible range
+    updateVirtualScroll() {
+        const container = this.virtualScroll.scrollContainer;
+        if (!container) return;
+
+        const { itemHeight, bufferSize } = this.virtualScroll;
+        const scrollTop = container.scrollTop;
+        const viewportHeight = container.clientHeight;
+
+        const displayEmails = this.getDisplayEmails();
+        const totalItems = displayEmails.length;
+
+        // Calculate visible range
+        const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight) - bufferSize);
+        const visibleEnd = Math.min(totalItems, Math.ceil((scrollTop + viewportHeight) / itemHeight) + bufferSize);
+
+        // Only re-render if visible range changed significantly
+        if (visibleStart !== this.virtualScroll.visibleStart || visibleEnd !== this.virtualScroll.visibleEnd) {
+            this.virtualScroll.visibleStart = visibleStart;
+            this.virtualScroll.visibleEnd = visibleEnd;
+            this.renderVirtualEmails();
+        }
+    },
+
+    // Render only visible emails (virtual scrolling)
+    renderVirtualEmails() {
+        const container = this.virtualScroll.scrollContainer;
+        if (!container) return;
+
+        const { itemHeight, visibleStart, visibleEnd } = this.virtualScroll;
+        const displayEmails = this.getDisplayEmails();
+        const totalItems = displayEmails.length;
+
+        // Update spacers
+        const topSpacer = container.querySelector('.virtual-spacer-top');
+        const bottomSpacer = container.querySelector('.virtual-spacer-bottom');
+
+        if (topSpacer) {
+            topSpacer.style.height = `${visibleStart * itemHeight}px`;
+        }
+        if (bottomSpacer) {
+            bottomSpacer.style.height = `${Math.max(0, (totalItems - visibleEnd) * itemHeight)}px`;
+        }
+
+        // Get visible emails
+        const visibleEmails = displayEmails.slice(visibleStart, visibleEnd);
+
+        // Create/update email items between spacers
+        const fragment = document.createDocumentFragment();
+        visibleEmails.forEach((email, i) => {
+            const isSelected = email.id === this.selectedEmailId;
+            const item = EmailRenderer.renderEmailItem(email, isSelected);
+            item.dataset.virtualIndex = visibleStart + i;
+            fragment.appendChild(item);
+        });
+
+        // Remove old email items (but keep spacers)
+        Array.from(container.children).forEach(child => {
+            if (!child.classList.contains('virtual-spacer-top') &&
+                !child.classList.contains('virtual-spacer-bottom') &&
+                !child.classList.contains('empty-state')) {
+                child.remove();
+            }
+        });
+
+        // Insert new items after top spacer
+        if (topSpacer && topSpacer.nextSibling !== bottomSpacer) {
+            topSpacer.after(fragment);
+        } else if (topSpacer) {
+            topSpacer.after(fragment);
+        } else {
+            container.prepend(fragment);
+        }
+    },
+
+    // Get emails to display (with filter applied)
+    getDisplayEmails() {
+        return this.filteredEmails.length > 0 || this.currentFilter !== 'all'
+            ? this.filteredEmails
+            : this.emails;
     },
 
     async loadFolders() {
@@ -535,52 +702,82 @@ const EmailListManager = {
         const emailList = document.querySelector('.email-list');
         if (!emailList) return;
 
-        if (!append) {
-            emailList.innerHTML = '';
-        }
-
         // Use filtered emails for display
-        const displayEmails = this.filteredEmails.length > 0 || this.currentFilter !== 'all'
-            ? this.filteredEmails
-            : this.emails;
+        const displayEmails = this.getDisplayEmails();
 
         console.log('[renderEmails]', {
             totalEmails: this.emails.length,
             filteredEmails: this.filteredEmails.length,
             currentFilter: this.currentFilter,
             displayCount: displayEmails.length,
-            append
+            append,
+            virtualScrollEnabled: this.virtualScroll.enabled
         });
 
         if (displayEmails.length === 0 && !append) {
+            // Clear spacers for empty state
+            emailList.innerHTML = '';
+
+            const isInbox = this.currentFolder === 'INBOX' || this.currentFolder === 'inbox';
             const emptyMessages = {
                 'vip': { icon: '⭐', title: 'No VIP emails', message: 'Add VIP senders to see their emails here' },
-                'unread': { icon: '✓', title: 'All caught up!', message: 'No unread emails' },
-                'all': { icon: '📭', title: 'No emails', message: 'This folder is empty' }
+                'unread': { icon: '✓', title: 'All caught up!', message: 'No unread emails', celebrate: isInbox },
+                'all': isInbox
+                    ? { icon: '🎉', title: 'Inbox Zero!', message: 'You\'ve conquered your inbox. Take a moment to celebrate!', celebrate: true }
+                    : { icon: '📭', title: 'No emails', message: 'This folder is empty' }
             };
             const msg = emptyMessages[this.currentFilter] || emptyMessages.all;
             emailList.innerHTML = `
-                <div class="empty-state">
+                <div class="empty-state inbox-zero${msg.celebrate ? ' celebration' : ''}">
                     <div class="empty-icon">${msg.icon}</div>
                     <div class="empty-title">${msg.title}</div>
                     <div class="empty-message">${msg.message}</div>
+                    ${msg.celebrate ? '<div class="inbox-zero-subtitle">✨ Enjoy the moment</div>' : ''}
                 </div>
             `;
+
+            // Trigger celebration confetti for Inbox Zero
+            if (msg.celebrate && typeof window.celebrateInboxZero === 'function') {
+                setTimeout(() => window.celebrateInboxZero(), 300);
+            }
             return;
         }
 
-        const fragment = document.createDocumentFragment();
-        displayEmails.forEach(email => {
-            const isSelected = email.id === this.selectedEmailId;
-            const item = EmailRenderer.renderEmailItem(email, isSelected);
-            fragment.appendChild(item);
-        });
+        // Use virtual scrolling for large lists
+        if (this.virtualScroll.enabled && displayEmails.length > 20) {
+            if (!append) {
+                emailList.innerHTML = '';
+                this.initVirtualScroll();
+            }
 
-        if (append) {
-            emailList.appendChild(fragment);
+            // Calculate initial visible range
+            const { itemHeight, bufferSize } = this.virtualScroll;
+            const viewportHeight = emailList.clientHeight || 600;
+            this.virtualScroll.visibleStart = 0;
+            this.virtualScroll.visibleEnd = Math.min(
+                displayEmails.length,
+                Math.ceil(viewportHeight / itemHeight) + bufferSize * 2
+            );
+
+            this.renderVirtualEmails();
         } else {
-            emailList.innerHTML = '';
-            emailList.appendChild(fragment);
+            // Standard rendering for small lists
+            if (!append) {
+                emailList.innerHTML = '';
+            }
+
+            const fragment = document.createDocumentFragment();
+            displayEmails.forEach(email => {
+                const isSelected = email.id === this.selectedEmailId;
+                const item = EmailRenderer.renderEmailItem(email, isSelected);
+                fragment.appendChild(item);
+            });
+
+            if (append) {
+                emailList.appendChild(fragment);
+            } else {
+                emailList.appendChild(fragment);
+            }
         }
     },
 
@@ -626,6 +823,11 @@ const EmailListManager = {
             // Store full email for reply/forward (includes thread_id)
             this.selectedEmailFull = email;
             this.renderEmailDetail(email);
+
+            // Render email body in sandboxed iframe (async, after DOM update)
+            requestAnimationFrame(() => {
+                this.renderEmailBodyIframe(email.id, email.body);
+            });
 
             // Mark as read if unread
             if (email.unread) {
@@ -701,6 +903,12 @@ const EmailListManager = {
                     <span class="ai-btn-text">✨ Summarize</span>
                 </button>
             </div>
+            <div class="smart-replies-container" id="smartReplies-${email.id}">
+                <button class="smart-replies-trigger" onclick="EmailListManager.loadSmartReplies('${email.id}')">
+                    <span class="smart-replies-icon">💬</span>
+                    <span>Get smart reply suggestions</span>
+                </button>
+            </div>
             ${email.attachments && email.attachments.length > 0 ? `
                 <div class="email-detail-attachments">
                     <div class="attachments-header">Attachments (${email.attachments.length})</div>
@@ -716,9 +924,328 @@ const EmailListManager = {
                 </div>
             ` : ''}
             <div class="email-detail-body">
-                ${email.body || '<p>No content</p>'}
+                <div class="email-iframe-container" id="emailBodyContainer-${email.id}">
+                    <div class="email-loading-state">
+                        <div class="email-loading-spinner"></div>
+                        <span>Loading email...</span>
+                    </div>
+                </div>
             </div>
         `;
+    },
+
+    // Render email body into a sandboxed iframe for security and proper HTML rendering
+    renderEmailBodyIframe(emailId, bodyHtml) {
+        const container = document.getElementById(`emailBodyContainer-${emailId}`);
+        if (!container) return;
+
+        // Create sandboxed iframe - no scripts, no forms, no popups
+        const iframe = document.createElement('iframe');
+        iframe.className = 'email-body-iframe';
+        iframe.setAttribute('sandbox', 'allow-same-origin'); // Minimal permissions - no scripts
+        iframe.setAttribute('title', 'Email content');
+        iframe.setAttribute('loading', 'lazy');
+
+        // Build the email content with embedded styles for proper rendering
+        const emailContent = this.buildEmailIframeContent(bodyHtml);
+
+        // Use srcdoc for security - content is isolated
+        iframe.srcdoc = emailContent;
+
+        // Handle iframe load
+        iframe.onload = () => {
+            // Process and hide broken/tracking images first
+            this.processIframeImages(iframe);
+            // Auto-resize iframe to content height
+            this.resizeIframeToContent(iframe);
+            // Add loaded class for fade-in animation
+            container.classList.add('loaded');
+            // Make links open in new tab
+            this.processIframeLinks(iframe);
+        };
+
+        iframe.onerror = () => {
+            container.innerHTML = `
+                <div class="email-error-state">
+                    <span class="error-icon">⚠️</span>
+                    <span>Failed to load email content</span>
+                </div>
+            `;
+        };
+
+        // Clear loading state and add iframe
+        container.innerHTML = '';
+        container.appendChild(iframe);
+    },
+
+    // Build the HTML content for the email iframe with embedded styles
+    buildEmailIframeContent(bodyHtml) {
+        // Default to empty paragraph if no content
+        const content = bodyHtml || '<p style="color: #71717a; font-style: italic;">No content</p>';
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Reset and base styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 15px;
+            line-height: 1.65;
+            color: #1a1a2e;
+            background: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            padding: 4px;
+        }
+
+        /* Typography */
+        p {
+            margin: 0 0 1em 0;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0 0 0.5em 0;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        h1 { font-size: 1.75em; }
+        h2 { font-size: 1.5em; }
+        h3 { font-size: 1.25em; }
+
+        /* Links */
+        a {
+            color: #6366f1;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        a:hover {
+            color: #4f46e5;
+            text-decoration: underline;
+        }
+
+        /* Images */
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Hide broken images - applied via JS */
+        img.broken-image,
+        img.tracking-pixel {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
+        }
+
+        /* Tables - common in HTML emails */
+        table {
+            border-collapse: collapse;
+            max-width: 100%;
+            width: auto;
+        }
+
+        td, th {
+            padding: 8px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        /* Blockquotes - for email threads */
+        blockquote {
+            margin: 1em 0;
+            padding: 0.5em 0 0.5em 1em;
+            border-left: 3px solid #e5e7eb;
+            color: #52525b;
+        }
+
+        /* Code blocks */
+        pre, code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.9em;
+            background: #f4f4f5;
+            border-radius: 4px;
+        }
+
+        code {
+            padding: 0.15em 0.4em;
+        }
+
+        pre {
+            padding: 1em;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        pre code {
+            padding: 0;
+            background: transparent;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 0.5em 0;
+            padding-left: 1.5em;
+        }
+
+        li {
+            margin-bottom: 0.25em;
+        }
+
+        /* Horizontal rules */
+        hr {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 1.5em 0;
+        }
+
+        /* Hide tracking pixels and invisible images */
+        img[width="1"], img[height="1"],
+        img[width="0"], img[height="0"],
+        img[width="1px"], img[height="1px"],
+        img[style*="display:none"],
+        img[style*="display: none"],
+        img[style*="width: 1px"],
+        img[style*="height: 1px"],
+        img[style*="width:1px"],
+        img[style*="height:1px"],
+        img[src*="tracking"],
+        img[src*="beacon"],
+        img[src*="pixel"],
+        img[src*="open."],
+        img[src*="/o/"],
+        img[src*="mailtrack"] {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Force word wrapping for long URLs/text */
+        * {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+    </style>
+</head>
+<body>${content}</body>
+</html>`;
+    },
+
+    // Resize iframe to fit its content
+    resizeIframeToContent(iframe) {
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (doc && doc.body) {
+                // Get the actual content height
+                const height = Math.max(
+                    doc.body.scrollHeight,
+                    doc.body.offsetHeight,
+                    doc.documentElement?.scrollHeight || 0,
+                    doc.documentElement?.offsetHeight || 0
+                );
+                // Set minimum height and add small buffer
+                iframe.style.height = Math.max(height + 20, 100) + 'px';
+            }
+        } catch (e) {
+            // Cross-origin restrictions - use default height
+            console.warn('Could not resize iframe:', e);
+            iframe.style.height = '400px';
+        }
+    },
+
+    // Process links in iframe to open in new tab
+    processIframeLinks(iframe) {
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (doc) {
+                const links = doc.querySelectorAll('a[href]');
+                links.forEach(link => {
+                    link.setAttribute('target', '_blank');
+                    link.setAttribute('rel', 'noopener noreferrer');
+                });
+            }
+        } catch (e) {
+            console.warn('Could not process iframe links:', e);
+        }
+    },
+
+    // Process images in iframe - hide broken and tracking images
+    processIframeImages(iframe) {
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (!doc) return;
+
+            const images = doc.querySelectorAll('img');
+            images.forEach(img => {
+                // Check if image is a tracking pixel by size
+                const isTrackingPixel = (
+                    img.naturalWidth <= 3 ||
+                    img.naturalHeight <= 3 ||
+                    img.width <= 3 ||
+                    img.height <= 3 ||
+                    (img.getAttribute('width') && parseInt(img.getAttribute('width')) <= 3) ||
+                    (img.getAttribute('height') && parseInt(img.getAttribute('height')) <= 3)
+                );
+
+                if (isTrackingPixel) {
+                    img.classList.add('tracking-pixel');
+                    img.style.display = 'none';
+                    return;
+                }
+
+                // Handle broken images
+                img.onerror = () => {
+                    img.classList.add('broken-image');
+                    img.style.display = 'none';
+                };
+
+                // Check if already broken (naturalWidth is 0 for broken images)
+                if (img.complete && img.naturalWidth === 0) {
+                    img.classList.add('broken-image');
+                    img.style.display = 'none';
+                }
+            });
+
+            // Re-run check after a short delay for images still loading
+            setTimeout(() => {
+                images.forEach(img => {
+                    if (img.complete && img.naturalWidth === 0 && !img.classList.contains('broken-image')) {
+                        img.classList.add('broken-image');
+                        img.style.display = 'none';
+                    }
+                    // Final check for tiny images
+                    if (img.complete && (img.naturalWidth <= 3 || img.naturalHeight <= 3)) {
+                        img.classList.add('tracking-pixel');
+                        img.style.display = 'none';
+                    }
+                });
+                // Resize iframe after hiding images
+                this.resizeIframeToContent(iframe);
+            }, 500);
+
+        } catch (e) {
+            console.warn('Could not process iframe images:', e);
+        }
     },
 
     formatSize(bytes) {
@@ -727,20 +1254,99 @@ const EmailListManager = {
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     },
 
-    async markAsRead(emailId) {
+    // Optimistic update helper - applies change immediately, rolls back on failure
+    async optimisticUpdate(emailId, updateFn, apiCall, successMsg, rollbackFn) {
+        const operationId = `${emailId}-${Date.now()}`;
+        const email = this.emails.find(e => e.id === emailId);
+        if (!email) return;
+
+        // Store original state for rollback
+        const originalState = JSON.parse(JSON.stringify(email));
+        this.pendingOperations.set(operationId, { emailId, originalState });
+
+        // Apply optimistic update immediately
+        updateFn(email);
+        this.updateEmailInUI(emailId);
+
         try {
-            await AirAPI.updateEmail(emailId, { unread: false });
+            // Make API call
+            await apiCall();
 
-            // Update local state
-            const email = this.emails.find(e => e.id === emailId);
-            if (email) email.unread = false;
-
-            // Update UI
-            const item = document.querySelector(`.email-item[data-email-id="${emailId}"]`);
-            if (item) item.classList.remove('unread');
+            // Success - show toast and clear pending operation
+            this.pendingOperations.delete(operationId);
+            if (successMsg && typeof showToast === 'function') {
+                showToast('success', successMsg.title, successMsg.message);
+            }
         } catch (error) {
-            console.error('Failed to mark as read:', error);
+            console.error(`Optimistic update failed for ${emailId}:`, error);
+
+            // Rollback to original state
+            if (rollbackFn) {
+                rollbackFn(email, originalState);
+            } else {
+                Object.assign(email, originalState);
+            }
+            this.updateEmailInUI(emailId);
+            this.pendingOperations.delete(operationId);
+
+            if (typeof showToast === 'function') {
+                showToast('error', 'Error', 'Failed to update. Changes reverted.');
+            }
         }
+    },
+
+    // Update a single email item in the UI without full re-render
+    updateEmailInUI(emailId) {
+        const email = this.emails.find(e => e.id === emailId);
+        const item = document.querySelector(`.email-item[data-email-id="${emailId}"]`);
+        if (!item || !email) return;
+
+        // Update unread class
+        item.classList.toggle('unread', email.unread);
+
+        // Update starred indicator
+        let starredEl = item.querySelector('.starred');
+        if (email.starred && !starredEl) {
+            const actionsEl = item.querySelector('.email-actions-mini');
+            if (actionsEl) {
+                const span = document.createElement('span');
+                span.className = 'starred';
+                span.title = 'Starred';
+                span.innerHTML = '&#9733;';
+                actionsEl.prepend(span);
+            }
+        } else if (!email.starred && starredEl) {
+            starredEl.remove();
+        }
+
+        // Add visual feedback for pending operation
+        if (this.hasPendingOperation(emailId)) {
+            item.classList.add('pending-update');
+        } else {
+            item.classList.remove('pending-update');
+        }
+    },
+
+    // Check if email has pending operation
+    hasPendingOperation(emailId) {
+        for (const [, op] of this.pendingOperations) {
+            if (op.emailId === emailId) return true;
+        }
+        return false;
+    },
+
+    async markAsRead(emailId) {
+        // Optimistic update - instant UI feedback
+        await this.optimisticUpdate(
+            emailId,
+            (email) => { email.unread = false; },
+            () => AirAPI.updateEmail(emailId, { unread: false }),
+            null, // Silent - no toast for mark as read
+            (email, original) => { email.unread = original.unread; }
+        );
+
+        // Also update filtered emails
+        this.applyFilter();
     },
 
     async toggleStar(emailId) {
@@ -749,36 +1355,33 @@ const EmailListManager = {
 
         const newStarred = !email.starred;
 
-        try {
-            await AirAPI.updateEmail(emailId, { starred: newStarred });
-            email.starred = newStarred;
+        // Optimistic update with immediate feedback
+        await this.optimisticUpdate(
+            emailId,
+            (e) => { e.starred = newStarred; },
+            () => AirAPI.updateEmail(emailId, { starred: newStarred }),
+            { title: newStarred ? 'Starred' : 'Unstarred', message: newStarred ? 'Email starred' : 'Star removed' },
+            (e, original) => { e.starred = original.starred; }
+        );
 
-            if (typeof showToast === 'function') {
-                showToast('info', newStarred ? 'Starred' : 'Unstarred',
-                    newStarred ? 'Email starred' : 'Star removed');
-            }
-
-            // Re-render if viewing this email
-            if (this.selectedEmailId === emailId) {
-                const fullEmail = await AirAPI.getEmail(emailId);
-                this.renderEmailDetail(fullEmail);
-            }
-        } catch (error) {
-            console.error('Failed to toggle star:', error);
-            if (typeof showToast === 'function') {
-                showToast('error', 'Error', 'Failed to update email');
-            }
+        // Re-render detail view if viewing this email
+        if (this.selectedEmailId === emailId && this.selectedEmailFull) {
+            this.selectedEmailFull.starred = email.starred;
+            this.renderEmailDetail(this.selectedEmailFull);
         }
     },
 
     async archiveEmail(emailId) {
-        // For now, just show a message - archive requires knowing the archive folder ID
-        if (typeof showToast === 'function') {
-            showToast('success', 'Archived', 'Email moved to archive');
-        }
+        const email = this.emails.find(e => e.id === emailId);
+        if (!email) return;
 
-        // Remove from current list
+        // Store original position for undo
+        const originalIndex = this.emails.indexOf(email);
+        const originalEmail = { ...email };
+
+        // Optimistic removal - instant UI feedback
         this.emails = this.emails.filter(e => e.id !== emailId);
+        this.applyFilter();
         this.renderEmails();
 
         // Clear detail pane if this was selected
@@ -789,30 +1392,66 @@ const EmailListManager = {
                 detailPane.innerHTML = '<div class="empty-state"><div class="empty-message">Select an email to view</div></div>';
             }
         }
+
+        // Show toast with undo option
+        if (typeof showToast === 'function') {
+            showToast('success', 'Archived', 'Email moved to archive', {
+                action: 'Undo',
+                onAction: () => {
+                    // Restore email
+                    this.emails.splice(originalIndex, 0, originalEmail);
+                    this.applyFilter();
+                    this.renderEmails();
+                    showToast('info', 'Restored', 'Email restored');
+                }
+            });
+        }
+
+        // Note: Archive API call would go here if available
     },
 
     async deleteEmail(emailId) {
+        const email = this.emails.find(e => e.id === emailId);
+        if (!email) return;
+
+        // Store original for undo
+        const originalIndex = this.emails.indexOf(email);
+        const originalEmail = { ...email };
+
+        // Optimistic removal - instant UI feedback
+        this.emails = this.emails.filter(e => e.id !== emailId);
+        this.applyFilter();
+        this.renderEmails();
+
+        // Clear detail pane if this was selected
+        if (this.selectedEmailId === emailId) {
+            this.selectedEmailId = null;
+            const detailPane = document.querySelector('.email-detail');
+            if (detailPane) {
+                detailPane.innerHTML = '<div class="empty-state"><div class="empty-message">Select an email to view</div></div>';
+            }
+        }
+
         try {
             await AirAPI.deleteEmail(emailId);
 
             if (typeof showToast === 'function') {
-                showToast('warning', 'Deleted', 'Email moved to trash');
-            }
-
-            // Remove from current list
-            this.emails = this.emails.filter(e => e.id !== emailId);
-            this.renderEmails();
-
-            // Clear detail pane if this was selected
-            if (this.selectedEmailId === emailId) {
-                this.selectedEmailId = null;
-                const detailPane = document.querySelector('.email-detail');
-                if (detailPane) {
-                    detailPane.innerHTML = '<div class="empty-state"><div class="empty-message">Select an email to view</div></div>';
-                }
+                showToast('warning', 'Deleted', 'Email moved to trash', {
+                    action: 'Undo',
+                    onAction: async () => {
+                        // Note: Undo delete would require undelete API
+                        showToast('info', 'Note', 'Check trash to restore');
+                    }
+                });
             }
         } catch (error) {
             console.error('Failed to delete email:', error);
+
+            // Rollback - restore email to list
+            this.emails.splice(originalIndex, 0, originalEmail);
+            this.applyFilter();
+            this.renderEmails();
+
             if (typeof showToast === 'function') {
                 showToast('error', 'Error', 'Failed to delete email');
             }
@@ -839,20 +1478,100 @@ const EmailListManager = {
         }
     },
 
-    // Summarize email with AI
-    async summarizeWithAI(emailId) {
-        // Check if AI provider is configured
-        if (typeof settingsState === 'undefined' || !settingsState.aiProvider) {
-            if (typeof showToast === 'function') {
-                showToast('warning', 'AI Not Configured', 'Please select an AI provider in Settings');
-            }
-            // Open settings modal
-            if (typeof toggleSettings === 'function') {
-                toggleSettings();
-            }
-            return;
-        }
+    // Load smart reply suggestions
+    async loadSmartReplies(emailId) {
+        const email = this.selectedEmailFull && this.selectedEmailFull.id === emailId
+            ? this.selectedEmailFull
+            : this.emails.find(e => e.id === emailId);
 
+        if (!email) return;
+
+        const container = document.getElementById(`smartReplies-${emailId}`);
+        if (!container) return;
+
+        // Show loading state
+        container.innerHTML = `
+            <div class="smart-replies-loading">
+                <span class="loading-spinner"></span>
+                <span>Generating smart replies...</span>
+            </div>
+        `;
+
+        // Extract plain text from email body
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(email.body || '', 'text/html');
+        const plainText = doc.body?.textContent || '';
+
+        try {
+            const response = await fetch('/api/ai/smart-replies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email_id: emailId,
+                    subject: email.subject || '',
+                    from: email.from?.map(f => f.name || f.email).join(', ') || '',
+                    body: plainText.substring(0, 2000)
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.replies && result.replies.length > 0) {
+                container.innerHTML = `
+                    <div class="smart-replies-header">
+                        <span class="smart-replies-icon">💬</span>
+                        <span>Smart Replies</span>
+                    </div>
+                    <div class="smart-replies-list">
+                        ${result.replies.map((reply, i) => `
+                            <button class="smart-reply-chip" onclick="EmailListManager.useSmartReply('${emailId}', ${i})" data-reply="${this.escapeHtml(reply)}">
+                                ${this.escapeHtml(reply)}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                // Store replies for use
+                this.smartReplies = result.replies;
+            } else {
+                container.innerHTML = `
+                    <button class="smart-replies-trigger" onclick="EmailListManager.loadSmartReplies('${emailId}')">
+                        <span class="smart-replies-icon">💬</span>
+                        <span>Get smart reply suggestions</span>
+                    </button>
+                `;
+                if (result.error) {
+                    if (typeof showToast === 'function') {
+                        showToast('error', 'AI Error', result.error);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Smart replies error:', err);
+            container.innerHTML = `
+                <button class="smart-replies-trigger" onclick="EmailListManager.loadSmartReplies('${emailId}')">
+                    <span class="smart-replies-icon">💬</span>
+                    <span>Get smart reply suggestions</span>
+                </button>
+            `;
+        }
+    },
+
+    // Use a smart reply suggestion
+    useSmartReply(emailId, replyIndex) {
+        if (!this.smartReplies || !this.smartReplies[replyIndex]) return;
+
+        const reply = this.smartReplies[replyIndex];
+        const email = this.selectedEmailFull && this.selectedEmailFull.id === emailId
+            ? this.selectedEmailFull
+            : this.emails.find(e => e.id === emailId);
+
+        if (email && typeof ComposeManager !== 'undefined') {
+            ComposeManager.openReply(email, reply);
+        }
+    },
+
+    // Summarize email with AI (enhanced version)
+    async summarizeWithAI(emailId) {
         const email = this.selectedEmailFull && this.selectedEmailFull.id === emailId
             ? this.selectedEmailFull
             : this.emails.find(e => e.id === emailId);
@@ -874,42 +1593,32 @@ const EmailListManager = {
             const text = btn.querySelector('.ai-btn-text');
             if (icon) icon.style.display = 'none';
             if (spinner) spinner.style.display = 'block';
-            if (text) text.textContent = 'Summarizing...';
+            if (text) text.textContent = 'Analyzing...';
         }
 
-        // Extract plain text from email body
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = email.body || '';
-        const plainText = tempDiv.textContent || tempDiv.innerText || '';
-
-        // Build prompt for Claude Code
-        const prompt = `Please summarize this email:
-
-From: ${email.from?.map(f => f.name || f.email).join(', ') || 'Unknown'}
-Subject: ${email.subject || '(No Subject)'}
-Date: ${new Date(email.date * 1000).toLocaleString()}
-
----
-${plainText.substring(0, 3000)}${plainText.length > 3000 ? '...' : ''}
----
-
-Provide a brief summary with:
-1. Key points
-2. Action items (if any)
-3. Sentiment`;
+        // Extract plain text from email body safely using DOMParser
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(email.body || '', 'text/html');
+        const plainText = doc.body?.textContent || '';
 
         try {
-            const response = await fetch('/api/ai/summarize', {
+            // Use enhanced summary endpoint
+            const response = await fetch('/api/ai/enhanced-summary', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email_id: emailId, prompt: prompt })
+                body: JSON.stringify({
+                    email_id: emailId,
+                    subject: email.subject || '',
+                    from: email.from?.map(f => f.name || f.email).join(', ') || '',
+                    body: plainText.substring(0, 3000)
+                })
             });
 
             const result = await response.json();
 
             if (result.success) {
-                // Show summary in a modal
-                this.showAISummaryModal(email.subject, result.summary);
+                // Show enhanced summary modal
+                this.showEnhancedSummaryModal(email.subject, result);
             } else {
                 if (typeof showToast === 'function') {
                     showToast('error', 'AI Error', result.error || 'Failed to summarize');
@@ -935,7 +1644,80 @@ Provide a brief summary with:
         }
     },
 
-    // Show AI summary in a modal
+    // Show enhanced AI summary modal with action items and sentiment
+    showEnhancedSummaryModal(subject, result) {
+        const sentimentIcons = {
+            positive: '😊',
+            neutral: '😐',
+            negative: '😟',
+            urgent: '🚨'
+        };
+
+        const categoryIcons = {
+            meeting: '📅',
+            task: '✅',
+            fyi: 'ℹ️',
+            question: '❓',
+            social: '👋'
+        };
+
+        const sentimentIcon = sentimentIcons[result.sentiment] || '😐';
+        const categoryIcon = categoryIcons[result.category] || 'ℹ️';
+
+        // Build action items HTML
+        const actionItemsHtml = result.action_items && result.action_items.length > 0
+            ? `<div class="summary-section">
+                <div class="summary-section-title">📋 Action Items</div>
+                <ul class="action-items-list">
+                    ${result.action_items.map(item => `<li>${this.escapeHtml(item)}</li>`).join('')}
+                </ul>
+               </div>`
+            : '';
+
+        let modal = document.getElementById('aiSummaryModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'aiSummaryModal';
+            modal.className = 'modal-overlay';
+            document.body.appendChild(modal);
+        }
+
+        modal.innerHTML = `
+            <div class="modal ai-summary-modal">
+                <div class="modal-header">
+                    <h3>✨ AI Analysis</h3>
+                    <button class="close-btn" onclick="EmailListManager.closeAISummaryModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="summary-subject">${this.escapeHtml(subject || '(No Subject)')}</div>
+                    <div class="summary-badges">
+                        <span class="summary-badge sentiment-${result.sentiment}">${sentimentIcon} ${result.sentiment}</span>
+                        <span class="summary-badge category-${result.category}">${categoryIcon} ${result.category}</span>
+                    </div>
+                    <div class="summary-section">
+                        <div class="summary-section-title">📝 Summary</div>
+                        <div class="summary-content">${this.escapeHtml(result.summary)}</div>
+                    </div>
+                    ${actionItemsHtml}
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="EmailListManager.copyAISummary()">Copy Summary</button>
+                    <button class="btn btn-primary" onclick="EmailListManager.closeAISummaryModal()">Close</button>
+                </div>
+            </div>
+        `;
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+
+        // Store summary for copying
+        this.currentSummary = result.summary;
+        if (result.action_items && result.action_items.length > 0) {
+            this.currentSummary += '\n\nAction Items:\n' + result.action_items.map(item => '• ' + item).join('\n');
+        }
+    },
+
+    // Show AI summary in a modal (legacy - for basic summarize)
     showAISummaryModal(subject, summary) {
         // Check if modal already exists
         let modal = document.getElementById('aiSummaryModal');

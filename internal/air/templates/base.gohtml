@@ -17,10 +17,81 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="/css/main.css">
-    <!-- Productivity features disabled for now -->
-    <!-- <link rel="stylesheet" href="/css/productivity.css"> -->
+    <link rel="stylesheet" href="/css/productivity.css">
 </head>
 <body>
+    <!-- Loading Overlay for Cache Initialization - uses inline styles to ensure it works before CSS loads -->
+    <div id="initOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#0a0a0f; z-index:999999; align-items:center; justify-content:center;">
+        <div style="text-align:center; max-width:400px; padding:24px;">
+            <div style="display:inline-flex; align-items:center; justify-content:center; width:80px; height:80px; background:linear-gradient(135deg, #6366f1, #8b5cf6); border-radius:16px; color:white; margin-bottom:24px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 8l9-5 9 5v8l-9 5-9-5V8z"/>
+                    <path d="M12 22V12"/>
+                    <path d="M3 8l9 4 9-4"/>
+                </svg>
+            </div>
+            <h2 style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; font-size:28px; font-weight:600; color:#fafafa; margin:0 0 8px; letter-spacing:-0.5px;">Nylas Air</h2>
+            <p style="font-family:-apple-system,BlinkMacSystemFont,sans-serif; font-size:16px; color:#a1a1aa; margin:0 0 32px;">Initializing fresh cache...</p>
+            <div style="width:100%; height:4px; background:#27272a; border-radius:2px; overflow:hidden; margin-bottom:16px;">
+                <div id="initProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg, #6366f1, #8b5cf6); border-radius:2px; transition:width 0.1s linear;"></div>
+            </div>
+            <p id="initStatus" style="font-family:ui-monospace,monospace; font-size:12px; color:#71717a; margin:0; letter-spacing:0.5px;">Preparing workspace</p>
+        </div>
+    </div>
+    <script>
+        // Cache initialization overlay - runs immediately, before any other scripts
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('init') === '1') {
+                var overlay = document.getElementById('initOverlay');
+                var progressBar = document.getElementById('initProgressBar');
+                var statusText = document.getElementById('initStatus');
+
+                // Show overlay immediately with flex display
+                overlay.style.display = 'flex';
+
+                var statuses = [
+                    'Preparing workspace',
+                    'Clearing old data',
+                    'Setting up folders',
+                    'Connecting to API',
+                    'Loading preferences',
+                    'Almost ready...'
+                ];
+
+                var progress = 0;
+                var statusIndex = 0;
+                var duration = 3000; // 3 seconds
+                var interval = 50;   // Update every 50ms
+                var steps = duration / interval;
+                var increment = 100 / steps;
+
+                var timer = setInterval(function() {
+                    progress += increment;
+                    progressBar.style.width = Math.min(progress, 100) + '%';
+
+                    // Update status text at intervals
+                    var newIndex = Math.floor((progress / 100) * statuses.length);
+                    if (newIndex !== statusIndex && newIndex < statuses.length) {
+                        statusIndex = newIndex;
+                        statusText.textContent = statuses[statusIndex];
+                    }
+
+                    if (progress >= 100) {
+                        clearInterval(timer);
+                        statusText.textContent = 'Ready!';
+
+                        // Remove init param and refresh
+                        setTimeout(function() {
+                            var newUrl = window.location.origin + window.location.pathname;
+                            window.location.replace(newUrl);
+                        }, 300);
+                    }
+                }, interval);
+            }
+        })();
+    </script>
+
     <!-- Skip Navigation Link for Accessibility -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -58,10 +129,17 @@
     <script src="/js/calendar.js"></script>
     <script src="/js/contacts.js?v=3"></script>
 
-    <!-- 4. Productivity features (disabled for now) -->
-    <!-- <script src="/js/productivity.js"></script> -->
+    <!-- 4. Celebration & Effects -->
+    <script src="/js/confetti.js"></script>
 
-    <!-- 5. UI modules -->
+    <!-- 5. Command Palette & Shortcuts -->
+    <script src="/js/command-palette.js"></script>
+    <script src="/js/shortcuts.js"></script>
+
+    <!-- 6. Theme Management -->
+    <script src="/js/theme.js"></script>
+
+    <!-- 7. UI modules -->
     <script src="/js/mobile.js"></script>
     <script src="/js/app.js"></script>
 </body>
