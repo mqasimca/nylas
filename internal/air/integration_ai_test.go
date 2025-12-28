@@ -329,6 +329,264 @@ Manager`,
 }
 
 // =============================================================================
+// Auto-Label Integration Tests
+// =============================================================================
+
+func TestIntegration_AIAutoLabel_MethodNotAllowed(t *testing.T) {
+	server := testServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ai/auto-label", nil)
+	w := httptest.NewRecorder()
+
+	server.handleAIAutoLabel(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status 405, got %d", w.Code)
+	}
+}
+
+func TestIntegration_AIAutoLabel_MissingContent(t *testing.T) {
+	server := testServer(t)
+
+	reqBody := AutoLabelRequest{
+		EmailID: "test-email-id",
+		Subject: "",
+		From:    "sender@example.com",
+		Body:    "",
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/auto-label", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleAIAutoLabel(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+
+	var resp AutoLabelResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp.Success {
+		t.Error("expected failure for missing content")
+	}
+
+	if resp.Error != "Email subject or body is required" {
+		t.Errorf("expected 'Email subject or body is required', got: %s", resp.Error)
+	}
+}
+
+func TestIntegration_AIAutoLabel_WithContent(t *testing.T) {
+	server := testServer(t)
+
+	reqBody := AutoLabelRequest{
+		EmailID: "test-email-id",
+		Subject: "Q4 Budget Review Meeting - URGENT",
+		From:    "cfo@company.com",
+		Body: `Hi Team,
+
+We need to review the Q4 budget numbers urgently before the board meeting on Friday.
+
+Please bring your department's spending reports and forecasts.
+
+This is high priority - please confirm attendance.
+
+Thanks,
+CFO`,
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/auto-label", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleAIAutoLabel(w, req)
+
+	if w.Code == http.StatusOK {
+		var resp AutoLabelResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if !resp.Success {
+			t.Errorf("expected success, got error: %s", resp.Error)
+		}
+
+		if len(resp.Labels) == 0 {
+			t.Error("expected at least one label")
+		}
+
+		// Validate priority is one of the expected values
+		validPriorities := map[string]bool{"high": true, "normal": true, "low": true}
+		if !validPriorities[resp.Priority] {
+			t.Errorf("unexpected priority: %s", resp.Priority)
+		}
+
+		// Validate category is one of the expected values
+		validCategories := map[string]bool{
+			"meeting": true, "task": true, "fyi": true, "question": true,
+			"social": true, "newsletter": true, "promotion": true,
+			"urgent": true, "personal": true, "work": true,
+		}
+		if !validCategories[resp.Category] {
+			t.Errorf("unexpected category: %s", resp.Category)
+		}
+
+		t.Logf("Labels: %v", resp.Labels)
+		t.Logf("Category: %s, Priority: %s", resp.Category, resp.Priority)
+	} else if w.Code == http.StatusInternalServerError {
+		var resp AutoLabelResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if strings.Contains(resp.Error, "Claude Code CLI not found") ||
+			strings.Contains(resp.Error, "claude code CLI not found") {
+			t.Skip("Claude Code CLI not installed, skipping AI test")
+		}
+
+		t.Logf("AI error: %s", resp.Error)
+	} else {
+		t.Fatalf("unexpected status %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// =============================================================================
+// Thread Summary Integration Tests
+// =============================================================================
+
+func TestIntegration_AIThreadSummary_MethodNotAllowed(t *testing.T) {
+	server := testServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/ai/thread-summary", nil)
+	w := httptest.NewRecorder()
+
+	server.handleAIThreadSummary(w, req)
+
+	if w.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected status 405, got %d", w.Code)
+	}
+}
+
+func TestIntegration_AIThreadSummary_NoMessages(t *testing.T) {
+	server := testServer(t)
+
+	reqBody := ThreadSummaryRequest{
+		ThreadID: "thread-123",
+		Messages: []ThreadMessage{},
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/thread-summary", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleAIThreadSummary(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+
+	var resp ThreadSummaryResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp.Success {
+		t.Error("expected failure for no messages")
+	}
+
+	if resp.Error != "At least one message is required" {
+		t.Errorf("expected 'At least one message is required', got: %s", resp.Error)
+	}
+}
+
+func TestIntegration_AIThreadSummary_WithMessages(t *testing.T) {
+	server := testServer(t)
+
+	reqBody := ThreadSummaryRequest{
+		ThreadID: "thread-123",
+		Messages: []ThreadMessage{
+			{
+				From:    "alice@company.com",
+				Subject: "Project Kickoff",
+				Body:    "Hi team, let's kick off the new project. I've attached the initial requirements.",
+				Date:    1703980800,
+			},
+			{
+				From:    "bob@company.com",
+				Subject: "Re: Project Kickoff",
+				Body:    "Thanks Alice! I've reviewed the requirements. I have a few questions about the timeline.",
+				Date:    1703984400,
+			},
+			{
+				From:    "alice@company.com",
+				Subject: "Re: Project Kickoff",
+				Body:    "Sure Bob! Let's schedule a call tomorrow to discuss. Does 2pm work?",
+				Date:    1703988000,
+			},
+			{
+				From:    "bob@company.com",
+				Subject: "Re: Project Kickoff",
+				Body:    "2pm works perfectly. I'll send a calendar invite.",
+				Date:    1703991600,
+			},
+		},
+	}
+	body, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/thread-summary", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	server.handleAIThreadSummary(w, req)
+
+	if w.Code == http.StatusOK {
+		var resp ThreadSummaryResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if !resp.Success {
+			t.Errorf("expected success, got error: %s", resp.Error)
+		}
+
+		if resp.Summary == "" {
+			t.Error("expected non-empty summary")
+		}
+
+		if resp.MessageCount != 4 {
+			t.Errorf("expected message count 4, got %d", resp.MessageCount)
+		}
+
+		if len(resp.Participants) != 2 {
+			t.Errorf("expected 2 participants, got %d", len(resp.Participants))
+		}
+
+		t.Logf("Summary: %s", resp.Summary)
+		t.Logf("Key Points: %v", resp.KeyPoints)
+		t.Logf("Action Items: %v", resp.ActionItems)
+		t.Logf("Participants: %v", resp.Participants)
+		t.Logf("Timeline: %s", resp.Timeline)
+		t.Logf("Next Steps: %s", resp.NextSteps)
+	} else if w.Code == http.StatusInternalServerError {
+		var resp ThreadSummaryResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("failed to decode response: %v", err)
+		}
+
+		if strings.Contains(resp.Error, "Claude Code CLI not found") ||
+			strings.Contains(resp.Error, "claude code CLI not found") {
+			t.Skip("Claude Code CLI not installed, skipping AI test")
+		}
+
+		t.Logf("AI error: %s", resp.Error)
+	} else {
+		t.Fatalf("unexpected status %d: %s", w.Code, w.Body.String())
+	}
+}
+
+// =============================================================================
 // Phase 7: Middleware Integration Tests
 // =============================================================================
 
