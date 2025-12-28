@@ -19,10 +19,10 @@ type MessageDetail struct {
 	global   *state.GlobalState
 	theme    *styles.Theme
 	viewport viewport.Model
-	id       string              // Thread ID or message ID
-	thread   *domain.Thread      // Thread data (if viewing thread)
-	messages []*domain.Message   // All messages in thread
-	message  *domain.Message     // Single message (for backward compatibility)
+	id       string            // Thread ID or message ID
+	thread   *domain.Thread    // Thread data (if viewing thread)
+	messages []*domain.Message // All messages in thread
+	message  *domain.Message   // Single message (for backward compatibility)
 	loading  bool
 	err      error
 	ready    bool
@@ -424,7 +424,7 @@ func (m *MessageDetail) renderMessage(content *strings.Builder, msg *domain.Mess
 		content.WriteString("\n")
 		for _, att := range msg.Attachments {
 			size := formatSize(att.Size)
-			content.WriteString(fmt.Sprintf("  📎 %s (%s)\n", att.Filename, size))
+			fmt.Fprintf(content, "  📎 %s (%s)\n", att.Filename, size)
 		}
 	}
 

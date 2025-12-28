@@ -103,7 +103,7 @@ func TestDashboard_Update_Quit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var msg tea.Msg
 			if tt.key == "ctrl+c" {
-				msg = tea.KeyPressMsg{Mod: tea.ModCtrl, Text: "c"}
+				msg = tea.KeyPressMsg{Mod: tea.ModCtrl, Code: 'c'}
 			} else {
 				msg = tea.KeyPressMsg{Text: tt.key}
 			}

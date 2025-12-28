@@ -159,11 +159,12 @@ func TestMessageDetail_UpdateWithKeyPress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var msg tea.Msg
-			if tt.key == "ctrl+c" {
-				msg = tea.KeyPressMsg{Mod: tea.ModCtrl, Text: "c"}
-			} else if tt.key == "esc" {
+			switch tt.key {
+			case "ctrl+c":
+				msg = tea.KeyPressMsg{Mod: tea.ModCtrl, Code: 'c'}
+			case "esc":
 				msg = tea.KeyPressMsg{Code: tea.KeyEsc}
-			} else {
+			default:
 				msg = tea.KeyPressMsg{Text: tt.key}
 			}
 

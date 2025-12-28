@@ -18,6 +18,18 @@ import (
 	"github.com/mqasimca/nylas/internal/tui2/utils"
 )
 
+// SearchMode represents the current search mode.
+type SearchMode int
+
+const (
+	// SearchModeOff means search is not active.
+	SearchModeOff SearchMode = iota
+	// SearchModeInput means user is typing a search query.
+	SearchModeInput
+	// SearchModeActive means search results are being displayed.
+	SearchModeActive
+)
+
 // BackMsg is sent to go back to the previous screen.
 type BackMsg struct{}
 
@@ -28,11 +40,17 @@ type MessageList struct {
 
 	layout  *components.ThreePaneLayout
 	spinner spinner.Model
+	search  *components.Search
 
 	threads          []domain.Thread
+	allThreads       []domain.Thread // All threads before filtering (for client-side search)
 	foldersLoaded    bool
 	loadingFolders   bool
 	selectedFolderID string // Currently selected folder for filtering
+
+	// Search state
+	searchMode  SearchMode
+	searchQuery *components.SearchQuery
 
 	loading bool
 	err     error
@@ -50,21 +68,28 @@ func NewMessageList(global *state.GlobalState) *MessageList {
 	// Create three-pane layout
 	layout := components.NewThreePaneLayout(theme)
 
+	// Create search component
+	search := components.NewSearch(theme)
+
 	// Initialize layout with current window size if available
 	if global.WindowSize.Width > 0 && global.WindowSize.Height > 0 {
-		layoutHeight := global.WindowSize.Height - 4
+		layoutHeight := global.WindowSize.Height - 5 // Reserve extra line for search
 		if layoutHeight < 10 {
 			layoutHeight = 10
 		}
 		layout.SetSize(global.WindowSize.Width, layoutHeight)
+		search.SetWidth(global.WindowSize.Width)
 	}
 
 	return &MessageList{
-		global:  global,
-		theme:   theme,
-		layout:  layout,
-		spinner: s,
-		loading: true,
+		global:      global,
+		theme:       theme,
+		layout:      layout,
+		spinner:     s,
+		search:      search,
+		searchMode:  SearchModeOff,
+		searchQuery: &components.SearchQuery{},
+		loading:     true,
 	}
 }
 
@@ -89,8 +114,68 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		key := msg.Key()
 		keyStr := msg.String()
 
+		// When in search input mode, handle search-specific keys first
+		if m.searchMode == SearchModeInput {
+			switch key.Code {
+			case tea.KeyEsc:
+				// Cancel search and return to normal mode
+				m.searchMode = SearchModeOff
+				m.search.Reset()
+				m.search.Blur()
+				// Restore original threads
+				if len(m.allThreads) > 0 {
+					m.threads = m.allThreads
+					m.updateThreadTable()
+				}
+				m.global.SetStatus("Search cancelled", 0)
+				return m, nil
+
+			case tea.KeyEnter:
+				// Submit search
+				m.searchMode = SearchModeActive
+				m.search.Blur()
+				m.searchQuery = m.search.Query()
+
+				// If query has API-searchable operators, do API search
+				if m.shouldUseAPISearch(m.searchQuery) {
+					m.loading = true
+					m.global.SetStatus("Searching...", 0)
+					return m, tea.Batch(m.spinner.Tick, m.searchMessagesAPI(m.searchQuery))
+				}
+
+				// Otherwise, apply client-side filter
+				m.applyClientFilter(m.searchQuery)
+				m.global.SetStatus(fmt.Sprintf("Found %d results", len(m.threads)), 0)
+				return m, nil
+
+			default:
+				// Pass to search input
+				m.search, cmd = m.search.Update(msg)
+				// Real-time client-side filtering as user types
+				m.searchQuery = m.search.Query()
+				if !m.searchQuery.IsEmpty() {
+					m.applyClientFilter(m.searchQuery)
+				} else if len(m.allThreads) > 0 {
+					m.threads = m.allThreads
+					m.updateThreadTable()
+				}
+				return m, cmd
+			}
+		}
+
 		// Handle Esc key
 		if key.Code == tea.KeyEsc {
+			// If search is active, clear it first
+			if m.searchMode == SearchModeActive {
+				m.searchMode = SearchModeOff
+				m.search.Reset()
+				if len(m.allThreads) > 0 {
+					m.threads = m.allThreads
+					m.updateThreadTable()
+				}
+				m.global.SetStatus("Search cleared", 0)
+				return m, nil
+			}
 			// Go back to dashboard
 			return m, func() tea.Msg { return BackMsg{} }
 		}
@@ -102,12 +187,27 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Handle ctrl+r (refresh)
 		if keyStr == "ctrl+r" {
+			// Clear search when refreshing
+			m.searchMode = SearchModeOff
+			m.search.Reset()
+			m.allThreads = nil
+
 			// Refresh messages (respecting current folder filter)
 			m.loading = true
 			if m.selectedFolderID != "" {
 				return m, tea.Batch(m.spinner.Tick, m.fetchMessagesForFolder(m.selectedFolderID))
 			}
 			return m, tea.Batch(m.spinner.Tick, m.fetchMessages())
+		}
+
+		// Handle '/' to activate search
+		if keyStr == "/" {
+			m.searchMode = SearchModeInput
+			// Store current threads for filtering
+			if len(m.allThreads) == 0 {
+				m.allThreads = m.threads
+			}
+			return m, m.search.Focus()
 		}
 
 		// Handle tab/shift+tab using keyStr
@@ -153,6 +253,10 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Set selected folder and reload messages
 					m.selectedFolderID = folderItem.Folder.ID
 					m.loading = true
+					// Clear search when changing folders
+					m.searchMode = SearchModeOff
+					m.search.Reset()
+					m.allThreads = nil
 					m.global.SetStatus(fmt.Sprintf("Loading messages from %s...", folderItem.Folder.Name), 0)
 					return m, tea.Batch(m.spinner.Tick, m.fetchMessagesForFolder(folderItem.Folder.ID))
 				}
@@ -260,30 +364,28 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-
 		}
 
 	case tea.WindowSizeMsg:
 		// Update layout size
 		m.global.SetWindowSize(msg.Width, msg.Height)
-		// Reserve space for header (2 lines) and footer (2 lines) = 4 lines
-		// Layout height: terminal height - 4 lines for header/footer
-		layoutHeight := msg.Height - 4
+		// Reserve space for header (2 lines), search (1 line if active), and footer (2 lines)
+		reservedLines := 4
+		if m.searchMode != SearchModeOff {
+			reservedLines = 5 // Extra line for search bar
+		}
+		layoutHeight := msg.Height - reservedLines
 		if layoutHeight < 10 {
 			layoutHeight = 10 // Minimum height
 		}
 		m.layout.SetSize(msg.Width, layoutHeight)
+		m.search.SetWidth(msg.Width)
 		return m, nil
 
 	case threadsLoadedMsg:
 		m.threads = msg.threads
 		m.loading = false
 		m.updateThreadTable()
-		return m, nil
-
-	case messagesLoadedMsg:
-		// Keep for backward compatibility if needed
-		m.loading = false
 		return m, nil
 
 	case foldersLoadedMsg:
@@ -336,15 +438,35 @@ func (m *MessageList) View() tea.View {
 		header += " " + m.spinner.View()
 	}
 
-	// Build help text
-	help := m.theme.Help.Render("c: compose  r: reply  a: reply all  f: forward  Tab: switch pane  Ctrl+R: refresh  esc: back")
+	// Show search status if active
+	if m.searchMode == SearchModeActive && !m.searchQuery.IsEmpty() {
+		searchInfo := fmt.Sprintf(" [Searching: %s - %d results]", m.search.Value(), len(m.threads))
+		searchStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary).Italic(true)
+		header += searchStyle.Render(searchInfo)
+	}
 
-	// Build layout (in v2 this returns tea.View, not string, so we need a way to get its string content)
-	// For now, keeping the old pattern - this might need adjustment
+	// Build search bar (only shown when in search mode)
+	var searchBar string
+	if m.searchMode != SearchModeOff {
+		searchBar = m.search.ViewInline() + "\n"
+	}
+
+	// Build help text
+	var help string
+	switch m.searchMode {
+	case SearchModeInput:
+		help = m.theme.Help.Render("Enter: search  Esc: cancel  | from: to: subject: is:unread has:attachment")
+	case SearchModeActive:
+		help = m.theme.Help.Render("/: search  Esc: clear search  c: compose  Tab: switch pane  Ctrl+R: refresh")
+	default:
+		help = m.theme.Help.Render("/: search  c: compose  r: reply  a: reply all  f: forward  Tab: switch pane  Ctrl+R: refresh  esc: back")
+	}
+
+	// Build layout
 	layoutView := m.layout.View()
 
 	// Join all sections with single newlines to maximize space
-	return tea.NewView(header + "\n" + layoutView + "\n" + help)
+	return tea.NewView(header + "\n" + searchBar + layoutView + "\n" + help)
 }
 
 // fetchMessages fetches the message list.
@@ -434,6 +556,12 @@ func (m *MessageList) fetchFolders() tea.Cmd {
 
 // updateMessageTable updates the message table in the layout.
 func (m *MessageList) updateThreadTable() {
+	// Create highlight style for search matches
+	highlightStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#000000")).
+		Background(lipgloss.Color("#FFFF00")).
+		Bold(true)
+
 	rows := make([]table.Row, len(m.threads))
 	for i, thread := range m.threads {
 		// Get participants (from the latest message)
@@ -455,6 +583,12 @@ func (m *MessageList) updateThreadTable() {
 		msgCount := len(thread.MessageIDs)
 		if msgCount > 1 {
 			subject = fmt.Sprintf("%s (%d)", subject, msgCount)
+		}
+
+		// Apply search highlighting when search is active
+		if m.searchMode == SearchModeActive && m.searchQuery != nil && !m.searchQuery.IsEmpty() {
+			from = m.searchQuery.HighlightMatches(from, "from", highlightStyle)
+			subject = m.searchQuery.HighlightMatches(subject, "subject", highlightStyle)
 		}
 
 		// Format date using latest message received date
@@ -543,10 +677,6 @@ func (m *MessageList) showThreadPreview(threadID string) {
 
 // Message types
 
-type messagesLoadedMsg struct {
-	messages []domain.Message
-}
-
 type threadsLoadedMsg struct {
 	threads []domain.Thread
 }
@@ -590,4 +720,170 @@ func truncate(s string, max int) string {
 		return s[:max]
 	}
 	return s[:max-3] + "..."
+}
+
+// shouldUseAPISearch returns true if the query should use API search.
+// API search is used when there are operators that require server-side filtering.
+func (m *MessageList) shouldUseAPISearch(query *components.SearchQuery) bool {
+	// Use API search for date filters (can't do client-side)
+	if query.After != "" || query.Before != "" {
+		return true
+	}
+	// Use API search for is: operators (unread, starred)
+	if len(query.Is) > 0 {
+		return true
+	}
+	// Use API search for has: operators (attachment)
+	if len(query.Has) > 0 {
+		return true
+	}
+	// Use API search for in: operators (folder)
+	if len(query.In) > 0 {
+		return true
+	}
+	return false
+}
+
+// searchMessagesAPI performs an API search using the native query.
+func (m *MessageList) searchMessagesAPI(query *components.SearchQuery) tea.Cmd {
+	return func() tea.Msg {
+		// Rate limit to avoid API errors
+		m.global.RateLimiter.Wait()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Build native search query
+		nativeQuery := query.ToNativeQuery()
+
+		// Fetch threads with search query
+		params := &domain.ThreadQueryParams{
+			Limit:       50,
+			SearchQuery: nativeQuery,
+		}
+
+		// Apply folder filter if selected
+		if m.selectedFolderID != "" {
+			params.In = []string{m.selectedFolderID}
+		}
+
+		threads, err := m.global.Client.GetThreads(ctx, m.global.GrantID, params)
+		if err != nil {
+			return errMsg{err}
+		}
+		return threadsLoadedMsg{threads}
+	}
+}
+
+// applyClientFilter filters threads client-side based on the search query.
+func (m *MessageList) applyClientFilter(query *components.SearchQuery) {
+	if query.IsEmpty() || len(m.allThreads) == 0 {
+		m.threads = m.allThreads
+		m.updateThreadTable()
+		return
+	}
+
+	var filtered []domain.Thread
+
+	for _, thread := range m.allThreads {
+		if m.threadMatchesQuery(thread, query) {
+			filtered = append(filtered, thread)
+		}
+	}
+
+	m.threads = filtered
+	m.updateThreadTable()
+}
+
+// threadMatchesQuery checks if a thread matches the search query.
+func (m *MessageList) threadMatchesQuery(thread domain.Thread, query *components.SearchQuery) bool {
+	// Check free text (matches subject, snippet, or participants)
+	if query.Text != "" {
+		text := strings.ToLower(query.Text)
+		matched := false
+
+		// Check subject
+		if strings.Contains(strings.ToLower(thread.Subject), text) {
+			matched = true
+		}
+
+		// Check snippet
+		if !matched && strings.Contains(strings.ToLower(thread.Snippet), text) {
+			matched = true
+		}
+
+		// Check participants
+		if !matched {
+			for _, p := range thread.Participants {
+				if strings.Contains(strings.ToLower(p.Email), text) ||
+					strings.Contains(strings.ToLower(p.Name), text) {
+					matched = true
+					break
+				}
+			}
+		}
+
+		if !matched {
+			return false
+		}
+	}
+
+	// Check from: operator
+	if len(query.From) > 0 {
+		matched := false
+		for _, from := range query.From {
+			fromLower := strings.ToLower(from)
+			for _, p := range thread.Participants {
+				if strings.Contains(strings.ToLower(p.Email), fromLower) ||
+					strings.Contains(strings.ToLower(p.Name), fromLower) {
+					matched = true
+					break
+				}
+			}
+			if matched {
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+
+	// Check to: operator (for threads, check all participants)
+	if len(query.To) > 0 {
+		matched := false
+		for _, to := range query.To {
+			toLower := strings.ToLower(to)
+			for _, p := range thread.Participants {
+				if strings.Contains(strings.ToLower(p.Email), toLower) ||
+					strings.Contains(strings.ToLower(p.Name), toLower) {
+					matched = true
+					break
+				}
+			}
+			if matched {
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+
+	// Check subject: operator
+	if len(query.Subject) > 0 {
+		matched := false
+		subjectLower := strings.ToLower(thread.Subject)
+		for _, subj := range query.Subject {
+			if strings.Contains(subjectLower, strings.ToLower(subj)) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+
+	return true
 }

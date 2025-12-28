@@ -344,7 +344,7 @@ func TestMessageList_KeyboardNavigation_CtrlC(t *testing.T) {
 	ml.layout.SetSize(120, 40)
 
 	// Test Ctrl+C - should return tea.Quit
-	msg := tea.KeyPressMsg{Mod: tea.ModCtrl, Text: "c"}
+	msg := tea.KeyPressMsg{Mod: tea.ModCtrl, Code: 'c'}
 	_, cmd := ml.Update(msg)
 
 	if cmd == nil {
@@ -463,7 +463,7 @@ func TestMessageList_KeyboardNavigation_Refresh(t *testing.T) {
 	ml.layout.SetSize(120, 40)
 
 	// Test 'ctrl+r' key - should set loading and return fetch command
-	msg := tea.KeyPressMsg{Mod: tea.ModCtrl, Text: "r"}
+	msg := tea.KeyPressMsg{Mod: tea.ModCtrl, Code: 'r'}
 	updated, cmd := ml.Update(msg)
 
 	updatedML := updated.(*MessageList)
@@ -656,22 +656,22 @@ func TestMessageList_KeyboardNavigation_ArrowKeys(t *testing.T) {
 	// Set up test threads
 	ml.threads = []domain.Thread{
 		{
-			ID:      "thread1",
-			Subject: "Test 1",
+			ID:                    "thread1",
+			Subject:               "Test 1",
 			LatestDraftOrMessage:  domain.Message{ID: "msg1", Subject: "Test 1"},
 			MessageIDs:            []string{"msg1"},
 			LatestMessageRecvDate: time.Now(),
 		},
 		{
-			ID:      "thread2",
-			Subject: "Test 2",
+			ID:                    "thread2",
+			Subject:               "Test 2",
 			LatestDraftOrMessage:  domain.Message{ID: "msg2", Subject: "Test 2"},
 			MessageIDs:            []string{"msg2"},
 			LatestMessageRecvDate: time.Now(),
 		},
 		{
-			ID:      "thread3",
-			Subject: "Test 3",
+			ID:                    "thread3",
+			Subject:               "Test 3",
 			LatestDraftOrMessage:  domain.Message{ID: "msg3", Subject: "Test 3"},
 			MessageIDs:            []string{"msg3"},
 			LatestMessageRecvDate: time.Now(),

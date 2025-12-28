@@ -139,9 +139,7 @@ func (a *App) navigate(msg models.NavigateMsg) tea.Cmd {
 		}
 		screen = models.NewCompose(a.global, data)
 	case models.ScreenCalendar:
-		// TODO: Implement calendar screen
-		a.global.SetStatus("Calendar screen not yet implemented", int(StatusWarning))
-		return nil
+		screen = models.NewCalendarScreen(a.global)
 	case models.ScreenContacts:
 		// TODO: Implement contacts screen
 		a.global.SetStatus("Contacts screen not yet implemented", int(StatusWarning))
