@@ -1,24 +1,28 @@
 // Package styles provides Lip Gloss styling for the TUI.
 package styles
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"image/color"
+
+	"charm.land/lipgloss/v2"
+)
 
 // Theme holds all style definitions.
 type Theme struct {
 	Name string
 
 	// Base colors
-	Foreground lipgloss.Color
-	Background lipgloss.Color
-	Primary    lipgloss.Color
-	Secondary  lipgloss.Color
-	Accent     lipgloss.Color
+	Foreground color.Color
+	Background color.Color
+	Primary    color.Color
+	Secondary  color.Color
+	Accent     color.Color
 
 	// Status colors
-	Success lipgloss.Color
-	Warning lipgloss.Color
-	Error   lipgloss.Color
-	Info    lipgloss.Color
+	Success color.Color
+	Warning color.Color
+	Error   color.Color
+	Info    color.Color
 
 	// Component styles
 	Title          lipgloss.Style

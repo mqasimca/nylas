@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/table"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/mqasimca/nylas/internal/tui2/styles"
 )
 
@@ -63,7 +63,7 @@ func NewThreePaneLayout(theme *styles.Theme) *ThreePaneLayout {
 	)
 
 	// Create preview viewport
-	preview := viewport.New(0, 0)
+	preview := viewport.New()
 
 	return &ThreePaneLayout{
 		folders:        folders,
@@ -143,8 +143,8 @@ func (t *ThreePaneLayout) SetSize(width, height int) {
 	t.messages.SetHeight(contentHeight)
 	t.messages.SetWidth(messageContentWidth)
 
-	t.preview.Width = previewContentWidth
-	t.preview.Height = contentHeight
+	t.preview.SetWidth(previewContentWidth)
+	t.preview.SetHeight(contentHeight)
 }
 
 // updateMessageTableColumns dynamically adjusts column widths based on available space.
@@ -236,6 +236,7 @@ func (t *ThreePaneLayout) Update(msg tea.Msg) tea.Cmd {
 }
 
 // View renders the three-pane layout.
+// Note: This is a helper component, not a top-level model, so it returns string not tea.View
 func (t *ThreePaneLayout) View() string {
 	// Calculate pane widths (must match SetSize calculations)
 	borderStyle := lipgloss.NewStyle().

@@ -4,8 +4,8 @@ package models
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/mqasimca/nylas/internal/tui2/state"
 	"github.com/mqasimca/nylas/internal/tui2/styles"
 )
@@ -20,6 +20,8 @@ const (
 	ScreenMessages
 	// ScreenMessageDetail is the message detail view.
 	ScreenMessageDetail
+	// ScreenCompose is the compose email view.
+	ScreenCompose
 	// ScreenCalendar is the calendar view.
 	ScreenCalendar
 	// ScreenContacts is the contacts view.
@@ -59,9 +61,16 @@ func (d *Dashboard) Init() tea.Cmd {
 func (d *Dashboard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
+		// Use msg.String() for modifier combos (key.Text is empty for Ctrl+key)
+		keyStr := msg.String()
+
+		// Check ctrl+c (handled by app.go, but included for clarity)
+		if keyStr == "ctrl+c" {
 			return d, tea.Quit
+		}
+
+		// Check regular keys
+		switch keyStr {
 		case "a":
 			// Navigate to Air (messages)
 			return d, navigateToMessages()
@@ -115,7 +124,7 @@ func navigateToHelp() tea.Cmd {
 }
 
 // View implements tea.Model.
-func (d *Dashboard) View() string {
+func (d *Dashboard) View() tea.View {
 	// Build dashboard layout
 	var sections []string
 
@@ -170,5 +179,5 @@ func (d *Dashboard) View() string {
 	// Add border
 	bordered := d.theme.Border.Render(content)
 
-	return bordered
+	return tea.NewView(bordered)
 }

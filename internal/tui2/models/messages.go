@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/spinner"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/tui2/components"
 	"github.com/mqasimca/nylas/internal/tui2/state"
@@ -29,7 +29,7 @@ type MessageList struct {
 	layout  *components.ThreePaneLayout
 	spinner spinner.Model
 
-	messages         []domain.Message
+	threads          []domain.Thread
 	foldersLoaded    bool
 	loadingFolders   bool
 	selectedFolderID string // Currently selected folder for filtering
@@ -85,16 +85,33 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global shortcuts first
-		switch msg.String() {
-		case "esc":
+		// Use msg.String() for all key matching (v2 pattern)
+		key := msg.Key()
+		keyStr := msg.String()
+
+		// Handle Esc key
+		if key.Code == tea.KeyEsc {
 			// Go back to dashboard
 			return m, func() tea.Msg { return BackMsg{} }
+		}
 
-		case "ctrl+c":
+		// Handle ctrl+c (handled by app.go)
+		if keyStr == "ctrl+c" {
 			return m, tea.Quit
+		}
 
-		case "h", "shift+tab":
+		// Handle ctrl+r (refresh)
+		if keyStr == "ctrl+r" {
+			// Refresh messages (respecting current folder filter)
+			m.loading = true
+			if m.selectedFolderID != "" {
+				return m, tea.Batch(m.spinner.Tick, m.fetchMessagesForFolder(m.selectedFolderID))
+			}
+			return m, tea.Batch(m.spinner.Tick, m.fetchMessages())
+		}
+
+		// Handle tab/shift+tab using keyStr
+		if keyStr == "shift+tab" {
 			// Focus previous pane
 			m.layout.FocusPrevious()
 			// Lazy load folders when focusing on folder pane
@@ -104,8 +121,10 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.fetchFolders()
 			}
 			return m, nil
+		}
 
-		case "l", "tab":
+		// Handle tab
+		if keyStr == "tab" {
 			// Focus next pane
 			m.layout.FocusNext()
 			// Lazy load folders when focusing on folder pane
@@ -115,16 +134,10 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.fetchFolders()
 			}
 			return m, nil
+		}
 
-		case "r":
-			// Refresh messages (respecting current folder filter)
-			m.loading = true
-			if m.selectedFolderID != "" {
-				return m, tea.Batch(m.spinner.Tick, m.fetchMessagesForFolder(m.selectedFolderID))
-			}
-			return m, tea.Batch(m.spinner.Tick, m.fetchMessages())
-
-		case "enter":
+		// Handle Enter key
+		if key.Code == tea.KeyEnter {
 			// Handle enter based on focused pane
 			switch m.layout.GetFocused() {
 			case components.FolderPane:
@@ -146,18 +159,108 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 
 			case components.MessagePane:
-				// Message selected - navigate to detail view
+				// Thread selected - navigate to thread detail view
 				idx := m.layout.SelectedMessageIndex()
-				if idx >= 0 && idx < len(m.messages) {
+				if idx >= 0 && idx < len(m.threads) {
 					return m, func() tea.Msg {
 						return NavigateMsg{
 							Screen: ScreenMessageDetail,
-							Data:   m.messages[idx].ID,
+							Data:   m.threads[idx].ID, // Pass thread ID
 						}
 					}
 				}
 				return m, nil
 			}
+		}
+
+		// Handle text keys using keyStr
+		switch keyStr {
+		case "h":
+			// Focus previous pane
+			m.layout.FocusPrevious()
+			// Lazy load folders when focusing on folder pane
+			if m.layout.GetFocused() == components.FolderPane && !m.foldersLoaded && !m.loadingFolders {
+				m.loadingFolders = true
+				m.global.SetStatus("Loading folders...", 0)
+				return m, m.fetchFolders()
+			}
+			return m, nil
+
+		case "l":
+			// Focus next pane
+			m.layout.FocusNext()
+			// Lazy load folders when focusing on folder pane
+			if m.layout.GetFocused() == components.FolderPane && !m.foldersLoaded && !m.loadingFolders {
+				m.loadingFolders = true
+				m.global.SetStatus("Loading folders...", 0)
+				return m, m.fetchFolders()
+			}
+			return m, nil
+
+		case "c":
+			// Compose new message
+			return m, func() tea.Msg {
+				return NavigateMsg{
+					Screen: ScreenCompose,
+					Data:   ComposeData{Mode: ComposeModeNew},
+				}
+			}
+
+		case "r":
+			// Reply to latest message in selected thread (only when message pane is focused)
+			if m.layout.GetFocused() == components.MessagePane {
+				idx := m.layout.SelectedMessageIndex()
+				if idx >= 0 && idx < len(m.threads) {
+					return m, func() tea.Msg {
+						return NavigateMsg{
+							Screen: ScreenCompose,
+							Data: ComposeData{
+								Mode:    ComposeModeReply,
+								Message: &m.threads[idx].LatestDraftOrMessage,
+							},
+						}
+					}
+				}
+			}
+			return m, nil
+
+		case "a":
+			// Reply all to latest message in selected thread (only when message pane is focused)
+			if m.layout.GetFocused() == components.MessagePane {
+				idx := m.layout.SelectedMessageIndex()
+				if idx >= 0 && idx < len(m.threads) {
+					return m, func() tea.Msg {
+						return NavigateMsg{
+							Screen: ScreenCompose,
+							Data: ComposeData{
+								Mode:    ComposeModeReplyAll,
+								Message: &m.threads[idx].LatestDraftOrMessage,
+							},
+						}
+					}
+				}
+			}
+			return m, nil
+
+		case "f":
+			// Forward latest message in selected thread (only when message pane is focused)
+			if m.layout.GetFocused() == components.MessagePane {
+				idx := m.layout.SelectedMessageIndex()
+				if idx >= 0 && idx < len(m.threads) {
+					return m, func() tea.Msg {
+						return NavigateMsg{
+							Screen: ScreenCompose,
+							Data: ComposeData{
+								Mode:    ComposeModeForward,
+								Message: &m.threads[idx].LatestDraftOrMessage,
+							},
+						}
+					}
+				}
+			}
+			return m, nil
+
+
 		}
 
 	case tea.WindowSizeMsg:
@@ -172,10 +275,15 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.layout.SetSize(msg.Width, layoutHeight)
 		return m, nil
 
-	case messagesLoadedMsg:
-		m.messages = msg.messages
+	case threadsLoadedMsg:
+		m.threads = msg.threads
 		m.loading = false
-		m.updateMessageTable()
+		m.updateThreadTable()
+		return m, nil
+
+	case messagesLoadedMsg:
+		// Keep for backward compatibility if needed
+		m.loading = false
 		return m, nil
 
 	case foldersLoadedMsg:
@@ -203,10 +311,10 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, cmd)
 
 	// Update preview when cursor moves in message pane
-	if m.layout.GetFocused() == components.MessagePane && !m.loading && len(m.messages) > 0 {
+	if m.layout.GetFocused() == components.MessagePane && !m.loading && len(m.threads) > 0 {
 		idx := m.layout.SelectedMessageIndex()
-		if idx >= 0 && idx < len(m.messages) {
-			m.showMessagePreview(m.messages[idx].ID)
+		if idx >= 0 && idx < len(m.threads) {
+			m.showThreadPreview(m.threads[idx].ID)
 		}
 	}
 
@@ -214,9 +322,9 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View implements tea.Model.
-func (m *MessageList) View() string {
+func (m *MessageList) View() tea.View {
 	if m.err != nil {
-		return m.theme.Error_.Render(fmt.Sprintf("Error: %v\n\nPress 'q' to go back", m.err))
+		return tea.NewView(m.theme.Error_.Render(fmt.Sprintf("Error: %v\n\nPress 'q' to go back", m.err)))
 	}
 
 	// Build header
@@ -229,13 +337,14 @@ func (m *MessageList) View() string {
 	}
 
 	// Build help text
-	help := m.theme.Help.Render("Tab/h/l: switch pane  Enter: select  r: refresh  esc: back  Ctrl+C: quit")
+	help := m.theme.Help.Render("c: compose  r: reply  a: reply all  f: forward  Tab: switch pane  Ctrl+R: refresh  esc: back")
 
-	// Build layout
+	// Build layout (in v2 this returns tea.View, not string, so we need a way to get its string content)
+	// For now, keeping the old pattern - this might need adjustment
 	layoutView := m.layout.View()
 
 	// Join all sections with single newlines to maximize space
-	return header + "\n" + layoutView + "\n" + help
+	return tea.NewView(header + "\n" + layoutView + "\n" + help)
 }
 
 // fetchMessages fetches the message list.
@@ -247,15 +356,19 @@ func (m *MessageList) fetchMessages() tea.Cmd {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		messages, err := m.global.Client.GetMessages(ctx, m.global.GrantID, 20)
+		// Fetch threads instead of individual messages for proper conversation grouping
+		params := &domain.ThreadQueryParams{
+			Limit: 50,
+		}
+		threads, err := m.global.Client.GetThreads(ctx, m.global.GrantID, params)
 		if err != nil {
 			return errMsg{err}
 		}
-		return messagesLoadedMsg{messages}
+		return threadsLoadedMsg{threads}
 	}
 }
 
-// fetchMessagesForFolder fetches messages filtered by folder ID.
+// fetchMessagesForFolder fetches threads filtered by folder ID.
 func (m *MessageList) fetchMessagesForFolder(folderID string) tea.Cmd {
 	return func() tea.Msg {
 		// Rate limit to avoid API errors
@@ -264,17 +377,17 @@ func (m *MessageList) fetchMessagesForFolder(folderID string) tea.Cmd {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Use GetMessagesWithParams to filter by folder
-		params := &domain.MessageQueryParams{
+		// Fetch threads filtered by folder
+		params := &domain.ThreadQueryParams{
 			In:    []string{folderID},
 			Limit: 50,
 		}
 
-		messages, err := m.global.Client.GetMessagesWithParams(ctx, m.global.GrantID, params)
+		threads, err := m.global.Client.GetThreads(ctx, m.global.GrantID, params)
 		if err != nil {
 			return errMsg{err}
 		}
-		return messagesLoadedMsg{messages}
+		return threadsLoadedMsg{threads}
 	}
 }
 
@@ -320,25 +433,32 @@ func (m *MessageList) fetchFolders() tea.Cmd {
 }
 
 // updateMessageTable updates the message table in the layout.
-func (m *MessageList) updateMessageTable() {
-	rows := make([]table.Row, len(m.messages))
-	for i, msg := range m.messages {
+func (m *MessageList) updateThreadTable() {
+	rows := make([]table.Row, len(m.threads))
+	for i, thread := range m.threads {
+		// Get participants (from the latest message)
 		from := "Unknown"
-		if len(msg.From) > 0 {
-			if msg.From[0].Name != "" {
-				from = msg.From[0].Name
+		if len(thread.Participants) > 0 {
+			if thread.Participants[0].Name != "" {
+				from = thread.Participants[0].Name
 			} else {
-				from = msg.From[0].Email
+				from = thread.Participants[0].Email
 			}
 		}
 
-		subject := msg.Subject
+		subject := thread.Subject
 		if subject == "" {
 			subject = "(no subject)"
 		}
 
-		// Format date
-		date := formatDate(msg.Date)
+		// Add message count if more than 1 message in thread
+		msgCount := len(thread.MessageIDs)
+		if msgCount > 1 {
+			subject = fmt.Sprintf("%s (%d)", subject, msgCount)
+		}
+
+		// Format date using latest message received date
+		date := formatDate(thread.LatestMessageRecvDate)
 
 		rows[i] = table.Row{
 			truncate(from, 20),
@@ -349,68 +469,68 @@ func (m *MessageList) updateMessageTable() {
 
 	m.layout.SetMessages(rows)
 
-	// Auto-preview the first message
-	if len(m.messages) > 0 {
-		m.showMessagePreview(m.messages[0].ID)
+	// Auto-preview the first thread
+	if len(m.threads) > 0 {
+		m.showThreadPreview(m.threads[0].ID)
 	}
 }
 
-// showMessagePreview displays a message in the preview pane.
-func (m *MessageList) showMessagePreview(msgID string) {
-	// Find message by ID
-	var msg *domain.Message
-	for i := range m.messages {
-		if m.messages[i].ID == msgID {
-			msg = &m.messages[i]
+// showThreadPreview displays a thread preview in the preview pane.
+func (m *MessageList) showThreadPreview(threadID string) {
+	// Find thread by ID
+	var thread *domain.Thread
+	for i := range m.threads {
+		if m.threads[i].ID == threadID {
+			thread = &m.threads[i]
 			break
 		}
 	}
 
-	if msg == nil {
-		m.layout.SetPreview("Message not found")
+	if thread == nil {
+		m.layout.SetPreview("Thread not found")
 		return
 	}
 
 	// Build preview content
 	var preview strings.Builder
 
-	// Header
-	preview.WriteString(m.theme.Title.Render("Subject: ") + msg.Subject + "\n\n")
-
-	// From
-	from := "Unknown"
-	if len(msg.From) > 0 {
-		if msg.From[0].Name != "" {
-			from = fmt.Sprintf("%s <%s>", msg.From[0].Name, msg.From[0].Email)
-		} else {
-			from = msg.From[0].Email
-		}
+	// Header with message count
+	msgCount := len(thread.MessageIDs)
+	header := thread.Subject
+	if msgCount > 1 {
+		header = fmt.Sprintf("%s (%d messages)", header, msgCount)
 	}
-	preview.WriteString(m.theme.KeyBinding.Render("From: ") + from + "\n")
+	preview.WriteString(m.theme.Title.Render("Subject: ") + header + "\n\n")
 
-	// To
-	if len(msg.To) > 0 {
-		toList := make([]string, len(msg.To))
-		for i, to := range msg.To {
-			if to.Name != "" {
-				toList[i] = fmt.Sprintf("%s <%s>", to.Name, to.Email)
+	// Participants (thread-level field, always populated)
+	if len(thread.Participants) > 0 {
+		participants := make([]string, 0, len(thread.Participants))
+		for _, p := range thread.Participants {
+			if p.Name != "" {
+				participants = append(participants, fmt.Sprintf("%s <%s>", p.Name, p.Email))
 			} else {
-				toList[i] = to.Email
+				participants = append(participants, p.Email)
 			}
 		}
-		preview.WriteString(m.theme.KeyBinding.Render("To: ") + strings.Join(toList, ", ") + "\n")
+		preview.WriteString(m.theme.KeyBinding.Render("Participants: ") + strings.Join(participants, ", ") + "\n")
 	}
 
-	// Date
-	preview.WriteString(m.theme.KeyBinding.Render("Date: ") + msg.Date.Format("Mon Jan 2, 2006 at 3:04 PM") + "\n")
+	// Date - use LatestMessageRecvDate from thread (always populated)
+	var displayDate time.Time
+	if !thread.LatestMessageRecvDate.IsZero() {
+		displayDate = thread.LatestMessageRecvDate
+	} else if !thread.LatestMessageSentDate.IsZero() {
+		displayDate = thread.LatestMessageSentDate
+	}
+
+	if !displayDate.IsZero() {
+		preview.WriteString(m.theme.KeyBinding.Render("Date: ") + displayDate.Format("Mon Jan 2, 2006 at 3:04 PM") + "\n")
+	}
 
 	preview.WriteString("\n" + strings.Repeat("─", 50) + "\n\n")
 
-	// Body - use snippet from message list, or body if available
-	content := msg.Snippet
-	if content == "" && msg.Body != "" {
-		content = msg.Body
-	}
+	// Body - use snippet from thread
+	content := thread.Snippet
 
 	if content != "" {
 		preview.WriteString(content)
@@ -425,6 +545,10 @@ func (m *MessageList) showMessagePreview(msgID string) {
 
 type messagesLoadedMsg struct {
 	messages []domain.Message
+}
+
+type threadsLoadedMsg struct {
+	threads []domain.Thread
 }
 
 type foldersLoadedMsg struct {

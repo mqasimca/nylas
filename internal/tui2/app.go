@@ -2,7 +2,9 @@
 package tui2
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	"fmt"
+
+	tea "charm.land/bubbletea/v2"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/mqasimca/nylas/internal/tui2/models"
 	"github.com/mqasimca/nylas/internal/tui2/state"
@@ -62,8 +64,14 @@ func (a *App) Init() tea.Cmd {
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Global keyboard shortcuts
-		if msg.String() == "ctrl+c" {
+		// Global keyboard shortcuts - check for Ctrl+C
+		// Note: Must use msg.String() for modifier combos as key.Text is empty
+		keyStr := msg.String()
+
+		// Debug: Log key presses to status bar (temporary)
+		a.global.SetStatus(fmt.Sprintf("DEBUG: Key pressed: %q", keyStr), 0)
+
+		if keyStr == "ctrl+c" {
 			return a, tea.Quit
 		}
 
@@ -100,11 +108,16 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View implements tea.Model.
-func (a *App) View() string {
+func (a *App) View() tea.View {
+	var v tea.View
 	if len(a.stack) > 0 {
-		return a.stack[len(a.stack)-1].View()
+		v = a.stack[len(a.stack)-1].View()
+	} else {
+		v = tea.NewView("Loading...")
 	}
-	return "Loading..."
+	// Enable full-window alt screen mode
+	v.AltScreen = true
+	return v
 }
 
 // navigate pushes a new screen onto the stack.
@@ -124,6 +137,14 @@ func (a *App) navigate(msg models.NavigateMsg) tea.Cmd {
 			return nil
 		}
 		screen = models.NewMessageDetail(a.global, messageID)
+	case models.ScreenCompose:
+		// Extract compose data
+		data, ok := msg.Data.(models.ComposeData)
+		if !ok {
+			a.global.SetStatus("Invalid compose data", int(StatusError))
+			return nil
+		}
+		screen = models.NewCompose(a.global, data)
 	case models.ScreenCalendar:
 		// TODO: Implement calendar screen
 		a.global.SetStatus("Calendar screen not yet implemented", int(StatusWarning))
@@ -147,8 +168,17 @@ func (a *App) navigate(msg models.NavigateMsg) tea.Cmd {
 	// Push screen onto stack
 	a.stack = append(a.stack, screen)
 
-	// Initialize the new screen
-	return screen.Init()
+	// Initialize the new screen and send current window size
+	// This ensures the screen receives WindowSizeMsg for proper layout initialization
+	return tea.Batch(
+		screen.Init(),
+		func() tea.Msg {
+			return tea.WindowSizeMsg{
+				Width:  a.global.WindowSize.Width,
+				Height: a.global.WindowSize.Height,
+			}
+		},
+	)
 }
 
 // back pops the current screen from the stack.
@@ -162,7 +192,7 @@ func (a *App) back() tea.Cmd {
 // Run starts the TUI application.
 func Run(cfg Config) error {
 	app := NewApp(cfg)
-	p := tea.NewProgram(app, tea.WithAltScreen())
+	p := tea.NewProgram(app)
 	_, err := p.Run()
 	return err
 }

@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/tui2/styles"
 )
@@ -192,7 +192,7 @@ func TestThreePaneLayout_Update(t *testing.T) {
 	layout.SetSize(120, 40)
 
 	// Test updating with key message
-	msg := tea.KeyMsg{Type: tea.KeyDown}
+	msg := tea.KeyPressMsg{Code: tea.KeyDown}
 	_ = layout.Update(msg)
 
 	// Update may return nil command, which is valid
@@ -331,9 +331,9 @@ func TestThreePaneLayout_DynamicPanelResizing(t *testing.T) {
 			}
 
 			// Verify preview width (allow ±2 for rounding)
-			if abs(previewModel.Width-expectedPreviewWidth) > 2 {
+			if abs(previewModel.Width()-expectedPreviewWidth) > 2 {
 				t.Errorf("Preview width = %d, want ~%d (%.0f%%)",
-					previewModel.Width, expectedPreviewWidth, float64(tt.expectedPreviewPct))
+					previewModel.Width(), expectedPreviewWidth, float64(tt.expectedPreviewPct))
 			}
 		})
 	}
@@ -373,9 +373,9 @@ func TestThreePaneLayout_StaticLayout(t *testing.T) {
 				pane, folderModel.Width(), expectedFolderWidth)
 		}
 
-		if abs(previewModel.Width-expectedPreviewWidth) > 2 {
+		if abs(previewModel.Width()-expectedPreviewWidth) > 2 {
 			t.Errorf("With %v focused: Preview width = %d, want ~%d (should be static 45%%)",
-				pane, previewModel.Width, expectedPreviewWidth)
+				pane, previewModel.Width(), expectedPreviewWidth)
 		}
 	}
 }
@@ -470,7 +470,7 @@ func TestFolderDelegate_Update(t *testing.T) {
 	delegate := newFolderDelegate(theme)
 
 	listModel := list.New([]list.Item{}, delegate, 20, 10)
-	cmd := delegate.Update(tea.KeyMsg{}, &listModel)
+	cmd := delegate.Update(tea.KeyPressMsg{}, &listModel)
 
 	if cmd != nil {
 		t.Error("folderDelegate.Update should always return nil")
@@ -500,12 +500,12 @@ func TestThreePaneLayout_UpdateWithDifferentPanes(t *testing.T) {
 		focusPane Pane
 		msg       tea.Msg
 	}{
-		{"folder_pane_down", FolderPane, tea.KeyMsg{Type: tea.KeyDown}},
-		{"folder_pane_up", FolderPane, tea.KeyMsg{Type: tea.KeyUp}},
-		{"message_pane_down", MessagePane, tea.KeyMsg{Type: tea.KeyDown}},
-		{"message_pane_up", MessagePane, tea.KeyMsg{Type: tea.KeyUp}},
-		{"preview_pane_down", PreviewPane, tea.KeyMsg{Type: tea.KeyDown}},
-		{"preview_pane_up", PreviewPane, tea.KeyMsg{Type: tea.KeyUp}},
+		{"folder_pane_down", FolderPane, tea.KeyPressMsg{Code: tea.KeyDown}},
+		{"folder_pane_up", FolderPane, tea.KeyPressMsg{Code: tea.KeyUp}},
+		{"message_pane_down", MessagePane, tea.KeyPressMsg{Code: tea.KeyDown}},
+		{"message_pane_up", MessagePane, tea.KeyPressMsg{Code: tea.KeyUp}},
+		{"preview_pane_down", PreviewPane, tea.KeyPressMsg{Code: tea.KeyDown}},
+		{"preview_pane_up", PreviewPane, tea.KeyPressMsg{Code: tea.KeyUp}},
 	}
 
 	for _, tt := range tests {
@@ -590,8 +590,8 @@ func TestThreePaneLayout_HeightCalculation(t *testing.T) {
 			}
 
 			prevModel := layout.GetPreview()
-			if prevModel.Height != expectedContentHeight {
-				t.Errorf("Preview height = %d, want %d", prevModel.Height, expectedContentHeight)
+			if prevModel.Height() != expectedContentHeight {
+				t.Errorf("Preview height = %d, want %d", prevModel.Height(), expectedContentHeight)
 			}
 		})
 	}

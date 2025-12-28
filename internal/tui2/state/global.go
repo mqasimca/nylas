@@ -4,7 +4,7 @@ package state
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/mqasimca/nylas/internal/tui2/utils"
 )

@@ -1,7 +1,7 @@
 // Package tui2 provides a Bubble Tea-based terminal user interface for Nylas.
 package tui2
 
-import tea "github.com/charmbracelet/bubbletea"
+import tea "charm.land/bubbletea/v2"
 
 // ScreenType represents different screens in the application.
 type ScreenType int
