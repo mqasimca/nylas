@@ -2,8 +2,6 @@
 package tui2
 
 import (
-	"fmt"
-
 	tea "charm.land/bubbletea/v2"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/mqasimca/nylas/internal/tui2/models"
@@ -66,12 +64,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// Global keyboard shortcuts - check for Ctrl+C
 		// Note: Must use msg.String() for modifier combos as key.Text is empty
-		keyStr := msg.String()
-
-		// Debug: Log key presses to status bar (temporary)
-		a.global.SetStatus(fmt.Sprintf("DEBUG: Key pressed: %q", keyStr), 0)
-
-		if keyStr == "ctrl+c" {
+		if msg.String() == "ctrl+c" {
 			return a, tea.Quit
 		}
 
