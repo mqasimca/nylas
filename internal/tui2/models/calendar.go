@@ -502,13 +502,24 @@ func (m *CalendarScreen) View() tea.View {
 
 	// Calendar grid
 	calendarView := m.calendarGrid.View()
+	calendarLines := len(strings.Split(calendarView, "\n"))
 
 	// Build main content with side-by-side layout
 	var mainContent string
 	if scheduleWidth > 0 {
-		// Today's schedule panel
-		schedulePanel := m.renderTodaySchedule(scheduleWidth, gridHeight)
-		mainContent = lipgloss.JoinHorizontal(lipgloss.Top, calendarView, schedulePanel)
+		// Today's schedule panel - auto-sized and vertically centered
+		schedulePanel := m.renderTodaySchedule(scheduleWidth, calendarLines)
+
+		// Center the schedule panel vertically against the calendar
+		centeredSchedule := lipgloss.Place(
+			scheduleWidth,
+			calendarLines,
+			lipgloss.Center,
+			lipgloss.Center,
+			schedulePanel,
+		)
+
+		mainContent = lipgloss.JoinHorizontal(lipgloss.Top, calendarView, centeredSchedule)
 	} else {
 		mainContent = calendarView
 	}
@@ -587,67 +598,90 @@ func (m *CalendarScreen) fetchEventsForMonth(calendarID string, month time.Time)
 }
 
 // renderTodaySchedule renders the "Today's Schedule" panel for the right side.
-func (m *CalendarScreen) renderTodaySchedule(width, height int) string {
-	var b strings.Builder
-
-	// Panel border style
-	panelStyle := lipgloss.NewStyle().
-		Width(width-2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.Dimmed.GetForeground()).
-		Padding(0, 1)
+// The panel auto-sizes based on content and will be vertically centered.
+// maxHeight is used to limit the number of events shown.
+func (m *CalendarScreen) renderTodaySchedule(width, maxHeight int) string {
+	var lines []string
 
 	// Header: "Today's Schedule" with date
 	selectedDate := m.calendarGrid.GetSelectedDate()
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(m.theme.Foreground)
-	dateStyle := lipgloss.NewStyle().
-		Foreground(m.theme.Secondary)
 
-	headerText := "Today's Schedule"
-	if !m.calendarGrid.IsToday(selectedDate) {
-		headerText = selectedDate.Format("Mon, Jan 2") + " Schedule"
+	headerText := "📅 Schedule"
+	if m.calendarGrid.IsToday(selectedDate) {
+		headerText = "📅 Today"
 	}
 
-	b.WriteString(headerStyle.Render(headerText))
-	b.WriteString("  ")
-	b.WriteString(dateStyle.Render(selectedDate.Format("Mon, Jan 2")))
-	b.WriteString("\n\n")
+	lines = append(lines, headerStyle.Render(headerText))
+	dateStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
+	lines = append(lines, dateStyle.Render(selectedDate.Format("Monday, Jan 2")))
+	lines = append(lines, "") // Empty line after header
 
 	// Get events for selected date
 	events := m.calendarGrid.GetEventsForDate(selectedDate)
 
 	if len(events) == 0 {
 		dimStyle := lipgloss.NewStyle().Foreground(m.theme.Dimmed.GetForeground())
-		b.WriteString(dimStyle.Render("No events"))
-		b.WriteString("\n")
+		lines = append(lines, dimStyle.Render("No events scheduled"))
+		lines = append(lines, "")
+		lines = append(lines, dimStyle.Render("Press 'n' to create"))
 	} else {
-		// Render each event as a card
-		maxEvents := (height - 4) / 5 // Each event card is ~5 lines
-		if maxEvents < 1 {
-			maxEvents = 1
+		// Calculate max events based on available height
+		// Each event card is roughly 4-5 lines, reserve 6 for header/footer
+		availableForEvents := maxHeight - 8
+		maxEvents := availableForEvents / 5
+		if maxEvents < 2 {
+			maxEvents = 2
+		}
+		if maxEvents > 8 {
+			maxEvents = 8 // Cap at 8 events for readability
 		}
 		if maxEvents > len(events) {
 			maxEvents = len(events)
 		}
 
-		for i := 0; i < maxEvents; i++ {
-			evt := events[i]
-			b.WriteString(m.renderEventCard(evt, width-4, i == m.selectedEventIdx))
-			b.WriteString("\n")
+		// Event count indicator
+		countStyle := lipgloss.NewStyle().Foreground(m.theme.Dimmed.GetForeground())
+		if len(events) > 1 {
+			lines = append(lines, countStyle.Render(fmt.Sprintf("%d events", len(events))))
+			lines = append(lines, "")
 		}
 
-		// Show remaining count
+		// Render each event as a card
+		for i := 0; i < maxEvents; i++ {
+			evt := events[i]
+			card := m.renderEventCard(evt, width-6, i == m.selectedEventIdx)
+			cardLines := strings.Split(card, "\n")
+			lines = append(lines, cardLines...)
+			// Add spacing between cards
+			if i < maxEvents-1 {
+				lines = append(lines, "")
+			}
+		}
+
+		// Show scroll indicator if more events
 		if len(events) > maxEvents {
-			moreStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
-			b.WriteString(moreStyle.Render(fmt.Sprintf("+%d more events", len(events)-maxEvents)))
-			b.WriteString("\n")
+			lines = append(lines, "")
+			scrollStyle := lipgloss.NewStyle().
+				Foreground(m.theme.Secondary).
+				Bold(true)
+			lines = append(lines, scrollStyle.Render(fmt.Sprintf("↓ %d more (J/K to scroll)", len(events)-maxEvents)))
 		}
 	}
 
-	// Wrap in panel
-	return panelStyle.Render(b.String())
+	// Join all lines into content
+	content := strings.Join(lines, "\n")
+
+	// Panel style - auto-sized based on content
+	panelStyle := lipgloss.NewStyle().
+		Width(width - 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(m.theme.Primary).
+		Padding(0, 1)
+
+	return panelStyle.Render(content)
 }
 
 // renderEventCard renders a single event as a card for the schedule panel.

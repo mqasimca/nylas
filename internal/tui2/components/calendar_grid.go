@@ -402,7 +402,10 @@ func (c *CalendarGrid) renderMonthView() string {
 		}
 		// Join cells horizontally
 		b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, weekCells...))
-		b.WriteString("\n")
+		// Only add newline between rows, not after the last row
+		if week < numWeeks-1 {
+			b.WriteString("\n")
+		}
 	}
 
 	return b.String()
