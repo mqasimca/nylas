@@ -202,6 +202,14 @@ func (f *EventForm) SetDate(date time.Time) {
 	f.endDateInput.SetValue(date.Format("2006-01-02"))
 }
 
+// SetTimeRange sets the start and end time for the event.
+func (f *EventForm) SetTimeRange(start, end time.Time) {
+	f.startDateInput.SetValue(start.Format("2006-01-02"))
+	f.startTimeInput.SetValue(start.Format("15:04"))
+	f.endDateInput.SetValue(end.Format("2006-01-02"))
+	f.endTimeInput.SetValue(end.Format("15:04"))
+}
+
 // SetSize sets the form size.
 func (f *EventForm) SetSize(width, height int) {
 	f.width = width

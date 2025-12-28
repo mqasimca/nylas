@@ -28,6 +28,8 @@ const (
 	SearchModeInput
 	// SearchModeActive means search results are being displayed.
 	SearchModeActive
+	// SearchModeAdvanced means the advanced search dialog is open.
+	SearchModeAdvanced
 )
 
 // BackMsg is sent to go back to the previous screen.
@@ -38,9 +40,10 @@ type MessageList struct {
 	global *state.GlobalState
 	theme  *styles.Theme
 
-	layout  *components.ThreePaneLayout
-	spinner spinner.Model
-	search  *components.Search
+	layout       *components.ThreePaneLayout
+	spinner      spinner.Model
+	search       *components.Search
+	searchDialog *components.SearchDialog
 
 	threads          []domain.Thread
 	allThreads       []domain.Thread // All threads before filtering (for client-side search)
@@ -109,10 +112,46 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	// Handle search dialog messages
+	case components.SearchDialogSubmitMsg:
+		m.searchMode = SearchModeActive
+		m.searchDialog = nil
+		m.search.SetValue(msg.Query)
+		m.searchQuery = components.ParseSearchQuery(msg.Query)
+
+		// Store current threads for filtering
+		if len(m.allThreads) == 0 {
+			m.allThreads = m.threads
+		}
+
+		// If query has API-searchable operators, do API search
+		if m.shouldUseAPISearch(m.searchQuery) {
+			m.loading = true
+			m.global.SetStatus("Searching...", 0)
+			return m, tea.Batch(m.spinner.Tick, m.searchMessagesAPI(m.searchQuery))
+		}
+
+		// Otherwise, apply client-side filter
+		m.applyClientFilter(m.searchQuery)
+		m.global.SetStatus(fmt.Sprintf("Found %d results", len(m.threads)), 0)
+		return m, nil
+
+	case components.SearchDialogCancelMsg:
+		m.searchMode = SearchModeOff
+		m.searchDialog = nil
+		return m, nil
+
 	case tea.KeyMsg:
 		// Use msg.String() for all key matching (v2 pattern)
 		key := msg.Key()
 		keyStr := msg.String()
+
+		// When in advanced search dialog mode, delegate to dialog
+		if m.searchMode == SearchModeAdvanced && m.searchDialog != nil {
+			var cmd tea.Cmd
+			m.searchDialog, cmd = m.searchDialog.Update(msg)
+			return m, cmd
+		}
 
 		// When in search input mode, handle search-specific keys first
 		if m.searchMode == SearchModeInput {
@@ -208,6 +247,22 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.allThreads = m.threads
 			}
 			return m, m.search.Focus()
+		}
+
+		// Handle '?' to open advanced search dialog
+		if keyStr == "?" {
+			m.searchMode = SearchModeAdvanced
+			m.searchDialog = components.NewSearchDialog(m.theme)
+			m.searchDialog.SetSize(m.global.WindowSize.Width, m.global.WindowSize.Height)
+			// Store current threads for filtering
+			if len(m.allThreads) == 0 {
+				m.allThreads = m.threads
+			}
+			// If there's an existing search query, populate the dialog
+			if m.searchQuery != nil && !m.searchQuery.IsEmpty() {
+				m.searchDialog.SetQuery(m.search.Value())
+			}
+			return m, m.searchDialog.Init()
 		}
 
 		// Handle tab/shift+tab using keyStr
@@ -371,7 +426,7 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.global.SetWindowSize(msg.Width, msg.Height)
 		// Reserve space for header (2 lines), search (1 line if active), and footer (2 lines)
 		reservedLines := 4
-		if m.searchMode != SearchModeOff {
+		if m.searchMode == SearchModeInput || m.searchMode == SearchModeActive {
 			reservedLines = 5 // Extra line for search bar
 		}
 		layoutHeight := msg.Height - reservedLines
@@ -380,6 +435,10 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.layout.SetSize(msg.Width, layoutHeight)
 		m.search.SetWidth(msg.Width)
+		// Resize search dialog if open
+		if m.searchDialog != nil {
+			m.searchDialog.SetSize(msg.Width, msg.Height)
+		}
 		return m, nil
 
 	case threadsLoadedMsg:
@@ -425,6 +484,11 @@ func (m *MessageList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (m *MessageList) View() tea.View {
+	// Show advanced search dialog if open
+	if m.searchMode == SearchModeAdvanced && m.searchDialog != nil {
+		return tea.NewView(m.searchDialog.View())
+	}
+
 	if m.err != nil {
 		return tea.NewView(m.theme.Error_.Render(fmt.Sprintf("Error: %v\n\nPress 'q' to go back", m.err)))
 	}
@@ -455,11 +519,11 @@ func (m *MessageList) View() tea.View {
 	var help string
 	switch m.searchMode {
 	case SearchModeInput:
-		help = m.theme.Help.Render("Enter: search  Esc: cancel  | from: to: subject: is:unread has:attachment")
+		help = m.theme.Help.Render("Enter: search  Esc: cancel  ?: advanced  | from: to: subject: is:unread has:attachment")
 	case SearchModeActive:
-		help = m.theme.Help.Render("/: search  Esc: clear search  c: compose  Tab: switch pane  Ctrl+R: refresh")
+		help = m.theme.Help.Render("/: search  ?: advanced  Esc: clear  c: compose  Tab: switch pane  Ctrl+R: refresh")
 	default:
-		help = m.theme.Help.Render("/: search  c: compose  r: reply  a: reply all  f: forward  Tab: switch pane  Ctrl+R: refresh  esc: back")
+		help = m.theme.Help.Render("/: search  ?: advanced  c: compose  r: reply  a: reply all  f: forward  Tab: pane  Ctrl+R: refresh  esc: back")
 	}
 
 	// Build layout

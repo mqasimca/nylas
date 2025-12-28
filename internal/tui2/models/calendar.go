@@ -23,6 +23,7 @@ const (
 	CalendarModeView CalendarScreenMode = iota
 	CalendarModeEventForm
 	CalendarModeConfirmDelete
+	CalendarModeAvailability
 )
 
 // CalendarScreen is the calendar view screen.
@@ -30,11 +31,12 @@ type CalendarScreen struct {
 	global *state.GlobalState
 	theme  *styles.Theme
 
-	calendarGrid  *components.CalendarGrid
-	spinner       spinner.Model
-	calendarList  list.Model
-	eventForm     *components.EventForm
-	confirmDialog *components.ConfirmDialog
+	calendarGrid       *components.CalendarGrid
+	spinner            spinner.Model
+	calendarList       list.Model
+	eventForm          *components.EventForm
+	confirmDialog      *components.ConfirmDialog
+	availabilityDialog *components.AvailabilityDialog
 
 	calendars        []domain.Calendar
 	events           []domain.Event
@@ -118,6 +120,8 @@ func (m *CalendarScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateEventForm(msg)
 	case CalendarModeConfirmDelete:
 		return m.updateConfirmDelete(msg)
+	case CalendarModeAvailability:
+		return m.updateAvailability(msg)
 	}
 
 	// View mode updates
@@ -198,6 +202,9 @@ func (m *CalendarScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedEventIdx = (m.selectedEventIdx - 1 + len(events)) % len(events)
 			}
 			return m, nil
+		case "A":
+			// Check availability (Shift+A)
+			return m.openAvailabilityDialog()
 		}
 
 		// Delegate to calendar grid for navigation
@@ -436,6 +443,133 @@ func (m *CalendarScreen) openDeleteConfirmation(event *domain.Event) (tea.Model,
 	return m, nil
 }
 
+// openAvailabilityDialog opens the availability check dialog.
+func (m *CalendarScreen) openAvailabilityDialog() (tea.Model, tea.Cmd) {
+	m.availabilityDialog = components.NewAvailabilityDialog(m.theme)
+	m.availabilityDialog.SetTimezone(m.timezone)
+	m.availabilityDialog.SetSize(m.width, m.height)
+
+	// Set date range to selected week
+	selectedDate := m.calendarGrid.GetSelectedDate()
+	startDate := selectedDate
+	endDate := selectedDate.AddDate(0, 0, 7)
+	m.availabilityDialog.SetDateRange(startDate, endDate)
+
+	if m.selectedCalendar != nil {
+		m.availabilityDialog.SetCalendarID(m.selectedCalendar.ID)
+	}
+
+	m.mode = CalendarModeAvailability
+	return m, m.availabilityDialog.Init()
+}
+
+// updateAvailability handles updates when in availability check mode.
+func (m *CalendarScreen) updateAvailability(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case components.AvailabilityCheckMsg:
+		// Perform the availability check
+		return m, m.checkAvailability(msg.Request)
+
+	case components.AvailabilityResultsMsg:
+		// Update the dialog with results
+		if m.availabilityDialog != nil {
+			m.availabilityDialog.SetResults(msg.Slots)
+		}
+		return m, nil
+
+	case components.AvailabilityCancelMsg:
+		m.mode = CalendarModeView
+		m.availabilityDialog = nil
+		return m, nil
+
+	case components.AvailabilitySelectSlotMsg:
+		// User selected a slot - create an event for it
+		m.mode = CalendarModeView
+		m.availabilityDialog = nil
+		return m.createEventFromSlot(msg.Slot)
+
+	case availabilityLoadedMsg:
+		if m.availabilityDialog != nil {
+			m.availabilityDialog.SetResults(msg.slots)
+		}
+		return m, nil
+
+	case errMsg:
+		if m.availabilityDialog != nil {
+			m.availabilityDialog.SetError(msg.err)
+		}
+		return m, nil
+
+	case tea.WindowSizeMsg:
+		m.global.SetWindowSize(msg.Width, msg.Height)
+		m.width = msg.Width
+		m.height = msg.Height
+		if m.availabilityDialog != nil {
+			m.availabilityDialog.SetSize(msg.Width, msg.Height)
+		}
+		return m, nil
+	}
+
+	// Forward to availability dialog
+	if m.availabilityDialog != nil {
+		var cmd tea.Cmd
+		m.availabilityDialog, cmd = m.availabilityDialog.Update(msg)
+		return m, cmd
+	}
+
+	return m, nil
+}
+
+// checkAvailability performs the availability check via the API.
+func (m *CalendarScreen) checkAvailability(req *domain.AvailabilityRequest) tea.Cmd {
+	return func() tea.Msg {
+		m.global.RateLimiter.Wait()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		resp, err := m.global.Client.GetAvailability(ctx, req)
+		if err != nil {
+			return errMsg{err}
+		}
+		return availabilityLoadedMsg{slots: resp.Data.TimeSlots}
+	}
+}
+
+// createEventFromSlot opens the event form pre-filled with the selected slot.
+func (m *CalendarScreen) createEventFromSlot(slot domain.AvailableSlot) (tea.Model, tea.Cmd) {
+	if m.selectedCalendar == nil {
+		m.global.SetStatus("No calendar selected", 1)
+		return m, nil
+	}
+	if m.selectedCalendar.ReadOnly {
+		m.global.SetStatus("Cannot create events on read-only calendar", 1)
+		return m, nil
+	}
+
+	m.eventForm = components.NewEventForm(m.theme, components.EventFormCreate)
+	m.eventForm.SetTimezone(m.timezone)
+	m.eventForm.SetSize(m.width-10, m.height-10)
+
+	// Set the slot time
+	startTime := time.Unix(slot.StartTime, 0)
+	endTime := time.Unix(slot.EndTime, 0)
+	if m.timezone != nil {
+		startTime = startTime.In(m.timezone)
+		endTime = endTime.In(m.timezone)
+	}
+	m.eventForm.SetDate(startTime)
+	m.eventForm.SetTimeRange(startTime, endTime)
+
+	m.mode = CalendarModeEventForm
+	return m, m.eventForm.Init()
+}
+
+// availabilityLoadedMsg contains loaded availability slots.
+type availabilityLoadedMsg struct {
+	slots []domain.AvailableSlot
+}
+
 // View implements tea.Model.
 func (m *CalendarScreen) View() tea.View {
 	// Show event form if in form mode
@@ -446,6 +580,11 @@ func (m *CalendarScreen) View() tea.View {
 	// Show confirm dialog if in confirm mode
 	if m.mode == CalendarModeConfirmDelete && m.confirmDialog != nil {
 		return tea.NewView(m.confirmDialog.View())
+	}
+
+	// Show availability dialog if in availability mode
+	if m.mode == CalendarModeAvailability && m.availabilityDialog != nil {
+		return tea.NewView(m.availabilityDialog.View())
 	}
 
 	if m.err != nil {
@@ -525,7 +664,7 @@ func (m *CalendarScreen) View() tea.View {
 	}
 
 	// Help text
-	help := m.theme.Help.Render("n: new  e: edit  d: delete  m/w/g: views  t: today  [/]: month  h/l/j/k: nav  J/K: select event  Ctrl+R: refresh  Esc: back")
+	help := m.theme.Help.Render("n: new  e: edit  d: delete  A: availability  m/w/g: views  t: today  [/]: month  h/l/j/k: nav  Ctrl+R: refresh  Esc: back")
 
 	return tea.NewView(header + "\n\n" + mainContent + "\n" + help)
 }
@@ -676,7 +815,7 @@ func (m *CalendarScreen) renderTodaySchedule(width, maxHeight int) string {
 
 	// Panel style - auto-sized based on content
 	panelStyle := lipgloss.NewStyle().
-		Width(width - 2).
+		Width(width-2).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Primary).
 		Padding(0, 1)
