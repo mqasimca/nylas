@@ -88,6 +88,9 @@ type MockClient struct {
 	GetCalendarsFunc func(ctx context.Context, grantID string) ([]domain.Calendar, error)
 	GetEventsFunc    func(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error)
 	GetEventFunc     func(ctx context.Context, grantID, calendarID, eventID string) (*domain.Event, error)
+	CreateEventFunc  func(ctx context.Context, grantID, calendarID string, req *domain.CreateEventRequest) (*domain.Event, error)
+	UpdateEventFunc  func(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error)
+	DeleteEventFunc  func(ctx context.Context, grantID, calendarID, eventID string) error
 }
 
 // NewMockClient creates a new MockClient.
@@ -673,6 +676,9 @@ func (m *MockClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 
 // CreateEvent creates a new event.
 func (m *MockClient) CreateEvent(ctx context.Context, grantID, calendarID string, req *domain.CreateEventRequest) (*domain.Event, error) {
+	if m.CreateEventFunc != nil {
+		return m.CreateEventFunc(ctx, grantID, calendarID, req)
+	}
 	return &domain.Event{
 		ID:         "new-event-id",
 		CalendarID: calendarID,
@@ -682,6 +688,9 @@ func (m *MockClient) CreateEvent(ctx context.Context, grantID, calendarID string
 
 // UpdateEvent updates an existing event.
 func (m *MockClient) UpdateEvent(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error) {
+	if m.UpdateEventFunc != nil {
+		return m.UpdateEventFunc(ctx, grantID, calendarID, eventID, req)
+	}
 	event := &domain.Event{
 		ID:         eventID,
 		CalendarID: calendarID,
@@ -694,6 +703,9 @@ func (m *MockClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 
 // DeleteEvent deletes an event.
 func (m *MockClient) DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error {
+	if m.DeleteEventFunc != nil {
+		return m.DeleteEventFunc(ctx, grantID, calendarID, eventID)
+	}
 	return nil
 }
 

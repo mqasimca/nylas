@@ -464,7 +464,7 @@ func TestParseNaturalDuration(t *testing.T) {
 		{"2d", false, func(ts int64) bool { return ts > now.Add(24*time.Hour).Unix() }},
 		{"30m", false, func(ts int64) bool { return ts > now.Unix() && ts <= now.Add(time.Hour).Unix() }},
 		{"tomorrow", false, func(ts int64) bool { return ts > now.Unix() }},
-		{"next week", false, func(ts int64) bool { return ts > now.Add(24*time.Hour).Unix() }},
+		{"next week", false, func(ts int64) bool { return ts > now.Unix() }}, // Monday 9 AM, may be <24h away on Sunday
 		{"weekend", false, func(ts int64) bool { return ts > now.Unix() }},
 		{"later", false, func(ts int64) bool { return ts > now.Unix() }},
 		{"9am", false, func(ts int64) bool { return ts > now.Unix() }},
