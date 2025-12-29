@@ -10,7 +10,11 @@ const settingsState = {
     threading: true,
     avatars: true,
     previewPane: true,
-    refreshInterval: 60 // Default 60 seconds
+    refreshInterval: 60, // Default 60 seconds
+    // Notetaker sources - array of {from, subject, linkDomain}
+    notetakerSources: [
+        { from: 'notebook@nylas.ai', subject: '', linkDomain: 'notebook.nylas.ai' }
+    ]
 };
 
 // Refresh interval timer
@@ -318,5 +322,162 @@ document.addEventListener('DOMContentLoaded', () => {
     initSettingsListeners();
     startRefreshTimer();
 });
+
+// ====================================
+// NOTETAKER SOURCES MANAGEMENT
+// ====================================
+
+// Create element helper
+function createElement(tag, className, textContent) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (textContent) el.textContent = textContent;
+    return el;
+}
+
+// Render notetaker sources list in settings
+function renderNotetakerSources() {
+    const container = document.getElementById('notetakerSourcesList');
+    if (!container) return;
+
+    // Clear existing content
+    container.textContent = '';
+
+    if (!settingsState.notetakerSources || settingsState.notetakerSources.length === 0) {
+        const emptyDiv = createElement('div', 'notetaker-sources-empty');
+        const emptyText = createElement('p', null, 'No sources configured. Add a source to fetch meeting recordings from email.');
+        emptyDiv.appendChild(emptyText);
+        container.appendChild(emptyDiv);
+        return;
+    }
+
+    settingsState.notetakerSources.forEach((source, index) => {
+        const card = createElement('div', 'notetaker-source-card');
+        card.onclick = () => editNotetakerSource(index);
+
+        const icon = createElement('div', 'notetaker-source-icon', '📧');
+        card.appendChild(icon);
+
+        const info = createElement('div', 'notetaker-source-info');
+        const fromDiv = createElement('div', 'notetaker-source-from', source.from);
+        info.appendChild(fromDiv);
+
+        const domainDiv = createElement('div', 'notetaker-source-domain', '🔗 ' + source.linkDomain);
+        info.appendChild(domainDiv);
+
+        if (source.subject) {
+            const subjectDiv = createElement('div', 'notetaker-source-subject', '📌 Subject: ' + source.subject);
+            info.appendChild(subjectDiv);
+        }
+        card.appendChild(info);
+
+        const deleteBtn = createElement('button', 'notetaker-source-delete');
+        deleteBtn.title = 'Delete source';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteNotetakerSource(index);
+        };
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '16');
+        svg.setAttribute('height', '16');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'M18 6L6 18');
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('d', 'M6 6l12 12');
+        svg.appendChild(path1);
+        svg.appendChild(path2);
+        deleteBtn.appendChild(svg);
+        card.appendChild(deleteBtn);
+
+        container.appendChild(card);
+    });
+}
+
+// Open add notetaker source modal
+function openAddNotetakerSourceModal() {
+    document.getElementById('notetakerSourceModalTitle').textContent = 'Add Notetaker Source';
+    document.getElementById('notetakerSourceEditIndex').value = '-1';
+    document.getElementById('notetakerSourceFrom').value = '';
+    document.getElementById('notetakerSourceSubject').value = '';
+    document.getElementById('notetakerSourceLink').value = '';
+    document.getElementById('notetakerSourceModal').classList.remove('hidden');
+}
+
+// Edit existing notetaker source
+function editNotetakerSource(index) {
+    const source = settingsState.notetakerSources[index];
+    if (!source) return;
+
+    document.getElementById('notetakerSourceModalTitle').textContent = 'Edit Notetaker Source';
+    document.getElementById('notetakerSourceEditIndex').value = index;
+    document.getElementById('notetakerSourceFrom').value = source.from || '';
+    document.getElementById('notetakerSourceSubject').value = source.subject || '';
+    document.getElementById('notetakerSourceLink').value = source.linkDomain || '';
+    document.getElementById('notetakerSourceModal').classList.remove('hidden');
+}
+
+// Close notetaker source modal
+function closeNotetakerSourceModal() {
+    document.getElementById('notetakerSourceModal').classList.add('hidden');
+}
+
+// Save notetaker source
+function saveNotetakerSource() {
+    const fromEmail = document.getElementById('notetakerSourceFrom').value.trim();
+    const subject = document.getElementById('notetakerSourceSubject').value.trim();
+    const linkDomain = document.getElementById('notetakerSourceLink').value.trim();
+    const editIndex = parseInt(document.getElementById('notetakerSourceEditIndex').value);
+
+    // Validate required fields
+    if (!fromEmail) {
+        showToast('error', 'Validation Error', 'From Email is required');
+        return;
+    }
+    if (!linkDomain) {
+        showToast('error', 'Validation Error', 'External Link Domain is required');
+        return;
+    }
+
+    const source = { from: fromEmail, subject: subject, linkDomain: linkDomain };
+
+    if (!settingsState.notetakerSources) {
+        settingsState.notetakerSources = [];
+    }
+
+    if (editIndex >= 0 && editIndex < settingsState.notetakerSources.length) {
+        // Edit existing
+        settingsState.notetakerSources[editIndex] = source;
+        showToast('success', 'Source Updated', 'Notetaker source has been updated');
+    } else {
+        // Add new
+        settingsState.notetakerSources.push(source);
+        showToast('success', 'Source Added', 'New notetaker source has been added');
+    }
+
+    closeNotetakerSourceModal();
+    renderNotetakerSources();
+}
+
+// Delete notetaker source
+function deleteNotetakerSource(index) {
+    if (!settingsState.notetakerSources || index < 0 || index >= settingsState.notetakerSources.length) {
+        return;
+    }
+
+    settingsState.notetakerSources.splice(index, 1);
+    renderNotetakerSources();
+    showToast('info', 'Source Removed', 'Notetaker source has been deleted');
+}
+
+// Update the updateSettingsUI to also render notetaker sources
+const originalUpdateSettingsUIForNotetaker = updateSettingsUI;
+updateSettingsUI = function() {
+    originalUpdateSettingsUIForNotetaker();
+    renderNotetakerSources();
+};
 
 console.log('%c⚙️ Settings module loaded', 'color: #8b5cf6;');

@@ -1,12 +1,12 @@
 {{define "modals"}}
 <!-- Command Palette -->
-<div class="modal-overlay hidden" id="commandPalette" onclick="toggleCommandPalette()">
+<div class="modal-overlay hidden" id="commandPalette" data-testid="command-palette" onclick="toggleCommandPalette()">
     <div class="command-palette" onclick="event.stopPropagation()">
         <div class="command-input-wrapper">
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
-            <input type="text" class="command-input" placeholder="Type a command or search..." autofocus>
+            <input type="text" class="command-input" data-testid="command-palette-input" placeholder="Type a command or search..." autofocus>
         </div>
         <div class="command-results">
             <div class="command-section">
@@ -64,13 +64,13 @@
 </div>
 
 <!-- Search Overlay -->
-<div class="search-overlay" id="searchOverlay" onclick="if(event.target === this) closeSearch()">
+<div class="search-overlay" id="searchOverlay" data-testid="search-overlay" onclick="if(event.target === this) closeSearch()">
     <div class="search-modal" onclick="event.stopPropagation()">
         <div class="search-input-wrapper">
             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
             </svg>
-            <input type="text" id="searchInput" class="search-input" placeholder="Search emails, events, contacts..."
+            <input type="text" id="searchInput" class="search-input" data-testid="search-input" placeholder="Search emails, events, contacts..."
                    oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)">
             <kbd class="search-kbd">ESC</kbd>
         </div>
@@ -109,38 +109,38 @@
 </div>
 
 <!-- Compose Modal -->
-<div class="compose-modal hidden" id="composeModal" style="display:none" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
+<div class="compose-modal hidden" id="composeModal" data-testid="compose-modal" style="display:none" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
     <div class="compose-header">
         <span class="compose-title" id="composeTitle">New Message</span>
         <div class="compose-controls">
             <button class="compose-control" type="button" title="Minimize">−</button>
-            <button class="compose-control modal-close" type="button" title="Close">×</button>
+            <button class="compose-control modal-close" type="button" title="Close" data-testid="compose-close">×</button>
         </div>
     </div>
     <form id="composeForm" class="compose-form">
         <div class="compose-fields">
             <div class="compose-field">
                 <label class="compose-label" for="composeTo">To</label>
-                <input type="text" id="composeTo" class="compose-field-input" placeholder="Recipients (comma separated)" autocomplete="email">
+                <input type="text" id="composeTo" class="compose-field-input" data-testid="compose-to" placeholder="Recipients (comma separated)" autocomplete="email">
             </div>
-            <div class="compose-field compose-field-collapsed" id="ccBccToggle">
+            <div class="compose-field compose-field-collapsed" id="ccBccToggle" data-testid="compose-cc-bcc-toggle">
                 <button type="button" class="compose-cc-toggle" onclick="toggleCcBcc()">Cc/Bcc</button>
             </div>
-            <div class="compose-field compose-field-cc hidden" id="ccField">
+            <div class="compose-field compose-field-cc hidden" id="ccField" data-testid="compose-cc-field">
                 <label class="compose-label" for="composeCc">Cc</label>
-                <input type="text" id="composeCc" class="compose-field-input" placeholder="Cc recipients">
+                <input type="text" id="composeCc" class="compose-field-input" data-testid="compose-cc" placeholder="Cc recipients">
             </div>
-            <div class="compose-field compose-field-bcc hidden" id="bccField">
+            <div class="compose-field compose-field-bcc hidden" id="bccField" data-testid="compose-bcc-field">
                 <label class="compose-label" for="composeBcc">Bcc</label>
-                <input type="text" id="composeBcc" class="compose-field-input" placeholder="Bcc recipients">
+                <input type="text" id="composeBcc" class="compose-field-input" data-testid="compose-bcc" placeholder="Bcc recipients">
             </div>
             <div class="compose-field">
                 <label class="compose-label" for="composeSubject">Subject</label>
-                <input type="text" id="composeSubject" class="compose-field-input" placeholder="Subject">
+                <input type="text" id="composeSubject" class="compose-field-input" data-testid="compose-subject" placeholder="Subject">
             </div>
         </div>
         <div class="compose-body">
-            <textarea id="composeBody" class="compose-editor" placeholder="Write your message..."></textarea>
+            <textarea id="composeBody" class="compose-editor" data-testid="compose-body" placeholder="Write your message..."></textarea>
         </div>
     </form>
     <div class="compose-footer">
@@ -154,7 +154,7 @@
             <button type="button" class="tool-btn danger" id="composeDiscard" title="Discard">🗑️</button>
         </div>
         <div class="send-group" style="display: flex;">
-            <button type="button" class="send-btn" id="composeSend">
+            <button type="button" class="send-btn" id="composeSend" data-testid="compose-send">
                 Send
                 <span class="send-shortcut">⌘↵</span>
             </button>
@@ -174,7 +174,7 @@ function toggleCcBcc() {
 </script>
 
 <!-- Toast Container -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer" data-testid="toast-container"></div>
 
 <!-- Send Animation -->
 <div class="send-animation" id="sendAnimation">
@@ -190,11 +190,11 @@ function toggleCcBcc() {
 </button>
 
 <!-- Keyboard Shortcut Overlay -->
-<div class="shortcut-overlay" id="shortcutOverlay" onclick="if(event.target === this) closeShortcutOverlay()">
+<div class="shortcut-overlay" id="shortcutOverlay" data-testid="shortcut-overlay" onclick="if(event.target === this) closeShortcutOverlay()">
     <div class="shortcut-modal">
         <div class="shortcut-header">
             <h2 class="shortcut-title">⌨️ Keyboard Shortcuts</h2>
-            <button class="shortcut-close" onclick="closeShortcutOverlay()">✕</button>
+            <button class="shortcut-close" data-testid="shortcut-close" onclick="closeShortcutOverlay()">✕</button>
         </div>
         <div class="shortcut-content">
             <div class="shortcut-group">
@@ -251,7 +251,7 @@ function toggleCcBcc() {
 </div>
 
 <!-- Context Menu -->
-<div class="context-menu" id="contextMenu">
+<div class="context-menu" id="contextMenu" data-testid="context-menu">
     <div class="context-menu-item" onclick="handleContextAction('reply')">
         <span class="context-menu-icon">↩️</span>
         <span>Reply</span>
@@ -452,11 +452,11 @@ function toggleCcBcc() {
 </div>
 
 <!-- Settings Modal -->
-<div class="settings-overlay" id="settingsOverlay" onclick="closeSettingsOnOverlay(event)">
+<div class="settings-overlay" id="settingsOverlay" data-testid="settings-overlay" onclick="closeSettingsOnOverlay(event)">
     <div class="settings-modal">
         <div class="settings-header">
             <h2>Settings</h2>
-            <button class="settings-close-btn" onclick="toggleSettings()">
+            <button class="settings-close-btn" data-testid="settings-close" onclick="toggleSettings()">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
@@ -464,7 +464,7 @@ function toggleCcBcc() {
         </div>
         <div class="settings-content">
             <!-- AI Provider Section -->
-            <div class="settings-section">
+            <div class="settings-section" data-testid="settings-ai-section">
                 <h3 class="settings-section-title">
                     <span class="settings-section-icon">✨</span>
                     AI Provider
@@ -487,8 +487,28 @@ function toggleCcBcc() {
                 </p>
             </div>
 
-            <!-- Theme Section -->
+            <!-- Notetaker Section -->
             <div class="settings-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">🎙️</span>
+                    Notetaker Sources
+                </h3>
+                <p class="settings-section-desc">Configure email sources for meeting recordings. Add multiple sources to aggregate recordings from different notetaker services.</p>
+
+                <div class="notetaker-sources-list" id="notetakerSourcesList">
+                    <!-- Sources will be rendered by JavaScript -->
+                </div>
+
+                <button class="settings-add-source-btn" onclick="openAddNotetakerSourceModal()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 5v14m-7-7h14"/>
+                    </svg>
+                    Add Source
+                </button>
+            </div>
+
+            <!-- Theme Section -->
+            <div class="settings-section" data-testid="settings-theme-section">
                 <h3 class="settings-section-title">
                     <span class="settings-section-icon">🎨</span>
                     Appearance
@@ -678,4 +698,36 @@ function scheduleCustomSend() {
     closeSendLaterModal();
 }
 </script>
+
+<!-- Add Notetaker Source Modal -->
+<div class="notetaker-source-modal-overlay hidden" id="notetakerSourceModal" onclick="if(event.target === this) closeNotetakerSourceModal()">
+    <div class="notetaker-source-modal">
+        <div class="notetaker-source-modal-header">
+            <h3 id="notetakerSourceModalTitle">Add Notetaker Source</h3>
+            <button class="notetaker-source-modal-close" onclick="closeNotetakerSourceModal()">×</button>
+        </div>
+        <div class="notetaker-source-modal-body">
+            <input type="hidden" id="notetakerSourceEditIndex" value="-1">
+            <div class="form-group">
+                <label for="notetakerSourceFrom">From Email</label>
+                <input type="email" id="notetakerSourceFrom" class="form-input" placeholder="e.g., notebook@nylas.ai">
+                <p class="form-hint">The sender email address for notetaker summary emails</p>
+            </div>
+            <div class="form-group">
+                <label for="notetakerSourceSubject">Subject Filter (Optional)</label>
+                <input type="text" id="notetakerSourceSubject" class="form-input" placeholder="e.g., Meeting Summary">
+                <p class="form-hint">Filter by subject line (leave empty to include all)</p>
+            </div>
+            <div class="form-group">
+                <label for="notetakerSourceLink">External Link Domain</label>
+                <input type="text" id="notetakerSourceLink" class="form-input" placeholder="e.g., notebook.nylas.ai">
+                <p class="form-hint">The domain for recording links (e.g., notebook.nylas.ai)</p>
+            </div>
+        </div>
+        <div class="notetaker-source-modal-footer">
+            <button class="btn-secondary" onclick="closeNotetakerSourceModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveNotetakerSource()">Save</button>
+        </div>
+    </div>
+</div>
 {{end}}

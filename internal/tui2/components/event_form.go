@@ -98,27 +98,30 @@ func NewEventForm(theme *styles.Theme, mode EventFormMode) *EventForm {
 
 	// Date/time inputs with placeholders
 	now := time.Now()
+	// Round to next hour for start time
+	startTime := now.Truncate(time.Hour).Add(time.Hour)
+	// End time is 1 hour after start
+	endTime := startTime.Add(time.Hour)
+
 	startDateInput := textinput.New()
 	startDateInput.Placeholder = "YYYY-MM-DD"
 	startDateInput.CharLimit = 10
-	startDateInput.SetValue(now.Format("2006-01-02"))
+	startDateInput.SetValue(startTime.Format("2006-01-02"))
 
 	startTimeInput := textinput.New()
 	startTimeInput.Placeholder = "HH:MM"
 	startTimeInput.CharLimit = 5
-	// Round to next hour
-	nextHour := now.Truncate(time.Hour).Add(time.Hour)
-	startTimeInput.SetValue(nextHour.Format("15:04"))
+	startTimeInput.SetValue(startTime.Format("15:04"))
 
 	endDateInput := textinput.New()
 	endDateInput.Placeholder = "YYYY-MM-DD"
 	endDateInput.CharLimit = 10
-	endDateInput.SetValue(now.Format("2006-01-02"))
+	endDateInput.SetValue(endTime.Format("2006-01-02"))
 
 	endTimeInput := textinput.New()
 	endTimeInput.Placeholder = "HH:MM"
 	endTimeInput.CharLimit = 5
-	endTimeInput.SetValue(nextHour.Add(time.Hour).Format("15:04"))
+	endTimeInput.SetValue(endTime.Format("15:04"))
 
 	form := &EventForm{
 		theme:            theme,
