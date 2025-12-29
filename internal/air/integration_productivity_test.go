@@ -216,8 +216,10 @@ func TestIntegration_Notetaker(t *testing.T) {
 	if nt.Provider != "google_meet" {
 		t.Errorf("expected provider 'google_meet', got '%s'", nt.Provider)
 	}
-	if nt.State != "scheduled" {
-		t.Errorf("expected state 'scheduled', got '%s'", nt.State)
+	// Accept both "scheduled" and "connecting" as valid initial states
+	// The Nylas API may return "connecting" initially before transitioning to "scheduled"
+	if nt.State != "scheduled" && nt.State != "connecting" {
+		t.Errorf("expected state 'scheduled' or 'connecting', got '%s'", nt.State)
 	}
 }
 

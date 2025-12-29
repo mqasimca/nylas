@@ -891,3 +891,8 @@
                 }
             }
         });
+
+        // Expose key functions for E2E testing
+        window.toggleCompose = toggleCompose;
+        window.toggleFocusMode = toggleFocusMode;
+        window.showToast = showToast;

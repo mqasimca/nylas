@@ -30,6 +30,8 @@ bin/
 coverage.html
 *.coverprofile
 ci-full.txt
+ci-full-verification.txt
+*-verification.txt
 test-integration.txt
 
 # IDE
@@ -162,6 +164,8 @@ temp/
 # Test artifacts (may expose test credentials)
 test_output/
 test_results/
+test-results/
+playwright-report/
 
 # ===========================================
 # End Security Section

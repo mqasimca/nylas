@@ -1,6 +1,6 @@
 {{define "contacts-view"}}
 <!-- Contacts View -->
-<div class="contacts-view" id="contactsView">
+<div class="contacts-view" id="contactsView" data-testid="contacts-view">
     <!-- Contacts Sidebar -->
     <aside class="sidebar">
         <button class="compose-btn" id="addContactBtn">
@@ -37,7 +37,7 @@
                 <input type="text" id="contactSearch" placeholder="Search by name or email..." class="contacts-search-input">
             </div>
         </div>
-        <div class="contacts-list" id="contactsList">
+        <div class="contacts-list" id="contactsList" data-testid="contacts-list">
             <!-- Skeleton loaders - replaced by JavaScript -->
             <div class="contact-skeleton">
                 <div class="skeleton-avatar"></div>
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Contact Detail Panel - populated by JavaScript -->
-    <div class="contact-detail-panel" id="contactDetail">
+    <div class="contact-detail-panel" id="contactDetail" data-testid="contact-detail">
         <div class="empty-state">
             <div class="empty-icon">👤</div>
             <div class="empty-title">Select a contact</div>

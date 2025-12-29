@@ -1,9 +1,9 @@
 {{define "calendar-view"}}
 <!-- Calendar View -->
-<div class="calendar-view" id="calendarView">
+<div class="calendar-view" id="calendarView" data-testid="calendar-view">
     <!-- Calendar Sidebar -->
     <aside class="sidebar">
-        <button class="compose-btn" onclick="alert('Create Event')">
+        <button class="compose-btn" data-testid="new-event-btn" onclick="alert('Create Event')">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M12 5v14m-7-7h14"/>
             </svg>
@@ -84,7 +84,7 @@
             </div>
             <button class="today-btn">Today</button>
         </div>
-        <div class="calendar-grid">
+        <div class="calendar-grid" data-testid="calendar-grid">
             <div class="calendar-day-header">Sun</div>
             <div class="calendar-day-header">Mon</div>
             <div class="calendar-day-header">Tue</div>
@@ -136,7 +136,7 @@
     </div>
 
     <!-- Calendar Events Panel -->
-    <div class="calendar-events-panel">
+    <div class="calendar-events-panel" data-testid="events-panel">
         <div class="events-header">
             <h3>Today's Schedule</h3>
             <span class="events-date">Wed, Dec 25</span>

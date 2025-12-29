@@ -1,9 +1,9 @@
 {{define "email-view"}}
 <!-- Email View -->
-<div class="email-view active" id="emailView" role="tabpanel" aria-labelledby="email-tab">
+<div class="email-view active" id="emailView" role="tabpanel" aria-labelledby="email-tab" data-testid="email-view">
     <!-- Sidebar -->
-    <aside class="sidebar" role="complementary" aria-label="Email folders">
-        <button class="compose-btn" onclick="toggleCompose()" aria-label="Compose new email">
+    <aside class="sidebar" role="complementary" aria-label="Email folders" data-testid="folder-sidebar">
+        <button class="compose-btn" data-testid="compose-btn" onclick="toggleCompose()" aria-label="Compose new email">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 5v14m-7-7h14"/>
             </svg>
@@ -22,7 +22,7 @@
     </aside>
 
     <!-- Email List -->
-    <div class="email-list-container">
+    <div class="email-list-container" data-testid="email-list-container">
         <div class="list-header">
             <div class="list-title">Inbox</div>
             <div class="filter-tabs" id="emailFilterTabs">
@@ -31,7 +31,7 @@
                 <div class="filter-tab" data-filter="unread">Unread</div>
             </div>
         </div>
-        <div class="email-list">
+        <div class="email-list" data-testid="email-list">
             <!-- Skeleton loaders - replaced by JavaScript -->
             <div class="email-skeleton">
                 <div class="skeleton-avatar"></div>
@@ -61,7 +61,7 @@
     </div>
 
     <!-- Preview Pane - populated by JavaScript -->
-    <div class="preview-pane email-detail">
+    <div class="preview-pane email-detail" data-testid="email-preview">
         <div class="empty-state">
             <div class="empty-icon">📬</div>
             <div class="empty-title">Select an email</div>

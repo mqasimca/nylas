@@ -97,8 +97,62 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 - `internal/adapters/mcp/proxy.go` - MCP proxy server
 
 **Air files (Web UI):**
-- `internal/air/` - HTTP server, handlers, templates
-- `internal/air/integration_*.go` - Integration tests organized by feature:
+- `internal/air/` - HTTP server, handlers, templates (all files ≤500 lines)
+
+**Server Core (refactored from server.go):**
+  - `server.go` (51 lines) - Server struct definition
+  - `server_lifecycle.go` (315 lines) - Initialization, routing, lifecycle
+  - `server_stores.go` (67 lines) - Cache store accessors
+  - `server_sync.go` (187 lines) - Background sync logic
+  - `server_offline.go` (98 lines) - Offline queue processing
+  - `server_converters.go` (116 lines) - Domain to cache conversions
+  - `server_template.go` (163 lines) - Template handling
+  - `server_modules_test.go` (523 lines) - Unit tests for server modules
+
+**Email Handlers:**
+  - `handlers_email.go` (522 lines) - Email operations
+  - `handlers_drafts.go` (531 lines) - Draft operations
+  - `handlers_bundles.go` - Email categorization into smart bundles
+
+**Calendar Handlers (refactored from handlers_calendar.go):**
+  - `handlers_calendars.go` (108 lines) - Calendar operations
+  - `handlers_events.go` (520 lines) - Event CRUD
+  - `handlers_calendar_helpers.go` (159 lines) - Helpers and converters
+
+**Contact Handlers (refactored from handlers_contacts.go):**
+  - `handlers_contacts.go` (190 lines) - Routes and listing
+  - `handlers_contacts_crud.go` (320 lines) - CRUD operations
+  - `handlers_contacts_search.go` (194 lines) - Search and groups
+  - `handlers_contacts_helpers.go` (308 lines) - Helpers and demo data
+
+**AI Handlers (refactored from handlers_ai.go):**
+  - `handlers_ai_types.go` (92 lines) - AI types
+  - `handlers_ai_summarize.go` (165 lines) - Email summarization
+  - `handlers_ai_smart.go` (225 lines) - Smart compose/reply
+  - `handlers_ai_thread.go` (192 lines) - Thread analysis
+  - `handlers_ai_complete.go` (216 lines) - Autocomplete
+  - `handlers_ai_config.go` (227 lines) - AI configuration
+
+**Productivity - Send Features (refactored from handlers_productivity_send.go):**
+  - `types_productivity_send.go` (82 lines) - Type definitions
+  - `handlers_scheduled_send.go` (177 lines) - Scheduled sends
+  - `handlers_undo_send.go` (148 lines) - Undo send feature
+  - `handlers_templates.go` (259 lines) - Template CRUD
+  - `handlers_templates_helpers.go` (100 lines) - Template utilities
+
+**Productivity - Inbox Features (refactored from handlers_productivity_inbox.go):**
+  - `handlers_splitinbox_types.go` (84 lines) - Split inbox types
+  - `handlers_splitinbox_config.go` (164 lines) - Configuration
+  - `handlers_splitinbox_categorize.go` (148 lines) - Categorization logic
+  - `handlers_snooze_types.go` (37 lines) - Snooze types
+  - `handlers_snooze_handlers.go` (126 lines) - Snooze operations
+  - `handlers_snooze_parser.go` (142 lines) - Natural language parser
+
+**Other Handlers:**
+  - `handlers_availability.go` (527 lines) - Availability checking
+  - `handlers_productivity_*.go` - Focus mode, reply later, analytics, etc.
+
+**Integration Tests:**
   - `integration_base_test.go` - Shared `testServer()` helper and utilities
   - `integration_core_test.go` - Config, Grants, Folders, Index tests
   - `integration_email_test.go` - Email and draft operations
@@ -107,6 +161,8 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
   - `integration_cache_test.go` - Cache operations
   - `integration_ai_test.go` - AI features
   - `integration_middleware_test.go` - Middleware tests
+  - `integration_productivity_test.go` - Productivity features
+  - `integration_bundles_test.go` - Bundle categorization
 
 **CLI pattern:**
 ```

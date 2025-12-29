@@ -135,8 +135,11 @@ func (bs *BundleStore) initDefaultBundles() {
 	}
 
 	for i := range defaults {
-		defaults[i].LastUpdated = time.Now()
-		bs.bundles[defaults[i].ID] = &defaults[i]
+		// Create a heap-allocated copy to avoid pointer aliasing
+		bundle := new(Bundle)
+		*bundle = defaults[i]
+		bundle.LastUpdated = time.Now()
+		bs.bundles[bundle.ID] = bundle
 	}
 }
 
@@ -277,9 +280,17 @@ func (s *Server) handleUpdateBundle(w http.ResponseWriter, r *http.Request) {
 	defer bundleStore.mu.Unlock()
 
 	if existing, ok := bundleStore.bundles[bundle.ID]; ok {
-		existing.Name = bundle.Name
-		existing.Icon = bundle.Icon
-		existing.Rules = bundle.Rules
+		// Only update provided fields
+		if bundle.Name != "" {
+			existing.Name = bundle.Name
+		}
+		if bundle.Icon != "" {
+			existing.Icon = bundle.Icon
+		}
+		// Only update rules if explicitly provided
+		if len(bundle.Rules) > 0 {
+			existing.Rules = bundle.Rules
+		}
 		existing.Collapsed = bundle.Collapsed
 		existing.LastUpdated = time.Now()
 	}

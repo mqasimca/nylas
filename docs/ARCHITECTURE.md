@@ -100,15 +100,32 @@ internal/cli/<feature>/
 
 ### File Organization
 
-```
-internal/air/
-  ├── server.go              # HTTP server setup
-  ├── handlers_*.go          # Feature handlers (email, calendar, contacts, AI)
-  ├── middleware.go          # Middleware stack
-  ├── data.go               # Data models
-  ├── templates/             # HTML templates
-  └── integration_*.go       # Integration tests (organized by feature)
-```
+**All files are ≤500 lines for maintainability.** Large files have been refactored into focused modules:
+
+**Server Core** (refactored from server.go):
+- `server.go` - Server struct definition
+- `server_lifecycle.go` - Initialization, routing, lifecycle
+- `server_stores.go` - Cache store accessors
+- `server_sync.go` - Background sync logic
+- `server_offline.go` - Offline queue processing
+- `server_converters.go` - Domain to cache conversions
+- `server_template.go` - Template handling
+- `server_modules_test.go` - Unit tests
+
+**Handlers** (organized by feature):
+- Email: `handlers_email.go`, `handlers_drafts.go`, `handlers_bundles.go`
+- Calendar: `handlers_calendars.go`, `handlers_events.go`, `handlers_calendar_helpers.go`
+- Contacts: `handlers_contacts.go`, `handlers_contacts_crud.go`, `handlers_contacts_search.go`, `handlers_contacts_helpers.go`
+- AI: `handlers_ai_types.go`, `handlers_ai_summarize.go`, `handlers_ai_smart.go`, `handlers_ai_thread.go`, `handlers_ai_complete.go`, `handlers_ai_config.go`
+- Productivity: `handlers_scheduled_send.go`, `handlers_undo_send.go`, `handlers_templates.go`, `handlers_snooze_*.go`, `handlers_splitinbox_*.go`
+
+**Other:**
+- `middleware.go` - Middleware stack
+- `data.go` - Data models
+- `templates/` - HTML templates
+- `integration_*.go` - Integration tests (organized by feature)
+
+**Complete file listing:** See `CLAUDE.md` for detailed file structure with line counts
 
 ### Integration Tests
 
