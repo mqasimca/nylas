@@ -200,6 +200,51 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/ai/enhanced-summary", s.handleAIEnhancedSummary) // POST enhanced summary with action items
 	mux.HandleFunc("/api/ai/auto-label", s.handleAIAutoLabel)             // POST auto-label email
 	mux.HandleFunc("/api/ai/thread-summary", s.handleAIThreadSummary)     // POST summarize email thread
+	mux.HandleFunc("/api/ai/complete", s.handleAIComplete)                // POST smart compose autocomplete
+	mux.HandleFunc("/api/ai/nl-search", s.handleNLSearch)                 // POST natural language search
+
+	// API routes - Bundles (smart email categorization)
+	mux.HandleFunc("/api/bundles", s.handleGetBundles)                  // GET list bundles
+	mux.HandleFunc("/api/bundles/categorize", s.handleBundleCategorize) // POST categorize into bundle
+	mux.HandleFunc("/api/bundles/emails", s.handleGetBundleEmails)      // GET emails in bundle
+
+	// API routes - Notetaker (meeting recordings)
+	mux.HandleFunc("/api/notetakers", s.handleNotetakersRoute)         // GET list, POST create
+	mux.HandleFunc("/api/notetakers/", s.handleNotetakerByID)          // GET, DELETE by ID
+	mux.HandleFunc("/api/notetakers/media", s.handleGetNotetakerMedia) // GET media for notetaker
+
+	// API routes - Screener (sender approval)
+	mux.HandleFunc("/api/screener", s.handleGetScreenedSenders)  // GET pending senders
+	mux.HandleFunc("/api/screener/add", s.handleAddToScreener)   // POST add to screener
+	mux.HandleFunc("/api/screener/allow", s.handleScreenerAllow) // POST allow sender
+	mux.HandleFunc("/api/screener/block", s.handleScreenerBlock) // POST block sender
+
+	// API routes - AI Configuration
+	mux.HandleFunc("/api/ai/config", s.handleAIConfigRoute)     // GET/PUT AI config
+	mux.HandleFunc("/api/ai/test", s.handleTestAIConnection)    // POST test connection
+	mux.HandleFunc("/api/ai/usage", s.handleGetAIUsage)         // GET usage stats
+	mux.HandleFunc("/api/ai/providers", s.handleGetAIProviders) // GET available providers
+
+	// API routes - Read Receipts
+	mux.HandleFunc("/api/receipts", s.handleGetReadReceipts)              // GET receipts
+	mux.HandleFunc("/api/receipts/settings", s.handleReadReceiptSettings) // GET/PUT settings
+	mux.HandleFunc("/api/track/open", s.handleTrackOpen)                  // GET tracking pixel
+
+	// API routes - Reply Later
+	mux.HandleFunc("/api/reply-later", s.handleReplyLaterRoute)             // GET list, POST add
+	mux.HandleFunc("/api/reply-later/update", s.handleUpdateReplyLater)     // PUT update
+	mux.HandleFunc("/api/reply-later/remove", s.handleRemoveFromReplyLater) // DELETE remove
+
+	// API routes - Focus Mode
+	mux.HandleFunc("/api/focus", s.handleFocusModeRoute)             // GET state, POST start, DELETE stop
+	mux.HandleFunc("/api/focus/break", s.handleStartBreak)           // POST start break
+	mux.HandleFunc("/api/focus/settings", s.handleFocusModeSettings) // GET/PUT settings
+
+	// API routes - Analytics
+	mux.HandleFunc("/api/analytics/dashboard", s.handleGetAnalyticsDashboard)    // GET dashboard
+	mux.HandleFunc("/api/analytics/trends", s.handleGetAnalyticsTrends)          // GET trends
+	mux.HandleFunc("/api/analytics/focus-time", s.handleGetFocusTimeSuggestions) // GET suggestions
+	mux.HandleFunc("/api/analytics/productivity", s.handleGetProductivityStats)  // GET productivity
 
 	// Static files (CSS, JS, icons)
 	staticFS, _ := fs.Sub(staticFiles, "static")

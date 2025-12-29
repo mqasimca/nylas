@@ -1,0 +1,163 @@
+{{define "notetaker-view"}}
+<!-- Notetaker View -->
+<div class="notetaker-view" id="notetakerView">
+    <!-- Notetaker Sidebar -->
+    <aside class="sidebar" role="complementary" aria-label="Notetaker options">
+        <button class="compose-btn" onclick="openJoinMeetingModal()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 5v14m-7-7h14"/>
+            </svg>
+            Join Meeting
+        </button>
+
+        <div class="folder-group">
+            <div class="folder-item active" data-filter="all" onclick="filterNotetakers('all', this)">
+                <span class="folder-icon">📋</span>
+                <span>All Recordings</span>
+                <span class="folder-count" id="notetakerCountAll">0</span>
+            </div>
+            <div class="folder-item" data-filter="scheduled" onclick="filterNotetakers('scheduled', this)">
+                <span class="folder-icon">📅</span>
+                <span>Scheduled</span>
+                <span class="folder-count" id="notetakerCountScheduled">0</span>
+            </div>
+            <div class="folder-item" data-filter="attending" onclick="filterNotetakers('attending', this)">
+                <span class="folder-icon">🔴</span>
+                <span>In Progress</span>
+                <span class="folder-count" id="notetakerCountAttending">0</span>
+            </div>
+            <div class="folder-item" data-filter="complete" onclick="filterNotetakers('complete', this)">
+                <span class="folder-icon">✅</span>
+                <span>Completed</span>
+                <span class="folder-count" id="notetakerCountComplete">0</span>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-title">Meeting Platforms</div>
+        <div class="folder-group">
+            <div class="folder-item" data-provider="zoom" onclick="filterByProvider('zoom', this)">
+                <span class="folder-icon">📹</span>
+                <span>Zoom</span>
+            </div>
+            <div class="folder-item" data-provider="google_meet" onclick="filterByProvider('google_meet', this)">
+                <span class="folder-icon">🟢</span>
+                <span>Google Meet</span>
+            </div>
+            <div class="folder-item" data-provider="teams" onclick="filterByProvider('teams', this)">
+                <span class="folder-icon">🔷</span>
+                <span>Microsoft Teams</span>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-title">Quick Actions</div>
+        <div class="folder-group">
+            <div class="folder-item" onclick="openJoinMeetingModal()">
+                <span class="folder-icon">🎙️</span>
+                <span>Record Meeting</span>
+            </div>
+            <div class="folder-item" onclick="showNotetakerHelp()">
+                <span class="folder-icon">❓</span>
+                <span>Help & Tips</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Notetaker List -->
+    <div class="notetaker-list-container">
+        <div class="notetaker-list-header">
+            <h2>Meeting Recordings</h2>
+            <div class="notetaker-list-actions">
+                <button class="btn-secondary" onclick="refreshNotetakers()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="notetaker-list" id="notetakerList">
+            <!-- Empty state -->
+            <div class="notetaker-empty" id="notetakerEmpty">
+                <div class="notetaker-empty-icon">🎙️</div>
+                <h3>No recordings yet</h3>
+                <p>Join a meeting to start recording with AI-powered transcription and summarization.</p>
+                <button class="btn-primary" onclick="openJoinMeetingModal()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 5v14m-7-7h14"/>
+                    </svg>
+                    Join Your First Meeting
+                </button>
+            </div>
+
+            <!-- Notetaker items will be rendered here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Notetaker Detail Panel -->
+    <div class="notetaker-detail" id="notetakerDetail">
+        <div class="notetaker-detail-empty">
+            <div class="detail-empty-icon">🎬</div>
+            <h3>Select a recording</h3>
+            <p>Click on a recording to view details, playback, and transcript</p>
+        </div>
+    </div>
+</div>
+
+<!-- Join Meeting Modal -->
+<div class="modal-overlay" id="joinMeetingModal" style="display: none;">
+    <div class="modal" role="dialog" aria-labelledby="joinMeetingTitle" style="max-width: 500px;">
+        <div class="modal-header">
+            <h2 id="joinMeetingTitle">Join Meeting with Notetaker</h2>
+            <button class="modal-close" onclick="closeJoinMeetingModal()" aria-label="Close">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="meetingLink">Meeting Link</label>
+                <input type="url" id="meetingLink" placeholder="https://meet.google.com/xxx-xxxx-xxx" class="form-input">
+                <p class="form-hint">Supports Zoom, Google Meet, and Microsoft Teams</p>
+            </div>
+            <div class="form-group">
+                <label for="botName">Bot Name (Optional)</label>
+                <input type="text" id="botName" placeholder="Nylas Notetaker" class="form-input">
+                <p class="form-hint">Name displayed when the bot joins the meeting</p>
+            </div>
+            <div class="form-group">
+                <label>Join Time</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="joinTime" value="now" checked>
+                        <span>Join Now</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="joinTime" value="scheduled">
+                        <span>Schedule for Later</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" id="scheduledTimeGroup" style="display: none;">
+                <label for="scheduledTime">Scheduled Time</label>
+                <input type="datetime-local" id="scheduledTime" class="form-input">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeJoinMeetingModal()">Cancel</button>
+            <button class="btn-primary" onclick="joinMeeting()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M15 10l5 5-5 5"/>
+                    <path d="M4 4v7a4 4 0 0 0 4 4h12"/>
+                </svg>
+                Join Meeting
+            </button>
+        </div>
+    </div>
+</div>
+{{end}}

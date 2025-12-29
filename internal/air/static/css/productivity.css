@@ -1708,3 +1708,464 @@
     color: var(--accent);
     margin: 0 var(--space-1);
 }
+
+/* ========================================
+   NOTETAKER VIEW
+   ======================================== */
+
+.notetaker-view {
+    display: none;
+    flex: 1;
+    gap: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.notetaker-view.active {
+    display: flex;
+}
+
+/* Notetaker List Container */
+.notetaker-list-container {
+    flex: 1;
+    max-width: 400px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: var(--bg-primary);
+}
+
+.notetaker-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notetaker-list-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.notetaker-list-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.notetaker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* Notetaker Item */
+.notetaker-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 8px;
+}
+
+.notetaker-item:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-hover);
+}
+
+.notetaker-item.active {
+    background: var(--bg-accent);
+    border-color: var(--accent);
+}
+
+.notetaker-status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--text-muted);
+}
+
+.notetaker-status-indicator.scheduled {
+    background: #eab308;
+}
+
+.notetaker-status-indicator.connecting,
+.notetaker-status-indicator.waiting_for_entry {
+    background: #f97316;
+}
+
+.notetaker-status-indicator.attending,
+.notetaker-status-indicator.recording {
+    background: #22c55e;
+    animation: pulse 1.5s infinite;
+}
+
+.notetaker-status-indicator.media_processing {
+    background: #3b82f6;
+}
+
+.notetaker-status-indicator.complete {
+    background: #10b981;
+}
+
+.notetaker-status-indicator.failed {
+    background: #ef4444;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.notetaker-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.notetaker-info h4 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notetaker-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.notetaker-date {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 2px;
+}
+
+.notetaker-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.notetaker-actions .action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s ease;
+}
+
+.notetaker-actions .action-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+.notetaker-actions .action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+/* Notetaker Empty State */
+.notetaker-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.notetaker-empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.notetaker-empty h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.notetaker-empty p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+    max-width: 280px;
+}
+
+/* Notetaker Detail Panel */
+.notetaker-detail {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    min-width: 0;
+}
+
+.notetaker-detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px;
+    text-align: center;
+}
+
+.detail-empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.notetaker-detail-empty h3 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.notetaker-detail-empty p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.notetaker-detail-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notetaker-detail-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.notetaker-detail-status.recording {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: #22c55e;
+    color: #22c55e;
+}
+
+.notetaker-detail-status.complete {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.notetaker-detail-header h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.notetaker-detail-meta {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.notetaker-detail-body {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.detail-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.detail-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.detail-section p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.recording-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px;
+}
+
+.recording-dot {
+    width: 24px;
+    height: 24px;
+    background: #ef4444;
+    border-radius: 50%;
+    margin-bottom: 16px;
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+.notetaker-detail-actions {
+    display: flex;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-elevated);
+}
+
+/* Notetaker Modal */
+.notetaker-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notetaker-modal .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.notetaker-modal .modal-content {
+    position: relative;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.notetaker-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notetaker-modal .modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.notetaker-modal .modal-header button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.notetaker-modal .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Help Content */
+.help-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.help-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.help-section h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--text-primary);
+}
+
+.help-section p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Video Container */
+.video-container {
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.video-container video {
+    display: block;
+    max-height: 60vh;
+}
+
+/* Transcript Content */
+.transcript-content {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* AI Summary */
+.ai-summary h4,
+.ai-summary h5 {
+    color: var(--text-primary);
+    margin: 16px 0 8px;
+}
+
+.ai-summary h4:first-child {
+    margin-top: 0;
+}
+
+.ai-summary ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.ai-summary li {
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}

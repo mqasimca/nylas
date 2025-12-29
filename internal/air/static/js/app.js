@@ -88,15 +88,22 @@
             const emailView = document.getElementById('emailView');
             const calendarView = document.getElementById('calendarView');
             const contactsView = document.getElementById('contactsView');
+            const notetakerView = document.getElementById('notetakerView');
 
             if (emailView) emailView.classList.remove('active');
             if (calendarView) calendarView.classList.remove('active');
             if (contactsView) contactsView.classList.remove('active');
+            if (notetakerView) notetakerView.classList.remove('active');
 
             // Show selected view
             const targetView = document.getElementById(view + 'View');
             if (targetView) {
                 targetView.classList.add('active');
+
+                // Load notetakers when view is shown
+                if (view === 'notetaker' && typeof NotetakerModule !== 'undefined') {
+                    NotetakerModule.loadNotetakers();
+                }
             }
 
             // Update mobile nav if present
