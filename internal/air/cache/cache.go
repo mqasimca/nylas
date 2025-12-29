@@ -83,7 +83,7 @@ func OpenSharedDB(basePath, filename string) (*sql.DB, error) {
 }
 
 // sanitizeEmail converts email to a safe filename.
-// Example: qasim.m@nylas.com -> qasim.m@nylas.com.db
+// Example: user@example.com -> user@example.com.db
 func sanitizeEmail(email string) string {
 	// Email addresses are generally safe, but clean up any path separators
 	safe := strings.ReplaceAll(email, "/", "_")

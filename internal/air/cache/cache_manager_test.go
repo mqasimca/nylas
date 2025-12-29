@@ -47,7 +47,7 @@ func TestSanitizeEmail(t *testing.T) {
 		email    string
 		expected string
 	}{
-		{"qasim.m@nylas.com", "qasim.m@nylas.com.db"},
+		{"test.user@example.com", "test.user@example.com.db"},
 		{"user@example.com", "user@example.com.db"},
 		{"test/path@bad.com", "test_path@bad.com.db"},
 		{"back\\slash@bad.com", "back_slash@bad.com.db"},
@@ -71,8 +71,8 @@ func TestManagerDBPath(t *testing.T) {
 	}
 	defer func() { _ = mgr.Close() }()
 
-	email := "qasim.m@nylas.com"
-	expected := filepath.Join(tmpDir, "qasim.m@nylas.com.db")
+	email := "test.user@example.com"
+	expected := filepath.Join(tmpDir, "test.user@example.com.db")
 	if got := mgr.DBPath(email); got != expected {
 		t.Errorf("DBPath(%q) = %q, want %q", email, got, expected)
 	}

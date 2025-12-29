@@ -38,7 +38,7 @@ func getDemoCommandOutput(command string) string {
     ●  bob@work.com            Project Update: Q4 Goals         15 min ago
   ★    calendar@google.com     Reminder: Design Review          1 hour ago
     ●  notifications@github    [nylas/cli] New PR opened        2 hours ago
-       support@nylas.com       Welcome to Nylas!                1 day ago
+       support@example.com     Welcome!                         1 day ago
 
 Showing 5 of 127 messages`
 

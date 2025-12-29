@@ -9,7 +9,7 @@ func TestContainsEmail(t *testing.T) {
 
 	emails := []ContactEmailResponse{
 		{Email: "test@example.com", Type: "work"},
-		{Email: "john@nylas.com", Type: "personal"},
+		{Email: "john@demo.org", Type: "personal"},
 	}
 
 	tests := []struct {
@@ -18,7 +18,7 @@ func TestContainsEmail(t *testing.T) {
 	}{
 		{"test@example.com", true},
 		{"example.com", true},
-		{"nylas.com", true},
+		{"demo.org", true},
 		{"john", true},
 		{"notfound", false},
 		{"xyz@other.com", false},

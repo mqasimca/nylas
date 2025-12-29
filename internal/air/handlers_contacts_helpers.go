@@ -235,10 +235,10 @@ func demoContacts() []ContactResponse {
 			GivenName:   "Alex",
 			Surname:     "Johnson",
 			DisplayName: "Alex Johnson",
-			CompanyName: "Nylas Inc",
+			CompanyName: "Example Corp",
 			JobTitle:    "Senior Engineer",
 			Emails: []ContactEmailResponse{
-				{Email: "alex.johnson@nylas.com", Type: "work"},
+				{Email: "demo@example.com", Type: "work"},
 			},
 			PhoneNumbers: []ContactPhoneResponse{
 				{Number: "+1-555-234-5678", Type: "work"},

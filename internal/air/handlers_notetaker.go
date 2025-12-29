@@ -104,16 +104,12 @@ func (s *Server) handleListNotetakers(w http.ResponseWriter, r *http.Request) {
 	var sources []NotetakerSource
 	if sourcesJSON != "" {
 		if err := json.Unmarshal([]byte(sourcesJSON), &sources); err != nil {
-			// Fall back to default source if parsing fails
-			sources = []NotetakerSource{
-				{From: "notebook@nylas.ai", LinkDomain: "notebook.nylas.ai"},
-			}
+			// Fall back to empty sources if parsing fails
+			sources = []NotetakerSource{}
 		}
 	} else {
-		// Default source if none provided
-		sources = []NotetakerSource{
-			{From: "notebook@nylas.ai", LinkDomain: "notebook.nylas.ai"},
-		}
+		// Empty sources if none provided - user must configure in Settings
+		sources = []NotetakerSource{}
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)

@@ -489,7 +489,7 @@ func demoEmails() []EmailResponse {
 			ID:      "demo-email-003",
 			Subject: "Re: Meeting Tomorrow",
 			Snippet: "That works for me. I'll send a calendar invite...",
-			From:    []EmailParticipantResponse{{Name: "Alex Johnson", Email: "alex.johnson@nylas.com"}},
+			From:    []EmailParticipantResponse{{Name: "Alex Johnson", Email: "demo@example.com"}},
 			To:      []EmailParticipantResponse{{Name: "You", Email: "you@example.com"}},
 			Date:    now.Add(-1 * time.Hour).Unix(),
 			Unread:  false,

@@ -27,8 +27,8 @@ const NotetakerModule = {
         if (typeof settingsState !== 'undefined' && settingsState.notetakerSources && settingsState.notetakerSources.length > 0) {
             return settingsState.notetakerSources;
         }
-        // Default source
-        return [{ from: 'notebook@nylas.ai', subject: '', linkDomain: 'notebook.nylas.ai' }];
+        // No default source - user must configure in Settings
+        return [];
     },
 
     /**
