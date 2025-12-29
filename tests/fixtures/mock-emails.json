@@ -3,12 +3,12 @@
     {
       "id": "test-email-1",
       "thread_id": "test-thread-1",
-      "subject": "Welcome to Nylas Air",
-      "snippet": "Thank you for trying out Nylas Air, the modern email client...",
+      "subject": "Welcome to Air",
+      "snippet": "Thank you for trying out Air, the modern email client...",
       "from": [
         {
-          "name": "Nylas Team",
-          "email": "hello@nylas.com"
+          "name": "Demo Team",
+          "email": "hello@example.com"
         }
       ],
       "to": [

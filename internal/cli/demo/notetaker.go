@@ -289,13 +289,13 @@ func newDemoMediaShowCmd() *cobra.Command {
 			fmt.Printf("    Format:   MP4\n")
 			fmt.Printf("    Size:     245.6 MB\n")
 			fmt.Printf("    Duration: 45:32\n")
-			_, _ = dim.Printf("    URL:      https://media.nylas.com/recordings/%s.mp4\n", notetakerID)
+			_, _ = dim.Printf("    URL:      https://media.example.com/recordings/%s.mp4\n", notetakerID)
 			fmt.Println()
 
 			fmt.Printf("  %s Transcript\n", green.Sprint("●"))
 			fmt.Printf("    Format:   VTT\n")
 			fmt.Printf("    Size:     128.4 KB\n")
-			_, _ = dim.Printf("    URL:      https://media.nylas.com/transcripts/%s.vtt\n", notetakerID)
+			_, _ = dim.Printf("    URL:      https://media.example.com/transcripts/%s.vtt\n", notetakerID)
 			fmt.Println()
 
 			fmt.Printf("  %s Summary\n", green.Sprint("●"))

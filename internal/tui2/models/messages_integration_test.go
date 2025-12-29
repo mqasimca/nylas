@@ -32,19 +32,19 @@ func TestIntegration_MessageList_FetchAndDisplay(t *testing.T) {
 		return []domain.Thread{
 			{
 				ID:      "thread1",
-				Subject: "Welcome to Nylas",
+				Subject: "Welcome Message",
 				LatestDraftOrMessage: domain.Message{
 					ID:      "msg1",
-					Subject: "Welcome to Nylas",
-					From:    []domain.EmailParticipant{{Name: "Nylas Team", Email: "team@nylas.com"}},
+					Subject: "Welcome Message",
+					From:    []domain.EmailParticipant{{Name: "Demo Team", Email: "team@example.com"}},
 					To:      []domain.EmailParticipant{{Email: "user@example.com"}},
 					Date:    time.Now().Add(-1 * time.Hour),
-					Snippet: "Thanks for using Nylas!",
+					Snippet: "Thanks for using our service!",
 				},
 				MessageIDs:            []string{"msg1"},
 				LatestMessageRecvDate: time.Now().Add(-1 * time.Hour),
-				Participants:          []domain.EmailParticipant{{Name: "Nylas Team", Email: "team@nylas.com"}},
-				Snippet:               "Thanks for using Nylas!",
+				Participants:          []domain.EmailParticipant{{Name: "Demo Team", Email: "team@example.com"}},
+				Snippet:               "Thanks for using our service!",
 			},
 			{
 				ID:      "thread2",

@@ -134,9 +134,9 @@ type Contact struct {
 // buildMockPageData creates mock data for Phase 1 (static design).
 func buildMockPageData() PageData {
 	return PageData{
-		UserName:      "Qasim M",
-		UserEmail:     "qasim@nylas.com",
-		UserAvatar:    "QM",
+		UserName:      "Demo User",
+		UserEmail:     "user@example.com",
+		UserAvatar:    "DU",
 		ActiveView:    "email",
 		ActiveFolder:  "inbox",
 		UnreadCount:   23,
@@ -188,7 +188,7 @@ func buildMockPageData() PageData {
 			{
 				ID:         "3",
 				From:       "Alex Johnson",
-				FromEmail:  "alex.johnson@nylas.com",
+				FromEmail:  "demo@example.com",
 				FromAvatar: "AJ",
 				Subject:    "Re: Meeting Tomorrow",
 				Preview:    "That works for me. I'll send a calendar invite...",
@@ -290,7 +290,7 @@ func buildMockPageData() PageData {
 		},
 
 		Contacts: []Contact{
-			{ID: "c1", Name: "Alex Johnson", Email: "alex.johnson@nylas.com", Role: "Senior Engineer at Nylas", Avatar: "AJ", AvatarColor: "var(--gradient-1)", IsVIP: true, Letter: "A"},
+			{ID: "c1", Name: "Alex Johnson", Email: "demo@example.com", Role: "Senior Engineer", Avatar: "AJ", AvatarColor: "var(--gradient-1)", IsVIP: true, Letter: "A"},
 			{ID: "c2", Name: "Amanda Peters", Email: "amanda.peters@stripe.com", Role: "Product Manager at Stripe", Avatar: "AP", AvatarColor: "var(--gradient-4)", Letter: "A"},
 			{ID: "c3", Name: "James Davis", Email: "james.davis@techcorp.com", Role: "CEO at TechCorp", Avatar: "JD", AvatarColor: "var(--gradient-2)", IsVIP: true, Letter: "J"},
 			{ID: "c4", Name: "Michael Park", Email: "michael.park@github.com", Role: "Developer Relations at GitHub", Avatar: "MP", AvatarColor: "linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%)", Letter: "M"},
