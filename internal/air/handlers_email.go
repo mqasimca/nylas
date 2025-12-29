@@ -78,6 +78,18 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 		params.Starred = &starredBool
 	}
 
+	// Search by sender email (from)
+	fromFilter := query.Get("from")
+	if fromFilter != "" {
+		params.From = fromFilter
+	}
+
+	// Full-text search query
+	searchQuery := query.Get("search")
+	if searchQuery != "" {
+		params.SearchQuery = searchQuery
+	}
+
 	// Cursor for pagination
 	cursor := query.Get("cursor")
 	if cursor != "" {

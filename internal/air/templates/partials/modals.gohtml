@@ -487,6 +487,26 @@ function toggleCcBcc() {
                 </p>
             </div>
 
+            <!-- Notetaker Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">🎙️</span>
+                    Notetaker Sources
+                </h3>
+                <p class="settings-section-desc">Configure email sources for meeting recordings. Add multiple sources to aggregate recordings from different notetaker services.</p>
+
+                <div class="notetaker-sources-list" id="notetakerSourcesList">
+                    <!-- Sources will be rendered by JavaScript -->
+                </div>
+
+                <button class="settings-add-source-btn" onclick="openAddNotetakerSourceModal()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 5v14m-7-7h14"/>
+                    </svg>
+                    Add Source
+                </button>
+            </div>
+
             <!-- Theme Section -->
             <div class="settings-section">
                 <h3 class="settings-section-title">
@@ -678,4 +698,36 @@ function scheduleCustomSend() {
     closeSendLaterModal();
 }
 </script>
+
+<!-- Add Notetaker Source Modal -->
+<div class="notetaker-source-modal-overlay hidden" id="notetakerSourceModal" onclick="if(event.target === this) closeNotetakerSourceModal()">
+    <div class="notetaker-source-modal">
+        <div class="notetaker-source-modal-header">
+            <h3 id="notetakerSourceModalTitle">Add Notetaker Source</h3>
+            <button class="notetaker-source-modal-close" onclick="closeNotetakerSourceModal()">×</button>
+        </div>
+        <div class="notetaker-source-modal-body">
+            <input type="hidden" id="notetakerSourceEditIndex" value="-1">
+            <div class="form-group">
+                <label for="notetakerSourceFrom">From Email</label>
+                <input type="email" id="notetakerSourceFrom" class="form-input" placeholder="e.g., notebook@nylas.ai">
+                <p class="form-hint">The sender email address for notetaker summary emails</p>
+            </div>
+            <div class="form-group">
+                <label for="notetakerSourceSubject">Subject Filter (Optional)</label>
+                <input type="text" id="notetakerSourceSubject" class="form-input" placeholder="e.g., Meeting Summary">
+                <p class="form-hint">Filter by subject line (leave empty to include all)</p>
+            </div>
+            <div class="form-group">
+                <label for="notetakerSourceLink">External Link Domain</label>
+                <input type="text" id="notetakerSourceLink" class="form-input" placeholder="e.g., notebook.nylas.ai">
+                <p class="form-hint">The domain for recording links (e.g., notebook.nylas.ai)</p>
+            </div>
+        </div>
+        <div class="notetaker-source-modal-footer">
+            <button class="btn-secondary" onclick="closeNotetakerSourceModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveNotetakerSource()">Save</button>
+        </div>
+    </div>
+</div>
 {{end}}

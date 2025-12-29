@@ -638,17 +638,36 @@ const EmailListManager = {
         return div.innerHTML;
     },
 
-    async loadEmails(folder = null) {
+    async loadEmails(folderOrOptions = null) {
         if (this.isLoading) return;
         this.isLoading = true;
 
-        console.log('[loadEmails] Starting...', { folder, limit: 50 });
+        // Support both string (folder) and object (options) parameter
+        let folder = null;
+        let search = null;
+        let from = null;
+        if (typeof folderOrOptions === 'string') {
+            folder = folderOrOptions;
+        } else if (folderOrOptions && typeof folderOrOptions === 'object') {
+            folder = folderOrOptions.folder || null;
+            search = folderOrOptions.search || null;
+            from = folderOrOptions.from || null;
+        }
+
+        console.log('[loadEmails] Starting...', { folder, search, from, limit: 50 });
 
         try {
             const options = { limit: 50 }; // Increased from 10 to 50 to fill viewport
             if (folder) {
                 this.currentFolder = folder;
                 options.folder = folder;
+            }
+            if (search) {
+                this.currentSearch = search;
+                options.search = search;
+            }
+            if (from) {
+                options.from = from;
             }
 
             const data = await AirAPI.getEmails(options);

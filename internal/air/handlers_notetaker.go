@@ -1,11 +1,27 @@
 package air
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/domain"
 )
+
+// States to filter out from notetaker list
+var excludedNotetakerStates = map[string]bool{
+	"failed_entry": true,
+}
+
+// NotetakerSource represents a source for fetching notetaker emails
+type NotetakerSource struct {
+	From       string `json:"from"`
+	Subject    string `json:"subject"`
+	LinkDomain string `json:"linkDomain"`
+}
 
 // NotetakerResponse represents a notetaker for the UI
 type NotetakerResponse struct {
@@ -18,6 +34,10 @@ type NotetakerResponse struct {
 	HasRecording  bool   `json:"hasRecording"`
 	HasTranscript bool   `json:"hasTranscript"`
 	CreatedAt     string `json:"createdAt,omitempty"`
+	IsExternal    bool   `json:"isExternal,omitempty"`
+	ExternalURL   string `json:"externalUrl,omitempty"`
+	Attendees     string `json:"attendees,omitempty"`
+	Summary       string `json:"summary,omitempty"`
 }
 
 // CreateNotetakerRequest for creating a notetaker
@@ -34,15 +54,6 @@ type MediaResponse struct {
 	RecordingSize  int64  `json:"recordingSize,omitempty"`
 	TranscriptSize int64  `json:"transcriptSize,omitempty"`
 	ExpiresAt      int64  `json:"expiresAt,omitempty"`
-}
-
-// notetakerStore holds notetakers in memory for demo
-type notetakerStore struct {
-	notetakers map[string]*NotetakerResponse
-}
-
-var ntStore = &notetakerStore{
-	notetakers: make(map[string]*NotetakerResponse),
 }
 
 // handleNotetakersRoute dispatches notetaker requests by method
@@ -69,21 +80,124 @@ func (s *Server) handleNotetakerByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleListNotetakers returns all notetakers
+// handleListNotetakers returns all notetakers from the Nylas API
 func (s *Server) handleListNotetakers(w http.ResponseWriter, r *http.Request) {
-	notetakers := make([]*NotetakerResponse, 0, len(ntStore.notetakers))
-	for _, nt := range ntStore.notetakers {
-		notetakers = append(notetakers, nt)
+	// Check if API client is available
+	if s.nylasClient == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "API client not available",
+		})
+		return
+	}
+
+	// Get default grant
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "No default account. Please select an account first.",
+		})
+		return
+	}
+
+	// Parse sources from query params (JSON array)
+	sourcesJSON := r.URL.Query().Get("sources")
+	var sources []NotetakerSource
+	if sourcesJSON != "" {
+		if err := json.Unmarshal([]byte(sourcesJSON), &sources); err != nil {
+			// Fall back to default source if parsing fails
+			sources = []NotetakerSource{
+				{From: "notebook@nylas.ai", LinkDomain: "notebook.nylas.ai"},
+			}
+		}
+	} else {
+		// Default source if none provided
+		sources = []NotetakerSource{
+			{From: "notebook@nylas.ai", LinkDomain: "notebook.nylas.ai"},
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	response := make([]*NotetakerResponse, 0)
+
+	// Fetch notetakers from Nylas API
+	notetakers, err := s.nylasClient.ListNotetakers(ctx, grantID, nil)
+	if err == nil {
+		// Convert to UI response format, filtering out excluded states
+		for _, nt := range notetakers {
+			if !excludedNotetakerStates[nt.State] {
+				response = append(response, domainToNotetakerResponse(&nt))
+			}
+		}
+	}
+
+	// Fetch external links from each configured source
+	for _, source := range sources {
+		if source.From != "" && source.LinkDomain != "" {
+			externalLinks := s.fetchNotetakerSummaryEmails(ctx, grantID, source)
+			response = append(response, externalLinks...)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(notetakers); err != nil {
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, "Failed to encode", http.StatusInternalServerError)
 	}
 }
 
-// handleCreateNotetaker creates a new notetaker
+// domainToNotetakerResponse converts a domain.Notetaker to NotetakerResponse
+func domainToNotetakerResponse(nt *domain.Notetaker) *NotetakerResponse {
+	resp := &NotetakerResponse{
+		ID:            nt.ID,
+		State:         nt.State,
+		MeetingLink:   nt.MeetingLink,
+		MeetingTitle:  nt.MeetingTitle,
+		HasRecording:  nt.MediaData != nil && nt.MediaData.Recording != nil,
+		HasTranscript: nt.MediaData != nil && nt.MediaData.Transcript != nil,
+	}
+
+	if !nt.JoinTime.IsZero() {
+		resp.JoinTime = nt.JoinTime.Format(time.RFC3339)
+	}
+	if !nt.CreatedAt.IsZero() {
+		resp.CreatedAt = nt.CreatedAt.Format(time.RFC3339)
+	}
+
+	// Get provider from meeting info or detect from link
+	if nt.MeetingInfo != nil && nt.MeetingInfo.Provider != "" {
+		resp.Provider = nt.MeetingInfo.Provider
+	} else {
+		resp.Provider = detectMeetingProvider(nt.MeetingLink)
+	}
+
+	// Set default title if empty
+	if resp.MeetingTitle == "" {
+		resp.MeetingTitle = "Meeting Recording"
+	}
+
+	return resp
+}
+
+// handleCreateNotetaker creates a new notetaker via the Nylas API
 func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
+	// Check if API client is available
+	if s.nylasClient == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "API client not available",
+		})
+		return
+	}
+
+	// Get default grant
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "No default account. Please select an account first.",
+		})
+		return
+	}
+
 	var req CreateNotetakerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -95,79 +209,121 @@ func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Detect provider from meeting link
-	provider := detectMeetingProvider(req.MeetingLink)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
 
-	// Generate ID
-	id := generateNotetakerID()
-
-	nt := &NotetakerResponse{
-		ID:           id,
-		State:        "scheduled",
-		MeetingLink:  req.MeetingLink,
-		MeetingTitle: "Meeting Recording",
-		Provider:     provider,
-		CreatedAt:    time.Now().Format(time.RFC3339),
+	// Build API request
+	apiReq := &domain.CreateNotetakerRequest{
+		MeetingLink: req.MeetingLink,
+		JoinTime:    req.JoinTime,
 	}
 
-	if req.JoinTime > 0 {
-		nt.JoinTime = time.Unix(req.JoinTime, 0).Format(time.RFC3339)
+	// Add bot config if name provided
+	if req.BotName != "" {
+		apiReq.BotConfig = &domain.BotConfig{
+			Name: req.BotName,
+		}
 	}
 
-	ntStore.notetakers[id] = nt
+	// Create notetaker via Nylas API
+	nt, err := s.nylasClient.CreateNotetaker(ctx, grantID, apiReq)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": "Failed to create notetaker: " + err.Error(),
+		})
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(nt); err != nil {
+	if err := json.NewEncoder(w).Encode(domainToNotetakerResponse(nt)); err != nil {
 		http.Error(w, "Failed to encode", http.StatusInternalServerError)
 	}
 }
 
-// handleGetNotetaker returns a single notetaker
+// handleGetNotetaker returns a single notetaker from the Nylas API
 func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
+	// Check if API client is available
+	if s.nylasClient == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "API client not available",
+		})
+		return
+	}
+
+	// Get default grant
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "No default account. Please select an account first.",
+		})
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
 	}
 
-	nt, ok := ntStore.notetakers[id]
-	if !ok {
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	nt, err := s.nylasClient.GetNotetaker(ctx, grantID, id)
+	if err != nil {
 		http.Error(w, "Notetaker not found", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(nt); err != nil {
+	if err := json.NewEncoder(w).Encode(domainToNotetakerResponse(nt)); err != nil {
 		http.Error(w, "Failed to encode", http.StatusInternalServerError)
 	}
 }
 
-// handleGetNotetakerMedia returns media for a notetaker
+// handleGetNotetakerMedia returns media for a notetaker from the Nylas API
 func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request) {
+	// Check if API client is available
+	if s.nylasClient == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "API client not available",
+		})
+		return
+	}
+
+	// Get default grant
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "No default account. Please select an account first.",
+		})
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
 	}
 
-	nt, ok := ntStore.notetakers[id]
-	if !ok {
-		http.Error(w, "Notetaker not found", http.StatusNotFound)
-		return
-	}
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
 
-	// Only return media if complete
-	if nt.State != "complete" {
+	// Get media from Nylas API
+	mediaData, err := s.nylasClient.GetNotetakerMedia(ctx, grantID, id)
+	if err != nil {
 		http.Error(w, "Recording not yet available", http.StatusNotFound)
 		return
 	}
 
-	media := MediaResponse{
-		RecordingURL:   "/api/notetakers/recording/" + id + ".mp4",
-		TranscriptURL:  "/api/notetakers/transcript/" + id + ".txt",
-		RecordingSize:  1024 * 1024 * 50, // 50MB example
-		TranscriptSize: 1024 * 10,        // 10KB example
-		ExpiresAt:      time.Now().Add(7 * 24 * time.Hour).Unix(),
+	media := MediaResponse{}
+	if mediaData.Recording != nil {
+		media.RecordingURL = mediaData.Recording.URL
+		media.RecordingSize = mediaData.Recording.Size
+		media.ExpiresAt = mediaData.Recording.ExpiresAt
+	}
+	if mediaData.Transcript != nil {
+		media.TranscriptURL = mediaData.Transcript.URL
+		media.TranscriptSize = mediaData.Transcript.Size
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -176,21 +332,40 @@ func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// handleDeleteNotetaker cancels a notetaker
+// handleDeleteNotetaker cancels a notetaker via the Nylas API
 func (s *Server) handleDeleteNotetaker(w http.ResponseWriter, r *http.Request) {
+	// Check if API client is available
+	if s.nylasClient == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "API client not available",
+		})
+		return
+	}
+
+	// Get default grant
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "No default account. Please select an account first.",
+		})
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
 	}
 
-	nt, ok := ntStore.notetakers[id]
-	if !ok {
-		http.Error(w, "Notetaker not found", http.StatusNotFound)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	err = s.nylasClient.DeleteNotetaker(ctx, grantID, id)
+	if err != nil {
+		http.Error(w, "Failed to cancel notetaker: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	nt.State = "cancelled"
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -209,7 +384,66 @@ func detectMeetingProvider(link string) string {
 	}
 }
 
-// generateNotetakerID generates a unique ID
-func generateNotetakerID() string {
-	return "nt_" + time.Now().Format("20060102150405")
+// fetchNotetakerSummaryEmails fetches emails containing recording links from a source
+func (s *Server) fetchNotetakerSummaryEmails(ctx context.Context, grantID string, source NotetakerSource) []*NotetakerResponse {
+	result := make([]*NotetakerResponse, 0)
+
+	// Search for emails from the configured sender
+	query := &domain.MessageQueryParams{
+		From:  source.From,
+		Limit: 20,
+	}
+
+	// Add subject filter if specified
+	if source.Subject != "" {
+		query.Subject = source.Subject
+	}
+
+	messages, err := s.nylasClient.GetMessagesWithParams(ctx, grantID, query)
+	if err != nil {
+		return result
+	}
+
+	// Build regex to extract URLs with recording IDs from email body
+	// Escape dots in the domain for regex
+	escapedDomain := strings.ReplaceAll(source.LinkDomain, ".", `\.`)
+	urlPattern := `https://` + escapedDomain + `/app/library/[a-zA-Z0-9]+`
+	linkRegex := regexp.MustCompile(urlPattern)
+
+	for _, msg := range messages {
+		// Only include emails that have a matching link in the body
+		urls := linkRegex.FindAllString(msg.Body, 1)
+		if len(urls) == 0 {
+			continue // Skip emails without a valid recording link
+		}
+
+		externalURL := urls[0]
+
+		// Use subject as meeting title directly
+		title := msg.Subject
+		if title == "" {
+			title = "Meeting Recording"
+		}
+
+		resp := &NotetakerResponse{
+			ID:            "email-" + msg.ID,
+			State:         "completed",
+			MeetingTitle:  title,
+			Provider:      "nylas_notebook",
+			HasRecording:  true,
+			HasTranscript: true,
+			IsExternal:    true,
+			ExternalURL:   externalURL,
+			Summary:       msg.Body,
+		}
+
+		// Parse date from message
+		if !msg.Date.IsZero() {
+			resp.CreatedAt = msg.Date.Format(time.RFC3339)
+		}
+
+		result = append(result, resp)
+	}
+
+	return result
 }

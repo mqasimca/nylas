@@ -173,6 +173,8 @@ const AirAPI = {
         if (options.starred) params.append('starred', 'true');
         if (options.limit) params.append('limit', options.limit.toString());
         if (options.cursor) params.append('cursor', options.cursor);
+        if (options.search) params.append('search', options.search);
+        if (options.from) params.append('from', options.from);
 
         const queryString = params.toString();
         return this.request(`/emails${queryString ? '?' + queryString : ''}`);

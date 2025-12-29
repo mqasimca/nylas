@@ -1,109 +1,29 @@
 {{define "notetaker-view"}}
-<!-- Notetaker View -->
+<!-- Notetaker View - Card Grid Layout -->
 <div class="notetaker-view" id="notetakerView">
-    <!-- Notetaker Sidebar -->
-    <aside class="sidebar" role="complementary" aria-label="Notetaker options">
-        <button class="compose-btn" onclick="openJoinMeetingModal()">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M12 5v14m-7-7h14"/>
-            </svg>
-            Join Meeting
-        </button>
-
-        <div class="folder-group">
-            <div class="folder-item active" data-filter="all" onclick="filterNotetakers('all', this)">
-                <span class="folder-icon">📋</span>
-                <span>All Recordings</span>
-                <span class="folder-count" id="notetakerCountAll">0</span>
+    <div class="nt-main">
+        <!-- Header with tabs -->
+        <div class="nt-header">
+            <div class="nt-tabs">
+                <button class="nt-tab active" data-filter="past" onclick="filterNotetakers('past', this)">Past</button>
+                <button class="nt-tab" data-filter="upcoming" onclick="filterNotetakers('upcoming', this)">Upcoming</button>
             </div>
-            <div class="folder-item" data-filter="scheduled" onclick="filterNotetakers('scheduled', this)">
-                <span class="folder-icon">📅</span>
-                <span>Scheduled</span>
-                <span class="folder-count" id="notetakerCountScheduled">0</span>
-            </div>
-            <div class="folder-item" data-filter="attending" onclick="filterNotetakers('attending', this)">
-                <span class="folder-icon">🔴</span>
-                <span>In Progress</span>
-                <span class="folder-count" id="notetakerCountAttending">0</span>
-            </div>
-            <div class="folder-item" data-filter="complete" onclick="filterNotetakers('complete', this)">
-                <span class="folder-icon">✅</span>
-                <span>Completed</span>
-                <span class="folder-count" id="notetakerCountComplete">0</span>
+            <div class="nt-actions">
+                <button class="btn-secondary" onclick="refreshNotetakers()">↻ Refresh</button>
+                <button class="btn-primary" onclick="openJoinMeetingModal()">+ Join Meeting</button>
             </div>
         </div>
 
-        <div class="sidebar-divider"></div>
-
-        <div class="sidebar-title">Meeting Platforms</div>
-        <div class="folder-group">
-            <div class="folder-item" data-provider="zoom" onclick="filterByProvider('zoom', this)">
-                <span class="folder-icon">📹</span>
-                <span>Zoom</span>
-            </div>
-            <div class="folder-item" data-provider="google_meet" onclick="filterByProvider('google_meet', this)">
-                <span class="folder-icon">🟢</span>
-                <span>Google Meet</span>
-            </div>
-            <div class="folder-item" data-provider="teams" onclick="filterByProvider('teams', this)">
-                <span class="folder-icon">🔷</span>
-                <span>Microsoft Teams</span>
-            </div>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <div class="sidebar-title">Quick Actions</div>
-        <div class="folder-group">
-            <div class="folder-item" onclick="openJoinMeetingModal()">
-                <span class="folder-icon">🎙️</span>
-                <span>Record Meeting</span>
-            </div>
-            <div class="folder-item" onclick="showNotetakerHelp()">
-                <span class="folder-icon">❓</span>
-                <span>Help & Tips</span>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Notetaker List -->
-    <div class="notetaker-list-container">
-        <div class="notetaker-list-header">
-            <h2>Meeting Recordings</h2>
-            <div class="notetaker-list-actions">
-                <button class="btn-secondary" onclick="refreshNotetakers()">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                    </svg>
-                    Refresh
-                </button>
-            </div>
-        </div>
-
-        <div class="notetaker-list" id="notetakerList">
+        <!-- Card Grid -->
+        <div class="nt-grid" id="notetakerList">
             <!-- Empty state -->
-            <div class="notetaker-empty" id="notetakerEmpty">
-                <div class="notetaker-empty-icon">🎙️</div>
+            <div class="nt-empty" id="notetakerEmpty">
+                <div class="nt-empty-icon">🎙️</div>
                 <h3>No recordings yet</h3>
-                <p>Join a meeting to start recording with AI-powered transcription and summarization.</p>
-                <button class="btn-primary" onclick="openJoinMeetingModal()">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M12 5v14m-7-7h14"/>
-                    </svg>
-                    Join Your First Meeting
-                </button>
+                <p>Join a meeting to start recording</p>
+                <button class="btn-primary" onclick="openJoinMeetingModal()">+ Join Meeting</button>
             </div>
-
-            <!-- Notetaker items will be rendered here by JavaScript -->
-        </div>
-    </div>
-
-    <!-- Notetaker Detail Panel -->
-    <div class="notetaker-detail" id="notetakerDetail">
-        <div class="notetaker-detail-empty">
-            <div class="detail-empty-icon">🎬</div>
-            <h3>Select a recording</h3>
-            <p>Click on a recording to view details, playback, and transcript</p>
+            <!-- Cards rendered by JS -->
         </div>
     </div>
 </div>

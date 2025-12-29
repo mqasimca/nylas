@@ -6,7 +6,7 @@
 const NotetakerModule = {
     notetakers: [],
     selectedNotetaker: null,
-    currentFilter: 'all',
+    currentFilter: 'past',
     currentProvider: null,
     isLoading: false,
 
@@ -17,6 +17,18 @@ const NotetakerModule = {
         this.setupEventListeners();
         this.setupJoinTimeToggle();
         console.log('%c🎙️ Notetaker module loaded', 'color: #8b5cf6;');
+    },
+
+    /**
+     * Get notetaker sources from global settings
+     * Falls back to default if not configured
+     */
+    getSources() {
+        if (typeof settingsState !== 'undefined' && settingsState.notetakerSources && settingsState.notetakerSources.length > 0) {
+            return settingsState.notetakerSources;
+        }
+        // Default source
+        return [{ from: 'notebook@nylas.ai', subject: '', linkDomain: 'notebook.nylas.ai' }];
     },
 
     /**
@@ -37,10 +49,16 @@ const NotetakerModule = {
 
     /**
      * Load all notetakers from API
+     * Uses notetaker sources from global settings
      */
     async loadNotetakers() {
         try {
-            const resp = await fetch('/api/notetakers');
+            const sources = this.getSources();
+            const params = new URLSearchParams();
+            // Pass sources as JSON array
+            params.set('sources', JSON.stringify(sources));
+            const url = '/api/notetakers?' + params.toString();
+            const resp = await fetch(url);
             if (resp.ok) {
                 this.notetakers = await resp.json();
                 this.renderNotetakerPanel();
@@ -156,7 +174,8 @@ const NotetakerModule = {
         const icons = {
             'zoom': '📹',
             'google_meet': '🎥',
-            'teams': '💼'
+            'teams': '💼',
+            'nylas_notebook': '📓'
         };
         return icons[provider] || '📹';
     },
@@ -176,99 +195,147 @@ const NotetakerModule = {
     },
 
     /**
-     * Build notetaker item element
+     * Build notetaker card element
      */
     buildNotetakerItem(nt) {
-        const item = this.createElement('div', 'notetaker-item');
-        item.dataset.id = nt.id;
+        const card = this.createElement('div', 'nt-card');
+        card.dataset.id = nt.id;
 
-        // Add click handler to select
-        item.onclick = (e) => {
-            // Don't select if clicking action buttons
-            if (e.target.closest('.notetaker-actions')) return;
-            this.selectNotetaker(nt.id);
-        };
+        // Click handler to show summary for external notetakers
+        if (nt.isExternal && nt.summary) {
+            card.style.cursor = 'pointer';
+            card.onclick = (e) => {
+                if (e.target.closest('.nt-card-btn') || e.target.closest('.nt-card-toggle')) return;
+                this.showSummaryModal(nt);
+            };
+        }
 
-        // Status indicator
-        const statusIndicator = this.createElement('div', ['notetaker-status-indicator', nt.state]);
-        if (nt.state === 'attending') statusIndicator.classList.add('recording');
-        item.appendChild(statusIndicator);
+        // Banner with provider icon
+        const banner = this.createElement('div', 'nt-card-banner');
+        const providerIcon = this.createElement('div', 'nt-card-provider');
+        providerIcon.innerHTML = this.getProviderSVG(nt.provider);
+        banner.appendChild(providerIcon);
+        card.appendChild(banner);
 
-        // Info
-        const info = this.createElement('div', 'notetaker-info');
-        const title = this.createElement('h4', null, nt.meetingTitle || 'Meeting Recording');
-        const statusLine = this.createElement('p', 'notetaker-meta',
-            this.getProviderIcon(nt.provider) + ' ' + this.getStatusText(nt.state));
-        info.appendChild(title);
-        info.appendChild(statusLine);
+        // Card body
+        const body = this.createElement('div', 'nt-card-body');
 
+        // Title row with badge
+        const titleRow = this.createElement('div', 'nt-card-title-row');
+        const title = this.createElement('h4', 'nt-card-title', nt.meetingTitle || 'Meeting Recording');
+        titleRow.appendChild(title);
+
+        // Status badge - show "External" for external sources
+        const badge = this.createElement('span', 'nt-card-badge');
+        if (nt.isExternal) {
+            badge.classList.add('external');
+            badge.textContent = 'External';
+        } else {
+            badge.classList.add(this.getBadgeClass(nt.state));
+            badge.textContent = this.getStatusText(nt.state);
+        }
+        titleRow.appendChild(badge);
+        body.appendChild(titleRow);
+
+        // Meta info (date/time)
+        const meta = this.createElement('div', 'nt-card-meta');
         if (nt.createdAt) {
-            const date = this.createElement('small', 'notetaker-date', new Date(nt.createdAt).toLocaleDateString());
-            info.appendChild(date);
+            const d = new Date(nt.createdAt);
+            meta.innerHTML = `<span>📅 ${d.toLocaleDateString()}</span><span>🕐 ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
         }
-        item.appendChild(info);
+        body.appendChild(meta);
 
-        // Quick actions
-        const actions = this.createElement('div', 'notetaker-actions');
+        // Details section (collapsed by default)
+        const details = this.createElement('div', 'nt-card-details');
+        details.style.display = 'none';
+        const detailsLink = nt.meetingLink ? `<p><a href="${nt.meetingLink}" target="_blank">🔗 Meeting Link</a></p>` : '';
+        details.innerHTML = `<p>${this.getProviderName(nt.provider)}</p>${detailsLink}`;
+        body.appendChild(details);
 
-        if (nt.state === 'complete') {
-            const playBtn = this.createElement('button', 'action-btn', '▶️');
-            playBtn.title = 'Play';
-            playBtn.onclick = (e) => { e.stopPropagation(); this.playRecording(nt.id); };
-            actions.appendChild(playBtn);
+        // Toggle details button
+        const toggleBtn = this.createElement('button', 'nt-card-toggle', '▼ Meeting Details');
+        toggleBtn.onclick = (e) => {
+            e.stopPropagation();
+            const open = details.style.display !== 'none';
+            details.style.display = open ? 'none' : 'block';
+            toggleBtn.textContent = open ? '▼ Meeting Details' : '▲ Hide Details';
+        };
+        body.appendChild(toggleBtn);
+
+        // Action button
+        const btn = this.createElement('button', 'nt-card-btn');
+        if (nt.isExternal && nt.externalUrl) {
+            btn.textContent = '🔗 Open Recording';
+            btn.onclick = () => window.open(nt.externalUrl, '_blank');
+        } else if (nt.state === 'complete' || nt.state === 'completed') {
+            btn.textContent = '▶️ Watch Now';
+            btn.onclick = () => this.playRecording(nt.id);
+        } else if (nt.state === 'scheduled') {
+            btn.textContent = '❌ Cancel';
+            btn.classList.add('danger');
+            btn.onclick = () => this.cancel(nt.id);
+        } else {
+            btn.textContent = this.getStatusText(nt.state);
+            btn.disabled = true;
         }
+        body.appendChild(btn);
 
-        if (nt.state === 'scheduled') {
-            const cancelBtn = this.createElement('button', 'action-btn danger', '✕');
-            cancelBtn.title = 'Cancel';
-            cancelBtn.onclick = (e) => { e.stopPropagation(); this.cancel(nt.id); };
-            actions.appendChild(cancelBtn);
-        }
-
-        item.appendChild(actions);
-        return item;
+        card.appendChild(body);
+        return card;
     },
 
     /**
-     * Render the notetaker list
+     * Get badge CSS class for state
+     */
+    getBadgeClass(state) {
+        const classes = {
+            'complete': 'complete', 'completed': 'complete',
+            'failed': 'failed', 'failed_entry': 'failed', 'cancelled': 'failed',
+            'attending': 'active', 'connecting': 'pending', 'waiting_for_entry': 'pending',
+            'scheduled': 'pending', 'media_processing': 'pending'
+        };
+        return classes[state] || 'pending';
+    },
+
+    /**
+     * Get provider SVG icon
+     */
+    getProviderSVG(provider) {
+        if (provider === 'google_meet') return '<svg viewBox="0 0 24 24" width="48" height="48"><rect fill="#00897B" width="24" height="24" rx="4"/><path fill="#fff" d="M12 6l6 4v4l-6 4-6-4v-4z"/></svg>';
+        if (provider === 'zoom') return '<svg viewBox="0 0 24 24" width="48" height="48"><rect fill="#2D8CFF" width="24" height="24" rx="4"/><path fill="#fff" d="M4 8h10v8H4z"/><path fill="#fff" d="M14 10l4-2v8l-4-2z"/></svg>';
+        if (provider === 'teams') return '<svg viewBox="0 0 24 24" width="48" height="48"><rect fill="#5059C9" width="24" height="24" rx="4"/><path fill="#fff" d="M6 8h8v8H6z"/></svg>';
+        return '<svg viewBox="0 0 24 24" width="48" height="48"><rect fill="#8b5cf6" width="24" height="24" rx="4"/><text x="12" y="16" text-anchor="middle" fill="#fff" font-size="10">N</text></svg>';
+    },
+
+    /**
+     * Render the notetaker list as cards
      */
     renderNotetakers() {
         const list = document.getElementById('notetakerList');
         const empty = document.getElementById('notetakerEmpty');
         if (!list) return;
 
-        // Filter notetakers
-        let filtered = this.notetakers;
-
-        if (this.currentFilter !== 'all') {
-            filtered = filtered.filter(nt => {
-                if (this.currentFilter === 'scheduled') return nt.state === 'scheduled';
-                if (this.currentFilter === 'attending') return ['connecting', 'waiting_for_entry', 'attending'].includes(nt.state);
-                if (this.currentFilter === 'complete') return nt.state === 'complete';
-                return true;
-            });
-        }
-
-        if (this.currentProvider) {
-            filtered = filtered.filter(nt => nt.provider === this.currentProvider);
-        }
-
-        // Clear existing items (keep empty state)
-        const items = list.querySelectorAll('.notetaker-item');
-        items.forEach(item => item.remove());
-
-        // Show/hide empty state
-        if (empty) {
-            empty.style.display = filtered.length === 0 ? 'flex' : 'none';
-        }
-
-        // Render filtered items
-        filtered.forEach(nt => {
-            list.appendChild(this.buildNotetakerItem(nt));
+        // Filter by past/upcoming
+        const now = Date.now();
+        let filtered = this.notetakers.filter(nt => {
+            const ntTime = nt.createdAt ? new Date(nt.createdAt).getTime() : now;
+            if (this.currentFilter === 'past') {
+                return nt.state === 'complete' || nt.state === 'completed' || nt.state === 'failed' || nt.state === 'cancelled' || nt.isExternal;
+            }
+            if (this.currentFilter === 'upcoming') {
+                return nt.state === 'scheduled' || nt.state === 'connecting' || nt.state === 'waiting_for_entry' || nt.state === 'attending';
+            }
+            return true;
         });
 
-        // Update counts
-        this.updateCounts();
+        // Clear existing cards
+        list.querySelectorAll('.nt-card').forEach(c => c.remove());
+
+        // Show/hide empty state
+        if (empty) empty.style.display = filtered.length === 0 ? 'flex' : 'none';
+
+        // Render cards
+        filtered.forEach(nt => list.appendChild(this.buildNotetakerItem(nt)));
     },
 
     /**
@@ -279,7 +346,7 @@ const NotetakerModule = {
             all: this.notetakers.length,
             scheduled: this.notetakers.filter(n => n.state === 'scheduled').length,
             attending: this.notetakers.filter(n => ['connecting', 'waiting_for_entry', 'attending'].includes(n.state)).length,
-            complete: this.notetakers.filter(n => n.state === 'complete').length
+            complete: this.notetakers.filter(n => n.state === 'complete' || n.state === 'completed').length
         };
 
         Object.entries(counts).forEach(([key, value]) => {
@@ -322,20 +389,42 @@ const NotetakerModule = {
 
         const nt = this.selectedNotetaker;
         const statusClass = nt.state === 'attending' ? 'recording' : nt.state;
+        const isCompleted = nt.state === 'complete' || nt.state === 'completed';
+
+        // Determine body content
+        let bodyContent;
+        if (nt.isExternal) {
+            bodyContent = this.renderExternalContent(nt);
+        } else if (isCompleted) {
+            bodyContent = this.renderCompleteContent(nt);
+        } else {
+            bodyContent = this.renderPendingContent(nt);
+        }
+
+        // Build status display
+        const statusDisplay = nt.isExternal
+            ? '🔗 External'
+            : this.getStatusIcon(nt.state) + ' ' + this.getStatusText(nt.state);
+
+        // Build attendees line
+        const attendeesLine = nt.attendees
+            ? '<p class="notetaker-detail-attendees">👥 ' + nt.attendees + '</p>'
+            : '';
 
         detail.innerHTML = `
             <div class="notetaker-detail-header">
                 <div class="notetaker-detail-status ${statusClass}">
-                    ${this.getStatusIcon(nt.state)} ${this.getStatusText(nt.state)}
+                    ${statusDisplay}
                 </div>
                 <h2>${nt.meetingTitle || 'Meeting Recording'}</h2>
                 <p class="notetaker-detail-meta">
                     ${this.getProviderIcon(nt.provider)} ${this.getProviderName(nt.provider)}
                     ${nt.createdAt ? ' • ' + new Date(nt.createdAt).toLocaleString() : ''}
                 </p>
+                ${attendeesLine}
             </div>
             <div class="notetaker-detail-body">
-                ${nt.state === 'complete' ? this.renderCompleteContent(nt) : this.renderPendingContent(nt)}
+                ${bodyContent}
             </div>
             <div class="notetaker-detail-actions">
                 ${this.renderActions(nt)}
@@ -350,9 +439,53 @@ const NotetakerModule = {
         const names = {
             'zoom': 'Zoom',
             'google_meet': 'Google Meet',
-            'teams': 'Microsoft Teams'
+            'teams': 'Microsoft Teams',
+            'nylas_notebook': 'Nylas Notebook (External)'
         };
         return names[provider] || provider || 'Unknown';
+    },
+
+    /**
+     * Strip embedded styles from HTML to allow our CSS to take control
+     */
+    stripEmbeddedStyles(html) {
+        // Remove <style> tags and their content
+        let cleaned = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+        // Remove inline style attributes
+        cleaned = cleaned.replace(/\s+style="[^"]*"/gi, '');
+        // Remove <html>, <head>, <body> tags but keep their content
+        cleaned = cleaned.replace(/<\/?html[^>]*>/gi, '');
+        cleaned = cleaned.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+        cleaned = cleaned.replace(/<\/?body[^>]*>/gi, '');
+        return cleaned;
+    },
+
+    /**
+     * Render content for external recording (from Nylas Notebook emails)
+     */
+    renderExternalContent(nt) {
+        const container = this.createElement('div', 'external-content');
+
+        // If there's a summary from the email, show it
+        if (nt.summary) {
+            const summarySection = this.createElement('div', 'detail-section summary-section');
+            const summaryContent = this.createElement('div', 'summary-content');
+            // Strip embedded styles to let our CSS control theming
+            summaryContent.innerHTML = this.stripEmbeddedStyles(nt.summary);
+            summarySection.appendChild(summaryContent);
+            container.appendChild(summarySection);
+        } else {
+            const content = this.createElement('div', 'detail-section');
+            const title = this.createElement('h3', null, '🔗 External Recording');
+            const desc = this.createElement('p', null, 'This recording is available in Nylas Notebook.');
+            const note = this.createElement('p', 'external-note', 'Click the button below to open in a new tab.');
+            content.appendChild(title);
+            content.appendChild(desc);
+            content.appendChild(note);
+            container.appendChild(content);
+        }
+
+        return container.outerHTML;
     },
 
     /**
@@ -404,7 +537,14 @@ const NotetakerModule = {
      * Render action buttons based on state
      */
     renderActions(nt) {
-        if (nt.state === 'complete') {
+        if (nt.isExternal && nt.externalUrl) {
+            return `
+                <button class="btn-primary" onclick="window.open('${nt.externalUrl}', '_blank')">
+                    🔗 Open in Nylas Notebook
+                </button>
+            `;
+        }
+        if (nt.state === 'complete' || nt.state === 'completed') {
             return `
                 <button class="btn-primary" onclick="NotetakerModule.playRecording('${nt.id}')">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -529,6 +669,43 @@ const NotetakerModule = {
     },
 
     /**
+     * Show summary modal for external notetakers
+     */
+    showSummaryModal(nt) {
+        const content = this.createElement('div', 'summary-modal-content');
+
+        // Email summary content - just the body text
+        if (nt.summary) {
+            const summaryDiv = this.createElement('div', 'summary-body');
+            summaryDiv.innerHTML = this.stripEmailCruft(nt.summary);
+            content.appendChild(summaryDiv);
+        }
+
+        this.showMediaModal(nt.meetingTitle || 'Meeting Summary', content);
+    },
+
+    /**
+     * Clean email HTML - keep structure but remove inline styles
+     */
+    stripEmailCruft(html) {
+        let cleaned = html;
+        // Remove style tags
+        cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+        // Remove inline styles
+        cleaned = cleaned.replace(/\s+style="[^"]*"/gi, '');
+        // Remove width/height attributes globally
+        cleaned = cleaned.replace(/\s+width="[^"]*"/gi, '');
+        cleaned = cleaned.replace(/\s+height="[^"]*"/gi, '');
+        // Add small size to all images
+        cleaned = cleaned.replace(/<img/gi, '<img style="max-width:80px;max-height:40px;display:block;margin:0 auto 16px"');
+        // Remove html/head/body tags
+        cleaned = cleaned.replace(/<\/?html[^>]*>/gi, '');
+        cleaned = cleaned.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+        cleaned = cleaned.replace(/<\/?body[^>]*>/gi, '');
+        return cleaned;
+    },
+
+    /**
      * Show media modal using safe DOM methods
      */
     showMediaModal(title, contentElement) {
@@ -564,6 +741,16 @@ const NotetakerModule = {
             showToast(message, type);
         } else {
             console.log(`[${type}] ${message}`);
+        }
+    },
+
+    /**
+     * Show settings modal - opens global settings modal
+     */
+    showSettingsModal() {
+        // Open the global settings modal
+        if (typeof toggleSettings === 'function') {
+            toggleSettings();
         }
     },
 
@@ -650,20 +837,14 @@ if (document.readyState === 'loading') {
 // ========================================
 
 /**
- * Filter notetakers by state
+ * Filter notetakers by past/upcoming
  */
 function filterNotetakers(filter, element) {
     NotetakerModule.currentFilter = filter;
-    NotetakerModule.currentProvider = null;
-
-    // Update active state
-    document.querySelectorAll('.folder-item[data-filter]').forEach(item => {
-        item.classList.toggle('active', item.dataset.filter === filter);
+    // Update tab active state
+    document.querySelectorAll('.nt-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.filter === filter);
     });
-    document.querySelectorAll('.folder-item[data-provider]').forEach(item => {
-        item.classList.remove('active');
-    });
-
     NotetakerModule.renderNotetakers();
 }
 
