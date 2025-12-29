@@ -1,6 +1,20 @@
 # Planning/internal docs
 *plan.md
 
+# Temporary refactoring/analysis documents
+REFACTORING_PROGRESS.md
+ENGINEERING_IMPROVEMENTS_SUMMARY.md
+COVERAGE_REPORT.md
+start.md
+*_PROGRESS.md
+*_SUMMARY.md
+*_REPORT.md
+
+# Temporary setup/installation docs (info should be in docs/development/)
+INSTALL_VHS.md
+VHS_SETUP_SUMMARY.md
+CODE_INDEX.md
+
 # Local development (not committed)
 /local/
 *design/
