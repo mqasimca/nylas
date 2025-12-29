@@ -96,3 +96,24 @@ HISTORY.md
 **/*.gif
 **/*.mp4
 **/*.svg
+
+# VHS test tapes and output (large files, load on-demand)
+internal/tui2/vhs-tests/tapes/**
+internal/tui2/vhs-tests/output/**
+
+# Generated files (load on-demand)
+ci-full.txt
+ci.txt
+*.test.log
+
+# Large integration test data
+tests/fixtures/large-*.json
+
+# Performance profiling data
+*.prof
+*.pprof
+
+# Temporary refactoring documents (archive after completion)
+REFACTORING_PROGRESS.md
+ENGINEERING_IMPROVEMENTS_SUMMARY.md
+COVERAGE_REPORT.md

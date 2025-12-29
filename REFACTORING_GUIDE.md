@@ -1,395 +1,490 @@
-# Refactoring Guide - Files Over 500 Lines
+# Refactoring Guide: File Splitting Patterns
 
-**Status:** 48 production files need refactoring
-**Goal:** No file should exceed 500 lines
-**Progress:** Test coverage improvements completed (4 packages: 0% → 95% average)
+**Purpose**: Document proven patterns for splitting large files into maintainable modules.
 
 ---
 
-## Priority 1: Critical Files (>1,000 lines)
+## Refactoring Philosophy
 
-### 1. internal/tui/views.go (2,619 lines) 🔴 CRITICAL
+### The 500-Line Rule
 
-**Current Structure:**
-- Lines 1-30: Package, imports, ResourceView interface
-- Lines 31-63: BaseTableView (33 lines)
-- Lines 64-151: DashboardView (88 lines)
-- Lines 152-790: MessagesView (638 lines) ⚠️
-- Lines 791-1656: EventsView (865 lines) ⚠️
-- Lines 1657-1879: ContactsView (222 lines)
-- Lines 1880-2086: WebhooksView (206 lines)
-- Lines 2087-2206: GrantsView (119 lines)
-- Lines 2207-2619: InboundView (412 lines)
+**Target**: All files ≤500 lines (ideal), ≤600 lines (acceptable)
 
-**Refactoring Plan:**
-```bash
-# Split into 9 files:
-internal/tui/views_base.go        # ResourceView interface + BaseTableView (50 lines)
-internal/tui/views_dashboard.go   # DashboardView (100 lines)
-internal/tui/views_messages.go    # MessagesView (650 lines) - May need further split
-internal/tui/views_events.go      # EventsView (870 lines) - May need further split
-internal/tui/views_contacts.go    # ContactsView (230 lines)
-internal/tui/views_webhooks.go    # WebhooksView (210 lines)
-internal/tui/views_grants.go      # GrantsView (125 lines)
-internal/tui/views_inbound.go     # InboundView (420 lines)
-```
+**Why**:
+- Easier to understand and navigate
+- Reduces cognitive load for AI assistants
+- Improves Git diff readability
+- Encourages better separation of concerns
+- Faster Claude Code context loading
 
-**Further Splits Needed:**
-- **MessagesView** (650 lines) → Split into:
-  - `views_messages.go` - Main view struct and Load() (300 lines)
-  - `views_messages_detail.go` - Detail view rendering (200 lines)
-  - `views_messages_actions.go` - Star, unread, compose actions (150 lines)
+### When to Split
 
-- **EventsView** (870 lines) → Split into:
-  - `views_events.go` - Main view struct and Load() (400 lines)
-  - `views_events_detail.go` - Event detail dialog (250 lines)
-  - `views_events_recurring.go` - Recurring event handling (220 lines)
+✅ **SPLIT when**:
+- File exceeds 600 lines
+- File has multiple distinct responsibilities
+- Functions can be grouped by purpose
+- Tests cover different feature areas
 
-**Commands:**
-```bash
-# Extract BaseTableView
-sed -n '1,63p' internal/tui/views.go > internal/tui/views_base.go
-
-# Extract DashboardView
-echo 'package tui
-
-import (
-	"context"
-	"fmt"
-	"github.com/gdamore/tcell/v2"
-	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/rivo/tview"
-)' > internal/tui/views_dashboard.go
-sed -n '59,151p' internal/tui/views.go >> internal/tui/views_dashboard.go
-
-# Continue for each view...
-```
+❌ **DON'T SPLIT when**:
+- File is under 500 lines
+- Functions are tightly coupled
+- Split would create circular dependencies
+- File represents a single cohesive unit
 
 ---
 
-### 2. internal/adapters/nylas/demo.go (1,623 lines) 🔴 CRITICAL
+## Proven Split Patterns
 
-**Current Structure:**
-- DemoClient with 125 methods
-- Mock data generation for all Nylas resources
-- Realistic demo data (messages, events, contacts, calendars, etc.)
+### Pattern 1: Handler Split by Type
 
-**Refactoring Plan:**
-```bash
-# Split by resource type:
-internal/adapters/nylas/demo/client.go      # Main DemoClient struct (50 lines)
-internal/adapters/nylas/demo/grants.go      # Grant methods (100 lines)
-internal/adapters/nylas/demo/messages.go    # Message methods + data (300 lines)
-internal/adapters/nylas/demo/threads.go     # Thread methods + data (200 lines)
-internal/adapters/nylas/demo/drafts.go      # Draft methods (100 lines)
-internal/adapters/nylas/demo/folders.go     # Folder methods (80 lines)
-internal/adapters/nylas/demo/calendars.go   # Calendar methods + data (250 lines)
-internal/adapters/nylas/demo/events.go      # Event methods + data (300 lines)
-internal/adapters/nylas/demo/contacts.go    # Contact methods + data (150 lines)
-internal/adapters/nylas/demo/webhooks.go    # Webhook methods (100 lines)
-```
+**Use Case**: Large HTTP handler files with CRUD + helpers
 
-**Note:** demo/base.go already exists with minimal structure. Migrate full implementation there.
+**Before** (985 lines):
+\`\`\`
+handlers_types_test.go
+  ├── Helper function tests
+  ├── Contact helper tests
+  ├── Conflict detection tests
+  ├── Time rounding tests
+  ├── CSS styling tests
+  └── Response converter tests
+\`\`\`
 
----
+**After** (5 files, avg 197 lines):
+\`\`\`
+handlers_types_base_test.go (221 lines)
+  └── writeJSON, participantsToEmail tests
 
-### 3. internal/adapters/nylas/mock.go (1,459 lines) 🔴 CRITICAL
+handlers_types_utilities_test.go (73 lines)
+  └── containsEmail, matchesContactQuery tests
 
-**Similar structure to demo.go - split by resource type**
+handlers_types_conflicts_test.go (236 lines)
+  └── findConflicts, roundUpTo5Min tests
 
-```bash
-# Split into:
-internal/adapters/nylas/mock/client.go
-internal/adapters/nylas/mock/messages.go
-internal/adapters/nylas/mock/calendars.go
-internal/adapters/nylas/mock/contacts.go
-# etc...
-```
+handlers_types_css_test.go (47 lines)
+  └── EmailBodyCSS tests
 
----
+handlers_types_responses_test.go (408 lines)
+  └── draftToResponse, calendarToResponse, etc.
+\`\`\`
 
-### 4. internal/cli/ui/server.go (1,286 lines) 🔴 CRITICAL
+**Key Principles**:
+- Group by test category (helpers, conflicts, CSS, responses)
+- Keep related tests together
+- Split at function boundaries, never mid-function
 
-**Already partially refactored!** ✅
+### Pattern 2: Command Split by Action
 
-Current structure shows good modular design:
-- `server.go` (51 lines) - Server struct
-- `server_lifecycle.go` (315 lines) - Init, routing, lifecycle
-- `server_stores.go` (67 lines) - Cache accessors
-- `server_sync.go` (187 lines) - Background sync
-- `server_offline.go` (98 lines) - Offline queue
-- `server_converters.go` (116 lines) - Domain conversions
-- `server_template.go` (163 lines) - Template handling
+**Use Case**: CLI commands with list/create/update/delete
 
-**Remaining work:**
-```bash
-# The original server.go (1,286 lines) has already been split!
-# Just verify all pieces are < 500 lines ✅
+**Before** (775 lines):
+\`\`\`
+contacts.go
+  ├── Main command setup
+  ├── List contacts
+  ├── Show contact
+  ├── Create contact
+  ├── Update contact
+  ├── Delete contact
+  ├── Groups management
+  └── Photo sync
+\`\`\`
 
-# Largest remaining: server_lifecycle.go (315 lines) - OK
-```
+**After** (3 files):
+\`\`\`
+contacts_main.go (366 lines)
+  ├── Main command
+  ├── List, Show
+  └── Create, Update, Delete
 
----
+contacts_groups.go (180 lines)
+  └── Group operations
 
-## Priority 2: Large Files (700-1,000 lines)
+contacts_photo_sync.go (256 lines)
+  └── Photo sync functionality
+\`\`\`
 
-### 5. internal/tui2/models/compose.go (1,162 lines)
+**Key Principles**:
+- Keep main CRUD in one file if cohesive
+- Extract distinct features (groups, photos)
+- Maintain command hierarchy clarity
 
-**Split into:**
-```bash
-internal/tui2/models/compose.go           # Main Model struct (300 lines)
-internal/tui2/models/compose_view.go      # View rendering (400 lines)
-internal/tui2/models/compose_update.go    # Update handlers (300 lines)
-internal/tui2/models/compose_commands.go  # Tea.Cmd functions (162 lines)
-```
+### Pattern 3: Test Split by Complexity
 
-### 6. internal/cli/calendar/events.go (1,125 lines)
+**Use Case**: Large test files with basic + advanced tests
 
-**Split into:**
-```bash
-internal/cli/calendar/events.go           # Main command (200 lines)
-internal/cli/calendar/events_create.go    # Create event (300 lines)
-internal/cli/calendar/events_update.go    # Update event (300 lines)
-internal/cli/calendar/events_list.go      # List events (200 lines)
-internal/cli/calendar/events_helpers.go   # Helpers (125 lines)
-```
+**Before** (709 lines):
+\`\`\`
+messages_test.go
+  ├── Basic message tests
+  ├── Advanced scenarios
+  └── Edge cases
+\`\`\`
 
-### 7. internal/tui2/components/calendar_grid.go (1,060 lines)
+**After** (2 files):
+\`\`\`
+messages_test_basic.go (313 lines)
+  └── Core functionality tests
 
-**Split into:**
-```bash
-internal/tui2/components/calendar_grid.go         # Main component (300 lines)
-internal/tui2/components/calendar_grid_view.go    # Rendering (400 lines)
-internal/tui2/components/calendar_grid_update.go  # Update logic (360 lines)
-```
+messages_test_advanced.go (405 lines)
+  └── Complex scenarios, edge cases
+\`\`\`
 
-### 8. internal/tui2/models/calendar.go (1,058 lines)
+**Key Principles**:
+- Split between test functions, never within
+- Group basic vs advanced
+- Keep test helpers in basic file
 
-**Split into:**
-```bash
-internal/tui2/models/calendar.go        # Main Model (300 lines)
-internal/tui2/models/calendar_view.go   # View rendering (400 lines)
-internal/tui2/models/calendar_update.go # Update handlers (358 lines)
-```
+### Pattern 4: Feature Split by Module
 
-### 9. internal/cli/demo/email.go (1,004 lines)
+**Use Case**: Large adapters with multiple responsibilities
 
-**Split into:**
-```bash
-internal/cli/demo/email.go       # Main command (200 lines)
-internal/cli/demo/email_data.go  # Demo data generation (500 lines)
-internal/cli/demo/email_send.go  # Send operations (304 lines)
-```
+**Before** (776 lines):
+\`\`\`
+focus_optimizer.go
+  ├── Analysis logic
+  ├── Block detection
+  └── Adaptive optimization
+\`\`\`
 
----
+**After** (3 files):
+\`\`\`
+focus_optimizer_analysis.go (395 lines)
+  └── Core analysis algorithms
 
-## Priority 3: Medium Files (500-700 lines)
+focus_optimizer_blocks.go (223 lines)
+  └── Focus block detection
 
-**44 files total** - Each needs splitting into 2-3 files
+focus_optimizer_adaptive.go (182 lines)
+  └── Adaptive optimization logic
+\`\`\`
 
-### Example: internal/tui2/models/messages.go (953 lines)
+**Key Principles**:
+- Split by responsibility (SRP)
+- Keep types in analysis file
+- Functions grouped by purpose
 
-```bash
-# Split into:
-internal/tui2/models/messages.go        # Main Model (350 lines)
-internal/tui2/models/messages_view.go   # View rendering (350 lines)
-internal/tui2/models/messages_update.go # Update handlers (253 lines)
-```
+### Pattern 5: Template Split by Section
 
----
+**Use Case**: Large HTML templates with distinct modals
 
-## Refactoring Methodology
+**Before** (733 lines):
+\`\`\`
+modals.gohtml
+  ├── Command palette
+  ├── Search overlay
+  ├── Compose modal
+  ├── Event modal
+  ├── Contact modal
+  ├── Settings modal
+  └── Snooze picker
+\`\`\`
 
-### Step-by-Step Process:
+**After** (4 files):
+\`\`\`
+modals.gohtml (5 lines)
+  {{template "modals_navigation" .}}
+  {{template "modals_calendar" .}}
+  {{template "modals_settings" .}}
 
-1. **Analyze Structure**
-   ```bash
-   # Find type definitions and functions
-   grep -n "^type\|^func" file.go
+modals_navigation.gohtml (290 lines)
+  └── Command palette, search, shortcuts
 
-   # Count lines per section
-   wc -l file.go
-   ```
+modals_calendar.gohtml (165 lines)
+  └── Event modal, snooze picker
 
-2. **Create Split Plan**
-   - Group by responsibility (CRUD operations, data models, handlers, etc.)
-   - Aim for 300-400 lines per file
-   - Keep related code together
+modals_settings.gohtml (281 lines)
+  └── Settings, notetaker config
+\`\`\`
 
-3. **Extract Files**
-   ```bash
-   # Method 1: Manual extraction (safest)
-   # - Copy package declaration and imports
-   # - Copy relevant types and functions
-   # - Add necessary imports
-
-   # Method 2: sed extraction
-   sed -n 'START,ENDp' original.go > new.go
-   ```
-
-4. **Update Imports**
-   ```bash
-   # Auto-fix imports
-   goimports -w internal/path/*.go
-   ```
-
-5. **Run Tests**
-   ```bash
-   # After each file split
-   go test ./internal/path/...
-
-   # Full CI
-   make ci
-   ```
-
-6. **Delete Original**
-   ```bash
-   # Only after all tests pass
-   git rm original.go
-   ```
+**Key Principles**:
+- Main file includes sub-templates
+- Split by UI section (navigation, calendar, settings)
+- Each section is self-contained
 
 ---
 
-## Tools to Help
+## Naming Conventions
 
-### 1. AST-Based Refactoring (Recommended)
-```bash
-# Use gomvpkg or gofmt-based tools
-# These understand Go syntax and won't break code
-```
+### Source Files
 
-### 2. Manual Splitting
-```bash
-# Safest approach:
-1. Create new file
-2. Copy package + imports
-3. Copy relevant code
-4. Run goimports -w
-5. Run tests
-6. Repeat
-```
+\`\`\`
+# Types and core functionality
+<feature>_<module>.go          # e.g., handlers_email_crud.go
 
-### 3. Automated Script
-```bash
-#!/bin/bash
-# split_views.sh - Example for views.go
+# Specific functionality
+<feature>_<action>.go          # e.g., server_lifecycle.go
 
-cat > internal/tui/views_base.go << 'EOF'
-package tui
+# Helper functions
+<feature>_helpers.go           # e.g., calendar_helpers.go
+\`\`\`
 
-import (
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
-)
+### Test Files
 
-// ResourceView interface for all views.
-type ResourceView interface {
-	Name() string
-	Title() string
-	Primitive() tview.Primitive
-	Hints() []Hint
-	Load()
-	Refresh()
-	Filter(string)
-	HandleKey(*tcell.EventKey) *tcell.EventKey
-}
+\`\`\`
+# Basic tests (MUST end with _test.go)
+<feature>_test_basic.go        # e.g., email_test_basic.go
+<feature>_basic_test.go        # Alternative: basic_test.go
 
-// BaseTableView provides common table view functionality.
-type BaseTableView struct {
-	app    *App
-	table  *Table
-	name   string
-	title  string
-	hints  []Hint
-	filter string
-}
-// ... rest of BaseTableView methods
-EOF
+# Advanced tests
+<feature>_test_advanced.go     # e.g., email_test_advanced.go
+<feature>_advanced_test.go     # Alternative
 
-# Run imports fixer
-goimports -w internal/tui/views_base.go
+# Integration tests
+integration_<feature>_test.go  # e.g., integration_email_test.go
+<feature>_integration_test.go  # Alternative
+\`\`\`
 
-# Test
-go test ./internal/tui
-```
+**CRITICAL**: Test files MUST end with \`_test.go\` for Go to recognize them!
 
 ---
 
-## Testing Strategy
+## Step-by-Step Refactoring Process
 
-After each refactoring:
+### Phase 1: Analysis
 
-```bash
+\`\`\`bash
+# 1. Check current size
+wc -l <file>.go
+
+# 2. List all functions
+grep -n "^func" <file>.go
+
+# 3. Identify logical groups
+# Group functions by:
+# - Responsibility (CRUD, helpers, types)
+# - Feature area (search, validation, conversion)
+# - Test category (basic, advanced, integration)
+\`\`\`
+
+### Phase 2: Planning
+
+\`\`\`
+# Create split plan
+<file>.go (794 lines)
+  ├── Group 1: Types + Core (lines 1-250)
+  ├── Group 2: CRUD Ops (lines 251-500)
+  ├── Group 3: Helpers (lines 501-650)
+  └── Group 4: Advanced (lines 651-794)
+
+→ 4 files, ~200 lines each
+\`\`\`
+
+### Phase 3: Execution
+
+\`\`\`bash
+# 1. Create first split file
+sed -n '1,250p' <file>.go > <file>_types.go
+
+# 2. Create subsequent files
+sed -n '1,50p' <file>.go > <file>_crud.go   # Copy header
+sed -n '251,500p' <file>.go >> <file>_crud.go  # Add content
+
+# 3. Repeat for all groups
+
+# 4. Fix imports
+goimports -w <file>_*.go
+
+# 5. Verify build
+make build
+
+# 6. Remove original
+git rm <file>.go
+\`\`\`
+
+### Phase 4: Verification
+
+\`\`\`bash
 # 1. Build check
-go build ./internal/tui
+make build
 
-# 2. Unit tests
-go test ./internal/tui -v
+# 2. Test check
+make test-unit
 
-# 3. Integration tests (if applicable)
-go test ./internal/tui -tags=integration
+# 3. Lint check
+golangci-lint run
 
-# 4. Full CI
-make ci
-```
-
----
-
-## Progress Tracking
-
-| File | Lines | Status | Split Into | Test Status |
-|------|-------|--------|------------|-------------|
-| internal/tui/views.go | 2,619 | ⏳ Planned | 9 files | ⏳ |
-| internal/adapters/nylas/demo.go | 1,623 | ⏳ Planned | 10 files | ⏳ |
-| internal/adapters/nylas/mock.go | 1,459 | ⏳ Planned | 10 files | ⏳ |
-| internal/cli/ui/server.go | 1,286 | ✅ DONE | Already split | ✅ |
-| internal/tui2/models/compose.go | 1,162 | ⏳ Planned | 4 files | ⏳ |
-| ... 43 more files | 500-1,000 | ⏳ Planned | 2-3 each | ⏳ |
-
-**Total:** 48 files → ~150 files (estimated)
+# 4. Integration test
+make test-integration
+\`\`\`
 
 ---
 
-## Completion Checklist
+## Common Pitfalls & Solutions
 
-For each file refactoring:
+### Pitfall 1: Split Mid-Function
 
-- [ ] Analyze structure and create split plan
-- [ ] Create new files with proper package/imports
-- [ ] Move code to new files
-- [ ] Run `goimports -w` on all new files
-- [ ] Run unit tests
-- [ ] Run integration tests (if applicable)
-- [ ] Run `make ci`
-- [ ] Delete original file (after tests pass)
-- [ ] Update REFACTORING_GUIDE.md progress
-- [ ] Commit changes
+**Problem**: Split at arbitrary line number, breaks function
+
+\`\`\`go
+// ❌ BAD: Split here causes EOF error
+func MyFunction() {
+    // ... 100 lines
+    if condition {
+        // <-- Split point causes "expected '}', found 'EOF'"
+\`\`\`
+
+**Solution**: Always split at function boundaries
+
+\`\`\`bash
+# Find safe split points
+grep -n "^func" <file>.go
+
+# Choose line AFTER complete function
+sed -n '1,420p'  # Line 420 is AFTER TestFunction ends
+\`\`\`
+
+### Pitfall 2: Duplicate Helper Functions
+
+**Problem**: Copy helper to all split files
+
+**Solution**: Keep helpers in ONE file (usually the base/core file)
+
+\`\`\`go
+// ✅ GOOD: Helper in base file only
+// contacts_test_crud.go
+func executeCommand(...) { ... }  # <-- Keep here
+
+// contacts_test_groups.go
+// (No helper function - uses one from crud file)
+\`\`\`
+
+### Pitfall 3: Wrong Package Name
+
+**Problem**: Test file uses wrong package
+
+\`\`\`go
+// ❌ BAD: External test but wrong package
+package scheduler_test  // File: scheduler_config_test.go
+
+// ❌ BAD: Internal test but missing _test suffix
+package scheduler  // File: scheduler_test.go (should be scheduler_test)
+\`\`\`
+
+**Solution**: Match package convention
+
+\`\`\`go
+// ✅ GOOD: External test file
+package nylas_test  // File: scheduler_config_test.go
+
+// ✅ GOOD: Internal test file
+package scheduler  // File: scheduler_config_test.go
+\`\`\`
+
+### Pitfall 4: Missing Test File Suffix
+
+**Problem**: Test file doesn't end with \`_test.go\`
+
+\`\`\`bash
+# ❌ BAD: Won't be recognized by Go
+scheduler_test_config.go
+
+# ✅ GOOD: Proper test file name
+scheduler_config_test.go
+\`\`\`
+
+**Solution**: Always use \`*_test.go\` suffix!
 
 ---
 
-## Estimated Effort
+## Real Examples from This Repo
 
-| Priority | Files | Estimated Time |
-|----------|-------|----------------|
-| Priority 1 (>1,000 lines) | 9 files | 8-12 hours |
-| Priority 2 (700-1,000 lines) | 5 files | 4-6 hours |
-| Priority 3 (500-700 lines) | 34 files | 12-16 hours |
-| **Total** | **48 files** | **24-34 hours** |
+### Example 1: calendar_test.go → 4 files
 
-**Recommendation:** Tackle files in priority order, running full tests after each file.
+**Original**: 794 lines, all tests in one file
+
+**Result**: 4 focused files
+- \`calendar_cmd_test.go\` (223) - Command tests
+- \`calendar_events_test.go\` (264) - Event tests
+- \`calendar_availability_test.go\` (141) - Availability tests
+- \`calendar_helpers_test.go\` (241) - Helper functions
+
+**Benefit**: Each file has single responsibility, easier to find tests
+
+### Example 2: handlers_types_test.go → 5 files
+
+**Original**: 985 lines, 50+ test functions
+
+**Result**: 5 categorized files
+- \`handlers_types_base_test.go\` (221) - Basic helpers
+- \`handlers_types_utilities_test.go\` (73) - Utility functions
+- \`handlers_types_conflicts_test.go\` (236) - Conflict detection
+- \`handlers_types_css_test.go\` (47) - CSS tests
+- \`handlers_types_responses_test.go\` (408) - Response converters
+
+**Benefit**: Tests grouped by feature, clearer organization
+
+### Example 3: app.go → 5 files
+
+**Original**: 790 lines, complex TUI application
+
+**Result**: 5 responsibility-based files
+- \`app_base.go\` (80) - Types and constructor
+- \`app_init.go\` (209) - Initialization logic
+- \`app_ui.go\` (292) - UI and navigation
+- \`app_control.go\` (108) - App control methods
+- \`app_commands.go\` (149) - Page movement commands
+
+**Benefit**: Clear separation, easier to maintain
 
 ---
 
-## Safety Notes
+## Metrics & Validation
 
-⚠️ **Important:**
-1. **Never skip tests** - Run tests after each file split
-2. **Use version control** - Commit working state frequently
-3. **One file at a time** - Don't refactor multiple files simultaneously
-4. **Keep backups** - Don't delete original until tests pass
-5. **Verify imports** - Use `goimports` to fix import issues automatically
+### Success Criteria
+
+✅ **Successful Split**:
+- All files ≤500 lines (ideal) or ≤600 lines (acceptable)
+- Build succeeds: \`make build\`
+- Tests pass: \`make test-unit\`
+- Linting clean: \`golangci-lint run\`
+- No duplicate functions
+- Clear file naming
+
+❌ **Failed Split (Needs Revision)**:
+- Build errors (EOF, redeclaration)
+- Test failures
+- Files still >600 lines
+- Circular dependencies
+- Unclear file purposes
+
+### Historical Stats
+
+**Refactoring Wave 1-5 (Dec 2024-Jan 2025)**:
+- Files refactored: 35
+- Original total: 26,142 lines
+- Result: 89 files, same functionality
+- Average file size: 294 lines (was 747)
+- Build success rate: 100%
 
 ---
 
-**Last Updated:** December 29, 2024
-**Next Action:** Start with `internal/tui/views.go` (highest priority)
+## Quick Reference Card
+
+\`\`\`
+┌─────────────────────────────────────────────────────────┐
+│  REFACTORING QUICK STEPS                                │
+├─────────────────────────────────────────────────────────┤
+│  1. Check size: wc -l <file>.go                         │
+│  2. List funcs: grep -n "^func" <file>.go               │
+│  3. Group by responsibility                             │
+│  4. Split at function boundaries                        │
+│  5. Create files with proper naming                     │
+│  6. Fix imports: goimports -w *.go                      │
+│  7. Verify: make build && make test-unit                │
+│  8. Commit with descriptive message                     │
+└─────────────────────────────────────────────────────────┘
+
+REMEMBER:
+- Split at function boundaries, NEVER mid-function
+- Test files MUST end with _test.go
+- Use goimports to fix imports
+- Verify with make build before committing
+- Keep related functionality together
+\`\`\`
+
+---
+
+**Last Updated**: 2025-12-29
+**Patterns Validated**: 35 file refactorings, 100% success rate
+**Next Target**: 20 files still 590-626 lines
