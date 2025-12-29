@@ -106,9 +106,41 @@ func DefaultTheme() *Theme {
 // GetTheme returns a theme by name.
 func GetTheme(name string) *Theme {
 	switch name {
-	case "k9s":
+	case "k9s", "":
 		return DefaultTheme()
+	case "cyberpunk":
+		return CyberpunkTheme()
+	case "nord":
+		return NordTheme()
+	case "dracula":
+		return DraculaTheme()
+	case "catppuccin":
+		return CatppuccinTheme()
+	case "gruvbox":
+		return GruvboxTheme()
+	case "tokyo_night":
+		return TokyoNightTheme()
 	default:
 		return DefaultTheme()
+	}
+}
+
+// GradientBorder creates a style with a gradient border.
+func GradientBorder(colors ...color.Color) lipgloss.Style {
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForegroundBlend(colors...)
+}
+
+// ListAvailableThemes returns a list of all available theme names.
+func ListAvailableThemes() []string {
+	return []string{
+		"k9s",
+		"cyberpunk",
+		"nord",
+		"dracula",
+		"catppuccin",
+		"gruvbox",
+		"tokyo_night",
 	}
 }

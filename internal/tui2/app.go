@@ -43,9 +43,9 @@ func NewApp(cfg Config) *App {
 		global: global,
 	}
 
-	// Push initial screen (Dashboard)
-	dashboard := models.NewDashboard(global)
-	app.stack = []tea.Model{dashboard}
+	// Push initial screen (Splash)
+	splash := models.NewSplash(global)
+	app.stack = []tea.Model{splash}
 
 	return app
 }
@@ -118,6 +118,8 @@ func (a *App) navigate(msg models.NavigateMsg) tea.Cmd {
 	var screen tea.Model
 
 	switch msg.Screen {
+	case models.ScreenSplash:
+		screen = models.NewSplash(a.global)
 	case models.ScreenDashboard:
 		screen = models.NewDashboard(a.global)
 	case models.ScreenMessages:
@@ -141,17 +143,13 @@ func (a *App) navigate(msg models.NavigateMsg) tea.Cmd {
 	case models.ScreenCalendar:
 		screen = models.NewCalendarScreen(a.global)
 	case models.ScreenContacts:
-		// TODO: Implement contacts screen
-		a.global.SetStatus("Contacts screen not yet implemented", int(StatusWarning))
-		return nil
+		screen = models.NewContactsScreen(a.global)
 	case models.ScreenSettings:
-		// TODO: Implement settings screen
-		a.global.SetStatus("Settings screen not yet implemented", int(StatusWarning))
-		return nil
+		screen = models.NewSettingsScreen(a.global)
 	case models.ScreenHelp:
-		// TODO: Implement help screen
-		a.global.SetStatus("Help screen not yet implemented", int(StatusWarning))
-		return nil
+		screen = models.NewHelpScreen(a.global)
+	case models.ScreenDebug:
+		screen = models.NewDebugScreen(a.global)
 	default:
 		return nil
 	}
