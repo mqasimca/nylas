@@ -12,9 +12,8 @@ const settingsState = {
     previewPane: true,
     refreshInterval: 60, // Default 60 seconds
     // Notetaker sources - array of {from, subject, linkDomain}
-    notetakerSources: [
-        { from: 'notebook@nylas.ai', subject: '', linkDomain: 'notebook.nylas.ai' }
-    ]
+    // No default - user must configure in Settings
+    notetakerSources: []
 };
 
 // Refresh interval timer
