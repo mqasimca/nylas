@@ -1,0 +1,10 @@
+# VHS test outputs
+output/*.png
+output/*.gif
+output/*.mp4
+output/*.webm
+output/*.txt
+output/*.ascii
+
+# Keep the directory structure
+!output/.gitkeep

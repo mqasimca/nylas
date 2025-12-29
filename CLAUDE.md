@@ -184,6 +184,10 @@ internal/tui2/       # New Bubble Tea TUI (experimental)
   ├── styles/        # Lip Gloss themes and styling
   ├── state/         # State management (GlobalState)
   ├── utils/         # Utilities
+  ├── vhs-tests/     # VHS visual testing (screenshots, GIFs)
+  │   ├── tapes/     # VHS tape files (.tape)
+  │   ├── output/    # Generated screenshots and GIFs
+  │   └── README.md  # VHS testing documentation
   ├── app.go         # Root application (Model Stack pattern)
   ├── messages.go    # Message types for Elm Architecture
   └── app_test.go    # Tests
@@ -193,6 +197,13 @@ internal/tui2/       # New Bubble Tea TUI (experimental)
 ```bash
 nylas tui                      # Default: tview
 nylas tui --engine bubbletea   # Experimental: Bubble Tea
+```
+
+**Visual testing with VHS:**
+```bash
+make test-vhs                  # Run dashboard visual test
+make test-vhs-all              # Run all visual tests (splash, dashboard, navigation)
+make test-vhs-clean            # Clean test outputs
 ```
 
 ---

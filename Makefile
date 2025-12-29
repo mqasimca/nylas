@@ -1,4 +1,4 @@
-.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
+.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
 # ============================================================================
 # Tool Versions (Pinned for Reproducibility)
@@ -177,6 +177,58 @@ test-cleanup:
 	done
 	@echo ""
 	@echo "✓ Test cleanup complete"
+
+# ============================================================================
+# VHS Visual Testing Targets
+# ============================================================================
+# VHS - Terminal recorder for visual testing
+# Install: sudo pacman -S vhs  (or from https://github.com/charmbracelet/vhs)
+
+test-vhs:
+	@echo "=== Running VHS Visual Tests ==="
+	@command -v vhs >/dev/null 2>&1 || { \
+		echo "ERROR: VHS not installed"; \
+		echo "Install with: sudo pacman -S vhs"; \
+		echo "Or visit: https://github.com/charmbracelet/vhs"; \
+		exit 1; \
+	}
+	@echo "Building latest binary..."
+	@$(MAKE) --no-print-directory build
+	@echo ""
+	@echo "Running dashboard test..."
+	@cd internal/tui2/vhs-tests/tapes && vhs dashboard.tape
+	@echo "✓ Dashboard test complete - check internal/tui2/vhs-tests/output/"
+
+test-vhs-all:
+	@echo "=== Running All VHS Visual Tests ==="
+	@command -v vhs >/dev/null 2>&1 || { \
+		echo "ERROR: VHS not installed"; \
+		echo "Install with: sudo pacman -S vhs"; \
+		exit 1; \
+	}
+	@echo "Building latest binary..."
+	@$(MAKE) --no-print-directory build
+	@echo ""
+	@echo "Running splash screen test..."
+	@cd internal/tui2/vhs-tests/tapes && vhs splash.tape
+	@echo ""
+	@echo "Running dashboard test..."
+	@cd internal/tui2/vhs-tests/tapes && vhs dashboard.tape
+	@echo ""
+	@echo "Running navigation test..."
+	@cd internal/tui2/vhs-tests/tapes && vhs navigation.tape
+	@echo ""
+	@echo "Running visual regression test..."
+	@cd internal/tui2/vhs-tests/tapes && vhs visual-regression.tape
+	@echo ""
+	@echo "✓ All VHS tests complete!"
+	@echo "  Output: internal/tui2/vhs-tests/output/"
+	@ls -lh internal/tui2/vhs-tests/output/
+
+test-vhs-clean:
+	@echo "=== Cleaning VHS Test Output ==="
+	@rm -f internal/tui2/vhs-tests/output/*
+	@echo "✓ VHS output cleaned"
 
 # ============================================================================
 # Security Targets
