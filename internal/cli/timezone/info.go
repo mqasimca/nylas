@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -77,7 +78,8 @@ func runInfo(zone, timeStr string, jsonOut bool) error {
 
 	// Get time zone info
 	svc := getService()
-	ctx := createContext()
+	ctx, cancel := common.CreateContext()
+	defer cancel()
 
 	info, err := svc.GetTimeZoneInfo(ctx, zone, checkTime)
 	if err != nil {

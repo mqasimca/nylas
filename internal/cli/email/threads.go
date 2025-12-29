@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +46,7 @@ func newThreadsListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			params := &domain.ThreadQueryParams{
@@ -102,7 +103,7 @@ func newThreadsListCmd() *cobra.Command {
 				}
 
 				msgCount := fmt.Sprintf("(%d)", len(t.MessageIDs))
-				dateStr := formatTimeAgo(t.LatestMessageRecvDate)
+				dateStr := common.FormatTimeAgo(t.LatestMessageRecvDate)
 
 				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
 					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
@@ -148,7 +149,7 @@ func newThreadsShowCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			thread, err := client.GetThread(ctx, grantID, threadID)
@@ -249,7 +250,7 @@ func newThreadsMarkCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.UpdateMessageRequest{}
@@ -328,7 +329,7 @@ func newThreadsDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get thread info for confirmation
@@ -414,7 +415,7 @@ Examples:
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			params := &domain.ThreadQueryParams{
@@ -499,7 +500,7 @@ Examples:
 				}
 
 				msgCount := fmt.Sprintf("(%d)", len(t.MessageIDs))
-				dateStr := formatTimeAgo(t.LatestMessageRecvDate)
+				dateStr := common.FormatTimeAgo(t.LatestMessageRecvDate)
 
 				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
 					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))

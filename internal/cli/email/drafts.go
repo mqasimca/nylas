@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -47,7 +48,7 @@ func newDraftsListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			drafts, err := client.GetDrafts(ctx, grantID, limit)
@@ -87,7 +88,7 @@ func newDraftsListCmd() *cobra.Command {
 					idShort = idShort[:12] + "..."
 				}
 
-				dateStr := formatTimeAgo(d.UpdatedAt)
+				dateStr := common.FormatTimeAgo(d.UpdatedAt)
 
 				fmt.Printf("%-15s %-25s %-35s %s\n", idShort, toStr, subj, dim.Sprint(dateStr))
 			}
@@ -150,7 +151,7 @@ func newDraftsCreateCmd() *cobra.Command {
 				body = strings.Join(bodyLines, "\n")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.CreateDraftRequest{
@@ -304,7 +305,7 @@ func newDraftsShowCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			draft, err := client.GetDraft(ctx, grantID, draftID)
@@ -370,7 +371,7 @@ func newDraftsSendCmd() *cobra.Command {
 			}
 
 			// Get draft info first
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			draft, err := client.GetDraft(ctx, grantID, draftID)
@@ -443,7 +444,7 @@ func newDraftsDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			err = client.DeleteDraft(ctx, grantID, draftID)

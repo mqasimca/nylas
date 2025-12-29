@@ -1,23 +1,16 @@
 package ai
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
 // GroqClient implements LLMProvider for Groq.
 type GroqClient struct {
-	apiKey string
-	model  string
-	client *http.Client
+	*BaseClient
 }
 
 // NewGroqClient creates a new Groq client.
@@ -28,17 +21,15 @@ func NewGroqClient(config *domain.GroqConfig) *GroqClient {
 		}
 	}
 
-	apiKey := expandEnvVar(config.APIKey)
-	if apiKey == "" {
-		apiKey = os.Getenv("GROQ_API_KEY")
-	}
+	apiKey := GetAPIKeyFromEnv(config.APIKey, "GROQ_API_KEY")
 
 	return &GroqClient{
-		apiKey: apiKey,
-		model:  config.Model,
-		client: &http.Client{
-			Timeout: 120 * time.Second,
-		},
+		BaseClient: NewBaseClient(
+			apiKey,
+			config.Model,
+			"https://api.groq.com/openai/v1",
+			0, // Use default timeout
+		),
 	}
 }
 
@@ -49,7 +40,7 @@ func (c *GroqClient) Name() string {
 
 // IsAvailable checks if Groq API key is configured.
 func (c *GroqClient) IsAvailable(ctx context.Context) bool {
-	return c.apiKey != ""
+	return c.IsConfigured()
 }
 
 // Chat sends a chat completion request.
@@ -59,13 +50,13 @@ func (c *GroqClient) Chat(ctx context.Context, req *domain.ChatRequest) (*domain
 
 // ChatWithTools sends a chat request with function calling.
 func (c *GroqClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest, tools []domain.Tool) (*domain.ChatResponse, error) {
-	if c.apiKey == "" {
+	if !c.IsConfigured() {
 		return nil, fmt.Errorf("groq API key not configured")
 	}
 
 	// Prepare Groq request (OpenAI-compatible format)
 	groqReq := map[string]any{
-		"model":    c.getModel(req.Model),
+		"model":    c.GetModel(req.Model),
 		"messages": c.convertMessages(req.Messages),
 	}
 
@@ -83,32 +74,7 @@ func (c *GroqClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest,
 		groqReq["tool_choice"] = "auto"
 	}
 
-	// Send request
-	body, err := json.Marshal(groqReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", "https://api.groq.com/openai/v1/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
-
-	resp, err := c.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("groq API error (%d): %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	// Parse response (OpenAI-compatible format)
+	// Send request using base client
 	var groqResp struct {
 		Choices []struct {
 			Message struct {
@@ -132,8 +98,12 @@ func (c *GroqClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest,
 		} `json:"usage"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&groqResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	headers := map[string]string{
+		"Authorization": "Bearer " + c.apiKey,
+	}
+
+	if err := c.DoJSONRequestAndDecode(ctx, "POST", "/chat/completions", groqReq, headers, &groqResp); err != nil {
+		return nil, err
 	}
 
 	if len(groqResp.Choices) == 0 {
@@ -177,13 +147,6 @@ func (c *GroqClient) StreamChat(ctx context.Context, req *domain.ChatRequest, ca
 }
 
 // Helper methods
-
-func (c *GroqClient) getModel(requestModel string) string {
-	if requestModel != "" {
-		return requestModel
-	}
-	return c.model
-}
 
 func (c *GroqClient) convertMessages(messages []domain.ChatMessage) []map[string]string {
 	result := make([]map[string]string, len(messages))

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -374,14 +375,14 @@ func TestFormatTimeAgo(t *testing.T) {
 		{5 * time.Minute, "5 minutes ago"},
 		{1 * time.Hour, "1 hour ago"},
 		{5 * time.Hour, "5 hours ago"},
-		{24 * time.Hour, "yesterday"},
+		{24 * time.Hour, "1 day ago"},
 		{48 * time.Hour, "2 days ago"},
 		{72 * time.Hour, "3 days ago"},
 	}
 
 	for _, tt := range tests {
 		past := time.Now().Add(-tt.duration)
-		got := formatTimeAgo(past)
+		got := common.FormatTimeAgo(past)
 		assert.Equal(t, tt.expected, got)
 	}
 }
@@ -400,7 +401,7 @@ func TestTruncate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := truncate(tt.input, tt.maxLen)
+		got := common.Truncate(tt.input, tt.maxLen)
 		assert.Equal(t, tt.expected, got)
 	}
 }

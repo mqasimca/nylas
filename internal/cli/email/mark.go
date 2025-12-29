@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -86,7 +87,7 @@ func markMessage(args []string, unread bool, starred *bool) error {
 		}
 	}
 
-	ctx, cancel := createContext()
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	req := &domain.UpdateMessageRequest{}

@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +42,7 @@ func newFoldersListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			folders, err := client.GetFolders(ctx, grantID)
@@ -127,7 +128,7 @@ func newFoldersShowCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			folder, err := client.GetFolder(ctx, grantID, folderID)
@@ -195,7 +196,7 @@ func newFoldersCreateCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.CreateFolderRequest{
@@ -251,7 +252,7 @@ func newFoldersRenameCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.UpdateFolderRequest{
@@ -320,7 +321,7 @@ func newFoldersDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			err = client.DeleteFolder(ctx, grantID, folderID)

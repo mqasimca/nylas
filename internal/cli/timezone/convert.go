@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -71,7 +72,8 @@ func runConvert(fromZone, toZone, timeStr string, jsonOut bool) error {
 
 	// Create service and convert
 	svc := getService()
-	ctx := createContext()
+	ctx, cancel := common.CreateContext()
+	defer cancel()
 
 	converted, err := svc.ConvertTime(ctx, fromZone, toZone, inputTime)
 	if err != nil {

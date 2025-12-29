@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +59,8 @@ func runDST(zone string, year int, jsonOut bool) error {
 
 	// Get DST transitions
 	svc := getService()
-	ctx := createContext()
+	ctx, cancel := common.CreateContext()
+	defer cancel()
 
 	transitions, err := svc.GetDSTTransitions(ctx, zone, year)
 	if err != nil {

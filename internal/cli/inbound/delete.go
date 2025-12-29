@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -57,7 +58,7 @@ func runDelete(args []string, skipConfirm bool) error {
 		return err
 	}
 
-	ctx, cancel := createContext()
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	// Get inbox details first for confirmation

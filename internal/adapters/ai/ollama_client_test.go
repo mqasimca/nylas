@@ -26,8 +26,8 @@ func TestNewOllamaClient(t *testing.T) {
 			t.Fatal("expected non-nil client")
 		}
 
-		if client.host != "http://custom:8080" {
-			t.Errorf("host = %q, want %q", client.host, "http://custom:8080")
+		if client.baseURL != "http://custom:8080" {
+			t.Errorf("baseURL = %q, want %q", client.baseURL, "http://custom:8080")
 		}
 
 		if client.model != "llama2" {
@@ -75,9 +75,9 @@ func TestOllamaClient_GetModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := client.getModel(tt.requestModel)
+			got := client.GetModel(tt.requestModel)
 			if got != tt.want {
-				t.Errorf("getModel() = %q, want %q", got, tt.want)
+				t.Errorf("GetModel() = %q, want %q", got, tt.want)
 			}
 		})
 	}

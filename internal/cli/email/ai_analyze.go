@@ -8,6 +8,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/adapters/config"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
@@ -148,7 +149,7 @@ func displayInboxAnalysis(result *ai.InboxSummaryResponse, emailCount int) {
 		for _, cat := range result.Categories {
 			fmt.Printf("  %s (%d)\n", cat.Name, cat.Count)
 			for _, subject := range cat.Subjects {
-				fmt.Printf("    • %s\n", truncate(subject, 50))
+				fmt.Printf("    • %s\n", common.Truncate(subject, 50))
 			}
 		}
 		fmt.Println()
@@ -167,7 +168,7 @@ func displayInboxAnalysis(result *ai.InboxSummaryResponse, emailCount int) {
 			case "low":
 				urgencyIcon = "🔵"
 			}
-			fmt.Printf("  %s %s: \"%s\" from %s\n", urgencyIcon, strings.ToUpper(item.Urgency), truncate(item.Subject, 40), item.From)
+			fmt.Printf("  %s %s: \"%s\" from %s\n", urgencyIcon, strings.ToUpper(item.Urgency), common.Truncate(item.Subject, 40), item.From)
 			if item.Reason != "" {
 				fmt.Printf("     → %s\n", item.Reason)
 			}

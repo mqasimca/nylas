@@ -80,7 +80,7 @@ func runMonitor(args []string, port int, tunnelType, webhookSecret string, jsonO
 		return err
 	}
 
-	ctx, cancel := createContext()
+	ctx, cancel := common.CreateContext()
 	inbox, err := client.GetInboundInbox(ctx, inboxID)
 	cancel()
 	if err != nil {
@@ -290,7 +290,7 @@ func printInboundEvent(event *ports.WebhookEvent, quiet bool) {
 				if obj, ok := data["object"].(map[string]any); ok {
 					// Print subject
 					if subject, ok := obj["subject"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), truncate(subject, 60))
+						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), common.Truncate(subject, 60))
 					}
 					// Print from
 					if from, ok := obj["from"].([]any); ok && len(from) > 0 {
@@ -312,7 +312,7 @@ func printInboundEvent(event *ports.WebhookEvent, quiet bool) {
 					}
 					// Print snippet
 					if snippet, ok := obj["snippet"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Preview:"), truncate(snippet, 60))
+						fmt.Printf("  %s %s\n", dim.Sprint("Preview:"), common.Truncate(snippet, 60))
 					}
 					// Print message ID
 					if id, ok := obj["id"].(string); ok {

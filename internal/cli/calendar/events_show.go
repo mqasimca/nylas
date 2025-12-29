@@ -1,0 +1,210 @@
+package calendar
+
+import (
+	"fmt"
+
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+)
+
+func newEventsShowCmd() *cobra.Command {
+	var (
+		calendarID string
+		targetTZ   string
+		showTZ     bool
+	)
+
+	cmd := &cobra.Command{
+		Use:     "show <event-id> [grant-id]",
+		Aliases: []string{"read", "get"},
+		Short:   "Show event details",
+		Long: `Display detailed information about a specific event.
+
+Examples:
+  # Show event in local timezone
+  nylas calendar events show <event-id>
+
+  # Show event in a specific timezone
+  nylas calendar events show <event-id> --timezone Europe/London
+
+  # Show event with timezone abbreviations
+  nylas calendar events show <event-id> --show-tz`,
+		Args: cobra.RangeArgs(1, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			eventID := args[0]
+
+			// Auto-detect timezone if not specified
+			if targetTZ == "" && !cmd.Flags().Changed("timezone") {
+				targetTZ = getLocalTimeZone()
+			}
+
+			// Validate timezone if specified
+			if targetTZ != "" {
+				if err := validateTimeZone(targetTZ); err != nil {
+					return err
+				}
+			}
+
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+
+			var grantID string
+			if len(args) > 1 {
+				grantID = args[1]
+			} else {
+				grantID, err = getGrantID(nil)
+				if err != nil {
+					return err
+				}
+			}
+
+			ctx, cancel := createContext()
+			defer cancel()
+
+			// Get calendar ID if not specified
+			if calendarID == "" {
+				calendars, err := client.GetCalendars(ctx, grantID)
+				if err != nil {
+					return fmt.Errorf("failed to get calendars: %w", err)
+				}
+				for _, cal := range calendars {
+					if cal.IsPrimary {
+						calendarID = cal.ID
+						break
+					}
+				}
+				if calendarID == "" && len(calendars) > 0 {
+					calendarID = calendars[0].ID
+				}
+			}
+
+			event, err := client.GetEvent(ctx, grantID, calendarID, eventID)
+			if err != nil {
+				return fmt.Errorf("failed to get event: %w", err)
+			}
+
+			cyan := color.New(color.FgCyan, color.Bold)
+			green := color.New(color.FgGreen)
+			dim := color.New(color.Faint)
+
+			// Title
+			fmt.Printf("%s\n\n", cyan.Sprint(event.Title))
+
+			// Time (with timezone conversion if requested)
+			fmt.Printf("%s\n", green.Sprint("When"))
+			timeDisplay, err := formatEventTimeWithTZ(event, targetTZ)
+			if err != nil {
+				fmt.Printf("  %s (timezone conversion error: %v)\n\n",
+					formatEventTime(event.When),
+					err)
+			} else {
+				if timeDisplay.ShowConversion {
+					// Show converted time prominently
+					fmt.Printf("  %s", timeDisplay.ConvertedTime)
+					if showTZ {
+						fmt.Printf(" %s", color.New(color.FgBlue).Sprint(timeDisplay.ConvertedTimezone))
+					}
+					fmt.Println()
+					// Show original time as reference
+					fmt.Printf("  %s %s",
+						dim.Sprint("(Original:"),
+						dim.Sprint(timeDisplay.OriginalTime))
+					if showTZ {
+						fmt.Printf(" %s", dim.Sprint(timeDisplay.OriginalTimezone))
+					}
+					fmt.Printf("%s\n\n", dim.Sprint(")"))
+				} else {
+					// No conversion - show original time
+					fmt.Printf("  %s", timeDisplay.OriginalTime)
+					if showTZ && timeDisplay.OriginalTimezone != "" {
+						fmt.Printf(" %s", color.New(color.FgBlue).Sprint(timeDisplay.OriginalTimezone))
+					}
+					fmt.Printf("\n\n")
+				}
+			}
+
+			// DST Warning (if applicable)
+			if !event.When.IsAllDay() {
+				start := event.When.StartDateTime()
+				eventTZ := start.Location().String()
+				if eventTZ == "Local" {
+					eventTZ = getLocalTimeZone()
+				}
+
+				dstWarning := checkDSTWarning(start, eventTZ)
+				if dstWarning != "" {
+					yellow := color.New(color.FgYellow)
+					fmt.Printf("  %s\n\n", yellow.Sprint(dstWarning))
+				}
+			}
+
+			// Location
+			if event.Location != "" {
+				fmt.Printf("%s\n", green.Sprint("Location"))
+				fmt.Printf("  %s\n\n", event.Location)
+			}
+
+			// Description
+			if event.Description != "" {
+				fmt.Printf("%s\n", green.Sprint("Description"))
+				fmt.Printf("  %s\n\n", event.Description)
+			}
+
+			// Organizer
+			if event.Organizer != nil {
+				fmt.Printf("%s\n", green.Sprint("Organizer"))
+				if event.Organizer.Name != "" {
+					fmt.Printf("  %s <%s>\n\n", event.Organizer.Name, event.Organizer.Email)
+				} else {
+					fmt.Printf("  %s\n\n", event.Organizer.Email)
+				}
+			}
+
+			// Participants
+			if len(event.Participants) > 0 {
+				fmt.Printf("%s\n", green.Sprint("Participants"))
+				for _, p := range event.Participants {
+					status := formatParticipantStatus(p.Status)
+					if p.Name != "" {
+						fmt.Printf("  %s <%s> %s\n", p.Name, p.Email, status)
+					} else {
+						fmt.Printf("  %s %s\n", p.Email, status)
+					}
+				}
+				fmt.Println()
+			}
+
+			// Conferencing
+			if event.Conferencing != nil && event.Conferencing.Details != nil {
+				fmt.Printf("%s\n", green.Sprint("Video Conference"))
+				if event.Conferencing.Provider != "" {
+					fmt.Printf("  Provider: %s\n", event.Conferencing.Provider)
+				}
+				if event.Conferencing.Details.URL != "" {
+					fmt.Printf("  URL: %s\n", event.Conferencing.Details.URL)
+				}
+				fmt.Println()
+			}
+
+			// Metadata
+			fmt.Printf("%s\n", green.Sprint("Details"))
+			fmt.Printf("  Status: %s\n", event.Status)
+			fmt.Printf("  Busy: %v\n", event.Busy)
+			if event.Visibility != "" {
+				fmt.Printf("  Visibility: %s\n", event.Visibility)
+			}
+			fmt.Printf("  ID: %s\n", dim.Sprint(event.ID))
+			fmt.Printf("  Calendar: %s\n", dim.Sprint(event.CalendarID))
+
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVarP(&calendarID, "calendar", "c", "", "Calendar ID (defaults to primary)")
+	cmd.Flags().StringVar(&targetTZ, "timezone", "", "Display times in this timezone (e.g., America/Los_Angeles). Defaults to local timezone.")
+	cmd.Flags().BoolVar(&showTZ, "show-tz", false, "Show timezone abbreviations (e.g., PST, EST)")
+
+	return cmd
+}

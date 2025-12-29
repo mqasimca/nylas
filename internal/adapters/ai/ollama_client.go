@@ -1,22 +1,18 @@
 package ai
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
 // OllamaClient implements LLMProvider for Ollama.
 type OllamaClient struct {
-	host   string
-	model  string
-	client *http.Client
+	*BaseClient
 }
 
 // NewOllamaClient creates a new Ollama client.
@@ -27,11 +23,12 @@ func NewOllamaClient(config *domain.OllamaConfig) *OllamaClient {
 	}
 
 	return &OllamaClient{
-		host:  config.Host,
-		model: config.Model,
-		client: &http.Client{
-			Timeout: 120 * time.Second,
-		},
+		BaseClient: NewBaseClient(
+			"", // No API key for local Ollama
+			config.Model,
+			config.Host,
+			0, // Use default timeout
+		),
 	}
 }
 
@@ -42,7 +39,7 @@ func (c *OllamaClient) Name() string {
 
 // IsAvailable checks if Ollama is accessible.
 func (c *OllamaClient) IsAvailable(ctx context.Context) bool {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.host+"/api/tags", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/api/tags", nil)
 	if err != nil {
 		return false
 	}
@@ -66,7 +63,7 @@ func (c *OllamaClient) Chat(ctx context.Context, req *domain.ChatRequest) (*doma
 func (c *OllamaClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest, tools []domain.Tool) (*domain.ChatResponse, error) {
 	// Prepare Ollama request
 	ollamaReq := map[string]any{
-		"model":    c.getModel(req.Model),
+		"model":    c.GetModel(req.Model),
 		"messages": c.convertMessages(req.Messages),
 		"stream":   false,
 	}
@@ -92,30 +89,7 @@ func (c *OllamaClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 		ollamaReq["tools"] = c.convertTools(tools)
 	}
 
-	// Send request
-	body, err := json.Marshal(ollamaReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.host+"/api/chat", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("ollama API error (%d): %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	// Parse response
+	// Send request using base client
 	var ollamaResp struct {
 		Message struct {
 			Role      string `json:"role"`
@@ -131,8 +105,8 @@ func (c *OllamaClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 		Done  bool   `json:"done"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	if err := c.DoJSONRequestAndDecode(ctx, "POST", "/api/chat", ollamaReq, nil, &ollamaResp); err != nil {
+		return nil, err
 	}
 
 	response := &domain.ChatResponse{
@@ -160,7 +134,7 @@ func (c *OllamaClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 func (c *OllamaClient) StreamChat(ctx context.Context, req *domain.ChatRequest, callback func(chunk string) error) error {
 	// Prepare Ollama request
 	ollamaReq := map[string]any{
-		"model":    c.getModel(req.Model),
+		"model":    c.GetModel(req.Model),
 		"messages": c.convertMessages(req.Messages),
 		"stream":   true,
 	}
@@ -171,27 +145,12 @@ func (c *OllamaClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 		}
 	}
 
-	body, err := json.Marshal(ollamaReq)
+	// Send streaming request using base client
+	resp, err := c.DoJSONRequest(ctx, "POST", "/api/chat", ollamaReq, nil)
 	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.host+"/api/chat", bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(httpReq)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("ollama API error (%d): %s", resp.StatusCode, string(bodyBytes))
-	}
 
 	// Stream response
 	decoder := json.NewDecoder(resp.Body)
@@ -225,13 +184,6 @@ func (c *OllamaClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 }
 
 // Helper methods
-
-func (c *OllamaClient) getModel(requestModel string) string {
-	if requestModel != "" {
-		return requestModel
-	}
-	return c.model
-}
 
 func (c *OllamaClient) convertMessages(messages []domain.ChatMessage) []map[string]string {
 	result := make([]map[string]string, len(messages))

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -61,7 +62,7 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 		return err
 	}
 
-	ctx, cancel := createContext()
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	// Build query params

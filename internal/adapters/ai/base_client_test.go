@@ -1,0 +1,330 @@
+package ai
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
+
+func TestNewBaseClient(t *testing.T) {
+	t.Run("creates client with default timeout", func(t *testing.T) {
+		client := NewBaseClient("test-key", "test-model", "https://api.example.com", 0)
+
+		if client.apiKey != "test-key" {
+			t.Errorf("expected apiKey 'test-key', got %q", client.apiKey)
+		}
+		if client.model != "test-model" {
+			t.Errorf("expected model 'test-model', got %q", client.model)
+		}
+		if client.baseURL != "https://api.example.com" {
+			t.Errorf("expected baseURL 'https://api.example.com', got %q", client.baseURL)
+		}
+		if client.client.Timeout != 120*time.Second {
+			t.Errorf("expected timeout 120s, got %v", client.client.Timeout)
+		}
+	})
+
+	t.Run("creates client with custom timeout", func(t *testing.T) {
+		client := NewBaseClient("key", "model", "url", 30*time.Second)
+
+		if client.client.Timeout != 30*time.Second {
+			t.Errorf("expected timeout 30s, got %v", client.client.Timeout)
+		}
+	})
+}
+
+func TestIsConfigured(t *testing.T) {
+	t.Run("returns true when API key is set", func(t *testing.T) {
+		client := NewBaseClient("test-key", "model", "url", 0)
+
+		if !client.IsConfigured() {
+			t.Error("expected IsConfigured to return true")
+		}
+	})
+
+	t.Run("returns false when API key is empty", func(t *testing.T) {
+		client := NewBaseClient("", "model", "url", 0)
+
+		if client.IsConfigured() {
+			t.Error("expected IsConfigured to return false")
+		}
+	})
+}
+
+func TestGetModel(t *testing.T) {
+	tests := []struct {
+		name         string
+		defaultModel string
+		requestModel string
+		expected     string
+	}{
+		{
+			name:         "returns request model when provided",
+			defaultModel: "default-model",
+			requestModel: "custom-model",
+			expected:     "custom-model",
+		},
+		{
+			name:         "returns default model when request model is empty",
+			defaultModel: "default-model",
+			requestModel: "",
+			expected:     "default-model",
+		},
+		{
+			name:         "returns empty when both are empty",
+			defaultModel: "",
+			requestModel: "",
+			expected:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := NewBaseClient("key", tt.defaultModel, "url", 0)
+			result := client.GetModel(tt.requestModel)
+
+			if result != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestDoJSONRequest(t *testing.T) {
+	t.Run("successful request with body", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Verify request
+			if r.Method != http.MethodPost {
+				t.Errorf("expected POST, got %s", r.Method)
+			}
+			if r.Header.Get("Content-Type") != "application/json" {
+				t.Errorf("expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
+			}
+			if r.Header.Get("Authorization") != "Bearer test-key" {
+				t.Errorf("expected Authorization header, got %s", r.Header.Get("Authorization"))
+			}
+
+			// Read and verify body
+			var body map[string]string
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Fatalf("failed to decode request body: %v", err)
+			}
+			if body["test"] != "data" {
+				t.Errorf("expected body['test']='data', got %q", body["test"])
+			}
+
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"result": "success"}`))
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("test-key", "model", server.URL, 0)
+		requestBody := map[string]string{"test": "data"}
+		headers := map[string]string{"Authorization": "Bearer test-key"}
+
+		resp, err := client.DoJSONRequest(context.Background(), http.MethodPost, "/test", requestBody, headers)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("successful request without body", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet {
+				t.Errorf("expected GET, got %s", r.Method)
+			}
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+
+		resp, err := client.DoJSONRequest(context.Background(), http.MethodGet, "/test", nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("expected status 200, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("handles context cancellation", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			time.Sleep(100 * time.Millisecond)
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+
+		_, err := client.DoJSONRequest(ctx, http.MethodGet, "/test", nil, nil)
+		if err == nil {
+			t.Error("expected error for cancelled context")
+		}
+	})
+
+	t.Run("handles invalid body marshaling", func(t *testing.T) {
+		client := NewBaseClient("key", "model", "http://example.com", 0)
+
+		// Channels cannot be marshaled to JSON
+		invalidBody := make(chan int)
+
+		_, err := client.DoJSONRequest(context.Background(), http.MethodPost, "/test", invalidBody, nil)
+		if err == nil {
+			t.Error("expected error for invalid body")
+		}
+		if err != nil && !contains(err.Error(), "failed to marshal request") {
+			t.Errorf("expected marshal error, got: %v", err)
+		}
+	})
+}
+
+func TestReadJSONResponse(t *testing.T) {
+	t.Run("successful decode", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"name": "test", "value": 123}`))
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+		resp, err := client.DoJSONRequest(context.Background(), http.MethodGet, "/test", nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected request error: %v", err)
+		}
+
+		var result map[string]any
+		err = client.ReadJSONResponse(resp, &result)
+		if err != nil {
+			t.Fatalf("unexpected decode error: %v", err)
+		}
+
+		if result["name"] != "test" {
+			t.Errorf("expected name='test', got %v", result["name"])
+		}
+		if result["value"].(float64) != 123 {
+			t.Errorf("expected value=123, got %v", result["value"])
+		}
+	})
+
+	t.Run("handles HTTP error status", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error": "bad request"}`))
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+		resp, err := client.DoJSONRequest(context.Background(), http.MethodGet, "/test", nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected request error: %v", err)
+		}
+
+		var result map[string]any
+		err = client.ReadJSONResponse(resp, &result)
+		if err == nil {
+			t.Error("expected error for HTTP 400")
+		}
+		if err != nil && !contains(err.Error(), "API error (status 400)") {
+			t.Errorf("expected API error message, got: %v", err)
+		}
+	})
+
+	t.Run("handles invalid JSON", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{invalid json`))
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+		resp, err := client.DoJSONRequest(context.Background(), http.MethodGet, "/test", nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected request error: %v", err)
+		}
+
+		var result map[string]any
+		err = client.ReadJSONResponse(resp, &result)
+		if err == nil {
+			t.Error("expected error for invalid JSON")
+		}
+		if err != nil && !contains(err.Error(), "failed to decode response") {
+			t.Errorf("expected decode error, got: %v", err)
+		}
+	})
+}
+
+func TestDoJSONRequestAndDecode(t *testing.T) {
+	t.Run("successful request and decode", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status": "ok"}`))
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+
+		var result map[string]string
+		err := client.DoJSONRequestAndDecode(context.Background(), http.MethodGet, "/test", nil, nil, &result)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if result["status"] != "ok" {
+			t.Errorf("expected status='ok', got %q", result["status"])
+		}
+	})
+
+	t.Run("handles request error", func(t *testing.T) {
+		client := NewBaseClient("key", "model", "http://invalid-url-that-does-not-exist.local", 0)
+
+		var result map[string]string
+		err := client.DoJSONRequestAndDecode(context.Background(), http.MethodGet, "/test", nil, nil, &result)
+		if err == nil {
+			t.Error("expected error for invalid URL")
+		}
+	})
+
+	t.Run("handles decode error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`error`))
+		}))
+		defer server.Close()
+
+		client := NewBaseClient("key", "model", server.URL, 0)
+
+		var result map[string]string
+		err := client.DoJSONRequestAndDecode(context.Background(), http.MethodGet, "/test", nil, nil, &result)
+		if err == nil {
+			t.Error("expected error for HTTP 400")
+		}
+	})
+}
+
+// Helper function
+func contains(s, substr string) bool {
+	return len(s) > 0 && len(substr) > 0 && (s == substr || len(s) >= len(substr) && (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || containsSubstring(s, substr)))
+}
+
+func containsSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

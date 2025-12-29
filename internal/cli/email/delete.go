@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +48,7 @@ func newDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			err = client.DeleteMessage(ctx, grantID, messageID)

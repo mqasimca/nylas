@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +46,7 @@ func newAttachmentsListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			attachments, err := client.ListAttachments(ctx, grantID, messageID)
@@ -105,7 +106,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
@@ -154,7 +155,7 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get attachment metadata first to get filename

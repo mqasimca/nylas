@@ -2,6 +2,7 @@
 package state
 
 import (
+	"sync"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -11,6 +12,8 @@ import (
 
 // GlobalState holds shared application state.
 type GlobalState struct {
+	mu sync.RWMutex
+
 	// Nylas integration
 	Client     ports.NylasClient
 	GrantStore ports.GrantStore
@@ -49,17 +52,37 @@ func NewGlobalState(client ports.NylasClient, grantStore ports.GrantStore, grant
 
 // SetWindowSize updates the window size.
 func (g *GlobalState) SetWindowSize(width, height int) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	g.WindowSize = tea.WindowSizeMsg{Width: width, Height: height}
 }
 
 // SetStatus sets the status message.
 func (g *GlobalState) SetStatus(message string, level int) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	g.StatusMessage = message
 	g.StatusLevel = level
 }
 
 // ClearStatus clears the status message.
 func (g *GlobalState) ClearStatus() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	g.StatusMessage = ""
 	g.StatusLevel = 0
+}
+
+// GetStatus returns the current status message and level.
+func (g *GlobalState) GetStatus() (string, int) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.StatusMessage, g.StatusLevel
+}
+
+// GetWindowSize returns the current window size.
+func (g *GlobalState) GetWindowSize() tea.WindowSizeMsg {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.WindowSize
 }
