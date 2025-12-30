@@ -1,5 +1,9 @@
 .PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean test-e2e test-e2e-air test-e2e-ui test-playwright test-playwright-air test-playwright-ui test-playwright-interactive test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
+# Disable parallel execution to prevent Go build cache corruption
+# Go's build cache is not safe for concurrent access (golang/go#43645)
+.NOTPARALLEL:
+
 # ============================================================================
 # Tool Versions (Pinned for Reproducibility)
 # ============================================================================
@@ -20,7 +24,6 @@ LDFLAGS := -ldflags "-s -w -X github.com/mqasimca/nylas/internal/cli.Version=$(V
 # ============================================================================
 build:
 	@mkdir -p bin
-	@go clean -cache
 	go build $(LDFLAGS) -o bin/nylas ./cmd/nylas
 
 # ============================================================================
