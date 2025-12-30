@@ -15,14 +15,13 @@ Quick navigation guide to find the right documentation for your needs.
 ### Understand the Project
 
 - **Architecture overview** → [ARCHITECTURE.md](ARCHITECTURE.md)
-- **Code organization** → [CODE_INDEX.md](../CODE_INDEX.md)
 - **File structure** → [CLAUDE.md](../CLAUDE.md#file-structure)
 
 ### Development
 
 - **Set up development environment** → [DEVELOPMENT.md](DEVELOPMENT.md)
 - **Testing guidelines** → [.claude/rules/testing.md](../.claude/rules/testing.md)
-- **Linting rules** → [.claude/rules/linting.md](../.claude/rules/linting.md)
+- **Go quality & linting** → [.claude/rules/go-quality.md](../.claude/rules/go-quality.md)
 - **Contributing guidelines** → [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ### Add Features
@@ -52,14 +51,14 @@ Quick navigation guide to find the right documentation for your needs.
 - **Security scan** → [.claude/commands/security-scan.md](../.claude/commands/security-scan.md)
 - **Security guidelines** → [SECURITY.md](SECURITY.md)
 - **Code review** → [.claude/commands/review-pr.md](../.claude/commands/review-pr.md)
-- **Linting rules** → [.claude/rules/linting.md](../.claude/rules/linting.md)
-- **Go best practices** → [.claude/rules/go-best-practices.md](../.claude/rules/go-best-practices.md)
+- **Go quality & linting** → [.claude/rules/go-quality.md](../.claude/rules/go-quality.md)
+- **File size limits** → [.claude/rules/file-size-limits.md](../.claude/rules/file-size-limits.md)
 
 ### Maintenance
 
 - **Update documentation** → [.claude/commands/update-docs.md](../.claude/commands/update-docs.md)
 - **Documentation rules** → [.claude/rules/documentation-maintenance.md](../.claude/rules/documentation-maintenance.md)
-- **Go best practices** → [.claude/rules/go-best-practices.md](../.claude/rules/go-best-practices.md)
+- **Go quality rules** → [.claude/rules/go-quality.md](../.claude/rules/go-quality.md)
 
 ### Specific Features
 
@@ -86,9 +85,10 @@ docs/
 └── troubleshooting/       # Debug guides (load on-demand)
 
 .claude/
-├── commands/              # 13 actionable skills
-├── rules/                 # 4 development rules (auto-loaded)
-└── agents/                # 3 specialized agents
+├── commands/              # 20 actionable skills
+├── rules/                 # 6 development rules (auto-loaded)
+├── agents/                # 6 specialized agents
+└── hooks/                 # 6 automation hooks
 ```
 
 ---
@@ -99,7 +99,7 @@ docs/
 1. [README.md](../README.md) - Project overview
 2. [CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
 3. [DEVELOPMENT.md](DEVELOPMENT.md) - Setup instructions
-4. [CODE_INDEX.md](../CODE_INDEX.md) - Code navigation
+4. [CLAUDE.md](../CLAUDE.md#file-structure) - Code navigation
 
 ### **Developers Adding Features**
 1. [ARCHITECTURE.md](ARCHITECTURE.md) - Understand the design
@@ -115,7 +115,7 @@ docs/
 ### **Maintainers**
 1. [.claude/commands/security-scan.md](../.claude/commands/security-scan.md) - Security checks
 2. [.claude/commands/review-pr.md](../.claude/commands/review-pr.md) - PR review
-3. [.claude/rules/linting.md](../.claude/rules/linting.md) - Linting workflow
+3. [.claude/rules/go-quality.md](../.claude/rules/go-quality.md) - Go quality & linting
 
 ### **Users**
 1. [README.md](../README.md) - Getting started
@@ -135,4 +135,4 @@ docs/
 
 ---
 
-**Last Updated:** December 27, 2024
+**Last Updated:** December 30, 2024

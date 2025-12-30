@@ -1,3 +1,9 @@
+---
+name: add-integration-test
+description: Add a new integration test to the CLI test suite
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(go test:*), Bash(go build:*)
+---
+
 # Add Integration Test
 
 Add a new integration test to the CLI test suite.

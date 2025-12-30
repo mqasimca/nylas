@@ -1,3 +1,9 @@
+---
+name: run-tests
+description: Run unit and integration tests with proper configuration
+allowed-tools: Read, Bash(go test:*), Bash(go build:*), Bash(make test:*)
+---
+
 # Run Tests
 
 Run unit tests and/or integration tests for the nylas CLI.
