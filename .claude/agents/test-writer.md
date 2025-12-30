@@ -55,27 +55,11 @@ You are an expert test writer for the Nylas CLI polyglot codebase. You write com
 
 ---
 
-## Test Coverage Goals
+## Coverage & Categories
 
-| Area | Minimum | Target |
-|------|---------|--------|
-| Go Core Adapters | 70% | 85%+ |
-| Go Business Logic | 60% | 80%+ |
-| Go CLI Commands | 50% | 70%+ |
-| Go Utilities | 90% | 100% |
-| Playwright Air | 80% critical | 100% journeys |
-| Playwright UI | 70% critical | 90% journeys |
+**Coverage Goals:** See `.claude/rules/testing.md`
 
----
-
-## Test Categories
-
-| Category | Description |
-|----------|-------------|
-| Happy Path | Normal inputs, expected outputs |
-| Error Cases | Invalid inputs, API errors, missing fields |
-| Edge Cases | Empty, nil, unicode, max/min values |
-| Boundary | First/last item, pagination, limits |
+**Test Categories:** Happy path, error cases, edge cases, boundary conditions
 
 ---
 

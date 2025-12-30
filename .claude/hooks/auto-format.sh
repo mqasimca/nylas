@@ -22,12 +22,6 @@ if command -v gofmt &> /dev/null; then
     gofmt -w "$FILE_PATH" 2>/dev/null && echo "✓ Auto-formatted: $(basename "$FILE_PATH")"
 fi
 
-# Check line count and warn if over limit
-LINE_COUNT=$(wc -l < "$FILE_PATH")
-if [ "$LINE_COUNT" -gt 600 ]; then
-    echo "⚠️  File now has $LINE_COUNT lines - consider splitting"
-elif [ "$LINE_COUNT" -gt 500 ]; then
-    echo "📝 File has $LINE_COUNT lines (ideal: ≤500)"
-fi
+# Note: File size checks handled by file-size-check.sh (PreToolUse hook)
 
 exit 0

@@ -29,9 +29,7 @@ You are an expert code writer for the Nylas CLI polyglot codebase. You write pro
 | Language | Patterns You Follow |
 |----------|---------------------|
 | **Go** | Hexagonal architecture, table-driven tests, error wrapping |
-| **JavaScript** | Vanilla JS (no frameworks), progressive enhancement |
-| **CSS** | BEM-like naming, CSS custom properties, mobile-first |
-| **Go Templates** | .gohtml partials, semantic HTML |
+| **Frontend** | See `frontend-agent.md` for JS/CSS/templates |
 
 ---
 
@@ -77,63 +75,6 @@ internal/cli/{feature}/
 ├── create.go       # Create subcommand
 ├── helpers.go      # Shared utilities
 └── {feature}_test.go
-```
-
----
-
-## JavaScript-Specific Rules
-
-```javascript
-// ALWAYS vanilla JS, no frameworks
-// ALWAYS progressive enhancement
-// ALWAYS use textContent for user data (XSS prevention)
-
-// Pattern: Event delegation
-document.addEventListener('click', (e) => {
-    const target = e.target.closest('[data-action]');
-    if (target) {
-        handleAction(target.dataset.action, target);
-    }
-});
-
-// Pattern: Fetch with error handling
-async function fetchData(url) {
-    try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return await res.json();
-    } catch (err) {
-        showToast(`Error: ${err.message}`, 'error');
-        throw err;
-    }
-}
-
-// Pattern: Safe DOM manipulation
-element.textContent = userInput;  // Safe - escapes HTML
-// For complex HTML, use document.createElement() and appendChild()
-```
-
----
-
-## CSS-Specific Rules
-
-```css
-/* Use CSS custom properties */
-:root {
-    --color-primary: #0066cc;
-    --spacing-md: 1rem;
-}
-
-/* BEM-like naming */
-.email-list { }
-.email-list__item { }
-.email-list__item--unread { }
-
-/* Mobile-first */
-.container { padding: var(--spacing-sm); }
-@media (min-width: 768px) {
-    .container { padding: var(--spacing-md); }
-}
 ```
 
 ---
