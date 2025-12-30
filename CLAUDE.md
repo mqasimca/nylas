@@ -12,6 +12,7 @@ Quick reference for AI assistants working on this codebase.
 - **NEVER commit secrets** - No API keys, tokens, passwords, .env files
 - **NEVER skip tests** - All changes require passing tests
 - **NEVER skip security scans** - Run `make security` before commits
+- **NEVER create files >600 lines** - Split using patterns from REFACTORING_GUIDE.md
 
 ### ALWAYS DO (every code change):
 
@@ -23,7 +24,9 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 **⚠️ CRITICAL: Never skip linting. Fix ALL linting errors in code you wrote.**
 
-**Details:** See `.claude/rules/linting.md`, `.claude/rules/go-best-practices.md`
+**⚠️ CRITICAL: Enforce file size limits. Files must be ≤500 lines (ideal) or ≤600 lines (max).**
+
+**Details:** See `.claude/rules/linting.md`, `.claude/rules/go-best-practices.md`, `.claude/rules/file-size-limits.md`
 
 ### Test & Doc Requirements:
 | Change | Unit Test | Integration Test | Update Docs |

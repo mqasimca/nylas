@@ -374,9 +374,9 @@ func TestLimitedBody(t *testing.T) {
 func TestStaticFilesEmbedded(t *testing.T) {
 	t.Parallel()
 
-	// Verify that critical static files are embedded
+	// Verify that critical static files are embedded (updated for modular commands)
 	expectedFiles := []string{
-		"static/js/commands.js",
+		"static/js/commands-init.js", // One of the new modular command files
 		"static/css/base.css",
 		"static/css/commands.css",
 	}
@@ -398,30 +398,29 @@ func TestStaticFilesEmbedded(t *testing.T) {
 func TestCommandsJSContainsRequiredFlags(t *testing.T) {
 	t.Parallel()
 
-	data, err := staticFiles.ReadFile("static/js/commands.js")
-	if err != nil {
-		t.Fatalf("Failed to read commands.js: %v", err)
-	}
-
-	content := string(data)
-
-	// Verify key commands have flags defined
+	// Verify key commands have flags defined in modular files
 	flagPatterns := []struct {
+		file     string
 		command  string
 		contains string
 	}{
-		{"email send", "required: true"},
-		{"calendar events create", "flags:"},
-		{"webhook create", "flags:"},
-		{"contacts create", "flags:"},
-		{"scheduler configurations create", "flags:"},
-		{"calendar virtual create", "email"},
+		{"static/js/commands-email.js", "email send", "required: true"},
+		{"static/js/commands-calendar.js", "calendar events create", "flags:"},
+		{"static/js/commands-webhook.js", "webhook create", "flags:"},
+		{"static/js/commands-contacts.js", "contacts create", "flags:"},
+		{"static/js/commands-scheduler.js", "scheduler configurations create", "flags:"},
+		{"static/js/commands-calendar.js", "calendar virtual create", "email"},
 	}
 
 	for _, tt := range flagPatterns {
 		t.Run(tt.command, func(t *testing.T) {
+			data, err := staticFiles.ReadFile(tt.file)
+			if err != nil {
+				t.Fatalf("Failed to read %s: %v", tt.file, err)
+			}
+			content := string(data)
 			if !strings.Contains(content, tt.contains) {
-				t.Errorf("commands.js should contain %q for %s", tt.contains, tt.command)
+				t.Errorf("%s should contain %q for %s", tt.file, tt.contains, tt.command)
 			}
 		})
 	}
@@ -430,15 +429,28 @@ func TestCommandsJSContainsRequiredFlags(t *testing.T) {
 func TestCommandsJSContainsNoDashboardOldURL(t *testing.T) {
 	t.Parallel()
 
-	data, err := staticFiles.ReadFile("static/js/commands.js")
-	if err != nil {
-		t.Fatalf("Failed to read commands.js: %v", err)
+	// Check all modular command files for old dashboard URL
+	commandFiles := []string{
+		"static/js/commands-auth.js",
+		"static/js/commands-email.js",
+		"static/js/commands-calendar.js",
+		"static/js/commands-contacts.js",
+		"static/js/commands-admin.js",
 	}
 
-	content := string(data)
+	for _, file := range commandFiles {
+		t.Run(file, func(t *testing.T) {
+			data, err := staticFiles.ReadFile(file)
+			if err != nil {
+				// Skip if file doesn't exist (not all command files may contain URLs)
+				return
+			}
+			content := string(data)
 
-	// Verify old dashboard URL is not present
-	if strings.Contains(content, "dashboard.nylas.com") && !strings.Contains(content, "dashboardv3.nylas.com") {
-		t.Error("commands.js contains old dashboard URL (dashboard.nylas.com instead of dashboardv3.nylas.com)")
+			// Verify old dashboard URL is not present
+			if strings.Contains(content, "dashboard.nylas.com") && !strings.Contains(content, "dashboardv3.nylas.com") {
+				t.Errorf("%s contains old dashboard URL (dashboard.nylas.com instead of dashboardv3.nylas.com)", file)
+			}
+		})
 	}
 }

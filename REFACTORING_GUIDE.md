@@ -10,6 +10,8 @@
 
 **Target**: All files ≤500 lines (ideal), ≤600 lines (acceptable)
 
+**⚠️ MANDATORY**: See `.claude/rules/file-size-limits.md` for enforcement rules
+
 **Why**:
 - Easier to understand and navigate
 - Reduces cognitive load for AI assistants

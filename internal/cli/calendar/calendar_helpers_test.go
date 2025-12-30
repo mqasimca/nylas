@@ -1,28 +1,13 @@
 package calendar
 
 import (
-	"bytes"
 	"testing"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
-// executeCommand executes a command and captures its output.
-func executeCommand(root *cobra.Command, args ...string) (string, string, error) {
-	stdout := new(bytes.Buffer)
-	stderr := new(bytes.Buffer)
-
-	root.SetOut(stdout)
-	root.SetErr(stderr)
-	root.SetArgs(args)
-
-	err := root.Execute()
-
-	return stdout.String(), stderr.String(), err
-}
 func TestParseTimeInput(t *testing.T) {
 	t.Run("parses_tomorrow", func(t *testing.T) {
 		result, err := parseTimeInput("tomorrow")
