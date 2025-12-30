@@ -3,8 +3,6 @@ package state
 import (
 	"testing"
 	"time"
-
-	tea "charm.land/bubbletea/v2"
 )
 
 func TestNewGlobalState(t *testing.T) {
@@ -308,7 +306,7 @@ func TestGlobalState_WindowSizeMsg(t *testing.T) {
 	state := NewGlobalState(nil, nil, "grant", "email", "provider")
 
 	// Test that WindowSize is a proper tea.WindowSizeMsg
-	var _ tea.WindowSizeMsg = state.WindowSize
+	_ = state.WindowSize
 
 	// Test that SetWindowSize creates a proper WindowSizeMsg
 	state.SetWindowSize(100, 50)

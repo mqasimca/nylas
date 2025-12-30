@@ -87,7 +87,7 @@ func (b *BaseClient) DoJSONRequest(ctx context.Context, method, endpoint string,
 
 // ReadJSONResponse reads and unmarshals a JSON response.
 func (b *BaseClient) ReadJSONResponse(resp *http.Response, v any) error {
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for HTTP errors
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
