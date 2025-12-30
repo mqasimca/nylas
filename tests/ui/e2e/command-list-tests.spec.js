@@ -333,8 +333,8 @@ test.describe('Command List - Navigation Flow', () => {
           await listCommand.click();
           await page.waitForTimeout(200);
 
-          // Verify List detail is shown
-          const heading = page.locator('h2').filter({ hasText: 'List' });
+          // Verify List detail is shown - scope to active page
+          const heading = page.locator(`#page-${tab} h2`).filter({ hasText: 'List' });
           await expect(heading).toBeVisible();
         }
       }
@@ -753,8 +753,8 @@ test.describe('Command List - All Tabs Navigation and Run', () => {
       await listCommand.click();
       await page.waitForTimeout(300);
 
-      // Verify List detail is shown
-      const heading = page.locator('h2').filter({ hasText: 'List' });
+      // Verify List detail is shown - scope to active page
+      const heading = page.locator(`#${tab.pageId} h2`).filter({ hasText: 'List' });
       await expect(heading).toBeVisible();
 
       // Click Run
