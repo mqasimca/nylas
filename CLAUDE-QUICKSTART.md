@@ -102,6 +102,13 @@ Your AI-powered development assistant with self-learning capabilities.
 | `/review-pr` | Review pull request | Read, Grep, Glob, Bash(git) |
 | `/update-docs` | Update documentation | Read, Write, Edit |
 
+### Parallel Commands
+
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `/parallel-explore` | Explore codebase with 4-5 parallel agents | Large codebase search, cross-layer feature discovery |
+| `/parallel-review` | Review code with parallel reviewer agents | Large PRs, multi-file reviews |
+
 ---
 
 ## Specialized Agents
@@ -219,6 +226,15 @@ Triggers:
 - "commit" → Git rules reminder
 ```
 
+### file-size-check.sh (PreToolUse Hook for Write)
+**Runs:** Before writing Go files
+**Blocks if:** File would exceed 600 lines
+**Warns if:** File would exceed 500 lines
+
+### auto-format.sh (PostToolUse Hook for Edit)
+**Runs:** After editing Go files
+**Action:** Auto-runs `gofmt -w` on the edited file
+
 **Hook Configuration:** See `.claude/HOOKS-CONFIG.md` for settings.json setup
 
 ---
@@ -304,6 +320,8 @@ Hard-won knowledge:
 | **Fix build** | `/fix-build` |
 | **Run tests** | `/run-tests` |
 | **Security check** | `/security-scan` |
+| **Explore codebase** | `/parallel-explore` |
+| **Review PR** | `/parallel-review` |
 | **Capture mistake** | `/correct "description"` |
 | **End session** | `/diary` |
 | **Review learnings** | `/reflect` |

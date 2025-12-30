@@ -307,6 +307,8 @@ Hooks run automatically to enforce quality:
 | Hook | Trigger | Purpose |
 |------|---------|---------|
 | `quality-gate.sh` | Stop | Blocks if Go code fails fmt/vet/lint/tests |
+| `subagent-review.sh` | SubagentStop | Blocks if subagent finds critical issues |
+| `pre-compact.sh` | PreCompact | Warns before context compaction |
 | `context-injector.sh` | UserPromptSubmit | Injects context reminders |
 | `file-size-check.sh` | PreToolUse (Write) | Blocks Go files >600 lines, warns >500 |
 | `auto-format.sh` | PostToolUse (Edit) | Auto-runs gofmt on edited Go files |
