@@ -1,31 +1,6 @@
 /* Email UI - Rendering and filtering */
 Object.assign(EmailListManager, {
-        all: this.emails.length,
-        vip: this.emails.filter(e => this.isVIP(e)).length,
-        unread: this.emails.filter(e => e.unread).length
-    };
-
-    // Update DOM
-    const tabs = document.querySelectorAll('.filter-tab');
-    tabs.forEach(tab => {
-        const filter = tab.dataset.filter || tab.textContent.toLowerCase().trim();
-        const count = counts[filter];
-        let countBadge = tab.querySelector('.filter-count');
-
-        if (count > 0 && filter !== 'all') {
-            if (!countBadge) {
-                countBadge = document.createElement('span');
-                countBadge.className = 'filter-count';
-                tab.appendChild(countBadge);
-            }
-            countBadge.textContent = count > 99 ? '99+' : count;
-        } else if (countBadge) {
-            countBadge.remove();
-        }
-    });
-},
-
-setupEventListeners() {
+    setupEventListeners() {
     // Folder click handling - use #folderList or .folder-group
     const folderList = document.getElementById('folderList') || document.querySelector('.folder-group');
     if (folderList) {

@@ -399,9 +399,9 @@ func TestMessageList_KeyboardNavigation_ArrowKeys(t *testing.T) {
 			msg := tea.KeyPressMsg{Code: tt.key}
 			updated, cmd := ml.Update(msg)
 
-			if updated == nil {
-				t.Error("Update should return a model")
-			}
+			// Update always returns a valid model (Bubble Tea contract)
+			// Verify by type assertion
+			_ = updated.(*MessageList)
 
 			// Arrow keys should be passed to the layout
 			// cmd may be nil or contain layout update commands

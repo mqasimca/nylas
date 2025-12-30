@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -46,16 +45,10 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse query parameters
-	query := r.URL.Query()
-	limit := 50
-	if l := query.Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 200 {
-			limit = parsed
-		}
-	}
+	query := NewQueryParams(r.URL.Query())
 
 	params := &domain.MessageQueryParams{
-		Limit: limit,
+		Limit: query.GetLimit(50),
 	}
 
 	// Filter by folder
@@ -65,15 +58,13 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Filter by unread
-	unreadFilter := query.Get("unread") == "true"
-	if unreadFilter {
+	if query.GetBool("unread") {
 		unreadBool := true
 		params.Unread = &unreadBool
 	}
 
 	// Filter by starred
-	starredFilter := query.Get("starred") == "true"
-	if starredFilter {
+	if query.GetBool("starred") {
 		starredBool := true
 		params.Starred = &starredBool
 	}
@@ -103,15 +94,15 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 	if cursor == "" && s.cacheManager != nil && s.cacheSettings != nil && s.cacheSettings.IsCacheEnabled() {
 		if store, err := s.getEmailStore(accountEmail); err == nil {
 			cacheOpts := cache.ListOptions{
-				Limit:       limit,
+				Limit:       params.Limit,
 				FolderID:    folderID,
-				UnreadOnly:  unreadFilter,
-				StarredOnly: starredFilter,
+				UnreadOnly:  params.Unread != nil && *params.Unread,
+				StarredOnly: params.Starred != nil && *params.Starred,
 			}
 			if cached, err := store.List(cacheOpts); err == nil && len(cached) > 0 {
 				resp := EmailsResponse{
 					Emails:  make([]EmailResponse, 0, len(cached)),
-					HasMore: len(cached) >= limit,
+					HasMore: len(cached) >= params.Limit,
 				}
 				for _, e := range cached {
 					resp.Emails = append(resp.Emails, cachedEmailToResponse(e))
@@ -131,7 +122,7 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 		// If offline and cache available, try cache as fallback
 		if s.cacheManager != nil && s.cacheSettings != nil && s.cacheSettings.IsCacheEnabled() {
 			if store, storeErr := s.getEmailStore(accountEmail); storeErr == nil {
-				cacheOpts := cache.ListOptions{Limit: limit, FolderID: folderID}
+				cacheOpts := cache.ListOptions{Limit: params.Limit, FolderID: folderID}
 				if cached, cacheErr := store.List(cacheOpts); cacheErr == nil && len(cached) > 0 {
 					resp := EmailsResponse{
 						Emails:  make([]EmailResponse, 0, len(cached)),

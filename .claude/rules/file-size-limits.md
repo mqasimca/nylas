@@ -28,7 +28,7 @@ wc -l <modified-file>.go
 
 # If file exceeds 500 lines:
 # → Plan to split it
-# → Reference REFACTORING_GUIDE.md for patterns
+# → Split by responsibility (types, helpers, handlers)
 # → Split before marking task complete
 ```
 
@@ -36,7 +36,7 @@ wc -l <modified-file>.go
 
 **If adding code would push file over 500 lines:**
 1. ✅ **STOP** - Do not add more code to the file
-2. ✅ **SPLIT** - Break the file using patterns from REFACTORING_GUIDE.md
+2. ✅ **SPLIT** - Break the file by responsibility (types, helpers, handlers)
 3. ✅ **VERIFY** - Run `make build` and `make test-unit`
 4. ✅ **DOCUMENT** - Update CLAUDE.md if file structure changes
 
@@ -67,7 +67,7 @@ wc -l <modified-file>.go
 
 ## How to Split Files
 
-**Reference:** See `REFACTORING_GUIDE.md` for detailed patterns
+**Pattern:** Split by responsibility - types, helpers, handlers, tests
 
 ### Quick Split Patterns:
 
@@ -116,18 +116,6 @@ make test-integration
 
 ---
 
-## Current Repository Status
-
-**As of 2025-12-29:**
-- **Total Go files:** 732
-- **Average file size:** 294 lines ✅
-- **Files >600 lines:** 0 ✅
-- **Files 500-600 lines:** ~20 (refactoring candidates)
-
-**Target:** All files ≤500 lines for complete consistency
-
----
-
 ## Exceptions (Rare)
 
 **Only exception allowed:**
@@ -157,60 +145,10 @@ Write Code → Check Size → If >500 lines → Split → Verify → Complete
 
 - [ ] All modified files ≤600 lines
 - [ ] All new files ≤500 lines
-- [ ] If split was required, REFACTORING_GUIDE.md patterns followed
+- [ ] If split was required, followed responsibility-based patterns
 - [ ] Build succeeds
 - [ ] Tests pass
 - [ ] CLAUDE.md updated (if file structure changed)
-
----
-
-## Why This Rule Exists
-
-### Benefits Achieved:
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Avg File Size | 747 lines | 294 lines | 61% reduction |
-| Context Loading | ~120KB | ~100KB | 16% reduction |
-| Navigation Speed | Slow | Fast | 3x faster |
-| Code Review | Difficult | Easy | Large diffs → focused diffs |
-
-### AI Assistant Benefits:
-- Faster context loading
-- Better code understanding
-- Reduced cognitive load
-- Easier to locate specific functionality
-- More efficient token usage
-
-### Developer Benefits:
-- Easier code navigation
-- Clearer separation of concerns
-- Better Git diffs
-- Simplified code reviews
-- Easier testing
-
----
-
-## Quick Reference Card
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  FILE SIZE QUICK CHECKS                                 │
-├─────────────────────────────────────────────────────────┤
-│  Before completing task:                                │
-│    1. wc -l <file>.go                                   │
-│    2. If >500 lines → Plan split                        │
-│    3. If >600 lines → MUST split                        │
-│    4. Reference REFACTORING_GUIDE.md                    │
-│    5. make build && make test-unit                      │
-│                                                          │
-│  REMEMBER:                                              │
-│    • 500 lines = Ideal                                  │
-│    • 600 lines = Maximum acceptable                     │
-│    • >600 lines = MUST refactor                         │
-│    • Always verify build after split                    │
-└─────────────────────────────────────────────────────────┘
-```
 
 ---
 
@@ -229,9 +167,3 @@ find . -name "*.go" -not -path "*/vendor/*" -exec wc -l {} \; | \
   awk '$1 > 600 {print "❌ EXCEEDS LIMIT:", $2, "(" $1, "lines)"}' | \
   sort -t: -k2 -rn
 ```
-
----
-
-**Last Updated:** 2025-12-29
-**Compliance Rate:** 100% (0 files >600 lines)
-**Next Goal:** Reduce remaining 20 files (590-626 lines) to ≤500 lines

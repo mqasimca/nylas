@@ -263,4 +263,10 @@ renderActions(nt) {
 },
 
 /**
+ * Render the notetaker list as modern cards
+ */
+renderNotetakerPanel() {
+    this.renderNotetakers();
+    this.updateCounts();
+}
 });

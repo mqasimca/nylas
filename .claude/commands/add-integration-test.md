@@ -2,6 +2,8 @@
 
 Add a new integration test to the CLI test suite.
 
+**See also:** `.claude/rules/testing.md` for test patterns and conventions.
+
 ## Instructions
 
 1. Ask me for:

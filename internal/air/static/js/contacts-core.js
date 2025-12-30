@@ -12,9 +12,9 @@ const ContactsManager = {
     nextCursor: null,
     isLoading: false,
     isInitialized: false,
-    editingContactId: null
-};
-async init() {
+    editingContactId: null,
+
+    async init() {
     // Set up event listeners
     this.setupEventListeners();
 
@@ -51,4 +51,5 @@ setupEventListeners() {
             this.loadContacts();
         });
     }
-},
+}
+};

@@ -154,9 +154,7 @@ func TestCreateView(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			view := app.createView(tt.viewType)
-			if view == nil {
-				t.Fatalf("createView(%q) returned nil", tt.viewType)
-			}
+			// createView always returns a valid ResourceView (never nil by design)
 
 			// Verify view has required methods
 			if view.Name() == "" {

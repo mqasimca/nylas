@@ -287,4 +287,15 @@ closeAISummaryModal() {
 
 // Copy AI summary to clipboard
 async copyAISummary() {
+    if (this.currentSummary) {
+        try {
+            await navigator.clipboard.writeText(this.currentSummary);
+            if (typeof showToast === 'function') {
+                showToast('success', 'Copied', 'Summary copied to clipboard');
+            }
+        } catch (err) {
+            console.error('Copy error:', err);
+        }
+    }
+}
 });

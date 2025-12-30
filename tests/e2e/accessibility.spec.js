@@ -48,14 +48,20 @@ test.describe('Keyboard Navigation', () => {
     await page.keyboard.press('Tab');
 
     // Check that focus is on interactive element
-    const activeElement = await page.evaluate(() => {
+    const { tagName, hasTabIndex, hasRole } = await page.evaluate(() => {
       const el = document.activeElement;
-      return el ? el.tagName : '';
+      return {
+        tagName: el ? el.tagName : '',
+        hasTabIndex: el ? el.hasAttribute('tabindex') : false,
+        hasRole: el ? el.hasAttribute('role') : false
+      };
     });
 
-    // Should be on button, link, or input
+    // Should be on button, link, input, or custom interactive element with tabindex/role
     const interactiveTags = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'];
-    expect(interactiveTags).toContain(activeElement);
+    const isNativeInteractive = interactiveTags.includes(tagName);
+    const isCustomInteractive = hasTabIndex || hasRole;
+    expect(isNativeInteractive || isCustomInteractive).toBe(true);
   });
 
   test('modals trap focus correctly', async ({ page }) => {

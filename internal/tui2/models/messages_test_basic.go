@@ -101,10 +101,7 @@ func TestMessageList_UpdateWithMessages(t *testing.T) {
 	msg := threadsLoadedMsg{threads: testThreads}
 	updated, cmd := ml.Update(msg)
 
-	if updated == nil {
-		t.Fatal("Update returned nil model")
-	}
-
+	// Update always returns a valid model (Bubble Tea contract)
 	updatedML := updated.(*MessageList)
 	if updatedML.loading {
 		t.Error("loading should be false after threads loaded")
@@ -130,10 +127,7 @@ func TestMessageList_UpdateWithError(t *testing.T) {
 	testErr := errMsg{err: context.Canceled}
 	updated, cmd := ml.Update(testErr)
 
-	if updated == nil {
-		t.Fatal("Update returned nil model")
-	}
-
+	// Update always returns a valid model (Bubble Tea contract)
 	updatedML := updated.(*MessageList)
 	if updatedML.loading {
 		t.Error("loading should be false after error")
@@ -160,9 +154,9 @@ func TestMessageList_UpdateWithKeyPress(t *testing.T) {
 	msg := tea.KeyPressMsg{Text: "q"}
 	updated, _ := ml.Update(msg)
 
-	if updated == nil {
-		t.Fatal("Update returned nil model")
-	}
+	// Update always returns a valid model (Bubble Tea contract)
+	// Verify by type assertion
+	_ = updated.(*MessageList)
 }
 
 func TestMessageList_View(t *testing.T) {

@@ -1,16 +1,8 @@
 # Claude Code Context Exclusions
 # Exclude files from being loaded in Claude's context to reduce token usage
 
-# Local temporary files and historical documentation
-local/
-local/**
+# Local files (not auto-loaded)
 *.local.md
-
-# Historical/archived documentation
-local/well-architected-optimizations.md
-local/suggestions.md
-local/SECURITY_REPORT.md
-local/video-*.md
 
 # Example/sample files (load on-demand only)
 docs/examples/
@@ -66,6 +58,13 @@ docs/FAQ.md
 docs/EXAMPLES.md
 docs/TROUBLESHOOTING.md
 docs/INDEX.md
+
+# Large reference docs (load on-demand to reduce context)
+# Use Read tool when working on related features
+docs/COMMANDS.md
+docs/MCP.md
+docs/AI.md
+docs/ARCHITECTURE.md
 
 # Historical planning documents
 plan.md

@@ -2,6 +2,8 @@
 
 Auto-detect code changes and update relevant documentation files.
 
+**See also:** `.claude/rules/documentation-maintenance.md` for documentation rules.
+
 Context: $ARGUMENTS
 
 ## Instructions

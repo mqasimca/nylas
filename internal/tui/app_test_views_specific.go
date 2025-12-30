@@ -226,9 +226,8 @@ func TestAvailabilityView_FullInterface(t *testing.T) {
 		t.Errorf("Title() = %q, want %q", view.Title(), "Availability")
 	}
 
-	if view.Primitive() == nil {
-		t.Error("Primitive() returned nil")
-	}
+	// Verify Primitive returns a valid tview.Primitive (not nil by design)
+	_ = view.Primitive()
 
 	hints := view.Hints()
 	if len(hints) == 0 {

@@ -2,6 +2,8 @@
 
 Perform a comprehensive security analysis of the codebase.
 
+**See also:** `.claude/agents/security-auditor.md` for deep security analysis agent.
+
 Target: $ARGUMENTS (leave empty for full scan)
 
 ## Instructions

@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestNewCalendarCmd(t *testing.T) {
 	cmd := NewCalendarCmd()
 

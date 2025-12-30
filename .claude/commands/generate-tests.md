@@ -2,6 +2,8 @@
 
 Generate comprehensive unit and integration tests for Go code.
 
+**See also:** `.claude/agents/test-writer.md` for autonomous test generation agent.
+
 ## Instructions
 
 1. Ask me for:

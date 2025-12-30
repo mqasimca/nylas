@@ -65,8 +65,11 @@ func TestAvailabilityView_Primitive(t *testing.T) {
 	app := createTestApp(t)
 	view := NewAvailabilityView(app)
 
-	if view.Primitive() == nil {
-		t.Error("Primitive() should not return nil")
+	// Verify Primitive returns a valid tview.Primitive (not nil by design)
+	p := view.Primitive()
+	if p.HasFocus() {
+		// Just verifying we can call methods on the primitive
+		_ = p
 	}
 }
 

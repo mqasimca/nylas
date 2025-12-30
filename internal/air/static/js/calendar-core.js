@@ -8,9 +8,9 @@ const CalendarManager = {
     currentView: 'week',
     selectedCalendarIds: [],
     isLoading: false,
-    isInitialized: false
-};
-async init() {
+    isInitialized: false,
+
+    async init() {
     // Only initialize once
     if (this.isInitialized) {
         return;
@@ -80,4 +80,5 @@ setupEventListeners() {
     if (todayBtn) {
         todayBtn.addEventListener('click', () => this.goToToday());
     }
-},
+}
+};

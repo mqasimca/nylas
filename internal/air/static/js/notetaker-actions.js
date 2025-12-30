@@ -336,5 +336,9 @@ showSettingsModal() {
 },
 
 /**
- * Setup event listeners
+ * Setup event listeners (handled in core module)
+ */
+initActions() {
+    console.log('Notetaker actions initialized');
+}
 });

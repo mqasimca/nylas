@@ -1,4 +1,4 @@
-.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
+.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean test-e2e test-playwright test-playwright-ui test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
 # ============================================================================
 # Tool Versions (Pinned for Reproducibility)
@@ -231,6 +231,46 @@ test-vhs-clean:
 	@echo "✓ VHS output cleaned"
 
 # ============================================================================
+# Playwright E2E Tests (Nylas Air Web UI)
+# ============================================================================
+# E2E tests using Playwright for the Nylas Air web interface
+# Requires: npm install (in tests/ directory)
+# The server is started automatically by Playwright config
+
+test-e2e: test-playwright
+
+test-playwright:
+	@echo "=== Running Playwright E2E Tests ==="
+	@command -v npm >/dev/null 2>&1 || { \
+		echo "ERROR: npm not installed"; \
+		echo "Install Node.js and npm first"; \
+		exit 1; \
+	}
+	@echo "Building latest binary..."
+	@$(MAKE) --no-print-directory build
+	@echo ""
+	@echo "Installing Playwright dependencies..."
+	@cd tests && npm install
+	@echo ""
+	@echo "Running E2E tests..."
+	@cd tests && npx playwright test
+	@echo ""
+	@echo "✓ Playwright E2E tests complete!"
+	@echo "  Report: tests/playwright-report/index.html"
+
+test-playwright-ui:
+	@echo "=== Running Playwright E2E Tests (UI Mode) ==="
+	@$(MAKE) --no-print-directory build
+	@cd tests && npm install
+	@cd tests && npx playwright test --ui
+
+test-playwright-headed:
+	@echo "=== Running Playwright E2E Tests (Headed) ==="
+	@$(MAKE) --no-print-directory build
+	@cd tests && npm install
+	@cd tests && npx playwright test --headed
+
+# ============================================================================
 # Security Targets
 # ============================================================================
 security:
@@ -296,23 +336,21 @@ check-context:
 	@echo "📊 Context Size Report"
 	@echo "======================"
 	@echo ""
-	@echo "Auto-loaded files (excluding FAQ, EXAMPLES, TROUBLESHOOTING, INDEX per .claudeignore):"
-	@ls -lh CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/MCP.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
+	@echo "Auto-loaded files:"
+	@ls -lh CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
 	@echo ""
-	@TOTAL=$$(ls -l CLAUDE.md .claude/rules/*.md docs/AI.md docs/ARCHITECTURE.md docs/COMMANDS.md docs/DEVELOPMENT.md docs/MCP.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
-	TIMEZONE=$$(ls -l docs/TIMEZONE.md 2>/dev/null | awk '{print int($$5/1024)}'); \
-	echo "Total auto-loaded context: $${TOTAL}KB (~$$((TOTAL / 4)) tokens)"; \
-	echo "TIMEZONE.md: $${TIMEZONE}KB"; \
+	@echo "On-demand files (excluded from auto-load):"
+	@ls -lh docs/COMMANDS.md docs/MCP.md docs/AI.md docs/ARCHITECTURE.md 2>/dev/null | awk '{print $$5, $$9}'
+	@echo ""
+	@TOTAL=$$(ls -l CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	ONDEMAND=$$(ls -l docs/COMMANDS.md docs/MCP.md docs/AI.md docs/ARCHITECTURE.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	echo "Auto-loaded context: $${TOTAL}KB (~$$((TOTAL / 4)) tokens)"; \
+	echo "On-demand available: $${ONDEMAND}KB"; \
 	echo ""; \
-	if [ $$TOTAL -gt 60 ]; then \
-		echo "⚠️  Context exceeds 60KB budget (currently $${TOTAL}KB)"; \
+	if [ $$TOTAL -gt 50 ]; then \
+		echo "⚠️  Context exceeds 50KB budget (currently $${TOTAL}KB)"; \
 	else \
-		echo "✅ Context within 60KB budget ($${TOTAL}KB)"; \
-	fi; \
-	if [ $$TIMEZONE -gt 5 ]; then \
-		echo "⚠️  TIMEZONE.md exceeds 5KB target (currently $${TIMEZONE}KB)"; \
-	else \
-		echo "✅ TIMEZONE.md within 5KB target ($${TIMEZONE}KB)"; \
+		echo "✅ Context within 50KB budget ($${TOTAL}KB)"; \
 	fi
 
 clean:

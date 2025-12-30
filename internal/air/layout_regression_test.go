@@ -8,7 +8,7 @@ import (
 )
 
 // TestEmailListNoMaxHeightConstraint is a regression test to ensure that the
-// email list is not constrained by the accessibility.css [role="listbox"] rule.
+// email list is not constrained by the accessibility-aria.css [role="listbox"] rule.
 //
 // Bug history: The email list had role="listbox" for accessibility, but the
 // generic [role="listbox"] selector in accessibility.css had max-height: 300px,
@@ -19,19 +19,19 @@ import (
 func TestEmailListNoMaxHeightConstraint(t *testing.T) {
 	t.Parallel()
 
-	// Read the accessibility.css file
-	cssPath := filepath.Join("static", "css", "accessibility.css")
+	// Read the accessibility-aria.css file (ARIA roles are defined here)
+	cssPath := filepath.Join("static", "css", "accessibility-aria.css")
 	// #nosec G304 -- test reading project CSS file, path is hardcoded
 	content, err := os.ReadFile(cssPath)
 	if err != nil {
-		t.Fatalf("Failed to read accessibility.css: %v", err)
+		t.Fatalf("Failed to read accessibility-aria.css: %v", err)
 	}
 
 	cssContent := string(content)
 
 	// Verify that the [role="listbox"] selector excludes .email-list
 	if !strings.Contains(cssContent, `[role="listbox"]:not(.email-list)`) {
-		t.Error("accessibility.css must use [role=\"listbox\"]:not(.email-list) to exclude email list from max-height constraint")
+		t.Error("accessibility-aria.css must use [role=\"listbox\"]:not(.email-list) to exclude email list from max-height constraint")
 	}
 
 	// Verify the old broken selector is not present
@@ -69,25 +69,25 @@ func TestEmailListContainerUsesGrid(t *testing.T) {
 func TestEmailViewUsesGrid(t *testing.T) {
 	t.Parallel()
 
-	// Read the calendar.css file (where email-view.active is defined)
-	cssPath := filepath.Join("static", "css", "calendar.css")
+	// Read the calendar-grid.css file (where email-view.active is defined)
+	cssPath := filepath.Join("static", "css", "calendar-grid.css")
 	// #nosec G304 -- test reading project CSS file, path is hardcoded
 	content, err := os.ReadFile(cssPath)
 	if err != nil {
-		t.Fatalf("Failed to read calendar.css: %v", err)
+		t.Fatalf("Failed to read calendar-grid.css: %v", err)
 	}
 
 	cssContent := string(content)
 
 	// Verify .email-view.active uses CSS Grid
 	if !strings.Contains(cssContent, ".email-view.active") {
-		t.Error("calendar.css must define .email-view.active")
+		t.Error("calendar-grid.css must define .email-view.active")
 	}
 
 	// Check for grid layout (need to find the rule and verify it has display: grid)
 	emailViewActiveIndex := strings.Index(cssContent, ".email-view.active")
 	if emailViewActiveIndex == -1 {
-		t.Fatal("Could not find .email-view.active in calendar.css")
+		t.Fatal("Could not find .email-view.active in calendar-grid.css")
 	}
 
 	// Get the next 500 characters after .email-view.active to check for grid properties

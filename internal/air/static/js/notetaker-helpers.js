@@ -175,4 +175,8 @@ getProviderSVG(provider) {
 
 /**
  * Render the notetaker list as cards
+ */
+renderNotetakerCards() {
+    this.renderNotetakers();
+}
 });

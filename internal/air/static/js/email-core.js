@@ -31,8 +31,8 @@ const EmailListManager = {
         cacheDuration: 60000
     },
 
-    pendingOperations: new Map()
-};
+    pendingOperations: new Map(),
+
     async init() {
         // Set up event listeners first (UI is ready immediately)
         this.setupEventListeners();
@@ -133,3 +133,28 @@ const EmailListManager = {
     // Update counts on filter tabs
     updateFilterCounts() {
         const counts = {
+            all: this.emails.length,
+            vip: this.emails.filter(e => this.isVIP(e)).length,
+            unread: this.emails.filter(e => e.unread).length
+        };
+
+        // Update DOM
+        const tabs = document.querySelectorAll('.filter-tab');
+        tabs.forEach(tab => {
+            const filter = tab.dataset.filter || tab.textContent.toLowerCase().trim();
+            const count = counts[filter];
+            let countBadge = tab.querySelector('.filter-count');
+
+            if (count > 0 && filter !== 'all') {
+                if (!countBadge) {
+                    countBadge = document.createElement('span');
+                    countBadge.className = 'filter-count';
+                    tab.appendChild(countBadge);
+                }
+                countBadge.textContent = count > 99 ? '99+' : count;
+            } else if (countBadge) {
+                countBadge.remove();
+            }
+        });
+    }
+};

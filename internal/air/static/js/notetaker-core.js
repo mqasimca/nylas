@@ -6,9 +6,9 @@ const NotetakerModule = {
     selectedNotetaker: null,
     currentFilter: 'past',
     currentProvider: null,
-    isLoading: false
-};
-init() {
+    isLoading: false,
+
+    init() {
     this.setupEventListeners();
     this.setupJoinTimeToggle();
     console.log('%c🎙️ Notetaker module loaded', 'color: #8b5cf6;');
@@ -210,3 +210,64 @@ if (document.readyState === 'loading') {
 
 /**
  * Filter notetakers by past/upcoming
+ */
+function filterNotetakers(filter) {
+    NotetakerModule.currentFilter = filter;
+    NotetakerModule.renderNotetakers();
+
+    // Update active state in sidebar
+    document.querySelectorAll('.folder-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.textContent.toLowerCase().includes(filter)) {
+            item.classList.add('active');
+        }
+    });
+}
+
+/**
+ * Open join meeting modal
+ */
+function openJoinMeetingModal() {
+    const modal = document.getElementById('joinMeetingModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+/**
+ * Close join meeting modal
+ */
+function closeJoinMeetingModal() {
+    const modal = document.getElementById('joinMeetingModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.style.display = 'none', 200);
+    }
+}
+
+/**
+ * Submit join meeting form
+ */
+function submitJoinMeeting() {
+    const linkInput = document.getElementById('meetingLinkInput');
+    const joinTimeRadio = document.querySelector('input[name="joinTime"]:checked');
+    const scheduledTimeInput = document.getElementById('scheduledTimeInput');
+
+    if (!linkInput || !linkInput.value) {
+        NotetakerModule.showNotification('Please enter a meeting link', 'error');
+        return;
+    }
+
+    let joinTime = null;
+    if (joinTimeRadio && joinTimeRadio.value === 'scheduled' && scheduledTimeInput && scheduledTimeInput.value) {
+        joinTime = new Date(scheduledTimeInput.value).getTime() / 1000;
+    }
+
+    NotetakerModule.joinMeeting(linkInput.value, joinTime);
+    closeJoinMeetingModal();
+
+    // Clear the form
+    if (linkInput) linkInput.value = '';
+    if (scheduledTimeInput) scheduledTimeInput.value = '';
+}
