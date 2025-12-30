@@ -269,13 +269,13 @@ func (d *Dashboard) View() tea.View {
 		label string
 		desc  string
 	}{
-		{"a", "\uf0e0", ":a", "Air", "Email messages"},       // nf-fa-envelope
-		{"e", "\uf073", ":e", "Events", "Calendar events"},   // nf-fa-calendar
-		{"c", "\uf0c0", ":c", "Contacts", "Contacts"},        // nf-fa-users
-		{"w", "\uf0e8", ":w", "Webhooks", "Webhooks"},        // nf-fa-sitemap
-		{"d", "\uf188", ":d", "Debug", "Debug panel"},        // nf-fa-bug
-		{"s", "\uf013", ":s", "Settings", "Settings"},        // nf-fa-cog
-		{"?", "\uf059", ":?", "Help", "Help & shortcuts"},    // nf-fa-question_circle
+		{"a", "\uf0e0", ":a", "Air", "Email messages"},     // nf-fa-envelope
+		{"e", "\uf073", ":e", "Events", "Calendar events"}, // nf-fa-calendar
+		{"c", "\uf0c0", ":c", "Contacts", "Contacts"},      // nf-fa-users
+		{"w", "\uf0e8", ":w", "Webhooks", "Webhooks"},      // nf-fa-sitemap
+		{"d", "\uf188", ":d", "Debug", "Debug panel"},      // nf-fa-bug
+		{"s", "\uf013", ":s", "Settings", "Settings"},      // nf-fa-cog
+		{"?", "\uf059", ":?", "Help", "Help & shortcuts"},  // nf-fa-question_circle
 	}
 
 	// Key badge style (nice button)

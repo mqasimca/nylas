@@ -248,7 +248,7 @@ func TestLoadConfig_InvalidJSON(t *testing.T) {
 
 	// Write invalid JSON
 	configPath := filepath.Join(configDir, "tui.json")
-	if err := os.WriteFile(configPath, []byte("{invalid json"), 0644); err != nil {
+	if err := os.WriteFile(configPath, []byte("{invalid json"), 0600); err != nil {
 		t.Fatalf("failed to write invalid config: %v", err)
 	}
 
@@ -292,7 +292,7 @@ func TestLoadConfig_FilePermissionError(t *testing.T) {
 	if err := os.WriteFile(configPath, []byte("{}"), 0000); err != nil {
 		t.Fatalf("failed to write config: %v", err)
 	}
-	defer func() { _ = os.Chmod(configPath, 0644) }() // Cleanup
+	defer func() { _ = os.Chmod(configPath, 0600) }() // Cleanup
 
 	// Load config should handle permission error gracefully
 	config, err := LoadConfig()

@@ -165,13 +165,13 @@ func resolveFolderName(ctx context.Context, client ports.NylasClient, grantID, f
 
 	// Common folder name mappings
 	nameAliases := map[string][]string{
-		"inbox":    {"inbox"},
-		"sent":     {"sent", "sent items", "sent mail"},
-		"drafts":   {"drafts", "draft"},
-		"trash":    {"trash", "deleted items", "deleted"},
-		"spam":     {"spam", "junk", "junk email"},
-		"archive":  {"archive", "all mail"},
-		"outbox":   {"outbox"},
+		"inbox":     {"inbox"},
+		"sent":      {"sent", "sent items", "sent mail"},
+		"drafts":    {"drafts", "draft"},
+		"trash":     {"trash", "deleted items", "deleted"},
+		"spam":      {"spam", "junk", "junk email"},
+		"archive":   {"archive", "all mail"},
+		"outbox":    {"outbox"},
 		"scheduled": {"scheduled"},
 	}
 
