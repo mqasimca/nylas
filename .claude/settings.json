@@ -67,7 +67,13 @@
       "WebFetch(domain:cli.nylas.com)",
       "Bash(rm -rf ~/.cache/go-build*)",
       "Bash(rm -rf ~/go/pkg/mod*)",
-      "Bash(go clean:*)"
+      "Bash(go clean:*)",
+      "Bash(tree:*)",
+      "Bash(echo:*)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:www.anthropic.com)",
+      "WebFetch(domain:platform.claude.com)",
+      "WebFetch(domain:github.com/anthropics)"
     ],
     "deny": [
       "Bash(git push:*)",
@@ -123,17 +129,6 @@
     ]
   },
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -q 'git commit'; then echo '🔒 Running post-commit security scan...' && make security; fi"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -145,6 +140,35 @@
           {
             "type": "command",
             "command": "if echo \"$TOOL_INPUT\" | grep -q 'git commit'; then git diff --cached | grep -iE '(api_key|password|secret|token|nyk_v0)' && echo '⛔ BLOCKED: Possible secret in commit' && exit 2 || exit 0; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/file-size-check.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT\" | grep -q 'git commit'; then echo '🔒 Running post-commit security scan...' && make security; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format.sh"
           }
         ]
       }
