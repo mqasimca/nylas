@@ -308,6 +308,8 @@ Hooks run automatically to enforce quality:
 |------|---------|---------|
 | `quality-gate.sh` | Stop | Blocks if Go code fails fmt/vet/lint/tests |
 | `context-injector.sh` | UserPromptSubmit | Injects context reminders |
+| `file-size-check.sh` | PreToolUse (Write) | Blocks Go files >600 lines, warns >500 |
+| `auto-format.sh` | PostToolUse (Edit) | Auto-runs gofmt on edited Go files |
 
 **Full hook docs:** `.claude/HOOKS-CONFIG.md`
 

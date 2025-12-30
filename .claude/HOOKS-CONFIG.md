@@ -12,6 +12,8 @@ This document explains how to enable all the custom hooks created for this proje
 | subagent-review.sh | `.claude/hooks/subagent-review.sh` | SubagentStop | Blocks if subagent finds critical issues |
 | pre-compact.sh | `.claude/hooks/pre-compact.sh` | PreCompact | Warns before context compaction |
 | context-injector.sh | `.claude/hooks/context-injector.sh` | UserPromptSubmit | Injects contextual reminders |
+| file-size-check.sh | `.claude/hooks/file-size-check.sh` | PreToolUse (Write) | Blocks Go files >600 lines, warns >500 |
+| auto-format.sh | `.claude/hooks/auto-format.sh` | PostToolUse (Edit) | Auto-runs gofmt on edited Go files |
 
 ---
 
@@ -34,10 +36,7 @@ Add to your Claude Code `settings.json`:
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/quality-gate.sh"
-          }
+          { "type": "command", "command": ".claude/hooks/quality-gate.sh" }
         ]
       }
     ],
@@ -45,10 +44,7 @@ Add to your Claude Code `settings.json`:
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/subagent-review.sh"
-          }
+          { "type": "command", "command": ".claude/hooks/subagent-review.sh" }
         ]
       }
     ],
@@ -56,10 +52,7 @@ Add to your Claude Code `settings.json`:
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-compact.sh"
-          }
+          { "type": "command", "command": ".claude/hooks/pre-compact.sh" }
         ]
       }
     ],
@@ -67,10 +60,23 @@ Add to your Claude Code `settings.json`:
       {
         "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/context-injector.sh"
-          }
+          { "type": "command", "command": ".claude/hooks/context-injector.sh" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/file-size-check.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/auto-format.sh" }
         ]
       }
     ]
@@ -80,58 +86,7 @@ Add to your Claude Code `settings.json`:
 
 ### Option 3: Project-level .claude/settings.json
 
-Create `.claude/settings.json` in your project root:
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/quality-gate.sh"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/subagent-review.sh"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-compact.sh"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/context-injector.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+Create `.claude/settings.json` in your project root (same as Option 2).
 
 ---
 
@@ -192,6 +147,31 @@ Create `.claude/settings.json` in your project root:
 
 **Never blocks:** Always exits 0
 
+### file-size-check.sh (PreToolUse Hook for Write)
+
+**Purpose:** Enforces file size limits before writing Go files.
+
+**What it checks:**
+- Reads `TOOL_INPUT` JSON for `file_path` and `content`
+- Only applies to `.go` files
+- Counts lines in content being written
+
+**When it blocks:**
+- File would exceed 600 lines → Exit 2 (blocked)
+- File would exceed 500 lines → Warning only (exit 0)
+- Non-Go files → Always passes
+
+### auto-format.sh (PostToolUse Hook for Edit)
+
+**Purpose:** Automatically formats Go files after edits.
+
+**What it does:**
+- Reads `TOOL_INPUT` JSON for `file_path`
+- Only applies to `.go` files
+- Runs `gofmt -w` on the edited file
+
+**Never blocks:** Always exits 0
+
 ---
 
 ## Testing Hooks
@@ -224,6 +204,28 @@ CLAUDE_USER_PROMPT="write a test for this" bash .claude/hooks/context-injector.s
 
 # Test security context
 CLAUDE_USER_PROMPT="add authentication" bash .claude/hooks/context-injector.sh
+```
+
+### Test file-size-check.sh
+
+```bash
+# Should pass (small file)
+TOOL_INPUT='{"file_path":"test.go","content":"package main\n"}' bash .claude/hooks/file-size-check.sh
+
+# Should warn (>500 lines)
+TOOL_INPUT='{"file_path":"test.go","content":"'"$(printf 'line\n%.0s' {1..510})"'"}' bash .claude/hooks/file-size-check.sh
+
+# Should block (>600 lines)
+TOOL_INPUT='{"file_path":"test.go","content":"'"$(printf 'line\n%.0s' {1..650})"'"}' bash .claude/hooks/file-size-check.sh
+```
+
+### Test auto-format.sh
+
+```bash
+# Create test file and format
+echo 'package main; func main() {}' > /tmp/test.go
+TOOL_INPUT='{"file_path":"/tmp/test.go"}' bash .claude/hooks/auto-format.sh
+cat /tmp/test.go  # Should be formatted
 ```
 
 ---
