@@ -26,7 +26,7 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 **⚠️ CRITICAL: Enforce file size limits. Files must be ≤500 lines (ideal) or ≤600 lines (max).**
 
-**Details:** See `.claude/rules/linting.md`, `.claude/rules/go-best-practices.md`, `.claude/rules/file-size-limits.md`
+**Details:** See `.claude/rules/go-quality.md`, `.claude/rules/file-size-limits.md`
 
 ### Test & Doc Requirements:
 | Change | Unit Test | Integration Test | Update Docs |
@@ -180,7 +180,7 @@ make test-vhs-clean            # Clean test outputs
 7. Tests: `internal/cli/integration/<feature>_test.go`
 8. Docs: `docs/COMMANDS.md` - Add examples
 
-**Detailed guide:** Use `/project:add-feature` skill
+**Detailed guide:** Use `/add-command` skill
 
 ---
 
@@ -200,7 +200,7 @@ make test-vhs-clean            # Clean test outputs
 
 **Before writing Go code:** Check `go.dev/ref/spec` using WebSearch
 
-**Complete rules:** `.claude/rules/go-best-practices.md`
+**Complete rules:** `.claude/rules/go-quality.md`
 
 ---
 
@@ -245,17 +245,37 @@ make test-cleanup                # Clean up test resources
 
 **Details:** `.claude/rules/testing.md`
 
+**Shared test patterns:** `.claude/shared/patterns/`
+
+---
+
+## Quality Hooks
+
+Hooks run automatically to enforce quality:
+
+| Hook | Trigger | Purpose |
+|------|---------|---------|
+| `quality-gate.sh` | Stop | Blocks if Go code fails fmt/vet/lint/tests |
+| `context-injector.sh` | UserPromptSubmit | Injects context reminders |
+
+**Full hook docs:** `.claude/HOOKS-CONFIG.md`
+
 ---
 
 ## Useful Commands
 
 | Command | What It Does |
 |---------|--------------|
-| `/clear` | Reset context |
-| `/project:add-feature` | Add new feature workflow |
-| `/project:fix-bug` | Bug fix workflow |
-| `/project:review-pr` | Code review |
-| `/project:security-scan` | Security audit |
+| `/session-start` | Load context from previous sessions |
+| `/add-command` | Add new CLI command |
+| `/generate-tests` | Generate tests for code |
+| `/fix-build` | Fix build errors |
+| `/run-tests` | Run unit/integration tests |
+| `/security-scan` | Security audit |
+| `/correct "desc"` | Capture mistake for learning |
+| `/diary` | Save session learnings |
+
+**Full command list:** See `CLAUDE-QUICKSTART.md`
 
 ---
 
@@ -334,3 +354,72 @@ make test-coverage
 3. Check `internal/cli/<feature>/helpers.go` - CLI helpers
 
 **API:** https://developer.nylas.com/docs/api/v3/
+
+---
+
+## LEARNINGS (Self-Updating)
+
+> **When Claude makes a mistake, use:** "Reflect on this mistake. Abstract and generalize the learning. Write it to CLAUDE.md."
+
+This section captures lessons learned from mistakes. Claude updates this section when errors are caught.
+
+### Project-Specific Gotchas
+- Playwright selectors: ALWAYS use semantic selectors (getByRole > getByText > getByLabel > getByTestId), NEVER CSS/XPath
+- Go tests: ALWAYS use table-driven tests with t.Run() for multiple scenarios
+- Air handlers: ALWAYS return after error responses (prevents writing to closed response)
+- Integration tests: ALWAYS use acquireRateLimit(t) before API calls in parallel tests
+- Frontend JS: ALWAYS use textContent for user data, NEVER innerHTML (XSS prevention)
+
+### Non-Obvious Workflows
+- Progressive disclosure: Keep main skill files under 100 lines, use references/ for details
+- Self-learning: Use "Reflect → Abstract → Generalize → Write" when mistakes occur
+- Session continuity: Read claude-progress.txt at session start, update at session end
+- Hook debugging: Check ~/.claude/logs/ for hook execution errors
+
+### Time-Wasting Bugs Fixed
+- Go build cache corruption: Fix with `sudo rm -rf ~/.cache/go-build ~/go/pkg/mod && go clean -cache`
+- Playwright MCP not connecting: Run `claude mcp add playwright` to install plugin
+- Quality gate timeout: Add `timeout 120` before golangci-lint in hooks
+
+### Curation Rules
+- Maximum 30 items per category
+- Remove obsolete entries when adding new
+- One imperative line per item
+- Monthly review to prune stale advice
+
+---
+
+## META - MAINTAINING THIS DOCUMENT
+
+> This section governs how Claude updates CLAUDE.md itself.
+
+### When to Update CLAUDE.md
+
+| Trigger | Action |
+|---------|--------|
+| Mistake caught by user | Add to LEARNINGS with abstracted pattern |
+| New workflow discovered | Add to Quick Reference if reusable |
+| Rule violation | Strengthen rule with concrete example |
+| Obsolete workaround | Remove from LEARNINGS |
+
+### Writing Principles
+
+**Core (Always Apply):**
+- Use absolute directives ("ALWAYS"/"NEVER") for critical rules
+- Lead with rationale before solution (1-3 bullets max)
+- Be concrete with actual commands/code examples
+- One clear point per bullet
+- Use bullets over paragraphs
+
+**Anti-Bloat Rules:**
+- Don't add "Warning Signs" to obvious rules
+- Don't show bad examples for trivial mistakes
+- Don't create decision trees for binary choices
+- Remove entries that haven't been relevant in 30 days
+
+### Process for Adding Rules
+
+1. Add new rule to appropriate section
+2. Verify rule doesn't duplicate existing guidance
+3. Test that rule is actionable (not vague)
+4. Keep entry under 2 lines

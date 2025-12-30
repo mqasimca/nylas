@@ -1,10 +1,26 @@
+---
+name: security-scan
+description: Perform security analysis - scan for secrets, vulnerabilities, and security issues
+allowed-tools: Read, Grep, Glob, Bash(grep:*), Bash(make security:*), Bash(golangci-lint:*)
+---
+
 # Security Scan
 
 Perform a comprehensive security analysis of the codebase.
 
-**See also:** `.claude/agents/security-auditor.md` for deep security analysis agent.
-
 Target: $ARGUMENTS (leave empty for full scan)
+
+---
+
+## Threat Model
+
+This CLI:
+- Stores API credentials (should use system keyring)
+- Makes HTTP requests to Nylas API
+- Reads/writes local files
+- Executes based on user input
+
+---
 
 ## Instructions
 

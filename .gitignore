@@ -26,6 +26,9 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/*.local.*
 .claude/*/*.local.*
+
+# Session-specific progress tracking (personal, not shared)
+claude-progress.txt
 # Build artifacts
 dist/
 

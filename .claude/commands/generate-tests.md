@@ -1,3 +1,9 @@
+---
+name: generate-tests
+description: Generate comprehensive unit and integration tests for Go code
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(go test:*), Bash(go build:*)
+---
+
 # Generate Tests
 
 Generate comprehensive unit and integration tests for Go code.

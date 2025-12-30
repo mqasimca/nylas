@@ -1,3 +1,9 @@
+---
+name: fix-build
+description: Diagnose and fix Go build errors
+allowed-tools: Read, Edit, Write, Grep, Glob, Bash(go build:*), Bash(go vet:*)
+---
+
 # Fix Build Errors
 
 Diagnose and fix build errors in the nylas CLI.

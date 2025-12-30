@@ -2,45 +2,72 @@
 
 Create a new CLI command following the nylas CLI patterns and hexagonal architecture.
 
-**Note: This CLI uses Nylas v3 API ONLY.** Reference: https://developer.nylas.com/docs/api/v3/
+**API Reference:** https://developer.nylas.com/docs/api/v3/
 
-## Instructions
+---
 
-1. First, ask me for:
-   - Command name (e.g., "resource", "attachment")
-   - Parent command if subcommand (e.g., "email" for "email attachments")
-   - What operations it needs (list, show, create, update, delete)
-   - Brief description of what it does
+## Quick Start
 
-2. Then create the following files in order:
+1. Ask for: command name, parent command, operations needed (list, show, create, update, delete)
+2. Follow patterns in `references/` directory
+3. Run `make ci` to verify
 
-### If new domain types needed:
-- `internal/domain/{resource}.go` - Domain types
-- Update `internal/domain/domain_test.go` - Add tests
+---
 
-### If new API methods needed:
-- Update `internal/ports/nylas.go` - Add interface methods
-- `internal/adapters/nylas/{resource}.go` - Implement methods
-- Update `internal/adapters/nylas/mock.go` - Add mock methods
+## Reference Files
 
-### CLI package:
-- `internal/cli/{resource}/{resource}.go` - Root command with New{Resource}Cmd()
-- `internal/cli/{resource}/list.go` - newListCmd() if needed
-- `internal/cli/{resource}/show.go` - newShowCmd() if needed
-- `internal/cli/{resource}/create.go` - newCreateCmd() if needed
-- `internal/cli/{resource}/helpers.go` - getClient(), getGrantID(), createContext()
-- `internal/cli/{resource}/{resource}_test.go` - Unit tests
+| File | When to Read |
+|------|--------------|
+| `references/domain-patterns.md` | Creating new domain types |
+| `references/adapter-patterns.md` | Implementing API methods |
+| `references/cli-patterns.md` | Building CLI commands |
 
-### Registration:
+**Read reference files ONLY when working on that specific layer.**
+
+---
+
+## Steps
+
+### 1. Domain Layer (if new types needed)
+- Create `internal/domain/{resource}.go`
+- Add tests to `internal/domain/domain_test_basic.go`
+
+### 2. Adapter Layer (if new API methods needed)
+- Update `internal/ports/nylas.go` with interface methods
+- Create `internal/adapters/nylas/{resource}.go`
+- Update `internal/adapters/nylas/mock_{resource}.go`
+
+### 3. CLI Layer
+- Create `internal/cli/{resource}/` directory
+- Add: `{resource}.go`, `list.go`, `show.go`, `create.go`, `helpers.go`
+- Add tests: `{resource}_test.go`
+
+### 4. Registration
 - Update `cmd/nylas/main.go` to add the command
 
-3. Follow these patterns:
-   - Use cobra command structure from existing commands
-   - Support --format flag (table, json, yaml) for list/show
-   - Use context with 30s timeout for API calls
-   - Use spinner for long operations
-   - Provide helpful error messages with suggestions
+### 5. Verify
+```bash
+make ci
+```
 
-4. After creating, run:
-   - `go build ./...` to verify compilation
-   - `go test ./internal/cli/{resource}/...` to run tests
+---
+
+## Common Patterns
+
+- **Context:** 30s timeout for API calls
+- **Format flag:** `--format` with table, json, yaml
+- **Spinner:** Use pterm spinner for long operations
+- **Errors:** Wrap with `fmt.Errorf("context: %w", err)`
+
+---
+
+## Checklist
+
+- [ ] Domain types with JSON tags
+- [ ] Port interface updated
+- [ ] Adapter with all CRUD methods
+- [ ] Mock implementation
+- [ ] CLI with all subcommands
+- [ ] Tests passing
+- [ ] Registered in main.go
+- [ ] `make ci` passes

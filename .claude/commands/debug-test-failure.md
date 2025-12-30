@@ -1,3 +1,9 @@
+---
+name: debug-test-failure
+description: Analyze test failures and suggest fixes
+allowed-tools: Read, Edit, Grep, Glob, Bash(go test:*), Bash(go build:*)
+---
+
 # Debug Test Failure
 
 Analyze test failures and suggest fixes.
