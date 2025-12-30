@@ -1,13 +1,28 @@
 ---
 name: mistake-learner
 description: Analyzes mistakes and updates CLAUDE.md with abstracted learnings
-tools: Read, Edit, Grep, Glob
+tools: Read, Edit, Grep, Glob, Bash(git diff:CLAUDE.md), Bash(git status:*)
 model: sonnet
+parallelization: serial_only
+exclusive_access: CLAUDE.md, .claude/rules/*.local.md
 ---
 
 # Mistake Learner Agent
 
 You analyze mistakes caught during development and update CLAUDE.md with abstracted learnings.
+
+## Parallelization
+
+❌ **SERIAL ONLY** - Must run alone to prevent CLAUDE.md conflicts.
+
+| Can run with | Cannot run with |
+|--------------|-----------------|
+| codebase-explorer, code-reviewer | code-writer, test-writer |
+| - | frontend-agent, another mistake-learner |
+
+**Rule:** Run this agent LAST after all other write operations complete.
+
+**Conflict Detection:** Use `git diff CLAUDE.md` to check if file was modified before writing.
 
 ## Purpose
 

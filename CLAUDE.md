@@ -119,15 +119,42 @@ internal/air/static/css/
 
 **Server Core:** `server*.go` - Split by responsibility (lifecycle, stores, sync, offline, converters, templates)
 
-**Handler Groups:** All handlers follow `handlers_<feature>*.go` pattern, split by responsibility:
+**Handler Groups:** All handlers follow `handlers_<feature>*.go` pattern (61 files), split by responsibility:
   - `handlers_email*.go`, `handlers_drafts.go` - Email operations
   - `handlers_calendar*.go`, `handlers_events.go` - Calendar/events
-  - `handlers_contacts*.go` - Contact CRUD, search, helpers
-  - `handlers_ai_*.go` - AI features (summarize, compose, thread, config)
-  - `handlers_*productivity*.go` - Productivity (scheduled send, undo, templates, split inbox, snooze)
-  - `handlers_availability.go`, `handlers_bundles.go` - Other features
+  - `handlers_contacts*.go` (4 files) - Contact CRUD, search, helpers
+  - `handlers_ai_*.go` (6 files) - AI features (complete, config, smart, summarize, thread, types)
+  - `handlers_scheduled_send.go`, `handlers_undo_send.go` - Send scheduling
+  - `handlers_templates*.go` (2 files) - Email templates
+  - `handlers_snooze_*.go` (3 files) - Snooze (handlers, parser, types)
+  - `handlers_splitinbox_*.go` (3 files) - Split inbox (categorize, config, types)
+  - `handlers_reply_later.go` - Reply later feature
+  - `handlers_analytics.go` - Analytics tracking
+  - `handlers_focus_mode.go` - Focus mode
+  - `handlers_read_receipts.go` - Read receipts
+  - `handlers_screener.go` - Email screener
+  - `handlers_notetaker.go` - Notetaker feature
+  - `handlers_availability.go`, `handlers_bundles.go`, `handlers_cache.go`, `handlers_config.go` - Other features
 
 **Integration Tests:** `integration_*_test.go` - Split by feature (core, email, calendar, contacts, cache, ai, middleware, productivity, bundles)
+
+**CLI Commands (18 directories in internal/cli/):**
+| Directory | Files | Purpose |
+|-----------|-------|---------|
+| `admin/` | 6 | Applications, connectors, credentials, grants |
+| `ai/` | 6 | Budget, usage, config, clear_data |
+| `auth/` | 23 | Login, logout, add, remove, status, switch, whoami |
+| `calendar/` | 35 | Events, availability, conflicts, focus time, AI scheduling |
+| `common/` | 15 | Client, errors, format, logger, pagination, progress |
+| `contacts/` | 13 | CRUD, groups, photos, sync |
+| `demo/` | 18 | Interactive demos for all features |
+| `email/` | 19 | CRUD, AI, drafts, attachments, threads |
+| `integration/` | 48 | Integration tests split by feature |
+| `mcp/` | 7 | Install, serve, status, uninstall, assistants |
+| `notetaker/` | 8 | CRUD, media management |
+| `otp/` | 7 | OTP/SMS operations |
+| `scheduler/` | 6 | Bookings, configurations, pages |
+| `timezone/` | 10 | Convert, DST, find, info |
 
 **CLI pattern:**
 ```
@@ -140,18 +167,42 @@ internal/cli/<feature>/
   └── helpers.go      # Shared helpers
 ```
 
-**Nylas Adapter (refactored):**
-- `internal/adapters/nylas/messages.go` - Message operations
-- `internal/adapters/nylas/messages_send.go` - Send message helpers
+**Adapter Directories (11 in internal/adapters/):**
+| Adapter | Files | Purpose |
+|---------|-------|---------|
+| `ai/` | 18 | AI clients (Claude, OpenAI, Groq, Ollama), email analyzer, pattern learner |
+| `analytics/` | 14 | Focus optimizer, conflict resolver, meeting scorer |
+| `browser/` | 2 | Browser automation |
+| `config/` | 5 | Configuration validation |
+| `keyring/` | 6 | Credential storage (file, grants) |
+| `mcp/` | 7 | MCP proxy server |
+| `nylas/` | 85 | Nylas API client (main adapter) |
+| `oauth/` | 3 | OAuth server |
+| `tunnel/` | 2 | Cloudflare tunnel |
+| `utilities/` | 12 | Services (contacts, email, scheduling, timezone, webhook) |
+| `webhookserver/` | 2 | Webhook server |
+
+**Nylas Adapter (heavily refactored):**
+- `messages.go`, `messages_send.go` - Message operations
+- `calendars_*.go` (5 files) - Calendar operations (calendars, converters, events, types, virtual)
+- `demo/` subdir (16 files) - Demo client for screenshots
+- `mock_*.go` (16 files) - Split mock implementations
 
 **AI Adapter (refactored):**
-- `internal/adapters/ai/pattern_learner.go` - Pattern learning core
-- `internal/adapters/ai/pattern_learner_analysis.go` - Analysis methods
+- `*_client.go` - AI clients (base, claude, openai, groq, ollama)
+- `email_analyzer_core.go`, `email_analyzer_prompts.go` - Email analyzer
+- `pattern_learner.go`, `pattern_learner_analysis.go` - Pattern learning
+
+**Analytics Adapter (new):**
+- `focus_optimizer_*.go` (3 files) - Focus time optimization
+- `pattern_learner_*.go` (2 files) - Meeting pattern learning
+- `conflict_resolver.go`, `meeting_scorer.go` - Conflict detection
 
 **TUI (Terminal UI):**
-- `internal/tui/` - tview-based TUI (commands, compose, views)
-- `internal/tui2/` - Bubble Tea TUI (models/, components/, styles/, state/)
+- `internal/tui/` - tview-based TUI (77 files: commands, compose, views)
+- `internal/tui2/` - Bubble Tea TUI (81+ files: models/, components/, styles/, state/, utils/)
 - `internal/tui2/vhs-tests/` - VHS visual testing (tapes/, output/)
+- **Themes:** Catppuccin, Cyberpunk, Dracula, Gruvbox, Nord, Tokyo Night
 
 **Switch between TUI engines:**
 ```bash
