@@ -1,15 +1,12 @@
 .PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean test-e2e test-e2e-air test-e2e-ui test-playwright test-playwright-air test-playwright-ui test-playwright-interactive test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
-# Disable parallel execution to prevent Go build cache corruption
-# Go's build cache is not safe for concurrent access (golang/go#43645)
+# Disable parallel Make execution - prevents Go build cache corruption on btrfs (CachyOS)
 .NOTPARALLEL:
 
 # ============================================================================
-# Tool Versions (Pinned for Reproducibility)
+# Tool Versions (use @latest for automatic updates)
 # ============================================================================
-GOLANGCI_LINT_VERSION := v2.7.2
-GOVULNCHECK_VERSION := v1.1.4
-GOSEC_VERSION := v2.22.1
+GOVULNCHECK_VERSION := latest
 
 # ============================================================================
 # Build Configuration
@@ -327,7 +324,7 @@ security:
 # ============================================================================
 # CI Targets
 # ============================================================================
-# Run all code quality checks (for local development and CI)
+# Primary CI target - Go tools already use all CPU cores internally
 ci: fmt vet lint test-unit test-race security vuln build
 	@echo ""
 	@echo "================================="
@@ -464,7 +461,7 @@ help:
 	@echo "  test-cleanup               - Clean up test resources"
 	@echo ""
 	@echo "CI (Granular):"
-	@echo "  ci                         - Quality checks only (no integration)"
+	@echo "  ci                         - All quality checks (no integration)"
 	@echo "                               (fmt, vet, lint, test-unit,"
 	@echo "                                test-race, security, vuln, build)"
 	@echo ""
