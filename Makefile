@@ -1,4 +1,4 @@
-.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean test-e2e test-playwright test-playwright-ui test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
+.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean test-e2e test-e2e-air test-e2e-ui test-playwright test-playwright-air test-playwright-ui test-playwright-interactive test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
 # ============================================================================
 # Tool Versions (Pinned for Reproducibility)
@@ -196,7 +196,8 @@ test-vhs:
 	@$(MAKE) --no-print-directory build
 	@echo ""
 	@echo "Running dashboard test..."
-	@cd internal/tui2/vhs-tests/tapes && vhs dashboard.tape
+	@vhs internal/tui2/vhs-tests/tapes/dashboard.tape
+	@mv -f *.png *.gif internal/tui2/vhs-tests/output/ 2>/dev/null || true
 	@echo "✓ Dashboard test complete - check internal/tui2/vhs-tests/output/"
 
 test-vhs-all:
@@ -210,17 +211,18 @@ test-vhs-all:
 	@$(MAKE) --no-print-directory build
 	@echo ""
 	@echo "Running splash screen test..."
-	@cd internal/tui2/vhs-tests/tapes && vhs splash.tape
+	@vhs internal/tui2/vhs-tests/tapes/splash.tape
 	@echo ""
 	@echo "Running dashboard test..."
-	@cd internal/tui2/vhs-tests/tapes && vhs dashboard.tape
+	@vhs internal/tui2/vhs-tests/tapes/dashboard.tape
 	@echo ""
 	@echo "Running navigation test..."
-	@cd internal/tui2/vhs-tests/tapes && vhs navigation.tape
+	@vhs internal/tui2/vhs-tests/tapes/navigation.tape
 	@echo ""
 	@echo "Running visual regression test..."
-	@cd internal/tui2/vhs-tests/tapes && vhs visual-regression.tape
+	@vhs internal/tui2/vhs-tests/tapes/visual-regression.tape
 	@echo ""
+	@mv -f *.png *.gif *.txt internal/tui2/vhs-tests/output/ 2>/dev/null || true
 	@echo "✓ All VHS tests complete!"
 	@echo "  Output: internal/tui2/vhs-tests/output/"
 	@ls -lh internal/tui2/vhs-tests/output/
@@ -231,16 +233,24 @@ test-vhs-clean:
 	@echo "✓ VHS output cleaned"
 
 # ============================================================================
-# Playwright E2E Tests (Nylas Air Web UI)
+# Playwright E2E Tests (Air + UI Web Interfaces)
 # ============================================================================
-# E2E tests using Playwright for the Nylas Air web interface
-# Requires: npm install (in tests/ directory)
-# The server is started automatically by Playwright config
+# E2E tests using Playwright for:
+# - Nylas Air: Modern web email client (http://localhost:7365)
+# - Nylas UI: Web-based CLI admin interface (http://localhost:7363)
+# Requires: npm (in tests/ directory)
 
+# Run all E2E tests (Air + UI)
 test-e2e: test-playwright
 
+# Run only Air (web email client) tests
+test-e2e-air: test-playwright-air
+
+# Run only UI (CLI admin interface) tests
+test-e2e-ui: test-playwright-ui
+
 test-playwright:
-	@echo "=== Running Playwright E2E Tests ==="
+	@echo "=== Running All Playwright E2E Tests (Air + UI) ==="
 	@command -v npm >/dev/null 2>&1 || { \
 		echo "ERROR: npm not installed"; \
 		echo "Install Node.js and npm first"; \
@@ -258,14 +268,36 @@ test-playwright:
 	@echo "✓ Playwright E2E tests complete!"
 	@echo "  Report: tests/playwright-report/index.html"
 
+test-playwright-air:
+	@echo "=== Running Playwright Air (Web Email Client) Tests ==="
+	@command -v npm >/dev/null 2>&1 || { \
+		echo "ERROR: npm not installed"; \
+		exit 1; \
+	}
+	@$(MAKE) --no-print-directory build
+	@cd tests && npm install
+	@cd tests && npx playwright test --project=air-chromium
+	@echo "✓ Air E2E tests complete!"
+
 test-playwright-ui:
-	@echo "=== Running Playwright E2E Tests (UI Mode) ==="
+	@echo "=== Running Playwright UI (CLI Admin Interface) Tests ==="
+	@command -v npm >/dev/null 2>&1 || { \
+		echo "ERROR: npm not installed"; \
+		exit 1; \
+	}
+	@$(MAKE) --no-print-directory build
+	@cd tests && npm install
+	@cd tests && npx playwright test --project=ui-chromium
+	@echo "✓ UI E2E tests complete!"
+
+test-playwright-interactive:
+	@echo "=== Running Playwright E2E Tests (Interactive Mode) ==="
 	@$(MAKE) --no-print-directory build
 	@cd tests && npm install
 	@cd tests && npx playwright test --ui
 
 test-playwright-headed:
-	@echo "=== Running Playwright E2E Tests (Headed) ==="
+	@echo "=== Running Playwright E2E Tests (Headed Browser) ==="
 	@$(MAKE) --no-print-directory build
 	@cd tests && npm install
 	@cd tests && npx playwright test --headed

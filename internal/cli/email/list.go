@@ -3,9 +3,11 @@ package email
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -65,9 +67,22 @@ Use --max to limit total messages when using --all.`,
 
 			// Default to INBOX unless --all-folders is set or specific folder is provided
 			if folder != "" {
-				params.In = []string{folder}
+				// Resolve folder name to ID if needed (for Microsoft accounts)
+				resolvedFolder, err := resolveFolderName(ctx, client, grantID, folder)
+				if err == nil && resolvedFolder != "" {
+					params.In = []string{resolvedFolder}
+				} else {
+					params.In = []string{folder}
+				}
 			} else if !allFolders {
-				params.In = []string{"INBOX"}
+				// Try to find inbox folder ID (works for both Google and Microsoft)
+				inboxID, err := resolveFolderName(ctx, client, grantID, "INBOX")
+				if err == nil && inboxID != "" {
+					params.In = []string{inboxID}
+				} else {
+					// Fallback to INBOX (works for Google)
+					params.In = []string{"INBOX"}
+				}
 			}
 
 			var messages []domain.Message
@@ -134,4 +149,64 @@ Use --max to limit total messages when using --all.`,
 	cmd.Flags().StringVar(&metadataPair, "metadata", "", "Filter by metadata (format: key:value, only key1-key5 supported)")
 
 	return cmd
+}
+
+// resolveFolderName looks up a folder by name and returns its ID.
+// This is needed for Microsoft accounts which use folder IDs, not names like "INBOX".
+// For Google accounts, this will just return the original name if no match is found.
+func resolveFolderName(ctx context.Context, client ports.NylasClient, grantID, folderName string) (string, error) {
+	folders, err := client.GetFolders(ctx, grantID)
+	if err != nil {
+		return "", err
+	}
+
+	// Normalize the search name
+	searchName := strings.ToLower(folderName)
+
+	// Common folder name mappings
+	nameAliases := map[string][]string{
+		"inbox":    {"inbox"},
+		"sent":     {"sent", "sent items", "sent mail"},
+		"drafts":   {"drafts", "draft"},
+		"trash":    {"trash", "deleted items", "deleted"},
+		"spam":     {"spam", "junk", "junk email"},
+		"archive":  {"archive", "all mail"},
+		"outbox":   {"outbox"},
+		"scheduled": {"scheduled"},
+	}
+
+	// Find matching aliases for the search name
+	var searchAliases []string
+	for key, aliases := range nameAliases {
+		if key == searchName || contains(aliases, searchName) {
+			searchAliases = aliases
+			break
+		}
+	}
+	if searchAliases == nil {
+		searchAliases = []string{searchName}
+	}
+
+	// Search for matching folder
+	for _, f := range folders {
+		folderNameLower := strings.ToLower(f.Name)
+		for _, alias := range searchAliases {
+			if folderNameLower == alias {
+				return f.ID, nil
+			}
+		}
+	}
+
+	// No match found - return empty (caller will use original name)
+	return "", nil
+}
+
+// contains checks if a slice contains a string.
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }

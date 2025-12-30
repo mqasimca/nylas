@@ -3,10 +3,10 @@ package models
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"charm.land/bubbles/v2/progress"
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/mqasimca/nylas/internal/tui2/state"
@@ -23,6 +23,7 @@ type SplashScreen struct {
 	global    *state.GlobalState
 	theme     *styles.Theme
 	progress  progress.Model
+	spinner   spinner.Model
 	percent   float64
 	startTime time.Time
 }
@@ -31,17 +32,23 @@ type SplashScreen struct {
 func NewSplash(global *state.GlobalState) *SplashScreen {
 	theme := styles.GetTheme(global.Theme)
 
-	// Create progress bar with gradient from primary to accent
+	// Create clean progress bar with gradient
 	prog := progress.New(
 		progress.WithColors(theme.Primary, theme.Accent),
-		progress.WithWidth(60),
+		progress.WithWidth(40),
 		progress.WithoutPercentage(),
 	)
+
+	// Create spinner for activity indication
+	sp := spinner.New()
+	sp.Spinner = spinner.Dot
+	sp.Style = lipgloss.NewStyle().Foreground(theme.Primary)
 
 	return &SplashScreen{
 		global:    global,
 		theme:     theme,
 		progress:  prog,
+		spinner:   sp,
 		percent:   0.0,
 		startTime: time.Now(),
 	}
@@ -52,6 +59,7 @@ func (s *SplashScreen) Init() tea.Cmd {
 	return tea.Batch(
 		tickCmd(),
 		s.progress.Init(),
+		s.spinner.Tick,
 	)
 }
 
@@ -88,6 +96,11 @@ func (s *SplashScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updatedProgress, cmd := s.progress.Update(msg)
 		s.progress = updatedProgress
 		return s, cmd
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		s.spinner, cmd = s.spinner.Update(msg)
+		return s, cmd
 	}
 
 	return s, nil
@@ -95,120 +108,73 @@ func (s *SplashScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (s *SplashScreen) View() tea.View {
-	var sections []string
-
-	// Calculate panel width first
-	panelWidth := 60
-	if s.global.WindowSize.Width < 70 {
+	// Calculate panel width
+	panelWidth := 50
+	if s.global.WindowSize.Width < 60 {
 		panelWidth = s.global.WindowSize.Width - 10
 	}
+	contentWidth := panelWidth - 6
 
-	// ✨ GLOSSY Logo with shimmer effect
+	var sections []string
+
+	// Clean logo
 	logoText := lipgloss.NewStyle().
 		Foreground(s.theme.Primary).
 		Bold(true).
 		Render(nylasLogo())
-
-	logo := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, logoText)
+	logo := lipgloss.PlaceHorizontal(contentWidth, lipgloss.Center, logoText)
 	sections = append(sections, logo)
-	sections = append(sections, "")
 
-	// Metallic subtitle with premium styling
-	subtitle := styles.MetallicText("Terminal Interface", s.theme)
+	// Subtitle - clean and simple
 	subtitleText := lipgloss.NewStyle().
 		Foreground(s.theme.Secondary).
-		Italic(true).
-		Render(subtitle)
-
-	subtitleStyled := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, subtitleText)
-	sections = append(sections, subtitleStyled)
-
-	// Tagline
-	taglineText := lipgloss.NewStyle().
-		Foreground(s.theme.Accent).
-		Render("Email & Calendar • Powered by Bubble Tea")
-
-	tagline := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, taglineText)
-	sections = append(sections, tagline)
-	sections = append(sections, "")
+		Render("Terminal Interface")
+	subtitle := lipgloss.PlaceHorizontal(contentWidth, lipgloss.Center, subtitleText)
+	sections = append(sections, subtitle)
 	sections = append(sections, "")
 
-	// Accent line separator
-	separatorLine := styles.AccentLine(s.theme, 50, "━")
-	separator := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, separatorLine)
+	// Simple separator
+	sepStyle := lipgloss.NewStyle().Foreground(s.theme.Dimmed.GetForeground())
+	separator := sepStyle.Render(styles.RepeatChar('─', contentWidth))
 	sections = append(sections, separator)
 	sections = append(sections, "")
 
-	// Progress bar with glow effect
+	// Progress bar - clean, no glow effects
 	progressView := s.progress.View()
-
-	// Add glow around progress bar
-	progressGlowText := lipgloss.NewStyle().
-		Foreground(s.theme.Primary).
-		Faint(true).
-		Render(strings.Repeat("▔", 40))
-	progressGlow := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, progressGlowText)
-
-	progressCentered := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, progressView)
-
-	progressBottomText := lipgloss.NewStyle().
-		Foreground(s.theme.Primary).
-		Faint(true).
-		Render(strings.Repeat("▁", 40))
-	progressBottom := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, progressBottomText)
-
-	sections = append(sections, progressGlow)
+	progressCentered := lipgloss.PlaceHorizontal(contentWidth, lipgloss.Center, progressView)
 	sections = append(sections, progressCentered)
-	sections = append(sections, progressBottom)
 	sections = append(sections, "")
 
-	// Loading text with animated dots and percentage
-	dots := strings.Repeat(".", (int(s.percent*3)%3)+1)
+	// Loading status with spinner and percentage
 	percentage := int(s.percent * 100)
+	spinnerView := s.spinner.View()
 
-	loadingText := lipgloss.NewStyle().
-		Foreground(s.theme.Info).
-		Bold(true).
-		Render(fmt.Sprintf("Loading%s %d%%", dots, percentage))
+	statusStyle := lipgloss.NewStyle().Foreground(s.theme.Foreground)
+	loadingText := statusStyle.Render(fmt.Sprintf("Initializing... %d%%", percentage))
 
-	loading := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, loadingText)
-	sections = append(sections, loading)
+	// Combine spinner and loading text
+	loadingLine := lipgloss.JoinHorizontal(lipgloss.Left, spinnerView, " ", loadingText)
+	loadingCentered := lipgloss.PlaceHorizontal(contentWidth, lipgloss.Center, loadingLine)
+	sections = append(sections, loadingCentered)
 	sections = append(sections, "")
 
-	// Premium hint with animation
-	hintTextStr := "⚡ Press any key to skip ⚡"
-	if int(s.percent*10)%2 == 0 {
-		hintTextStr = "✨ Press any key to skip ✨"
-	}
-
-	hintText := lipgloss.NewStyle().
-		Foreground(s.theme.Accent).
-		Italic(true).
-		Render(hintTextStr)
-
-	hint := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, hintText)
-	sections = append(sections, hint)
-	sections = append(sections, "")
-
-	// Version/credits
-	creditsText := lipgloss.NewStyle().
+	// Skip hint - subtle
+	hintStyle := lipgloss.NewStyle().
 		Foreground(s.theme.Dimmed.GetForeground()).
-		Faint(true).
-		Render("◆ Nylas CLI v2.0 ◆")
+		Italic(true)
+	hintText := hintStyle.Render("Press any key to skip")
+	hint := lipgloss.PlaceHorizontal(contentWidth, lipgloss.Center, hintText)
+	sections = append(sections, hint)
 
-	credits := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, creditsText)
-	sections = append(sections, credits)
-
-	// Join all sections (left-aligned within the panel)
+	// Join all sections
 	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
 
-	// Premium border
+	// Clean rounded border
 	bordered := lipgloss.NewStyle().
-		BorderStyle(lipgloss.ThickBorder()).
+		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(s.theme.Primary).
-		BorderBackground(lipgloss.Color("#0a0a0a")).
-		Background(lipgloss.Color("#0f0f0f")).
-		Padding(3, 4).
+		Background(lipgloss.Color("#0d0d0d")).
+		Padding(2, 3).
 		Width(panelWidth).
 		Render(content)
 

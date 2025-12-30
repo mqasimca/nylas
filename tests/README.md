@@ -1,6 +1,13 @@
-# Nylas Air E2E Testing Guide
+# Nylas E2E Testing Guide
 
-End-to-end testing for Nylas Air using Playwright.
+End-to-end testing for Nylas web interfaces using Playwright.
+
+## Test Targets
+
+| Command | Type | Port | Description |
+|---------|------|------|-------------|
+| `nylas air` | Web | 7365 | Modern web email client |
+| `nylas ui` | Web | 7363 | Web-based CLI admin interface |
 
 ## Prerequisites
 
@@ -18,216 +25,104 @@ npm install
 # Install Playwright browsers (first time only)
 npx playwright install chromium
 
-# Run all tests
-npm run test:e2e
+# Run all tests (Air + UI)
+npm test
 
-# Run tests with UI mode (interactive)
-npm run test:e2e:ui
+# Run Air tests only
+npm run test:air
 
-# Run tests for CI (generates HTML report)
-npm run test:e2e:ci
+# Run UI tests only
+npm run test:ui
 ```
 
-## Test Structure
+## Directory Structure
 
 ```
 tests/
-├── e2e/                    # Test spec files
-│   ├── smoke.spec.js       # Basic smoke tests
-│   ├── navigation.spec.js  # View switching tests
-│   ├── modals.spec.js      # Modal interaction tests
-│   └── keyboard.spec.js    # Keyboard shortcut tests
-├── fixtures/               # Mock data
-│   ├── mock-emails.json
-│   ├── mock-events.json
-│   └── mock-contacts.json
-├── helpers/                # Shared utilities
-│   ├── selectors.js        # Element selectors
-│   └── api-mocks.js        # API mocking utilities
-├── playwright.config.js    # Playwright configuration
-└── package.json
+├── air/                      # Nylas Air (web email client) tests
+│   └── e2e/                  # E2E test specs
+│       ├── smoke.spec.js
+│       ├── navigation.spec.js
+│       ├── keyboard.spec.js
+│       └── ...
+├── ui/                       # Nylas UI (CLI admin interface) tests
+│   └── e2e/                  # E2E test specs
+│       ├── smoke.spec.js
+│       └── navigation.spec.js
+├── shared/                   # Shared utilities
+│   ├── fixtures/             # Mock data
+│   │   ├── mock-emails.json
+│   │   ├── mock-events.json
+│   │   └── mock-contacts.json
+│   └── helpers/              # Test utilities
+│       ├── air-selectors.js  # Air element selectors
+│       ├── ui-selectors.js   # UI element selectors
+│       └── api-mocks.js      # API mocking utilities
+├── playwright.config.js      # Multi-project Playwright config
+├── package.json
+└── README.md
 ```
 
 ## Running Tests
 
 ### All Tests
 ```bash
-npm run test:e2e
+npm test                      # Run all (Air + UI)
+make test-e2e                 # Via Makefile
 ```
 
-### Specific Test File
+### Air Tests Only
 ```bash
-npx playwright test smoke.spec.js
-npx playwright test navigation.spec.js
+npm run test:air              # Air tests
+npm run test:air:ui           # Interactive UI mode
+npm run test:air:headed       # Headed browser
+npm run test:air:debug        # Debug mode
+make test-e2e-air             # Via Makefile
 ```
 
-### Specific Test
+### UI Tests Only
 ```bash
-npx playwright test -g "page loads successfully"
+npm run test:ui               # UI tests
+npm run test:ui:ui            # Interactive UI mode
+npm run test:ui:headed        # Headed browser
+npm run test:ui:debug         # Debug mode
+make test-e2e-ui              # Via Makefile
 ```
 
-### Headed Mode (See Browser)
+### Interactive Mode
 ```bash
-npx playwright test --headed
-```
-
-### Debug Mode
-```bash
-npx playwright test --debug
-```
-
-### UI Mode (Interactive)
-```bash
-npm run test:e2e:ui
+make test-playwright-interactive  # Interactive for all
 ```
 
 ## Test Categories
 
-### Smoke Tests (`smoke.spec.js`)
-Basic functionality verification:
-- Page loads successfully
-- Main navigation is visible
-- Email view is default
-- Accessibility elements present
+### Air Tests (Web Email Client)
 
-### Navigation Tests (`navigation.spec.js`)
-View switching and navigation:
-- Switch between Email, Calendar, Contacts, Notetaker
-- Keyboard shortcuts (1, 2, 3 keys)
-- Search overlay functionality
-- ARIA attributes
+| File | Description |
+|------|-------------|
+| `smoke.spec.js` | Basic functionality |
+| `navigation.spec.js` | View switching |
+| `keyboard.spec.js` | Keyboard shortcuts |
+| `modals.spec.js` | Modal interactions |
+| `email-operations-*.spec.js` | Email features |
+| `calendar-operations-*.spec.js` | Calendar features |
+| `contacts-operations-*.spec.js` | Contact features |
 
-### Modal Tests (`modals.spec.js`)
-Modal interactions:
-- Compose modal (open, close, fill form)
-- Settings modal (theme selection)
-- Command palette
-- Keyboard shortcuts overlay
+### UI Tests (CLI Admin Interface)
 
-### Keyboard Tests (`keyboard.spec.js`)
-Keyboard shortcut functionality:
-- Global shortcuts (C, ?, Shift+F)
-- Modifier keys (Cmd+K, Ctrl+K)
-- Shortcuts blocked in input fields
-- Navigation shortcuts
+| File | Description |
+|------|-------------|
+| `smoke.spec.js` | Page loads, basic elements |
+| `navigation.spec.js` | Sidebar navigation, page switching |
 
-## Selectors Strategy
+## Writing Tests
 
-Tests use `data-testid` attributes for stable element selection:
+### Air Test Example
 
 ```javascript
-// Good - stable selector
-page.locator('[data-testid="compose-modal"]')
-
-// Fallback - semantic selector
-page.locator('.compose-btn')
-
-// Avoid - text-based (breaks with i18n)
-page.getByText('Compose')
-```
-
-### Available Test IDs
-
-| Element | data-testid |
-|---------|-------------|
-| Main nav | `main-nav` |
-| Email tab | `nav-tab-email` |
-| Calendar tab | `nav-tab-calendar` |
-| Contacts tab | `nav-tab-contacts` |
-| Email view | `email-view` |
-| Calendar view | `calendar-view` |
-| Contacts view | `contacts-view` |
-| Compose modal | `compose-modal` |
-| Compose To | `compose-to` |
-| Compose Subject | `compose-subject` |
-| Compose Body | `compose-body` |
-| Compose Send | `compose-send` |
-| Command palette | `command-palette` |
-| Search overlay | `search-overlay` |
-| Settings overlay | `settings-overlay` |
-| Shortcut overlay | `shortcut-overlay` |
-
-See `helpers/selectors.js` for the complete list.
-
-## API Mocking
-
-Use the `api-mocks.js` helpers to mock API responses:
-
-```javascript
-const { mockEmailsAPI, mockFoldersAPI } = require('../helpers/api-mocks');
-
-test.beforeEach(async ({ page }) => {
-  await mockEmailsAPI(page, require('../fixtures/mock-emails.json').messages);
-  await mockFoldersAPI(page, require('../fixtures/mock-emails.json').folders);
-});
-```
-
-### Available Mocks
-
-- `mockEmailsAPI(page, messages)` - Mock messages endpoint
-- `mockFoldersAPI(page, folders)` - Mock folders endpoint
-- `mockCalendarsAPI(page, calendars)` - Mock calendars endpoint
-- `mockEventsAPI(page, events)` - Mock events endpoint
-- `mockContactsAPI(page, contacts)` - Mock contacts endpoint
-- `mockAPIError(page, endpoint, status)` - Mock error response
-- `mockNetworkFailure(page, pattern)` - Mock network failure
-- `mockAllAPIsEmpty(page)` - Mock all APIs with empty data
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `BASE_URL` | App URL | `http://localhost:7365` |
-| `CI` | Running in CI | - |
-
-### Playwright Config
-
-Key settings in `playwright.config.js`:
-
-```javascript
-{
-  testDir: './e2e',
-  timeout: 30000,
-  retries: process.env.CI ? 2 : 0,
-  webServer: {
-    command: 'cd .. && go run cmd/nylas/main.go air --no-browser',
-    port: 7365,
-    reuseExistingServer: !process.env.CI,
-  }
-}
-```
-
-## CI Integration
-
-Tests run automatically in CI:
-
-```yaml
-# GitHub Actions example
-- name: Run E2E Tests
-  run: |
-    cd tests
-    npm ci
-    npx playwright install chromium
-    npm run test:e2e:ci
-```
-
-### Artifacts
-
-On failure, these artifacts are saved:
-- Screenshots in `test-results/`
-- Traces in `test-results/` (on first retry)
-- HTML report in `playwright-report/`
-
-## Writing New Tests
-
-### 1. Create Test File
-
-```javascript
-// tests/e2e/my-feature.spec.js
+// tests/air/e2e/my-feature.spec.js
 const { test, expect } = require('@playwright/test');
-const selectors = require('../helpers/selectors');
+const selectors = require('../../shared/helpers/air-selectors');
 
 test.describe('My Feature', () => {
   test.beforeEach(async ({ page }) => {
@@ -241,52 +136,114 @@ test.describe('My Feature', () => {
 });
 ```
 
-### 2. Add Selectors (if needed)
-
-Add new selectors to `helpers/selectors.js`:
+### UI Test Example
 
 ```javascript
-exports.myFeature = {
-  button: '[data-testid="my-button"]',
-  modal: '[data-testid="my-modal"]',
-};
+// tests/ui/e2e/my-feature.spec.js
+const { test, expect } = require('@playwright/test');
+const selectors = require('../../shared/helpers/ui-selectors');
+
+test.describe('My Feature', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator(selectors.general.app)).toBeVisible();
+  });
+
+  test('does something', async ({ page }) => {
+    // Test implementation
+  });
+});
 ```
 
-### 3. Add Test IDs to Templates
+## Selectors
 
-Add `data-testid` attributes to Go templates:
+### Air Selectors
 
-```html
-<button data-testid="my-button">Click Me</button>
+```javascript
+const selectors = require('../../shared/helpers/air-selectors');
+
+// Navigation
+selectors.nav.main           // '[data-testid="main-nav"]'
+selectors.nav.tabEmail       // '[data-testid="nav-tab-email"]'
+
+// Views
+selectors.views.email        // '[data-testid="email-view"]'
+selectors.views.calendar     // '[data-testid="calendar-view"]'
 ```
 
-## Best Practices
+### UI Selectors
 
-1. **Use data-testid** - Stable, decoupled from styling
-2. **Wait for elements** - Use `expect().toBeVisible()` before interacting
-3. **Isolate tests** - Each test should work independently
-4. **Mock API responses** - Don't depend on backend state
-5. **Test user flows** - Focus on what users do, not implementation
-6. **Keep tests fast** - Avoid unnecessary waits
+```javascript
+const selectors = require('../../shared/helpers/ui-selectors');
+
+// Header
+selectors.header.header      // '.header'
+selectors.header.themeBtn    // '.theme-btn'
+
+// Navigation
+selectors.nav.overview       // '[data-page="overview"]'
+selectors.nav.email          // '[data-page="email"]'
+
+// Pages
+selectors.pages.overview     // '#page-overview'
+selectors.dashboard.title    // '.dashboard-title'
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AIR_PORT` | Air server port | 7365 |
+| `UI_PORT` | UI server port | 7363 |
+| `CI` | Running in CI | - |
+
+### Playwright Config
+
+```javascript
+{
+  projects: [
+    {
+      name: 'air-chromium',
+      testDir: './air/e2e',
+      use: { baseURL: 'http://localhost:7365' },
+    },
+    {
+      name: 'ui-chromium',
+      testDir: './ui/e2e',
+      use: { baseURL: 'http://localhost:7363' },
+    },
+  ],
+  webServer: [
+    { command: 'nylas air --no-browser', port: 7365 },
+    { command: 'nylas ui --no-browser', port: 7363 },
+  ],
+}
+```
+
+## Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make test-e2e` | Run all E2E tests |
+| `make test-e2e-air` | Run Air tests only |
+| `make test-e2e-ui` | Run UI tests only |
+| `make test-playwright-interactive` | Interactive mode |
+| `make test-playwright-headed` | Headed browser mode |
 
 ## Troubleshooting
 
-### Tests timeout
-- Check if Air server is running
+**Tests timeout:**
+- Check if servers are running
 - Increase timeout in config
-- Check network/API mocking
 
-### Element not found
+**Element not found:**
 - Verify selector in DevTools
-- Check if element is in DOM
 - Add explicit wait
 
-### Flaky tests
-- Add proper waits for async operations
-- Use `await expect().toBeVisible()`
-- Check for race conditions
+### Debug Tips
 
-### Debug tips
 ```bash
 # Run with headed mode
 npx playwright test --headed
@@ -294,13 +251,10 @@ npx playwright test --headed
 # Run with debug mode
 npx playwright test --debug
 
-# Show browser console
+# Slow motion
 npx playwright test --headed --slow-mo=500
 ```
 
 ## Resources
 
 - [Playwright Documentation](https://playwright.dev/docs/intro)
-- [Playwright Test API](https://playwright.dev/docs/api/class-test)
-- [Playwright Selectors](https://playwright.dev/docs/selectors)
-- [Nylas Air Architecture](../internal/air/README.md)

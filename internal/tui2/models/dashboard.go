@@ -3,7 +3,6 @@ package models
 
 import (
 	"fmt"
-	"image/color"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -195,6 +194,10 @@ func (d *Dashboard) cycleTheme() tea.Cmd {
 	d.statusBar = components.NewStatusBar(d.theme, d.global.Email)
 	d.footerBar = components.NewFooterBar(d.theme, d.global.Email)
 
+	// Restore widths after creating new components
+	d.statusBar.SetWidth(d.global.WindowSize.Width)
+	d.footerBar.SetWidth(d.global.WindowSize.Width)
+
 	// Restore keybindings
 	d.footerBar.SetBindings([]components.KeyBinding{
 		{Key: "a", Description: "Air"},
@@ -232,134 +235,96 @@ func (d *Dashboard) View() tea.View {
 	d.statusBar.SetUnreadCount(0)
 	d.statusBar.SetEventCount(0)
 
-	// Status bar with enhanced styling
+	// Status bar at top
 	statusBarView := d.statusBar.View()
 
-	// Build dashboard layout
-	var sections []string
+	var lines []string
 
-	// ✨ GLOSSY WELCOME with metallic effect
-	panelWidth := 70
-	if d.global.WindowSize.Width < 80 {
-		panelWidth = d.global.WindowSize.Width - 10
-	}
-
-	welcomeTitleText := lipgloss.NewStyle().
+	// App name and current view badge (k9s style)
+	appName := lipgloss.NewStyle().
 		Foreground(d.theme.Primary).
 		Bold(true).
-		Render("✨ NYLAS CLI ✨")
+		Render("NYLAS")
+	viewBadge := lipgloss.NewStyle().
+		Foreground(d.theme.Background).
+		Background(d.theme.Primary).
+		Padding(0, 1).
+		Render(":dashboard")
+	lines = append(lines, fmt.Sprintf("%s\n%s", appName, viewBadge))
+	lines = append(lines, "")
 
-	welcomeTitle := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, welcomeTitleText)
-
-	welcomeSubtitleText := lipgloss.NewStyle().
-		Foreground(d.theme.Secondary).
-		Italic(true).
-		Render("✦ Premium Terminal Interface ✦")
-
-	welcomeSubtitle := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, welcomeSubtitleText)
-
-	sections = append(sections, welcomeTitle)
-	sections = append(sections, welcomeSubtitle)
-	sections = append(sections, "")
-
-	// Accent line separator
-	separatorLine := styles.AccentLine(d.theme, 60, "─")
-	separator := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, separatorLine)
-	sections = append(sections, separator)
-	sections = append(sections, "")
-
-	// Account info in a glass panel style
-	accountInfoText := lipgloss.NewStyle().
-		Foreground(d.theme.Dimmed.GetForeground()).
-		Render(fmt.Sprintf("🔐 %s  •  %s", d.global.Email, d.global.Provider))
-	accountInfo := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, accountInfoText)
-	sections = append(sections, accountInfo)
-	sections = append(sections, "")
-
-	// Quick Actions with GLOSSY cards
-	actionsTitleText := lipgloss.NewStyle().
+	// Quick Navigation header
+	navHeader := lipgloss.NewStyle().
 		Foreground(d.theme.Primary).
 		Bold(true).
-		Underline(true).
-		Render("⚡ QUICK ACTIONS ⚡")
+		Render("Quick Navigation")
+	lines = append(lines, navHeader)
+	lines = append(lines, "")
 
-	actionsTitle := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, actionsTitleText)
-	sections = append(sections, actionsTitle)
-	sections = append(sections, "")
-
-	actions := []struct {
+	// Navigation items - vim style commands with key badges and Nerd Font icons
+	navItems := []struct {
 		key   string
 		icon  string
+		cmd   string
+		label string
 		desc  string
-		color color.Color
 	}{
-		{"a", "📧", "Air - View your inbox", d.theme.Primary},
-		{"c", "📅", "Calendar - Manage events", d.theme.Secondary},
-		{"p", "👥", "Contacts - Manage contacts", d.theme.Accent},
-		{"d", "🐛", "Debug - System diagnostics", lipgloss.Color("#FF6B9D")},
-		{"s", "⚙️ ", "Settings - Configure app", d.theme.Warning},
-		{"?", "❓", "Help - Keyboard shortcuts", d.theme.Info},
+		{"a", "\uf0e0", ":a", "Air", "Email messages"},       // nf-fa-envelope
+		{"e", "\uf073", ":e", "Events", "Calendar events"},   // nf-fa-calendar
+		{"c", "\uf0c0", ":c", "Contacts", "Contacts"},        // nf-fa-users
+		{"w", "\uf0e8", ":w", "Webhooks", "Webhooks"},        // nf-fa-sitemap
+		{"d", "\uf188", ":d", "Debug", "Debug panel"},        // nf-fa-bug
+		{"s", "\uf013", ":s", "Settings", "Settings"},        // nf-fa-cog
+		{"?", "\uf059", ":?", "Help", "Help & shortcuts"},    // nf-fa-question_circle
 	}
 
-	// Add each action item individually
-	for _, action := range actions {
-		// Glossy key badge
-		keyBadge := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#000000")).
-			Background(action.color).
-			Bold(true).
-			Padding(0, 1).
-			Render(action.key)
+	// Key badge style (nice button)
+	keyBadgeStyle := lipgloss.NewStyle().
+		Foreground(d.theme.Background).
+		Background(d.theme.Primary).
+		Bold(true).
+		Padding(0, 1)
 
-		// Action description with icon
-		descText := fmt.Sprintf("%s  %s", action.icon, action.desc)
+	iconStyle := lipgloss.NewStyle().Foreground(d.theme.Accent).Width(2)
+	cmdStyle := lipgloss.NewStyle().Foreground(d.theme.Warning)
+	labelStyle := lipgloss.NewStyle().Foreground(d.theme.Secondary).Width(12)
+	descStyle := lipgloss.NewStyle().Foreground(d.theme.Info)
 
-		// Create action line with badge and description
-		line := fmt.Sprintf("   %s   %s", keyBadge, descText)
-
-		sections = append(sections, line)
+	for _, item := range navItems {
+		keyBadge := keyBadgeStyle.Render(item.key)
+		icon := iconStyle.Render(item.icon)
+		cmd := cmdStyle.Render(fmt.Sprintf("%-6s", item.cmd))
+		label := labelStyle.Render(item.label)
+		desc := descStyle.Render(item.desc)
+		lines = append(lines, fmt.Sprintf("  %s %s %s%s%s", keyBadge, icon, cmd, label, desc))
 	}
-	sections = append(sections, "")
-	sections = append(sections, "")
+	lines = append(lines, "")
 
-	// Theme info with premium styling
-	themeInfoText := lipgloss.NewStyle().
-		Foreground(d.theme.Dimmed.GetForeground()).
-		Italic(true).
-		Render(fmt.Sprintf("◆ Theme: %s ◆ Press 't' to cycle ◆", d.theme.Name))
-	themeInfo := lipgloss.PlaceHorizontal(panelWidth-8, lipgloss.Center, themeInfoText)
-	sections = append(sections, themeInfo)
+	// Command mode hint
+	hintStyle := lipgloss.NewStyle().Foreground(d.theme.Primary)
+	lines = append(lines, hintStyle.Render("Press : to enter command mode"))
 
-	// Join all sections (left-aligned within the panel)
-	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
+	// Join content
+	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
 
-	// Premium double border with shadow
-	bordered := lipgloss.NewStyle().
-		BorderStyle(lipgloss.ThickBorder()).
-		BorderForeground(d.theme.Primary).
-		BorderBackground(lipgloss.Color("#0a0a0a")).
-		Background(lipgloss.Color("#0f0f0f")).
-		Padding(2, 4).
-		Width(panelWidth).
+	// Calculate available height for content
+	contentHeight := d.global.WindowSize.Height - 3 // status bar + footer
+
+	// Pad content to fill available space (push footer to bottom)
+	contentView := lipgloss.NewStyle().
+		Width(d.global.WindowSize.Width).
+		Height(contentHeight).
+		Padding(0, 1).
 		Render(content)
-
-	// Center content
-	centered := lipgloss.Place(
-		d.global.WindowSize.Width,
-		d.global.WindowSize.Height-4, // Leave room for status bar and footer
-		lipgloss.Center,
-		lipgloss.Center,
-		bordered,
-	)
 
 	// Footer bar
 	footerBarView := d.footerBar.View()
 
-	// Combine all with spacing
+	// Combine all layers
 	fullView := lipgloss.JoinVertical(
 		lipgloss.Left,
 		statusBarView,
-		centered,
+		contentView,
 		footerBarView,
 	)
 

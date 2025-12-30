@@ -2,52 +2,39 @@
 const { defineConfig, devices } = require('@playwright/test');
 
 /**
- * Playwright configuration for Nylas Air E2E tests.
+ * Playwright configuration for Nylas E2E tests.
+ *
+ * Supports two test targets:
+ * - Air: Modern web email client (http://localhost:7365)
+ * - UI: Web-based CLI admin interface (http://localhost:7363)
  *
  * @see https://playwright.dev/docs/test-configuration
  */
-module.exports = defineConfig({
-  // Test directory
-  testDir: './e2e',
 
+// Environment variables
+const isCI = !!process.env.CI;
+const airPort = parseInt(process.env.AIR_PORT || '7365', 10);
+const uiPort = parseInt(process.env.UI_PORT || '7363', 10);
+
+module.exports = defineConfig({
   // Run tests in parallel within files
   fullyParallel: true,
 
   // Fail the build on CI if accidentally left test.only
-  forbidOnly: !!process.env.CI,
+  forbidOnly: isCI,
 
   // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
+  retries: isCI ? 2 : 0,
 
   // Single worker on CI for stability, parallel locally
-  workers: process.env.CI ? 1 : undefined,
+  workers: isCI ? 1 : undefined,
 
   // Reporter configuration
   reporter: [
     ['list'],
-    ['html', { open: 'never' }],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'test-results/results.json' }],
   ],
-
-  // Shared settings for all projects
-  use: {
-    // Base URL for the Air server
-    baseURL: process.env.AIR_BASE_URL || 'http://localhost:7365',
-
-    // Collect trace on first retry
-    trace: 'on-first-retry',
-
-    // Take screenshot only on failure
-    screenshot: 'only-on-failure',
-
-    // Record video on first retry
-    video: 'on-first-retry',
-
-    // Timeout for each action
-    actionTimeout: 10000,
-
-    // Timeout for each navigation
-    navigationTimeout: 30000,
-  },
 
   // Global timeout for each test
   timeout: 30000,
@@ -57,54 +44,66 @@ module.exports = defineConfig({
     timeout: 5000,
   },
 
-  // Web server configuration
-  webServer: {
-    // Command to start the Air server
-    command: 'cd .. && go run cmd/nylas/main.go air --no-browser --port 7365',
+  // Output directory for test artifacts
+  outputDir: 'test-results/',
 
-    // Port to wait for
-    port: 7365,
-
-    // Timeout for server startup
-    timeout: 60000,
-
-    // Reuse existing server in dev mode
-    reuseExistingServer: !process.env.CI,
-
-    // Environment variables for the server
-    env: {
-      AIR_TEST_MODE: 'true',
-    },
-  },
-
-  // Projects (browser configurations)
+  // Projects (test configurations)
   projects: [
+    // =========================================================================
+    // Nylas Air (Modern Web Email Client)
+    // =========================================================================
     {
-      name: 'chromium',
+      name: 'air-chromium',
+      testDir: './air/e2e',
       use: {
         ...devices['Desktop Chrome'],
-        // Viewport for consistent screenshots
+        baseURL: `http://localhost:${airPort}`,
         viewport: { width: 1280, height: 720 },
+        trace: 'on-first-retry',
+        screenshot: 'only-on-failure',
+        video: 'on-first-retry',
+        actionTimeout: 10000,
+        navigationTimeout: 30000,
       },
     },
 
-    // Uncomment for additional browser testing
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    // Uncomment for mobile testing
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
+    // =========================================================================
+    // Nylas UI (Web-based CLI Admin Interface)
+    // =========================================================================
+    {
+      name: 'ui-chromium',
+      testDir: './ui/e2e',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${uiPort}`,
+        viewport: { width: 1280, height: 720 },
+        trace: 'on-first-retry',
+        screenshot: 'only-on-failure',
+        video: 'on-first-retry',
+        actionTimeout: 10000,
+        navigationTimeout: 30000,
+      },
+    },
   ],
 
-  // Output directory for test artifacts
-  outputDir: 'test-results/',
+  // Web server configurations
+  webServer: [
+    // Nylas Air server (port 7365)
+    {
+      command: 'cd .. && go run cmd/nylas/main.go air --no-browser --port ' + airPort,
+      port: airPort,
+      timeout: 60000,
+      reuseExistingServer: !isCI,
+      env: {
+        AIR_TEST_MODE: 'true',
+      },
+    },
+    // Nylas UI server (port 7363)
+    {
+      command: 'cd .. && go run cmd/nylas/main.go ui --no-browser --port ' + uiPort,
+      port: uiPort,
+      timeout: 60000,
+      reuseExistingServer: !isCI,
+    },
+  ],
 });

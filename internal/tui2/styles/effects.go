@@ -223,6 +223,14 @@ func FloatingPanel(theme *Theme, content string, width int) string {
 	)
 }
 
+// RepeatChar repeats a character n times
+func RepeatChar(char rune, n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return strings.Repeat(string(char), n)
+}
+
 // AccentLine creates an accented horizontal line with gradient effect
 func AccentLine(theme *Theme, width int, char string) string {
 	if char == "" {

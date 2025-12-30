@@ -61,120 +61,68 @@ func (s *StatusBar) Update() {
 	s.currentTime = time.Now()
 }
 
-// View renders the status bar with glossy styling.
+// View renders the status bar with clean k9s-style design.
 func (s *StatusBar) View() string {
 	if s.width == 0 {
 		return ""
 	}
 
-	// ✨ Left section: App info with metallic effect
-	appInfo := lipgloss.NewStyle().
-		Foreground(s.theme.Primary).
-		Bold(true).
-		Background(lipgloss.Color("#1a1a1a")).
+	sep := lipgloss.NewStyle().Foreground(s.theme.Dimmed.GetForeground()).Render(" │ ")
+
+	// Right section (k9s style): email | provider | grant_id | time | status
+	emailStyle := lipgloss.NewStyle().Foreground(s.theme.Foreground)
+	email := emailStyle.Render(s.email)
+
+	providerBadge := lipgloss.NewStyle().
+		Foreground(s.theme.Background).
+		Background(s.theme.Secondary).
 		Padding(0, 1).
-		Render(fmt.Sprintf("✨ %s %s", s.appName, s.version))
+		Render("microsoft") // TODO: get from global state
 
-	// Middle section: Stats with badge styling
-	inboxBadge := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#000000")).
-		Background(s.theme.Info).
-		Bold(true).
-		Padding(0, 1).
-		Render(fmt.Sprintf("%d", s.unreadCount))
+	grantStyle := lipgloss.NewStyle().Foreground(s.theme.Dimmed.GetForeground())
+	grantID := grantStyle.Render("46c724e7-1eaa-4c75-810c-8f8a7ead6009") // TODO: get from global state
 
-	inbox := lipgloss.NewStyle().
-		Foreground(s.theme.Foreground).
-		Render(fmt.Sprintf("📥 %s", inboxBadge))
+	timeStyle := lipgloss.NewStyle().Foreground(s.theme.Foreground)
+	timeStr := timeStyle.Render(s.currentTime.Format("15:04:05"))
 
-	eventsBadge := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#000000")).
-		Background(s.theme.Warning).
-		Bold(true).
-		Padding(0, 1).
-		Render(fmt.Sprintf("%d", s.eventCount))
+	// Refresh indicator
+	refreshStyle := lipgloss.NewStyle().Foreground(s.theme.Dimmed.GetForeground())
+	refresh := refreshStyle.Render("<1s>")
 
-	events := lipgloss.NewStyle().
-		Foreground(s.theme.Foreground).
-		Render(fmt.Sprintf("📅 %s", eventsBadge))
-
-	// Right section: Status with glow and time
+	// Live status
 	statusDot := "●"
 	statusColor := s.theme.Success
-	statusText := "ONLINE"
+	statusText := "Live"
 	if !s.online {
-		statusDot = "●"
 		statusColor = s.theme.Error
-		statusText = "OFFLINE"
+		statusText = "Offline"
 	}
-
-	statusStyle := lipgloss.NewStyle().
+	status := lipgloss.NewStyle().
 		Foreground(statusColor).
-		Bold(true).
-		Background(lipgloss.Color("#1a1a1a")).
-		Padding(0, 1).
 		Render(fmt.Sprintf("%s %s", statusDot, statusText))
 
-	clock := lipgloss.NewStyle().
-		Foreground(s.theme.Accent).
-		Background(lipgloss.Color("#1a1a1a")).
-		Bold(true).
-		Padding(0, 1).
-		Render(s.currentTime.Format("⏰ 15:04:05"))
-
-	// Glossy separator
-	sep := lipgloss.NewStyle().
-		Foreground(s.theme.Primary).
-		Render(" ◆ ")
-
-	// Combine sections
-	left := lipgloss.JoinHorizontal(lipgloss.Left, appInfo)
-	middle := lipgloss.JoinHorizontal(lipgloss.Left, inbox, sep, events)
-	right := lipgloss.JoinHorizontal(lipgloss.Left, statusStyle, sep, clock)
-
-	// Calculate spacing
-	leftWidth := lipgloss.Width(left)
-	middleWidth := lipgloss.Width(middle)
-	rightWidth := lipgloss.Width(right)
-
-	totalContent := leftWidth + middleWidth + rightWidth
-	if totalContent >= s.width {
-		// Not enough space, show minimal version
-		return lipgloss.NewStyle().
-			Width(s.width).
-			Background(lipgloss.Color("#0a0a0a")).
-			Foreground(s.theme.Foreground).
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderBottom(true).
-			BorderForeground(s.theme.Primary).
-			Render(appInfo)
-	}
-
-	// Calculate gaps
-	remainingSpace := s.width - totalContent
-	gap1 := remainingSpace / 2
-	gap2 := remainingSpace - gap1
-
-	spacer1 := lipgloss.NewStyle().Width(gap1).Render("")
-	spacer2 := lipgloss.NewStyle().Width(gap2).Render("")
-
-	content := lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		left,
-		spacer1,
-		middle,
-		spacer2,
-		right,
+	right := lipgloss.JoinHorizontal(lipgloss.Left,
+		email, sep, providerBadge, sep, grantID, "   ", timeStr, " ", refresh, " ", status,
 	)
 
-	// Premium background with gradient effect and border
+	// Calculate spacing
+	rightWidth := lipgloss.Width(right)
+
+	if rightWidth >= s.width {
+		// Minimal version
+		return lipgloss.NewStyle().
+			Width(s.width).
+			MaxWidth(s.width).
+			Render(right)
+	}
+
+	// Right-align the content
+	spacer := lipgloss.NewStyle().Width(s.width - rightWidth).Render("")
+	content := lipgloss.JoinHorizontal(lipgloss.Left, spacer, right)
+
 	return lipgloss.NewStyle().
 		Width(s.width).
-		Background(lipgloss.Color("#0a0a0a")).
-		Foreground(s.theme.Foreground).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderBottom(true).
-		BorderForeground(s.theme.Primary).
+		MaxWidth(s.width).
 		Render(content)
 }
 
@@ -217,79 +165,22 @@ func (f *FooterBar) View() string {
 		return ""
 	}
 
-	// Build bindings display with glossy badges
-	var bindingStrs []string
-	for i, b := range f.bindings {
-		// Alternate colors for visual variety
-		badgeColor := f.theme.Primary
-		if i%2 == 1 {
-			badgeColor = f.theme.Accent
-		}
+	// Simple k9s-style footer: :command | ?:help | ^c:quit
+	sep := lipgloss.NewStyle().Foreground(f.theme.Dimmed.GetForeground()).Render(" │ ")
 
-		// Glossy key badge
-		key := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#000000")).
-			Background(badgeColor).
-			Bold(true).
-			Padding(0, 1).
-			Render(b.Key)
+	cmdStyle := lipgloss.NewStyle().Foreground(f.theme.Warning)
+	descStyle := lipgloss.NewStyle().Foreground(f.theme.Foreground)
 
-		// Description
-		desc := lipgloss.NewStyle().
-			Foreground(f.theme.Foreground).
-			Render(b.Description)
-
-		// Separator
-		sep := lipgloss.NewStyle().
-			Foreground(f.theme.Dimmed.GetForeground()).
-			Render(" • ")
-
-		bindingStrs = append(bindingStrs, fmt.Sprintf("%s %s%s", key, desc, sep))
+	items := []string{
+		cmdStyle.Render(":") + descStyle.Render("command"),
+		cmdStyle.Render("?:") + descStyle.Render("help"),
+		cmdStyle.Render("^c:") + descStyle.Render("quit"),
 	}
 
-	left := lipgloss.JoinHorizontal(lipgloss.Left, bindingStrs...)
+	content := lipgloss.JoinHorizontal(lipgloss.Left, items[0], sep, items[1], sep, items[2])
 
-	// User email with premium badge on the right
-	emailBadge := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#000000")).
-		Background(f.theme.Secondary).
-		Bold(true).
-		Padding(0, 1).
-		Render("👤")
-
-	emailText := lipgloss.NewStyle().
-		Foreground(f.theme.Foreground).
-		Render(fmt.Sprintf(" %s", f.email))
-
-	right := lipgloss.JoinHorizontal(lipgloss.Left, emailBadge, emailText)
-
-	// Calculate spacing
-	leftWidth := lipgloss.Width(left)
-	rightWidth := lipgloss.Width(right)
-
-	if leftWidth+rightWidth >= f.width {
-		// Not enough space - show minimal version
-		return lipgloss.NewStyle().
-			Width(f.width).
-			Background(lipgloss.Color("#0a0a0a")).
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderTop(true).
-			BorderForeground(f.theme.Primary).
-			Render(left)
-	}
-
-	gap := f.width - leftWidth - rightWidth
-	spacer := lipgloss.NewStyle().Width(gap).Render("")
-
-	content := lipgloss.JoinHorizontal(lipgloss.Left, left, spacer, right)
-
-	// Premium footer with top border and dark background
 	return lipgloss.NewStyle().
 		Width(f.width).
-		Background(lipgloss.Color("#0a0a0a")).
-		Foreground(f.theme.Foreground).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderTop(true).
-		BorderForeground(f.theme.Primary).
+		MaxWidth(f.width).
 		Render(content)
 }

@@ -279,6 +279,21 @@ make test-cleanup                # Clean up test resources
 **Never loaded (excluded via .claudeignore):**
 - Build artifacts, coverage reports, IDE files
 
+**Dynamic local rules (check before operations):**
+
+Before performing these operations, check if a matching `.local.md` rule exists and read it:
+
+| Operation | Check for file |
+|-----------|----------------|
+| Git commits | `.claude/rules/git-commits.local.md` |
+| Go cache cleanup | `.claude/rules/go-cache-cleanup.local.md` |
+| Any operation | `.claude/rules/<operation>.local.md` |
+
+```bash
+# Pattern: Check if local rule exists before operation
+ls .claude/rules/<operation>.local.md 2>/dev/null && Read it
+```
+
 ---
 
 ## Quick Reference
