@@ -279,6 +279,67 @@ Hooks run automatically to enforce quality:
 
 ---
 
+## Subagent Parallelization
+
+Use parallel agents to explore or review the 745-file codebase without exhausting context.
+
+### When to Use Parallel Agents
+
+| Task | Agents | Why |
+|------|--------|-----|
+| Full codebase exploration | 5 | One per major directory |
+| Feature search | 4 | Search cli, adapters, air, tui simultaneously |
+| Multi-file PR review | 4 | Review different files in parallel |
+| Test coverage analysis | 4 | Analyze different packages |
+
+### Invocation Patterns
+
+```
+# Full exploration (5 agents)
+"Explore using 5 parallel agents:
+ - Agent 1: internal/cli/
+ - Agent 2: internal/adapters/
+ - Agent 3: internal/air/
+ - Agent 4: internal/tui2/
+ - Agent 5: internal/domain/ + ports/"
+
+# Feature search (4 agents)
+"Find all email-related code using 4 agents across cli, adapters, air, tui"
+
+# PR review (4 agents)
+"Review these 8 files using 4 parallel code-reviewer agents"
+```
+
+### Directory Parallelization Value
+
+| Directory | Files | Parallel Value |
+|-----------|-------|----------------|
+| `internal/cli/` | 268 | HIGH |
+| `internal/adapters/` | 158 | HIGH |
+| `internal/air/` | 117 | HIGH |
+| `internal/tui2/` | 81 | MEDIUM |
+| `internal/domain/` | 19 | LOW (shared) |
+
+### Safe vs Unsafe
+
+**✅ SAFE:** Explore, review, search across different directories
+**❌ AVOID:** Write to same file, modify domain/ or ports/nylas.go, parallel integration tests
+
+### Existing Agents for Parallel Use
+
+| Agent | Parallel Use |
+|-------|--------------|
+| `codebase-explorer` | ✅ Spawn 4-5 for large searches |
+| `code-reviewer` | ✅ Review different files |
+| `test-writer` | ⚠️ Different packages only |
+| `code-writer` | ⚠️ Disjoint files only |
+
+### Key Benefit
+
+Parallel agents have **isolated context windows** - prevents "dumb Claude mid-session" when exploring large codebases.
+
+---
+
 ## Context Loading Strategy
 
 **Auto-loaded:**
