@@ -1,16 +1,8 @@
 # Claude Code Context Exclusions
 # Exclude files from being loaded in Claude's context to reduce token usage
 
-# Local temporary files and historical documentation
-local/
-local/**
+# Local files (not auto-loaded)
 *.local.md
-
-# Historical/archived documentation
-local/well-architected-optimizations.md
-local/suggestions.md
-local/SECURITY_REPORT.md
-local/video-*.md
 
 # Example/sample files (load on-demand only)
 docs/examples/
@@ -67,6 +59,13 @@ docs/EXAMPLES.md
 docs/TROUBLESHOOTING.md
 docs/INDEX.md
 
+# Large reference docs (load on-demand to reduce context)
+# Use Read tool when working on related features
+docs/COMMANDS.md
+docs/MCP.md
+docs/AI.md
+docs/ARCHITECTURE.md
+
 # Historical planning documents
 plan.md
 AI_plan.md
@@ -96,3 +95,24 @@ HISTORY.md
 **/*.gif
 **/*.mp4
 **/*.svg
+
+# VHS test tapes and output (large files, load on-demand)
+internal/tui2/vhs-tests/tapes/**
+internal/tui2/vhs-tests/output/**
+
+# Generated files (load on-demand)
+ci-full.txt
+ci.txt
+*.test.log
+
+# Large integration test data
+tests/fixtures/large-*.json
+
+# Performance profiling data
+*.prof
+*.pprof
+
+# Temporary refactoring documents (archive after completion)
+REFACTORING_PROGRESS.md
+ENGINEERING_IMPROVEMENTS_SUMMARY.md
+COVERAGE_REPORT.md

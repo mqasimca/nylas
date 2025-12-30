@@ -119,9 +119,9 @@ func TestGroqClient_GetModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := client.getModel(tt.requestModel)
+			got := client.GetModel(tt.requestModel)
 			if got != tt.want {
-				t.Errorf("getModel() = %q, want %q", got, tt.want)
+				t.Errorf("GetModel() = %q, want %q", got, tt.want)
 			}
 		})
 	}

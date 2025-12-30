@@ -1,11 +1,9 @@
 package email
 
 import (
-	"context"
 	"fmt"
 	"html"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/config"
@@ -63,41 +61,6 @@ func getGrantID(args []string) (string, error) {
 	return defaultGrant, nil
 }
 
-// formatTimeAgo formats a time as a relative string.
-func formatTimeAgo(t time.Time) string {
-	now := time.Now()
-	diff := now.Sub(t)
-
-	if diff < time.Minute {
-		return "just now"
-	} else if diff < time.Hour {
-		mins := int(diff.Minutes())
-		if mins == 1 {
-			return "1 minute ago"
-		}
-		return fmt.Sprintf("%d minutes ago", mins)
-	} else if diff < 24*time.Hour {
-		hours := int(diff.Hours())
-		if hours == 1 {
-			return "1 hour ago"
-		}
-		return fmt.Sprintf("%d hours ago", hours)
-	} else if diff < 48*time.Hour {
-		return "yesterday"
-	} else {
-		days := int(diff.Hours() / 24)
-		return fmt.Sprintf("%d days ago", days)
-	}
-}
-
-// truncate truncates a string to the given length.
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
 // formatContact formats a contact for display.
 func formatContact(c domain.EmailParticipant) string {
 	if c.Name != "" {
@@ -133,7 +96,7 @@ func printMessage(msg domain.Message, showBody bool) {
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatContacts(msg.To))
 	}
-	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), formatTimeAgo(msg.Date))
+	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(msg.Date))
 	if status != "" {
 		fmt.Printf("Status:  %s\n", status)
 	}
@@ -166,7 +129,7 @@ func printMessageRaw(msg domain.Message) {
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatContacts(msg.To))
 	}
-	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), formatTimeAgo(msg.Date))
+	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(msg.Date))
 	fmt.Printf("ID:      %s\n", msg.ID)
 	fmt.Println(strings.Repeat("─", 60))
 
@@ -206,7 +169,7 @@ func printMessageSummaryWithID(msg domain.Message, index int, showID bool) {
 		subject = subject[:37] + "..."
 	}
 
-	dateStr := formatTimeAgo(msg.Date)
+	dateStr := common.FormatTimeAgo(msg.Date)
 	if len(dateStr) > 12 {
 		dateStr = msg.Date.Format("Jan 2")
 	}
@@ -325,9 +288,4 @@ func removeTagWithContent(s, tag string) string {
 // printSuccess prints a success message in green.
 func printSuccess(format string, args ...any) {
 	_, _ = green.Printf(format+"\n", args...)
-}
-
-// createContext creates a context with timeout.
-func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
 }

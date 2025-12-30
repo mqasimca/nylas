@@ -1,0 +1,291 @@
+{{define "modals_navigation"}}
+<!-- Command Palette -->
+<div class="modal-overlay hidden" id="commandPalette" data-testid="command-palette" onclick="toggleCommandPalette()">
+    <div class="command-palette" onclick="event.stopPropagation()">
+        <div class="command-input-wrapper">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" class="command-input" data-testid="command-palette-input" placeholder="Type a command or search..." autofocus>
+        </div>
+        <div class="command-results">
+            <div class="command-section">
+                <div class="command-section-title">Quick Actions</div>
+                <div class="command-item selected">
+                    <div class="command-icon-wrapper">✉️</div>
+                    <div class="command-text">
+                        <div class="command-title">Compose new email</div>
+                        <div class="command-description">Start writing a new message</div>
+                    </div>
+                    <div class="command-shortcut"><kbd>C</kbd></div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">📅</div>
+                    <div class="command-text">
+                        <div class="command-title">Create event</div>
+                        <div class="command-description">Add a new calendar event</div>
+                    </div>
+                    <div class="command-shortcut"><kbd>⇧</kbd><kbd>C</kbd></div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">🎯</div>
+                    <div class="command-text">
+                        <div class="command-title">Find meeting time</div>
+                        <div class="command-description">Find optimal time across timezones</div>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">🧘</div>
+                    <div class="command-text">
+                        <div class="command-title">Block focus time</div>
+                        <div class="command-description">Protect time for deep work</div>
+                    </div>
+                </div>
+            </div>
+            <div class="command-section">
+                <div class="command-section-title">AI Features</div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">✨</div>
+                    <div class="command-text">
+                        <div class="command-title">Smart Compose</div>
+                        <div class="command-description">AI-powered email drafting</div>
+                    </div>
+                </div>
+                <div class="command-item">
+                    <div class="command-icon-wrapper">📝</div>
+                    <div class="command-text">
+                        <div class="command-title">Summarize thread</div>
+                        <div class="command-description">Get AI summary of conversation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Overlay -->
+<div class="search-overlay" id="searchOverlay" data-testid="search-overlay" onclick="if(event.target === this) closeSearch()">
+    <div class="search-modal" onclick="event.stopPropagation()">
+        <div class="search-input-wrapper">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" id="searchInput" class="search-input" data-testid="search-input" placeholder="Search emails, events, contacts..."
+                   oninput="handleSearchInput(this.value)" onkeydown="handleSearchKeydown(event)">
+            <kbd class="search-kbd">ESC</kbd>
+        </div>
+        <div class="search-filters">
+            <button class="search-filter-chip active" onclick="toggleSearchFilter(this)" data-filter="all">
+                All
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="emails">
+                <span>📧</span> Emails
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="events">
+                <span>📅</span> Events
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="contacts">
+                <span>👤</span> Contacts
+            </button>
+            <button class="search-filter-chip" onclick="toggleSearchFilter(this)" data-filter="attachments">
+                <span>📎</span> Attachments
+            </button>
+        </div>
+        <div class="search-suggestions" id="searchSuggestions">
+            <!-- Recent searches section - populated by JavaScript -->
+            <div class="search-suggestion-group" id="recentSearchesGroup">
+                <div class="search-suggestion-title">
+                    <span>Recent Searches</span>
+                    <button class="clear-recent-btn" onclick="RecentSearches.clear()" title="Clear recent searches">Clear</button>
+                </div>
+                <div id="recentSearchesList">
+                    <!-- Recent searches will be rendered here -->
+                </div>
+            </div>
+            <!-- Search results section -->
+            <div id="searchResultsSection"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Compose Modal -->
+<div class="compose-modal hidden" id="composeModal" data-testid="compose-modal" style="display:none" aria-hidden="true" role="dialog" aria-labelledby="composeTitle">
+    <div class="compose-header">
+        <span class="compose-title" id="composeTitle">New Message</span>
+        <div class="compose-controls">
+            <button class="compose-control" type="button" title="Minimize">−</button>
+            <button class="compose-control modal-close" type="button" title="Close" data-testid="compose-close">×</button>
+        </div>
+    </div>
+    <form id="composeForm" class="compose-form">
+        <div class="compose-fields">
+            <div class="compose-field">
+                <label class="compose-label" for="composeTo">To</label>
+                <input type="text" id="composeTo" class="compose-field-input" data-testid="compose-to" placeholder="Recipients (comma separated)" autocomplete="email">
+            </div>
+            <div class="compose-field compose-field-collapsed" id="ccBccToggle" data-testid="compose-cc-bcc-toggle">
+                <button type="button" class="compose-cc-toggle" onclick="toggleCcBcc()">Cc/Bcc</button>
+            </div>
+            <div class="compose-field compose-field-cc hidden" id="ccField" data-testid="compose-cc-field">
+                <label class="compose-label" for="composeCc">Cc</label>
+                <input type="text" id="composeCc" class="compose-field-input" data-testid="compose-cc" placeholder="Cc recipients">
+            </div>
+            <div class="compose-field compose-field-bcc hidden" id="bccField" data-testid="compose-bcc-field">
+                <label class="compose-label" for="composeBcc">Bcc</label>
+                <input type="text" id="composeBcc" class="compose-field-input" data-testid="compose-bcc" placeholder="Bcc recipients">
+            </div>
+            <div class="compose-field">
+                <label class="compose-label" for="composeSubject">Subject</label>
+                <input type="text" id="composeSubject" class="compose-field-input" data-testid="compose-subject" placeholder="Subject">
+            </div>
+        </div>
+        <div class="compose-body">
+            <textarea id="composeBody" class="compose-editor" data-testid="compose-body" placeholder="Write your message..."></textarea>
+        </div>
+    </form>
+    <div class="compose-footer">
+        <div class="compose-tools">
+            <button type="button" class="tool-btn" id="composeSave" title="Save draft">💾</button>
+            <button type="button" class="tool-btn" title="Attach file">📎</button>
+            <button type="button" class="tool-btn" title="Insert link">🔗</button>
+            <button type="button" class="tool-btn" title="Insert emoji">😊</button>
+            <!-- Templates button disabled: <button type="button" class="tool-btn" onclick="TemplatesManager.open()" title="Templates">📋</button> -->
+            <button type="button" class="tool-btn ai" title="AI Compose">✨</button>
+            <button type="button" class="tool-btn danger" id="composeDiscard" title="Discard">🗑️</button>
+        </div>
+        <div class="send-group" style="display: flex;">
+            <button type="button" class="send-btn" id="composeSend" data-testid="compose-send">
+                Send
+                <span class="send-shortcut">⌘↵</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCcBcc() {
+    const ccField = document.getElementById('ccField');
+    const bccField = document.getElementById('bccField');
+    const toggle = document.getElementById('ccBccToggle');
+    ccField.classList.remove('hidden');
+    bccField.classList.remove('hidden');
+    toggle.classList.add('hidden');
+}
+</script>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer" data-testid="toast-container"></div>
+
+<!-- Send Animation -->
+<div class="send-animation" id="sendAnimation">
+    <div class="send-animation-icon">✈️</div>
+    <div class="send-animation-text">Message Sent</div>
+</div>
+
+<!-- Focus Mode Toggle -->
+<button class="focus-mode-toggle" id="focusModeToggle" onclick="toggleFocusMode()">
+    <span>🎯</span>
+    <span>Focus Mode</span>
+    <kbd style="font-size: 10px; padding: 2px 6px; background: var(--bg-surface); border-radius: 4px;">F</kbd>
+</button>
+
+<!-- Keyboard Shortcut Overlay -->
+<div class="shortcut-overlay" id="shortcutOverlay" data-testid="shortcut-overlay" onclick="if(event.target === this) closeShortcutOverlay()">
+    <div class="shortcut-modal">
+        <div class="shortcut-header">
+            <h2 class="shortcut-title">⌨️ Keyboard Shortcuts</h2>
+            <button class="shortcut-close" data-testid="shortcut-close" onclick="closeShortcutOverlay()">✕</button>
+        </div>
+        <div class="shortcut-content">
+            <div class="shortcut-group">
+                <div class="shortcut-group-title">Navigation</div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Next email</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">J</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Previous email</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">K</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Open email</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">O</span> or <span class="shortcut-key">↵</span></div>
+                </div>
+            </div>
+            <div class="shortcut-group">
+                <div class="shortcut-group-title">Actions</div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Compose</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">C</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Reply</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">R</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Archive</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">E</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Delete</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">#</span></div>
+                </div>
+            </div>
+            <div class="shortcut-group">
+                <div class="shortcut-group-title">Application</div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Search</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">⌘</span><span class="shortcut-key">K</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Focus mode</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">⇧</span><span class="shortcut-key">F</span></div>
+                </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-label">Show shortcuts</span>
+                    <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="contextMenu" data-testid="context-menu">
+    <div class="context-menu-item" onclick="handleContextAction('reply')">
+        <span class="context-menu-icon">↩️</span>
+        <span>Reply</span>
+        <span class="context-menu-shortcut">R</span>
+    </div>
+    <div class="context-menu-item" onclick="handleContextAction('forward')">
+        <span class="context-menu-icon">↪️</span>
+        <span>Forward</span>
+        <span class="context-menu-shortcut">F</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <!-- Snooze disabled
+    <div class="context-menu-item" onclick="SnoozeManager.openForEmail(window.contextMenuEmailId)">
+        <span class="context-menu-icon">⏰</span>
+        <span>Snooze</span>
+        <span class="context-menu-shortcut">Z</span>
+    </div>
+    -->
+    <div class="context-menu-item" onclick="handleContextAction('archive')">
+        <span class="context-menu-icon">📥</span>
+        <span>Archive</span>
+        <span class="context-menu-shortcut">E</span>
+    </div>
+    <div class="context-menu-item" onclick="handleContextAction('star')">
+        <span class="context-menu-icon">⭐</span>
+        <span>Star</span>
+        <span class="context-menu-shortcut">S</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item danger" onclick="handleContextAction('delete')">
+        <span class="context-menu-icon">🗑️</span>
+        <span>Delete</span>
+        <span class="context-menu-shortcut">#</span>
+    </div>
+</div>
+
+{{end}}

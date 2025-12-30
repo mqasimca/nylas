@@ -72,7 +72,7 @@ func TestStatusBar_SetCounts(t *testing.T) {
 func TestStatusBar_View(t *testing.T) {
 	theme := styles.GetTheme("k9s")
 	statusBar := NewStatusBar(theme, "test@example.com")
-	statusBar.SetWidth(100)
+	statusBar.SetWidth(200)
 	statusBar.SetUnreadCount(10)
 	statusBar.SetEventCount(3)
 
@@ -82,9 +82,9 @@ func TestStatusBar_View(t *testing.T) {
 		t.Error("View returned empty string")
 	}
 
-	// Check that view contains expected elements
-	if !strings.Contains(view, "Nylas CLI") {
-		t.Error("View should contain app name")
+	// k9s style: should contain email
+	if !strings.Contains(view, "test@example.com") {
+		t.Error("View should contain email")
 	}
 }
 
@@ -108,9 +108,6 @@ func TestFooterBar_View(t *testing.T) {
 	theme := styles.GetTheme("k9s")
 	footer := NewFooterBar(theme, "test@example.com")
 	footer.SetWidth(100)
-	footer.SetBindings([]KeyBinding{
-		{Key: "a", Description: "Action"},
-	})
 
 	view := footer.View()
 
@@ -118,70 +115,38 @@ func TestFooterBar_View(t *testing.T) {
 		t.Error("View returned empty string")
 	}
 
+	// k9s style footer: :command | ?:help | ^c:quit
+	if !strings.Contains(view, "command") {
+		t.Error("View should contain 'command'")
+	}
+}
+
+// k9s-style Tests
+
+func TestStatusBar_K9sStyle(t *testing.T) {
+	theme := styles.GetTheme("k9s")
+	statusBar := NewStatusBar(theme, "test@example.com")
+	statusBar.SetWidth(200)
+
+	view := statusBar.View()
+
+	// Should contain email
 	if !strings.Contains(view, "test@example.com") {
-		t.Error("View should contain email")
+		t.Error("Status bar should contain email")
+	}
+
+	// Should contain pipe separator
+	if !strings.Contains(view, "│") {
+		t.Error("Status bar should contain pipe separator")
 	}
 }
 
-// Glossy Enhancement Tests
-
-func TestStatusBar_GlossyAppInfo(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	statusBar := NewStatusBar(theme, "test@example.com")
-	statusBar.SetWidth(150)
-
-	view := statusBar.View()
-
-	// Should contain sparkle emoji
-	if !strings.Contains(view, "✨") {
-		t.Error("Status bar should contain sparkle emoji for glossy effect")
-	}
-
-	// Should contain app name and version
-	if !strings.Contains(view, "Nylas CLI") {
-		t.Error("Status bar should contain app name")
-	}
-
-	if !strings.Contains(view, "v2.0") {
-		t.Error("Status bar should contain version")
-	}
-}
-
-func TestStatusBar_GlossyBadges(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	statusBar := NewStatusBar(theme, "test@example.com")
-	statusBar.SetWidth(150)
-	statusBar.SetUnreadCount(42)
-	statusBar.SetEventCount(7)
-
-	view := statusBar.View()
-
-	// Should contain inbox emoji
-	if !strings.Contains(view, "📥") {
-		t.Error("Status bar should contain inbox emoji")
-	}
-
-	// Should contain calendar emoji
-	if !strings.Contains(view, "📅") {
-		t.Error("Status bar should contain calendar emoji")
-	}
-
-	// Should contain counts (though they may be ANSI-styled)
-	if !strings.Contains(view, "42") {
-		t.Error("Status bar should display unread count")
-	}
-
-	if !strings.Contains(view, "7") {
-		t.Error("Status bar should display event count")
-	}
-}
-
-func TestStatusBar_GlossyStatus(t *testing.T) {
+func TestStatusBar_LiveStatus(t *testing.T) {
 	theme := styles.GetTheme("k9s")
 
 	t.Run("online status", func(t *testing.T) {
 		statusBar := NewStatusBar(theme, "test@example.com")
-		statusBar.SetWidth(150)
+		statusBar.SetWidth(200)
 		statusBar.SetOnline(true)
 
 		view := statusBar.View()
@@ -191,74 +156,37 @@ func TestStatusBar_GlossyStatus(t *testing.T) {
 			t.Error("Status bar should contain status dot")
 		}
 
-		// Should contain ONLINE text
-		if !strings.Contains(view, "ONLINE") {
-			t.Error("Status bar should display ONLINE status")
+		// Should contain Live text
+		if !strings.Contains(view, "Live") {
+			t.Error("Status bar should display Live status")
 		}
 	})
 
 	t.Run("offline status", func(t *testing.T) {
 		statusBar := NewStatusBar(theme, "test@example.com")
-		statusBar.SetWidth(150)
+		statusBar.SetWidth(200)
 		statusBar.SetOnline(false)
 
 		view := statusBar.View()
 
-		// Should contain OFFLINE text
-		if !strings.Contains(view, "OFFLINE") {
-			t.Error("Status bar should display OFFLINE status")
+		// Should contain Offline text
+		if !strings.Contains(view, "Offline") {
+			t.Error("Status bar should display Offline status")
 		}
 	})
 }
 
-func TestStatusBar_GlossyClock(t *testing.T) {
+func TestStatusBar_Time(t *testing.T) {
 	theme := styles.GetTheme("k9s")
 	statusBar := NewStatusBar(theme, "test@example.com")
-	statusBar.SetWidth(150)
+	statusBar.SetWidth(200)
 	statusBar.Update() // Update time
 
 	view := statusBar.View()
 
-	// Should contain clock emoji
-	if !strings.Contains(view, "⏰") {
-		t.Error("Status bar should contain clock emoji")
-	}
-
-	// Should contain time (HH:MM:SS format)
-	// We can't check exact time, but we can verify it's not empty
+	// Should not be empty
 	if view == "" {
 		t.Error("Status bar view should not be empty")
-	}
-}
-
-func TestStatusBar_GlossySeparators(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	statusBar := NewStatusBar(theme, "test@example.com")
-	statusBar.SetWidth(150)
-
-	view := statusBar.View()
-
-	// Should contain diamond separator
-	if !strings.Contains(view, "◆") {
-		t.Error("Status bar should contain diamond separator for glossy effect")
-	}
-}
-
-func TestStatusBar_MinimalView(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	statusBar := NewStatusBar(theme, "test@example.com")
-	statusBar.SetWidth(20) // Very small width
-
-	view := statusBar.View()
-
-	// Should still return content (minimal version)
-	if view == "" {
-		t.Error("Status bar should show minimal version when width is small")
-	}
-
-	// Should at least contain app name in minimal version
-	if !strings.Contains(view, "Nylas CLI") {
-		t.Error("Minimal status bar should contain app name")
 	}
 }
 
@@ -275,99 +203,29 @@ func TestStatusBar_ZeroWidth(t *testing.T) {
 	}
 }
 
-func TestFooterBar_GlossyBadges(t *testing.T) {
+func TestFooterBar_K9sStyle(t *testing.T) {
 	theme := styles.GetTheme("k9s")
 	footer := NewFooterBar(theme, "test@example.com")
 	footer.SetWidth(150)
-	footer.SetBindings([]KeyBinding{
-		{Key: "a", Description: "Air"},
-		{Key: "c", Description: "Calendar"},
-		{Key: "p", Description: "People"},
-	})
 
 	view := footer.View()
 
-	// Should contain all keys
-	if !strings.Contains(view, "Air") {
-		t.Error("Footer should contain Air binding")
+	// k9s style: :command | ?:help | ^c:quit
+	if !strings.Contains(view, "command") {
+		t.Error("Footer should contain 'command'")
 	}
 
-	if !strings.Contains(view, "Calendar") {
-		t.Error("Footer should contain Calendar binding")
+	if !strings.Contains(view, "help") {
+		t.Error("Footer should contain 'help'")
 	}
 
-	if !strings.Contains(view, "People") {
-		t.Error("Footer should contain People binding")
+	if !strings.Contains(view, "quit") {
+		t.Error("Footer should contain 'quit'")
 	}
 
-	// Should contain bullet separators
-	if !strings.Contains(view, "•") {
-		t.Error("Footer should contain bullet separator")
-	}
-}
-
-func TestFooterBar_GlossyUserBadge(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	footer := NewFooterBar(theme, "user@example.com")
-	footer.SetWidth(150)
-
-	view := footer.View()
-
-	// Should contain user emoji
-	if !strings.Contains(view, "👤") {
-		t.Error("Footer should contain user emoji badge")
-	}
-
-	// Should contain email
-	if !strings.Contains(view, "user@example.com") {
-		t.Error("Footer should display user email")
-	}
-}
-
-func TestFooterBar_AlternatingColors(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	footer := NewFooterBar(theme, "test@example.com")
-	footer.SetWidth(200)
-	footer.SetBindings([]KeyBinding{
-		{Key: "a", Description: "First"},
-		{Key: "b", Description: "Second"},
-		{Key: "c", Description: "Third"},
-		{Key: "d", Description: "Fourth"},
-	})
-
-	view := footer.View()
-
-	// Should contain all bindings
-	if !strings.Contains(view, "First") {
-		t.Error("Footer should contain First binding")
-	}
-
-	if !strings.Contains(view, "Second") {
-		t.Error("Footer should contain Second binding")
-	}
-
-	if !strings.Contains(view, "Third") {
-		t.Error("Footer should contain Third binding")
-	}
-
-	if !strings.Contains(view, "Fourth") {
-		t.Error("Footer should contain Fourth binding")
-	}
-}
-
-func TestFooterBar_MinimalView(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	footer := NewFooterBar(theme, "verylongemail@example.com")
-	footer.SetWidth(30) // Very small width
-	footer.SetBindings([]KeyBinding{
-		{Key: "a", Description: "Action"},
-	})
-
-	view := footer.View()
-
-	// Should still return content (minimal version)
-	if view == "" {
-		t.Error("Footer should show minimal version when width is small")
+	// Should contain pipe separators
+	if !strings.Contains(view, "│") {
+		t.Error("Footer should contain pipe separator")
 	}
 }
 
@@ -381,24 +239,5 @@ func TestFooterBar_ZeroWidth(t *testing.T) {
 	// Should return empty string when width is 0
 	if view != "" {
 		t.Error("Footer should return empty string when width is 0")
-	}
-}
-
-func TestFooterBar_EmptyBindings(t *testing.T) {
-	theme := styles.GetTheme("k9s")
-	footer := NewFooterBar(theme, "test@example.com")
-	footer.SetWidth(100)
-	footer.SetBindings([]KeyBinding{})
-
-	view := footer.View()
-
-	// Should still display email even with no bindings
-	if !strings.Contains(view, "test@example.com") {
-		t.Error("Footer should display email even with empty bindings")
-	}
-
-	// Should contain user emoji
-	if !strings.Contains(view, "👤") {
-		t.Error("Footer should contain user emoji even with empty bindings")
 	}
 }

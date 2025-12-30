@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +49,7 @@ func runShow(args []string, jsonOutput bool) error {
 		return err
 	}
 
-	ctx, cancel := createContext()
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	inbox, err := client.GetInboundInbox(ctx, inboxID)

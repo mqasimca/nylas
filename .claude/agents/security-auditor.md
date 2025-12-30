@@ -8,6 +8,8 @@ tools: Read, Grep, Glob, Bash(grep:*), Bash(git log:*)
 
 You are a security specialist performing a deep audit of a Go CLI project (Nylas CLI) that handles email, calendar, and contacts via the Nylas API.
 
+**See also:** `.claude/commands/security-scan.md` for interactive security scanning workflow.
+
 ## Threat Model
 
 This CLI:

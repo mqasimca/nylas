@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -41,37 +40,17 @@ func (s *Server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse query parameters
-	query := r.URL.Query()
+	query := NewQueryParams(r.URL.Query())
 
 	// Calendar ID is required
-	calendarID := query.Get("calendar_id")
-	if calendarID == "" {
-		calendarID = "primary" // Default to primary calendar
-	}
+	calendarID := query.GetString("calendar_id", "primary")
 
 	// Build query params
 	params := &domain.EventQueryParams{
-		Limit:           50,
+		Limit:           query.GetLimit(50),
 		ExpandRecurring: true,
-	}
-
-	// Limit
-	if l := query.Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 200 {
-			params.Limit = parsed
-		}
-	}
-
-	// Date range filtering
-	if start := query.Get("start"); start != "" {
-		if parsed, err := strconv.ParseInt(start, 10, 64); err == nil {
-			params.Start = parsed
-		}
-	}
-	if end := query.Get("end"); end != "" {
-		if parsed, err := strconv.ParseInt(end, 10, 64); err == nil {
-			params.End = parsed
-		}
+		Start:           query.GetInt64("start", 0),
+		End:             query.GetInt64("end", 0),
 	}
 
 	// Default to current week if no date range specified

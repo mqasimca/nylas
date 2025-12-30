@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +37,7 @@ func newReadCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			msg, err := client.GetMessage(ctx, grantID, messageID)

@@ -1,7 +1,6 @@
 package timezone
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,13 +13,6 @@ import (
 // getService creates a new timezone service.
 func getService() *timezone.Service {
 	return timezone.NewService()
-}
-
-// createContext creates a context with timeout.
-func createContext() context.Context {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	_ = cancel // Will be called when function returns
-	return ctx
 }
 
 // formatTime formats a time with time zone information.

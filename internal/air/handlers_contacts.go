@@ -3,7 +3,6 @@ package air
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -52,26 +51,12 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse query parameters
-	query := r.URL.Query()
-	limit := 50
-	if l := query.Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 200 {
-			limit = parsed
-		}
-	}
+	query := NewQueryParams(r.URL.Query())
 
 	params := &domain.ContactQueryParams{
-		Limit: limit,
-	}
-
-	// Filter by email
-	if email := query.Get("email"); email != "" {
-		params.Email = email
-	}
-
-	// Filter by source
-	if source := query.Get("source"); source != "" {
-		params.Source = source
+		Limit:  query.GetLimit(50),
+		Email:  query.GetString("email", ""),
+		Source: query.GetString("source", ""),
 	}
 
 	// Filter by group
@@ -94,12 +79,12 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 		if store, err := s.getContactStore(accountEmail); err == nil {
 			cacheOpts := cache.ContactListOptions{
 				Group: group,
-				Limit: limit,
+				Limit: params.Limit,
 			}
 			if cached, err := store.List(cacheOpts); err == nil && len(cached) > 0 {
 				resp := ContactsResponse{
 					Contacts: make([]ContactResponse, 0, len(cached)),
-					HasMore:  len(cached) >= limit,
+					HasMore:  len(cached) >= params.Limit,
 				}
 				for _, c := range cached {
 					resp.Contacts = append(resp.Contacts, cachedContactToResponse(c))

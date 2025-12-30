@@ -163,7 +163,7 @@ func TestBuildPageData_DemoMode(t *testing.T) {
 func TestCSS_EmailListNoMaxHeight(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodGet, "/css/accessibility.css", nil)
+	req := httptest.NewRequest(http.MethodGet, "/css/accessibility-aria.css", nil)
 	w := httptest.NewRecorder()
 
 	// Get the CSS file handler
@@ -179,7 +179,7 @@ func TestCSS_EmailListNoMaxHeight(t *testing.T) {
 
 	// Verify the [role="listbox"] selector excludes .email-list
 	if !strings.Contains(css, `:not(.email-list)`) {
-		t.Error("accessibility.css must use [role=\"listbox\"]:not(.email-list) to exclude email list from max-height constraint")
+		t.Error("accessibility-aria.css must use [role=\"listbox\"]:not(.email-list) to exclude email list from max-height constraint")
 	}
 
 	// Verify max-height: 300px exists but NOT for email-list
@@ -222,7 +222,7 @@ func TestCSS_EmailListGrid(t *testing.T) {
 func TestCSS_EmailViewGrid(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodGet, "/css/calendar.css", nil)
+	req := httptest.NewRequest(http.MethodGet, "/css/calendar-grid.css", nil)
 	w := httptest.NewRecorder()
 
 	staticFS, _ := fs.Sub(staticFiles, "static")
@@ -237,7 +237,7 @@ func TestCSS_EmailViewGrid(t *testing.T) {
 
 	// Verify email-view.active uses Grid
 	if !strings.Contains(css, ".email-view.active") {
-		t.Error("calendar.css must define .email-view.active")
+		t.Error("calendar-grid.css must define .email-view.active")
 	}
 
 	if !strings.Contains(css, "grid-template-columns") {

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -174,7 +175,7 @@ Supports custom metadata:
 			}
 			fmt.Printf("  Subject: %s\n", subject)
 			if body != "" {
-				fmt.Printf("  Body:    %s\n", truncate(body, 50))
+				fmt.Printf("  Body:    %s\n", common.Truncate(body, 50))
 			}
 			if !scheduledTime.IsZero() {
 				fmt.Printf("  \033[33mScheduled:\033[0m %s\n", scheduledTime.Format("Mon Jan 2, 2006 3:04 PM MST"))
@@ -210,7 +211,7 @@ Supports custom metadata:
 			}
 
 			// Send
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			msg, err := client.SendMessage(ctx, grantID, req)

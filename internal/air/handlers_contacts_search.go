@@ -3,7 +3,6 @@ package air
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -76,7 +75,7 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
+	query := NewQueryParams(r.URL.Query())
 	q := query.Get("q")
 
 	// Demo mode: filter mock contacts
@@ -121,25 +120,14 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse query parameters
-	limit := 50
-	if l := query.Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 200 {
-			limit = parsed
-		}
-	}
-
 	params := &domain.ContactQueryParams{
-		Limit: limit,
+		Limit:     query.GetLimit(50),
+		PageToken: query.Get("cursor"),
 	}
 
 	// Set email filter if query looks like email
 	if strings.Contains(q, "@") {
 		params.Email = q
-	}
-
-	// Cursor for pagination
-	if cursor := query.Get("cursor"); cursor != "" {
-		params.PageToken = cursor
 	}
 
 	// Get account email for cache search
@@ -148,11 +136,11 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 	// Try cache search first
 	if q != "" && s.cacheManager != nil && s.cacheSettings != nil && s.cacheSettings.IsCacheEnabled() {
 		if store, err := s.getContactStore(accountEmail); err == nil {
-			cached, err := store.Search(q, limit)
+			cached, err := store.Search(q, params.Limit)
 			if err == nil && len(cached) > 0 {
 				resp := ContactsResponse{
 					Contacts: make([]ContactResponse, 0, len(cached)),
-					HasMore:  len(cached) >= limit,
+					HasMore:  len(cached) >= params.Limit,
 				}
 				for _, c := range cached {
 					resp.Contacts = append(resp.Contacts, cachedContactToResponse(c))

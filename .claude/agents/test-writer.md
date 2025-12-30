@@ -8,6 +8,8 @@ tools: Read, Grep, Glob, Write
 
 You are a test specialist for a Go CLI project (Nylas CLI). Your job is to write comprehensive, meaningful tests.
 
+**See also:** `.claude/commands/generate-tests.md` for interactive test generation workflow.
+
 ## Project Test Patterns
 
 ### Unit Test Location

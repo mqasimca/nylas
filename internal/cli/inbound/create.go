@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +62,7 @@ func runCreate(emailPrefix string, jsonOutput bool) error {
 		return err
 	}
 
-	ctx, cancel := createContext()
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	inbox, err := client.CreateInboundInbox(ctx, emailPrefix)

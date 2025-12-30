@@ -1,9 +1,10 @@
 # VHS Tape: Test Navigation Flow
 # This tape tests navigating through different screens
 
-Output ../output/navigation.gif
+Output navigation.gif
 
 Set Shell bash
+Set FontFamily "MesloLGS Nerd Font Mono"
 Set FontSize 14
 Set Width 1200
 Set Height 800
@@ -11,48 +12,52 @@ Set Theme "Catppuccin Mocha"
 
 # Launch and skip splash
 Type "./bin/nylas tui --engine bubbletea"
-Sleep 500ms
 Enter
-Sleep 500ms
+Sleep 2s
+
+# Skip splash
+Type " "
+Sleep 1.5s
 
 # Start from dashboard
-Screenshot ../output/nav-dashboard.png
+Screenshot nav-dashboard.png
 Sleep 500ms
 
 # Navigate to Help (press '?')
 Type "?"
-Sleep 500ms
-Screenshot ../output/nav-help.png
 Sleep 1s
-
-# Go back to dashboard (press ESC or 'q')
-Escape
+Screenshot nav-help.png
 Sleep 500ms
-Screenshot ../output/nav-back-to-dashboard.png
+
+# Go back to dashboard (press ESC)
+Escape
+Sleep 1s
+Screenshot nav-back-to-dashboard.png
 
 # Navigate to Settings (press 's')
 Type "s"
-Sleep 500ms
-Screenshot ../output/nav-settings.png
 Sleep 1s
+Screenshot nav-settings.png
+Sleep 500ms
 
 # Back to dashboard
 Escape
-Sleep 500ms
+Sleep 1s
 
 # Navigate to Debug (press 'd')
 Type "d"
-Sleep 500ms
-Screenshot ../output/nav-debug.png
 Sleep 1s
+Screenshot nav-debug.png
+Sleep 500ms
 
 # Back to dashboard
 Escape
-Sleep 500ms
+Sleep 1s
 
 # Final dashboard view
-Screenshot ../output/nav-final.png
+Screenshot nav-final.png
 
 # Quit
+Sleep 500ms
 Ctrl+C
-Sleep 200ms
+Sleep 500ms

@@ -1,0 +1,281 @@
+{{define "modals_settings"}}
+<!-- Settings Modal -->
+<div class="settings-overlay" id="settingsOverlay" data-testid="settings-overlay" onclick="closeSettingsOnOverlay(event)">
+    <div class="settings-modal">
+        <div class="settings-header">
+            <h2>Settings</h2>
+            <button class="settings-close-btn" data-testid="settings-close" onclick="toggleSettings()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="settings-content">
+            <!-- AI Provider Section -->
+            <div class="settings-section" data-testid="settings-ai-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">✨</span>
+                    AI Provider
+                </h3>
+                <p class="settings-section-desc">Choose which AI provider to use for email summaries and smart replies</p>
+                <div class="settings-options">
+                    <label class="settings-option" data-provider="claude-code">
+                        <input type="radio" name="ai-provider" value="claude-code">
+                        <div class="option-content">
+                            <div class="option-icon claude-icon">C</div>
+                            <div class="option-details">
+                                <div class="option-name">Claude Code</div>
+                                <div class="option-desc">Anthropic's Claude via MCP integration</div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <p class="settings-section-hint" style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                    💡 Use Claude Code CLI with the Nylas MCP server for AI-powered email features.
+                </p>
+            </div>
+
+            <!-- Notetaker Section -->
+            <div class="settings-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">🎙️</span>
+                    Notetaker Sources
+                </h3>
+                <p class="settings-section-desc">Configure email sources for meeting recordings. Add multiple sources to aggregate recordings from different notetaker services.</p>
+
+                <div class="notetaker-sources-list" id="notetakerSourcesList">
+                    <!-- Sources will be rendered by JavaScript -->
+                </div>
+
+                <button class="settings-add-source-btn" onclick="openAddNotetakerSourceModal()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 5v14m-7-7h14"/>
+                    </svg>
+                    Add Source
+                </button>
+            </div>
+
+            <!-- Theme Section -->
+            <div class="settings-section" data-testid="settings-theme-section">
+                <h3 class="settings-section-title">
+                    <span class="settings-section-icon">🎨</span>
+                    Appearance
+                </h3>
+                <p class="settings-section-desc">Customize the look and feel</p>
+                <div class="settings-subsection">
+                    <div class="settings-label">Theme Mode</div>
+                    <div class="theme-toggle-group">
+                        <button class="theme-btn" data-theme="light" onclick="setTheme('light')">Light</button>
+                        <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')">Dark</button>
+                        <button class="theme-btn" data-theme="system" onclick="setTheme('system')">System</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="settings-footer">
+            <button class="settings-reset-btn" onclick="resetSettings()">Reset to Defaults</button>
+            <button class="settings-save-btn" onclick="saveSettings()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Snooze Picker Modal -->
+<div class="snooze-picker-overlay hidden" id="snoozePickerOverlay" onclick="if(event.target === this) closeSnoozeModal()">
+    <div class="snooze-picker-modal">
+        <div class="snooze-picker-header">
+            <h3>Snooze until...</h3>
+            <button class="snooze-picker-close" onclick="closeSnoozeModal()">×</button>
+        </div>
+        <div class="snooze-options">
+            <button class="snooze-option" onclick="snoozeEmail('later_today')">
+                <span class="snooze-option-icon">🌆</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">Later today</span>
+                    <span class="snooze-option-time" id="snoozeLaterToday">6:00 PM</span>
+                </div>
+            </button>
+            <button class="snooze-option" onclick="snoozeEmail('tomorrow')">
+                <span class="snooze-option-icon">🌅</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">Tomorrow</span>
+                    <span class="snooze-option-time" id="snoozeTomorrow">9:00 AM</span>
+                </div>
+            </button>
+            <button class="snooze-option" onclick="snoozeEmail('next_week')">
+                <span class="snooze-option-icon">📅</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">Next week</span>
+                    <span class="snooze-option-time" id="snoozeNextWeek">Monday 9:00 AM</span>
+                </div>
+            </button>
+            <button class="snooze-option" onclick="snoozeEmail('weekend')">
+                <span class="snooze-option-icon">🏖️</span>
+                <div class="snooze-option-text">
+                    <span class="snooze-option-label">This weekend</span>
+                    <span class="snooze-option-time" id="snoozeWeekend">Saturday 10:00 AM</span>
+                </div>
+            </button>
+        </div>
+        <div class="snooze-custom">
+            <button class="snooze-custom-btn" onclick="openCustomSnooze()">
+                <span>📆</span> Pick date & time
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Send Later Picker Modal -->
+<div class="send-later-overlay hidden" id="sendLaterOverlay" onclick="if(event.target === this) closeSendLaterModal()">
+    <div class="send-later-modal">
+        <div class="send-later-header">
+            <h3>Schedule send</h3>
+            <button class="send-later-close" onclick="closeSendLaterModal()">×</button>
+        </div>
+        <div class="send-later-options">
+            <button class="send-later-option" onclick="scheduleSend('tomorrow_morning')">
+                <span class="send-later-icon">🌅</span>
+                <div class="send-later-text">
+                    <span class="send-later-label">Tomorrow morning</span>
+                    <span class="send-later-time">8:00 AM</span>
+                </div>
+            </button>
+            <button class="send-later-option" onclick="scheduleSend('tomorrow_afternoon')">
+                <span class="send-later-icon">🌇</span>
+                <div class="send-later-text">
+                    <span class="send-later-label">Tomorrow afternoon</span>
+                    <span class="send-later-time">1:00 PM</span>
+                </div>
+            </button>
+            <button class="send-later-option" onclick="scheduleSend('next_monday')">
+                <span class="send-later-icon">📅</span>
+                <div class="send-later-text">
+                    <span class="send-later-label">Monday morning</span>
+                    <span class="send-later-time">8:00 AM</span>
+                </div>
+            </button>
+        </div>
+        <div class="send-later-custom">
+            <label class="send-later-custom-label">Custom date & time</label>
+            <div class="send-later-custom-inputs">
+                <input type="date" id="sendLaterDate" class="send-later-date-input">
+                <input type="time" id="sendLaterTime" class="send-later-time-input" value="09:00">
+            </div>
+            <button class="send-later-schedule-btn" onclick="scheduleCustomSend()">
+                Schedule
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Snooze Modal Functions
+function closeSnoozeModal() {
+    document.getElementById('snoozePickerOverlay').classList.add('hidden');
+}
+
+function openSnoozeModal(emailId) {
+    window.snoozeEmailId = emailId;
+    updateSnoozeTimes();
+    document.getElementById('snoozePickerOverlay').classList.remove('hidden');
+}
+
+function updateSnoozeTimes() {
+    const now = new Date();
+
+    // Later today (6 PM)
+    const laterToday = new Date(now);
+    laterToday.setHours(18, 0, 0, 0);
+    if (laterToday <= now) laterToday.setDate(laterToday.getDate() + 1);
+    document.getElementById('snoozeLaterToday').textContent = laterToday.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Tomorrow (9 AM)
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    document.getElementById('snoozeTomorrow').textContent = 'Tomorrow ' + tomorrow.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Next week (Monday 9 AM)
+    const nextWeek = new Date(now);
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+    nextWeek.setDate(nextWeek.getDate() + daysUntilMonday);
+    nextWeek.setHours(9, 0, 0, 0);
+    document.getElementById('snoozeNextWeek').textContent = 'Monday ' + nextWeek.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    // Weekend (Saturday 10 AM)
+    const weekend = new Date(now);
+    const daysUntilSat = (6 - now.getDay() + 7) % 7 || 7;
+    weekend.setDate(weekend.getDate() + daysUntilSat);
+    weekend.setHours(10, 0, 0, 0);
+    document.getElementById('snoozeWeekend').textContent = 'Sat ' + weekend.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function snoozeEmail(option) {
+    console.log('Snoozing email:', window.snoozeEmailId, 'until:', option);
+    showToast('Email snoozed', 'success');
+    closeSnoozeModal();
+}
+
+function openCustomSnooze() {
+    console.log('Opening custom snooze picker');
+}
+
+// Send Later Modal Functions
+function closeSendLaterModal() {
+    document.getElementById('sendLaterOverlay').classList.add('hidden');
+}
+
+function openSendLaterModal() {
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('sendLaterDate').value = tomorrow.toISOString().split('T')[0];
+    document.getElementById('sendLaterOverlay').classList.remove('hidden');
+}
+
+function scheduleSend(option) {
+    console.log('Scheduling send:', option);
+    showToast('Email scheduled', 'success');
+    closeSendLaterModal();
+}
+
+function scheduleCustomSend() {
+    const date = document.getElementById('sendLaterDate').value;
+    const time = document.getElementById('sendLaterTime').value;
+    console.log('Scheduling custom send:', date, time);
+    showToast('Email scheduled for ' + new Date(date + 'T' + time).toLocaleString(), 'success');
+    closeSendLaterModal();
+}
+</script>
+
+<!-- Add Notetaker Source Modal -->
+<div class="notetaker-source-modal-overlay hidden" id="notetakerSourceModal" onclick="if(event.target === this) closeNotetakerSourceModal()">
+    <div class="notetaker-source-modal">
+        <div class="notetaker-source-modal-header">
+            <h3 id="notetakerSourceModalTitle">Add Notetaker Source</h3>
+            <button class="notetaker-source-modal-close" onclick="closeNotetakerSourceModal()">×</button>
+        </div>
+        <div class="notetaker-source-modal-body">
+            <input type="hidden" id="notetakerSourceEditIndex" value="-1">
+            <div class="form-group">
+                <label for="notetakerSourceFrom">From Email</label>
+                <input type="email" id="notetakerSourceFrom" class="form-input" placeholder="e.g., notebook@example.ai">
+                <p class="form-hint">The sender email address for notetaker summary emails</p>
+            </div>
+            <div class="form-group">
+                <label for="notetakerSourceSubject">Subject Filter (Optional)</label>
+                <input type="text" id="notetakerSourceSubject" class="form-input" placeholder="e.g., Meeting Summary">
+                <p class="form-hint">Filter by subject line (leave empty to include all)</p>
+            </div>
+            <div class="form-group">
+                <label for="notetakerSourceLink">External Link Domain</label>
+                <input type="text" id="notetakerSourceLink" class="form-input" placeholder="e.g., notebook.nylas.ai">
+                <p class="form-hint">The domain for recording links (e.g., notebook.nylas.ai)</p>
+            </div>
+        </div>
+        <div class="notetaker-source-modal-footer">
+            <button class="btn-secondary" onclick="closeNotetakerSourceModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveNotetakerSource()">Save</button>
+        </div>
+    </div>
+</div>
+{{end}}

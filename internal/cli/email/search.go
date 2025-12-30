@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -64,7 +65,7 @@ Examples:
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			params := &domain.MessageQueryParams{

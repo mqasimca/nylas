@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +48,8 @@ Examples:
 func runList(filter string, jsonOut bool) error {
 	// Get all time zones
 	svc := getService()
-	ctx := createContext()
+	ctx, cancel := common.CreateContext()
+	defer cancel()
 
 	zones, err := svc.ListTimeZones(ctx)
 	if err != nil {

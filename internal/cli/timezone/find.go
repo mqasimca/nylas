@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -133,7 +134,8 @@ func runFindMeeting(zonesStr, durationStr, startHour, endHour,
 
 	// Find meeting times
 	svc := getService()
-	ctx := createContext()
+	ctx, cancel := common.CreateContext()
+	defer cancel()
 
 	result, err := svc.FindMeetingTime(ctx, req)
 	if err != nil {

@@ -1,24 +1,18 @@
 package ai
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
 // ClaudeClient implements LLMProvider for Anthropic Claude.
 type ClaudeClient struct {
-	apiKey string
-	model  string
-	client *http.Client
+	*BaseClient
 }
 
 // NewClaudeClient creates a new Claude client.
@@ -29,17 +23,15 @@ func NewClaudeClient(config *domain.ClaudeConfig) *ClaudeClient {
 		}
 	}
 
-	apiKey := expandEnvVar(config.APIKey)
-	if apiKey == "" {
-		apiKey = os.Getenv("ANTHROPIC_API_KEY")
-	}
+	apiKey := GetAPIKeyFromEnv(config.APIKey, "ANTHROPIC_API_KEY")
 
 	return &ClaudeClient{
-		apiKey: apiKey,
-		model:  config.Model,
-		client: &http.Client{
-			Timeout: 120 * time.Second,
-		},
+		BaseClient: NewBaseClient(
+			apiKey,
+			config.Model,
+			"https://api.anthropic.com/v1",
+			0, // Use default timeout
+		),
 	}
 }
 
@@ -50,7 +42,7 @@ func (c *ClaudeClient) Name() string {
 
 // IsAvailable checks if Claude API key is configured.
 func (c *ClaudeClient) IsAvailable(ctx context.Context) bool {
-	return c.apiKey != ""
+	return c.IsConfigured()
 }
 
 // Chat sends a chat completion request.
@@ -60,7 +52,7 @@ func (c *ClaudeClient) Chat(ctx context.Context, req *domain.ChatRequest) (*doma
 
 // ChatWithTools sends a chat request with function calling.
 func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest, tools []domain.Tool) (*domain.ChatResponse, error) {
-	if c.apiKey == "" {
+	if !c.IsConfigured() {
 		return nil, fmt.Errorf("claude API key not configured")
 	}
 
@@ -68,7 +60,7 @@ func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 	system, messages := c.extractSystemMessage(req.Messages)
 
 	claudeReq := map[string]any{
-		"model":      c.getModel(req.Model),
+		"model":      c.GetModel(req.Model),
 		"messages":   c.convertMessages(messages),
 		"max_tokens": c.getMaxTokens(req.MaxTokens),
 	}
@@ -86,33 +78,12 @@ func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 		claudeReq["tools"] = c.convertTools(tools)
 	}
 
-	// Send request
-	body, err := json.Marshal(claudeReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	// Send request using base client with Claude-specific headers
+	headers := map[string]string{
+		"x-api-key":         c.apiKey,
+		"anthropic-version": "2023-06-01",
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-api-key", c.apiKey)
-	httpReq.Header.Set("anthropic-version", "2023-06-01")
-
-	resp, err := c.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("claude API error (%d): %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	// Parse response
 	var claudeResp struct {
 		ID      string `json:"id"`
 		Type    string `json:"type"`
@@ -131,8 +102,8 @@ func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 		} `json:"usage"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&claudeResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	if err := c.DoJSONRequestAndDecode(ctx, "POST", "/messages", claudeReq, headers, &claudeResp); err != nil {
+		return nil, err
 	}
 
 	response := &domain.ChatResponse{
@@ -173,14 +144,14 @@ func (c *ClaudeClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 // StreamChat streams chat responses.
 func (c *ClaudeClient) StreamChat(ctx context.Context, req *domain.ChatRequest, callback func(chunk string) error) error {
 	// Claude streaming requires SSE handling, simplified version here
-	if c.apiKey == "" {
+	if !c.IsConfigured() {
 		return fmt.Errorf("claude API key not configured")
 	}
 
 	system, messages := c.extractSystemMessage(req.Messages)
 
 	claudeReq := map[string]any{
-		"model":      c.getModel(req.Model),
+		"model":      c.GetModel(req.Model),
 		"messages":   c.convertMessages(messages),
 		"max_tokens": c.getMaxTokens(req.MaxTokens),
 		"stream":     true,
@@ -194,30 +165,17 @@ func (c *ClaudeClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 		claudeReq["temperature"] = req.Temperature
 	}
 
-	body, err := json.Marshal(claudeReq)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
+	// Send streaming request using base client
+	headers := map[string]string{
+		"x-api-key":         c.apiKey,
+		"anthropic-version": "2023-06-01",
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(body))
+	resp, err := c.DoJSONRequest(ctx, "POST", "/messages", claudeReq, headers)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-api-key", c.apiKey)
-	httpReq.Header.Set("anthropic-version", "2023-06-01")
-
-	resp, err := c.client.Do(httpReq)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("claude API error (%d): %s", resp.StatusCode, string(bodyBytes))
-	}
 
 	// Simple SSE parsing (production would use proper SSE library)
 	scanner := &sseScanner{reader: resp.Body}
@@ -238,13 +196,6 @@ func (c *ClaudeClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 }
 
 // Helper methods
-
-func (c *ClaudeClient) getModel(requestModel string) string {
-	if requestModel != "" {
-		return requestModel
-	}
-	return c.model
-}
 
 func (c *ClaudeClient) getMaxTokens(requestMaxTokens int) int {
 	if requestMaxTokens > 0 {
@@ -341,13 +292,4 @@ func (s *sseScanner) Event() sseEvent {
 
 func (s *sseScanner) Err() error {
 	return s.err
-}
-
-// expandEnvVar expands environment variables in the format ${VAR_NAME}
-func expandEnvVar(value string) string {
-	if strings.HasPrefix(value, "${") && strings.HasSuffix(value, "}") {
-		envVar := value[2 : len(value)-1]
-		return os.Getenv(envVar)
-	}
-	return value
 }

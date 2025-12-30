@@ -119,9 +119,9 @@ func TestClaudeClient_GetModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := client.getModel(tt.requestModel)
+			got := client.GetModel(tt.requestModel)
 			if got != tt.want {
-				t.Errorf("getModel() = %q, want %q", got, tt.want)
+				t.Errorf("GetModel() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -339,16 +339,16 @@ func TestExpandEnvVar(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := expandEnvVar(tt.value)
+			got := ExpandEnvVar(tt.value)
 
 			// For non-env var values, should return exact input
 			if tt.value == "literal-value" && got != tt.want {
-				t.Errorf("expandEnvVar() = %q, want %q", got, tt.want)
+				t.Errorf("ExpandEnvVar() = %q, want %q", got, tt.want)
 			}
 
 			// For partial match, should return exact input
 			if tt.value == "${incomplete" && got != tt.want {
-				t.Errorf("expandEnvVar() = %q, want %q", got, tt.want)
+				t.Errorf("ExpandEnvVar() = %q, want %q", got, tt.want)
 			}
 
 			// For env vars, just verify it doesn't panic

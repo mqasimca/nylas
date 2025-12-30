@@ -19,6 +19,10 @@ import (
 
 const binaryName = "nylas"
 
+// maxBinarySize is the maximum allowed size for the extracted binary (100MB).
+// This prevents decompression bomb attacks (G110).
+const maxBinarySize = 100 * 1024 * 1024
+
 // getAssetName returns the expected asset name for the current platform.
 func getAssetName(version string) string {
 	goos := runtime.GOOS
@@ -170,10 +174,18 @@ func extractFromTarGz(archivePath string) (string, error) {
 				return "", fmt.Errorf("create temp file: %w", err)
 			}
 
-			if _, err := io.Copy(tmpFile, tr); err != nil {
+			// Use LimitReader to prevent decompression bombs (G110)
+			limitedReader := io.LimitReader(tr, maxBinarySize)
+			written, err := io.Copy(tmpFile, limitedReader)
+			if err != nil {
 				_ = tmpFile.Close()
 				_ = os.Remove(tmpFile.Name())
 				return "", fmt.Errorf("extract binary: %w", err)
+			}
+			if written >= maxBinarySize {
+				_ = tmpFile.Close()
+				_ = os.Remove(tmpFile.Name())
+				return "", fmt.Errorf("binary exceeds maximum allowed size of %d bytes", maxBinarySize)
 			}
 
 			if err := tmpFile.Close(); err != nil {
@@ -210,11 +222,20 @@ func extractFromZip(archivePath string) (string, error) {
 				return "", fmt.Errorf("create temp file: %w", err)
 			}
 
-			if _, err := io.Copy(tmpFile, rc); err != nil {
+			// Use LimitReader to prevent decompression bombs (G110)
+			limitedReader := io.LimitReader(rc, maxBinarySize)
+			written, err := io.Copy(tmpFile, limitedReader)
+			if err != nil {
 				_ = tmpFile.Close()
 				_ = rc.Close()
 				_ = os.Remove(tmpFile.Name())
 				return "", fmt.Errorf("extract binary: %w", err)
+			}
+			if written >= maxBinarySize {
+				_ = tmpFile.Close()
+				_ = rc.Close()
+				_ = os.Remove(tmpFile.Name())
+				return "", fmt.Errorf("binary exceeds maximum allowed size of %d bytes", maxBinarySize)
 			}
 
 			_ = rc.Close()

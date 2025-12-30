@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -38,7 +39,7 @@ func newScheduledListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			scheduled, err := client.ListScheduledMessages(ctx, grantID)
@@ -104,7 +105,7 @@ func newScheduledShowCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
@@ -159,7 +160,7 @@ func newScheduledCancelCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get scheduled message info for confirmation

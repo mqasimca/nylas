@@ -12,6 +12,7 @@ Quick reference for AI assistants working on this codebase.
 - **NEVER commit secrets** - No API keys, tokens, passwords, .env files
 - **NEVER skip tests** - All changes require passing tests
 - **NEVER skip security scans** - Run `make security` before commits
+- **NEVER create files >600 lines** - Split logically by responsibility (types, helpers, handlers)
 
 ### ALWAYS DO (every code change):
 
@@ -23,7 +24,9 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 **⚠️ CRITICAL: Never skip linting. Fix ALL linting errors in code you wrote.**
 
-**Details:** See `.claude/rules/linting.md`, `.claude/rules/go-best-practices.md`
+**⚠️ CRITICAL: Enforce file size limits. Files must be ≤500 lines (ideal) or ≤600 lines (max).**
+
+**Details:** See `.claude/rules/linting.md`, `.claude/rules/go-best-practices.md`, `.claude/rules/file-size-limits.md`
 
 ### Test & Doc Requirements:
 | Change | Unit Test | Integration Test | Update Docs |
@@ -95,74 +98,36 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 **MCP files:**
 - `internal/cli/mcp/` - CLI commands (install, serve, status, uninstall)
 - `internal/adapters/mcp/proxy.go` - MCP proxy server
+- `internal/adapters/mcp/proxy_response.go` - Response handling helpers
 
 **Air files (Web UI):**
 - `internal/air/` - HTTP server, handlers, templates (all files ≤500 lines)
+- `internal/air/query_helpers.go` - Query parameter parsing utilities
 
-**Server Core (refactored from server.go):**
-  - `server.go` (51 lines) - Server struct definition
-  - `server_lifecycle.go` (315 lines) - Initialization, routing, lifecycle
-  - `server_stores.go` (67 lines) - Cache store accessors
-  - `server_sync.go` (187 lines) - Background sync logic
-  - `server_offline.go` (98 lines) - Offline queue processing
-  - `server_converters.go` (116 lines) - Domain to cache conversions
-  - `server_template.go` (163 lines) - Template handling
-  - `server_modules_test.go` (523 lines) - Unit tests for server modules
+**Air CSS (refactored for maintainability):**
+```
+internal/air/static/css/
+  ├── main.css                 # Core styles and imports
+  ├── accessibility-*.css      # Accessibility (core, aria)
+  ├── calendar-*.css           # Calendar (grid, modal)
+  ├── components-*.css         # UI components (account, skeleton, ui)
+  ├── contacts-*.css           # Contacts (list, modal)
+  ├── features-*.css           # Features (ui, widgets)
+  ├── productivity-*.css       # Productivity (send, ui)
+  └── settings-*.css           # Settings (ai, modal, notetaker)
+```
 
-**Email Handlers:**
-  - `handlers_email.go` (522 lines) - Email operations
-  - `handlers_drafts.go` (531 lines) - Draft operations
-  - `handlers_bundles.go` - Email categorization into smart bundles
+**Server Core:** `server*.go` - Split by responsibility (lifecycle, stores, sync, offline, converters, templates)
 
-**Calendar Handlers (refactored from handlers_calendar.go):**
-  - `handlers_calendars.go` (108 lines) - Calendar operations
-  - `handlers_events.go` (520 lines) - Event CRUD
-  - `handlers_calendar_helpers.go` (159 lines) - Helpers and converters
+**Handler Groups:** All handlers follow `handlers_<feature>*.go` pattern, split by responsibility:
+  - `handlers_email*.go`, `handlers_drafts.go` - Email operations
+  - `handlers_calendar*.go`, `handlers_events.go` - Calendar/events
+  - `handlers_contacts*.go` - Contact CRUD, search, helpers
+  - `handlers_ai_*.go` - AI features (summarize, compose, thread, config)
+  - `handlers_*productivity*.go` - Productivity (scheduled send, undo, templates, split inbox, snooze)
+  - `handlers_availability.go`, `handlers_bundles.go` - Other features
 
-**Contact Handlers (refactored from handlers_contacts.go):**
-  - `handlers_contacts.go` (190 lines) - Routes and listing
-  - `handlers_contacts_crud.go` (320 lines) - CRUD operations
-  - `handlers_contacts_search.go` (194 lines) - Search and groups
-  - `handlers_contacts_helpers.go` (308 lines) - Helpers and demo data
-
-**AI Handlers (refactored from handlers_ai.go):**
-  - `handlers_ai_types.go` (92 lines) - AI types
-  - `handlers_ai_summarize.go` (165 lines) - Email summarization
-  - `handlers_ai_smart.go` (225 lines) - Smart compose/reply
-  - `handlers_ai_thread.go` (192 lines) - Thread analysis
-  - `handlers_ai_complete.go` (216 lines) - Autocomplete
-  - `handlers_ai_config.go` (227 lines) - AI configuration
-
-**Productivity - Send Features (refactored from handlers_productivity_send.go):**
-  - `types_productivity_send.go` (82 lines) - Type definitions
-  - `handlers_scheduled_send.go` (177 lines) - Scheduled sends
-  - `handlers_undo_send.go` (148 lines) - Undo send feature
-  - `handlers_templates.go` (259 lines) - Template CRUD
-  - `handlers_templates_helpers.go` (100 lines) - Template utilities
-
-**Productivity - Inbox Features (refactored from handlers_productivity_inbox.go):**
-  - `handlers_splitinbox_types.go` (84 lines) - Split inbox types
-  - `handlers_splitinbox_config.go` (164 lines) - Configuration
-  - `handlers_splitinbox_categorize.go` (148 lines) - Categorization logic
-  - `handlers_snooze_types.go` (37 lines) - Snooze types
-  - `handlers_snooze_handlers.go` (126 lines) - Snooze operations
-  - `handlers_snooze_parser.go` (142 lines) - Natural language parser
-
-**Other Handlers:**
-  - `handlers_availability.go` (527 lines) - Availability checking
-  - `handlers_productivity_*.go` - Focus mode, reply later, analytics, etc.
-
-**Integration Tests:**
-  - `integration_base_test.go` - Shared `testServer()` helper and utilities
-  - `integration_core_test.go` - Config, Grants, Folders, Index tests
-  - `integration_email_test.go` - Email and draft operations
-  - `integration_calendar_test.go` - Calendar, events, availability, conflicts
-  - `integration_contacts_test.go` - Contact operations
-  - `integration_cache_test.go` - Cache operations
-  - `integration_ai_test.go` - AI features
-  - `integration_middleware_test.go` - Middleware tests
-  - `integration_productivity_test.go` - Productivity features
-  - `integration_bundles_test.go` - Bundle categorization
+**Integration Tests:** `integration_*_test.go` - Split by feature (core, email, calendar, contacts, cache, ai, middleware, productivity, bundles)
 
 **CLI pattern:**
 ```
@@ -175,23 +140,18 @@ internal/cli/<feature>/
   └── helpers.go      # Shared helpers
 ```
 
-**TUI (Terminal UI) implementations:**
-```
-internal/tui/        # Current tview-based TUI (k9s-style)
-internal/tui2/       # New Bubble Tea TUI (experimental)
-  ├── models/        # Screen models (Dashboard, Messages, etc.)
-  ├── components/    # Custom Bubble Tea components
-  ├── styles/        # Lip Gloss themes and styling
-  ├── state/         # State management (GlobalState)
-  ├── utils/         # Utilities
-  ├── vhs-tests/     # VHS visual testing (screenshots, GIFs)
-  │   ├── tapes/     # VHS tape files (.tape)
-  │   ├── output/    # Generated screenshots and GIFs
-  │   └── README.md  # VHS testing documentation
-  ├── app.go         # Root application (Model Stack pattern)
-  ├── messages.go    # Message types for Elm Architecture
-  └── app_test.go    # Tests
-```
+**Nylas Adapter (refactored):**
+- `internal/adapters/nylas/messages.go` - Message operations
+- `internal/adapters/nylas/messages_send.go` - Send message helpers
+
+**AI Adapter (refactored):**
+- `internal/adapters/ai/pattern_learner.go` - Pattern learning core
+- `internal/adapters/ai/pattern_learner_analysis.go` - Analysis methods
+
+**TUI (Terminal UI):**
+- `internal/tui/` - tview-based TUI (commands, compose, views)
+- `internal/tui2/` - Bubble Tea TUI (models/, components/, styles/, state/)
+- `internal/tui2/vhs-tests/` - VHS visual testing (tapes/, output/)
 
 **Switch between TUI engines:**
 ```bash
@@ -301,21 +261,38 @@ make test-cleanup                # Clean up test resources
 
 ## Context Loading Strategy
 
-**Auto-loaded (always in context):**
+**Auto-loaded:**
 - `CLAUDE.md` - This guide
-- `docs/COMMANDS.md` - Command reference
-- `docs/ARCHITECTURE.md` - Architecture overview
 - `.claude/rules/*.md` - Development rules
+- Select docs (DEVELOPMENT, SECURITY, TIMEZONE, TUI, WEBHOOKS)
 
-**Load on-demand (use Read tool):**
-- `docs/commands/*.md` - Detailed command guides
-- `docs/ai/*.md` - AI provider setup
-- `plan.md`, `AI_plan.md` - Planning documents
+**On-demand (use Read tool when needed):**
+| Doc | When to Load |
+|-----|--------------|
+| `docs/COMMANDS.md` | Adding/modifying CLI commands |
+| `docs/ARCHITECTURE.md` | Understanding project structure |
+| `docs/MCP.md` | Working on MCP server |
+| `docs/AI.md` | Working on AI features |
+| `docs/commands/*.md` | Detailed command guides |
+| `docs/ai/*.md` | AI provider setup |
 
 **Never loaded (excluded via .claudeignore):**
-- `local/` - Historical docs (233KB)
 - Build artifacts, coverage reports, IDE files
-- `docs/commands/`, `docs/ai/` - Detailed guides
+
+**Dynamic local rules (check before operations):**
+
+Before performing these operations, check if a matching `.local.md` rule exists and read it:
+
+| Operation | Check for file |
+|-----------|----------------|
+| Git commits | `.claude/rules/git-commits.local.md` |
+| Go cache cleanup | `.claude/rules/go-cache-cleanup.local.md` |
+| Any operation | `.claude/rules/<operation>.local.md` |
+
+```bash
+# Pattern: Check if local rule exists before operation
+ls .claude/rules/<operation>.local.md 2>/dev/null && Read it
+```
 
 ---
 
