@@ -342,6 +342,7 @@ Hard-won knowledge:
 - **Agent details:** Read `.claude/agents/<agent>.md`
 - **Hook setup:** Read `.claude/HOOKS-CONFIG.md`
 - **Project rules:** Read `CLAUDE.md`
+- **Architecture:** Read `docs/ARCHITECTURE.md`
 
 ### Documentation Hierarchy
 

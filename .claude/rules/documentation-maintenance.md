@@ -16,7 +16,7 @@
 | **New skill/workflow** | CLAUDE.md (if user-facing) | 🟡 IF NEEDED |
 | **Security change** | SECURITY.md | 🔴 CRITICAL |
 | **Architecture change** | ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
-| **Utility feature** | plan.md, CLAUDE.md, COMMANDS.md | 🔴 CRITICAL |
+| **Utility feature** | CLAUDE.md, COMMANDS.md | 🔴 CRITICAL |
 | **Timezone change** | TIMEZONE.md, COMMANDS.md, CLAUDE.md | 🔴 CRITICAL |
 | **Working hours/breaks** | TIMEZONE.md, ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
 
@@ -88,4 +88,4 @@ grep -r "old-pattern" docs/ .claude/ *.md
 
 ---
 
-**Last Updated:** December 23, 2024
+**Last Updated:** December 31, 2024
