@@ -57,6 +57,7 @@ func (s *Server) handleAIComplete(w http.ResponseWriter, r *http.Request) {
 func getAICompletion(text string, maxLen int) string {
 	prompt := buildCompletionPrompt(text, maxLen)
 
+	//nolint:gosec // G204: Command is hardcoded "claude" binary, prompt is user-controlled but safe for CLI arg
 	cmd := exec.Command("claude", "-p", prompt)
 	output, err := cmd.Output()
 	if err != nil {

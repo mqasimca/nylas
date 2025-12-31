@@ -200,6 +200,7 @@ func TestSaveConfig_JSONFormatting(t *testing.T) {
 
 	// Read raw file content
 	configPath, _ := GetConfigPath()
+	//nolint:gosec // G304: configPath is from GetConfigPath(), a controlled path
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("failed to read config file: %v", err)

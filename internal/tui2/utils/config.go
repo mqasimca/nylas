@@ -49,6 +49,7 @@ func LoadConfig() (*TUIConfig, error) {
 		return DefaultConfig(), err
 	}
 
+	//nolint:gosec // G304: configPath is from GetConfigPath(), a controlled path in user's config dir
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {

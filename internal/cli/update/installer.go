@@ -118,6 +118,7 @@ func downloadChecksums(ctx context.Context, url string) (map[string]string, erro
 
 // verifyChecksum verifies the SHA256 checksum of a file.
 func verifyChecksum(filePath, expected string) (bool, error) {
+	//nolint:gosec // G304: filePath is from controlled update process, not user input
 	f, err := os.Open(filePath)
 	if err != nil {
 		return false, fmt.Errorf("open file: %w", err)
@@ -143,6 +144,7 @@ func extractBinary(archivePath, goos string) (string, error) {
 
 // extractFromTarGz extracts the binary from a tar.gz archive.
 func extractFromTarGz(archivePath string) (string, error) {
+	//nolint:gosec // G304: archivePath is from controlled update process, not user input
 	f, err := os.Open(archivePath)
 	if err != nil {
 		return "", fmt.Errorf("open archive: %w", err)
@@ -304,6 +306,7 @@ func installBinary(newBinaryPath, targetPath string) error {
 	}
 
 	// Set executable permissions
+	//nolint:gosec // G302: 0755 is intentional - binary must be executable
 	if err := os.Chmod(targetPath, 0755); err != nil {
 		// Restore backup on failure
 		_ = os.Remove(targetPath)
@@ -321,12 +324,14 @@ func installBinary(newBinaryPath, targetPath string) error {
 
 // copyFile copies a file from src to dst.
 func copyFile(src, dst string) error {
+	//nolint:gosec // G304: src is from controlled update process, not user input
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = srcFile.Close() }()
 
+	//nolint:gosec // G304: dst is from controlled update process, not user input
 	dstFile, err := os.Create(dst)
 	if err != nil {
 		return err
@@ -343,6 +348,7 @@ func copyFile(src, dst string) error {
 // checkWritePermission checks if we can write to a directory.
 func checkWritePermission(dir string) error {
 	testFile := filepath.Join(dir, ".nylas-update-test")
+	//nolint:gosec // G304: testFile is a fixed filename in a controlled directory
 	f, err := os.Create(testFile)
 	if err != nil {
 		return err

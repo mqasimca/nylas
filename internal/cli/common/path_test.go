@@ -11,12 +11,14 @@ func TestValidateExecutablePath(t *testing.T) {
 	// Create a temporary executable file for testing
 	tmpDir := t.TempDir()
 	validExec := filepath.Join(tmpDir, "test-executable")
+	//nolint:gosec // G306: 0755 is intentional - test requires executable file
 	if err := os.WriteFile(validExec, []byte("#!/bin/sh\necho test"), 0755); err != nil {
 		t.Fatalf("Failed to create test executable: %v", err)
 	}
 
 	// Create a non-executable file
 	nonExec := filepath.Join(tmpDir, "test-non-executable")
+	//nolint:gosec // G306: 0644 is intentional - test requires non-executable file
 	if err := os.WriteFile(nonExec, []byte("test"), 0644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}

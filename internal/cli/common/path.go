@@ -74,6 +74,7 @@ func SafeCommand(name string, args ...string) (*exec.Cmd, error) {
 	}
 
 	// Create command with validated path
+	//nolint:gosec // G204: execPath is validated by FindExecutableInPath before use
 	cmd := exec.Command(execPath, args...)
 	return cmd, nil
 }
