@@ -1,3 +1,5 @@
+// mock.go provides mock implementations of the Slack client for testing.
+
 package slack
 
 import (
@@ -14,6 +16,7 @@ var _ ports.SlackClient = (*MockClient)(nil)
 type MockClient struct {
 	TestAuthFunc         func(ctx context.Context) (*domain.SlackAuth, error)
 	ListChannelsFunc     func(ctx context.Context, params *domain.SlackChannelQueryParams) (*domain.SlackChannelListResponse, error)
+	ListMyChannelsFunc   func(ctx context.Context, params *domain.SlackChannelQueryParams) (*domain.SlackChannelListResponse, error)
 	GetChannelFunc       func(ctx context.Context, channelID string) (*domain.SlackChannel, error)
 	GetMessagesFunc      func(ctx context.Context, params *domain.SlackMessageQueryParams) (*domain.SlackMessageListResponse, error)
 	GetThreadRepliesFunc func(ctx context.Context, channelID, threadTS string, limit int) ([]domain.SlackMessage, error)
@@ -66,6 +69,19 @@ func (m *MockClient) GetChannel(ctx context.Context, channelID string) (*domain.
 		ID:        channelID,
 		Name:      "general",
 		IsChannel: true,
+	}, nil
+}
+
+// ListMyChannels returns only channels the user is a member of.
+func (m *MockClient) ListMyChannels(ctx context.Context, params *domain.SlackChannelQueryParams) (*domain.SlackChannelListResponse, error) {
+	if m.ListMyChannelsFunc != nil {
+		return m.ListMyChannelsFunc(ctx, params)
+	}
+	return &domain.SlackChannelListResponse{
+		Channels: []domain.SlackChannel{
+			{ID: "C123456", Name: "general", IsChannel: true, IsMember: true},
+			{ID: "C234567", Name: "random", IsChannel: true, IsMember: true},
+		},
 	}, nil
 }
 

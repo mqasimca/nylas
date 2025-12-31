@@ -30,21 +30,37 @@ internal/
 
 **Three layers:**
 
-1. **Domain** (`internal/domain/`)
-   - Pure business logic
-   - No external dependencies
-   - Core types: Message, Event, Contact, Calendar, Webhook
+1. **Domain** (`internal/domain/`) - 21 files
+   - Pure business logic, no external dependencies
+   - Core types: Message, Email, Calendar, Event, Contact, Grant, Webhook
+   - Feature types: AI, Analytics, Admin, Scheduler, Notetaker, Slack, Inbound
+   - Support types: Config, Errors, Provider, Utilities
 
-2. **Ports** (`internal/ports/`)
-   - Interface contracts
-   - `NylasClient` - API operations
-   - `SecretStore` - Credential storage
+2. **Ports** (`internal/ports/`) - 7 interface files
+   - `nylas.go` - NylasClient interface (main API operations)
+   - `secrets.go` - SecretStore interface (credential storage)
+   - `llm.go` - LLM interface (AI providers)
+   - `slack.go` - Slack interface
+   - `config.go` - Config interface
+   - `utilities.go` - Utilities interface
+   - `webhook_server.go` - Webhook server interface
 
-3. **Adapters** (`internal/adapters/`)
-   - Concrete implementations
-   - `nylas/` - HTTP client for Nylas API
-   - `keyring/` - System keyring
-   - `oauth/` - OAuth callback server
+3. **Adapters** (`internal/adapters/`) - 12 adapter directories
+
+   | Adapter | Files | Purpose |
+   |---------|-------|---------|
+   | `nylas/` | 85 | Nylas API client (messages, calendars, contacts, events) |
+   | `ai/` | 18 | AI clients (Claude, OpenAI, Groq, Ollama), email analyzer |
+   | `analytics/` | 14 | Focus optimizer, conflict resolver, meeting scorer |
+   | `keyring/` | 6 | Credential storage (system keyring, file-based) |
+   | `mcp/` | 7 | MCP proxy server for AI assistants |
+   | `slack/` | 9 | Slack API client (channels, messages, users) |
+   | `config/` | 5 | Configuration validation |
+   | `oauth/` | 3 | OAuth callback server |
+   | `utilities/` | 12 | Services (contacts, email, scheduling, timezone, webhook) |
+   | `browser/` | 2 | Browser automation |
+   | `tunnel/` | 2 | Cloudflare tunnel |
+   | `webhookserver/` | 2 | Webhook server |
 
 **Benefits:**
 - Testability (mock adapters)
@@ -133,16 +149,18 @@ Air integration tests are **split by feature** for better maintainability:
 
 | File | Tests | Purpose |
 |------|-------|---------|
-| `integration_base_test.go` | 0 | Shared `testServer()` helper and utilities |
+| `integration_base_test.go` | 0 | Shared `testServer()` helper, utilities, rate limiting |
 | `integration_core_test.go` | 5 | Config, Grants, Folders, Index page |
 | `integration_email_test.go` | 4 | Email listing, filtering, drafts |
 | `integration_calendar_test.go` | 11 | Calendars, events, availability, conflicts |
-| `integration_contacts_test.go` | 4 | Contact operations |
-| `integration_cache_test.go` | 4 | Cache operations |
-| `integration_ai_test.go` | 3 | AI summarization features |
-| `integration_middleware_test.go` | 6 | Middleware (compression, security, CORS) |
+| `integration_contacts_test.go` | 4 | Contact CRUD operations |
+| `integration_cache_test.go` | 4 | Cache store operations, invalidation |
+| `integration_ai_test.go` | 15 | AI summarization, smart compose, thread analysis, config |
+| `integration_middleware_test.go` | 6 | Compression, security headers, CORS |
+| `integration_bundles_test.go` | 8 | Email bundles, categorization, bundle operations |
+| `integration_productivity_test.go` | 8 | Scheduled send, undo send, snooze, reply later |
 
-**Total:** 37 integration tests across 8 organized files
+**Total:** 65 integration tests across 10 organized files
 
 **Running tests:**
 ```bash

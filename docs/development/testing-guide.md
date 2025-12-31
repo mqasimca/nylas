@@ -253,6 +253,8 @@ stdout, stderr, err := runCLIWithRateLimit(t, "email", "list")
 
 ## Coverage Goals
 
+**See:** `.claude/rules/testing.md` for authoritative coverage targets.
+
 | Package Type | Minimum | Target |
 |--------------|---------|--------|
 | Core Adapters | 70% | 85%+ |

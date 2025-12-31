@@ -28,7 +28,7 @@ Context: $ARGUMENTS
    | `internal/cli/*/` | `docs/COMMANDS.md` |
    | `internal/domain/*.go` | `docs/COMMANDS.md` (if affects CLI output) |
    | `cmd/nylas/main.go` | `docs/COMMANDS.md` (new commands) |
-   | `internal/adapters/nylas/*.go` | `plan.md` (API coverage) |
+   | `internal/adapters/nylas/*.go` | `docs/ARCHITECTURE.md` (if new adapter) |
    | Major features | `README.md` |
    | New flags | `docs/COMMANDS.md` |
 
@@ -78,21 +78,14 @@ Context: $ARGUMENTS
    ```
    ```
 
-4. **Update plan.md** (if API changes)
-
-   For new API implementations:
-   - Mark endpoints as ✅ Complete
-   - Add new planned endpoints if discovered
-   - Update coverage percentages
-
-5. **Update README.md** (for major features)
+4. **Update README.md** (for major features)
 
    Only update README for:
    - New command groups (e.g., adding `nylas scheduler`)
    - Major new capabilities
    - Breaking changes
 
-6. **Verify documentation accuracy**
+5. **Verify documentation accuracy**
 
    ```bash
    # Build and test the commands
@@ -175,7 +168,7 @@ nylas {command} show <id>
 ## Files to Check
 
 1. **docs/COMMANDS.md** - Primary CLI documentation
-2. **plan.md** - API implementation status
+2. **docs/ARCHITECTURE.md** - Architecture and structure (if major changes)
 3. **README.md** - Project overview (major changes only)
 4. **CLAUDE.md** - AI assistant guide (if patterns change)
 
@@ -195,7 +188,7 @@ make build
 - [ ] Identified all changed files
 - [ ] Determined documentation impact
 - [ ] Updated `docs/COMMANDS.md` for CLI changes
-- [ ] Updated `plan.md` for API changes
+- [ ] Updated `docs/ARCHITECTURE.md` for structural changes
 - [ ] Updated `README.md` for major features
 - [ ] Verified examples work correctly
 - [ ] Help text matches documentation

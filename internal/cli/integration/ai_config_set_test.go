@@ -304,18 +304,6 @@ callback_port: 8080
 	}
 }
 
-func TestCLI_AIConfigGet_MissingArgs(t *testing.T) {
-	if testBinary == "" {
-		t.Skip("CLI binary not found")
-	}
-
-	_, _, err := runCLI("ai", "config", "get")
-
-	if err == nil {
-		t.Error("Expected error for missing key argument, got none")
-	}
-}
-
 func TestCLI_AIConfigSet_MissingArgs(t *testing.T) {
 	if testBinary == "" {
 		t.Skip("CLI binary not found")

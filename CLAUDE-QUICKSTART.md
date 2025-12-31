@@ -85,6 +85,8 @@ Your AI-powered development assistant with self-learning capabilities.
 
 ### Testing Commands
 
+> **Authoritative source:** `.claude/commands/run-tests.md`
+
 | Command | Purpose | Tools Used |
 |---------|---------|------------|
 | `/run-tests` | Run unit/integration tests | Read, Bash(go test, make test) |
@@ -93,7 +95,11 @@ Your AI-powered development assistant with self-learning capabilities.
 | `/debug-test-failure` | Analyze and fix test failures | Read, Edit, Bash(go test) |
 | `/analyze-coverage` | Analyze test coverage | Read, Bash(go test) |
 
+**Coverage goals:** See `.claude/rules/testing.md` for authoritative targets.
+
 ### Quality Commands
+
+> **Make targets:** See `docs/DEVELOPMENT.md` for authoritative list.
 
 | Command | Purpose | Tools Used |
 |---------|---------|------------|
@@ -264,9 +270,10 @@ CLAUDE.md has a self-updating LEARNINGS section:
 
 ### Project-Specific Gotchas
 Things unique to this codebase:
-- Playwright selectors: ALWAYS use semantic selectors
-- Go tests: ALWAYS use table-driven tests
-- Integration tests: ALWAYS use acquireRateLimit(t)
+- Playwright selectors: ALWAYS use semantic selectors (getByRole > getByText > getByLabel > getByTestId)
+- Go tests: ALWAYS use table-driven tests with t.Run()
+- Integration tests: ALWAYS use acquireRateLimit(t) before API calls
+- Directory permissions: Use 0750, not 0755 (gosec G301)
 
 ### Non-Obvious Workflows
 Surprising sequences:
@@ -275,7 +282,7 @@ Surprising sequences:
 
 ### Time-Wasting Bugs Fixed
 Hard-won knowledge:
-- Go build cache corruption: Fix with `sudo rm -rf ~/.cache/go-build`
+- Go build cache corruption: Fix with `sudo rm -rf ~/.cache/go-build ~/go/pkg/mod && go clean -cache`
 
 ---
 
@@ -335,7 +342,17 @@ Hard-won knowledge:
 - **Agent details:** Read `.claude/agents/<agent>.md`
 - **Hook setup:** Read `.claude/HOOKS-CONFIG.md`
 - **Project rules:** Read `CLAUDE.md`
-- **Improvement plan:** Read `c_plan.md`
+- **Architecture:** Read `docs/ARCHITECTURE.md`
+
+### Documentation Hierarchy
+
+| Topic | Authoritative Source |
+|-------|---------------------|
+| Make targets | `docs/DEVELOPMENT.md` |
+| Test commands | `.claude/commands/run-tests.md` |
+| Coverage goals | `.claude/rules/testing.md` |
+| Rate limiting | `.claude/shared/patterns/integration-test-patterns.md` |
+| Go quality | `.claude/rules/go-quality.md` |
 
 ---
 

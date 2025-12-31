@@ -38,14 +38,9 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 ### Test Coverage Goals:
 
-| Package Type | Minimum | Target |
-|--------------|---------|--------|
-| Core Adapters | 70% | 85%+ |
-| Business Logic | 60% | 80%+ |
-| CLI Commands | 50% | 70%+ |
-| Utilities | 90% | 100% |
+**See:** `.claude/rules/testing.md` for coverage targets by package type.
 
-**Check coverage:** `make test-coverage` (opens coverage.html in browser)
+**Check coverage:** `make test-coverage`
 
 ### Docs to Update:
 - `docs/COMMANDS.md` → New/changed commands or flags
@@ -143,19 +138,23 @@ internal/air/static/css/
 |-----------|-------|---------|
 | `admin/` | 6 | Applications, connectors, credentials, grants |
 | `ai/` | 6 | Budget, usage, config, clear_data |
-| `auth/` | 23 | Login, logout, add, remove, status, switch, whoami |
+| `auth/` | 22 | Login, logout, add, remove, status, switch, whoami |
 | `calendar/` | 35 | Events, availability, conflicts, focus time, AI scheduling |
-| `common/` | 15 | Client, errors, format, logger, pagination, progress |
+| `common/` | 16 | Client, errors, format, logger, pagination, progress |
 | `contacts/` | 13 | CRUD, groups, photos, sync |
-| `demo/` | 18 | Interactive demos for all features |
-| `email/` | 19 | CRUD, AI, drafts, attachments, threads |
+| `demo/` | 19 | Interactive demos for all features |
+| `email/` | 20 | CRUD, AI, drafts, attachments, threads |
+| `inbound/` | 9 | Inbound email handling |
 | `integration/` | 49 | Integration tests split by feature |
 | `mcp/` | 7 | Install, serve, status, uninstall, assistants |
 | `notetaker/` | 8 | CRUD, media management |
 | `otp/` | 7 | OTP/SMS operations |
 | `scheduler/` | 6 | Bookings, configurations, pages |
-| `slack/` | 8 | Channels, messages, users, send, reply, search |
+| `slack/` | 9 | Channels, messages, users, send, reply, search |
 | `timezone/` | 10 | Convert, DST, find, info |
+| `ui/` | 15 | UI server commands |
+| `update/` | 5 | CLI update commands |
+| `webhook/` | 11 | Webhook commands |
 
 **CLI pattern:**
 ```
@@ -237,23 +236,9 @@ make test-vhs-clean            # Clean test outputs
 
 ---
 
-## Go Modernization (Go 1.21+)
+## Go Modernization
 
-**Always use modern patterns:**
-
-| Instead of | Use | Since |
-|------------|-----|-------|
-| `io/ioutil` | `os` package | Go 1.16+ |
-| `interface{}` | `any` | Go 1.18+ |
-| Manual slice ops | `slices` package | Go 1.21+ |
-| Manual map ops | `maps` package | Go 1.21+ |
-| Recreate to clear | `clear()` | Go 1.21+ |
-| Custom min/max | `min()`, `max()` | Go 1.21+ |
-| `sort.Slice` | `slices.SortFunc` | Go 1.21+ |
-
-**Before writing Go code:** Check `go.dev/ref/spec` using WebSearch
-
-**Complete rules:** `.claude/rules/go-quality.md`
+**See:** `.claude/rules/go-quality.md` for modern Go patterns (1.21+), error handling, and linting fixes.
 
 ---
 
@@ -375,7 +360,7 @@ Use parallel agents to explore or review the 745-file codebase without exhaustin
 | `internal/adapters/` | 158 | HIGH |
 | `internal/air/` | 117 | HIGH |
 | `internal/tui2/` | 81 | MEDIUM |
-| `internal/domain/` | 19 | LOW (shared) |
+| `internal/domain/` | 21 | LOW (shared) |
 
 ### Safe vs Unsafe
 
@@ -487,32 +472,18 @@ Write current progress to claude-progress.txt
 
 ### Essential Make Targets
 
-| Target | Description | When to Use |
-|--------|-------------|-------------|
-| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) | Before PRs, releases |
-| `make ci` | Quality checks only (no integration) | Quick pre-commit |
-| `make build` | Build binary | Development |
-| `make test-unit` | Unit tests only | Fast feedback |
-| `make test-coverage` | Coverage report | Check test coverage |
-| `make clean` | Remove artifacts | Clean workspace |
+**See:** `docs/DEVELOPMENT.md` for complete make target list.
 
-**Run `make help` for all available targets**
-
-### Common Workflows
+| Target | Description |
+|--------|-------------|
+| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) |
+| `make ci` | Quality checks only (no integration) |
+| `make build` | Build binary |
+| `make test-unit` | Unit tests only |
 
 ```bash
 # Before committing code
 make ci-full
-
-# Quick pre-commit check
-make ci
-
-# Build and test locally
-make build
-./bin/nylas --help
-
-# Check test coverage
-make test-coverage
 ```
 
 **Debugging:**

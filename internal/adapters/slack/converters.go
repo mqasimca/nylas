@@ -1,3 +1,5 @@
+// converters.go provides type conversion utilities between slack-go and domain types.
+
 package slack
 
 import (
@@ -38,6 +40,10 @@ func convertChannel(ch slack.Channel) domain.SlackChannel {
 		IsMPIM:      ch.IsMpIM,
 		IsPrivate:   ch.IsPrivate,
 		IsArchived:  ch.IsArchived,
+		IsMember:    ch.IsMember,
+		IsShared:    ch.IsShared,
+		IsOrgShared: ch.IsOrgShared,
+		IsExtShared: ch.IsExtShared,
 		Topic:       ch.Topic.Value,
 		Purpose:     ch.Purpose.Value,
 		MemberCount: ch.NumMembers,

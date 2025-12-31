@@ -4,32 +4,48 @@ Build and test the Nylas CLI.
 
 > **Quick Links:** [README](../README.md) | [Commands](COMMANDS.md) | [Architecture](ARCHITECTURE.md)
 
+> **This is the authoritative source for make targets.** Other files reference this document.
+
 ---
 
 ## Prerequisites
 
-- Go 1.21+
-- Make (optional)
+- Go 1.24+ (check with `go version`)
+- Make
 
 ---
 
-## Build
+## Make Targets
 
-```bash
-make build                   # Build binary
-make clean                   # Clean artifacts
-```
+### Essential Commands
 
----
+| Target | Description | When to Use |
+|--------|-------------|-------------|
+| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) | Before PRs, releases |
+| `make ci` | Quality checks only (no integration tests) | Quick pre-commit |
+| `make build` | Build binary to `./bin/nylas` | Development |
+| `make clean` | Remove build artifacts | Clean workspace |
 
-## Test
+### Testing Commands
 
-```bash
-make ci                      # Quick quality checks (no integration tests)
-make ci-full                 # Complete CI pipeline (quality + tests + cleanup)
-make lint                    # Run linter only
-make test-unit               # Run unit tests only
-```
+| Target | Description |
+|--------|-------------|
+| `make test-unit` | Run unit tests |
+| `make test-race` | Run tests with race detector |
+| `make test-integration` | Run CLI integration tests |
+| `make test-air-integration` | Run Air web UI integration tests |
+| `make test-coverage` | Generate coverage report |
+| `make test-cleanup` | Clean up test resources |
+
+### Quality Commands
+
+| Target | Description |
+|--------|-------------|
+| `make lint` | Run golangci-lint |
+| `make security` | Run security scan (gosec) |
+| `make vuln` | Run vulnerability check (govulncheck) |
+
+**Run `make help` for all available targets.**
 
 ---
 
@@ -41,6 +57,8 @@ export NYLAS_GRANT_ID="your-grant-id"
 
 make test-integration
 ```
+
+**CRITICAL:** Air tests create real resources. Always use `make ci-full` for automatic cleanup.
 
 ---
 

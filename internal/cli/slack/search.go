@@ -1,3 +1,5 @@
+// search.go provides message search functionality for Slack workspaces.
+
 package slack
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
+// newSearchCmd creates the search command for searching messages.
 func newSearchCmd() *cobra.Command {
 	var (
 		query  string
@@ -66,7 +69,7 @@ Examples:
 			_, _ = cyan.Printf("Found %d messages:\n\n", len(messages))
 
 			for _, msg := range messages {
-				printMessage(msg, showID)
+				printMessage(msg, showID, false)
 			}
 
 			return nil

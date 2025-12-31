@@ -63,6 +63,7 @@ if obj == nil {
 | **SA9003** | Implement or remove empty branch |
 | **SA1019** | Use non-deprecated function |
 | **ineffassign** | Remove/use variable |
+| **G301** | Use 0750 for directories, not 0755 |
 
 ---
 

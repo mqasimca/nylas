@@ -1,3 +1,5 @@
+// send.go provides commands for sending messages and replies to Slack channels.
+
 package slack
 
 import (
@@ -13,6 +15,7 @@ import (
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
+// newSendCmd creates the send command for sending messages to channels.
 func newSendCmd() *cobra.Command {
 	var (
 		channelID   string
@@ -101,6 +104,7 @@ Examples:
 	return cmd
 }
 
+// newReplyCmd creates the reply command for replying to thread messages.
 func newReplyCmd() *cobra.Command {
 	var (
 		channelID   string

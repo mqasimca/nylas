@@ -2,6 +2,8 @@
 
 Shared patterns for Go integration tests in the Nylas CLI project.
 
+> **This is the authoritative source for rate limiting patterns.** Other files reference this document.
+
 ---
 
 ## CLI Integration Tests
@@ -62,15 +64,17 @@ package air
 
 Location: `internal/air/integration_*.go`
 
-### Files:
+### Files (10 total):
 - `integration_base_test.go` - Shared helpers (`testServer()`, utilities)
 - `integration_core_test.go` - Config, Grants, Folders, Index
 - `integration_email_test.go` - Email and draft operations
 - `integration_calendar_test.go` - Calendar, events, availability
 - `integration_contacts_test.go` - Contact operations
 - `integration_cache_test.go` - Cache operations
-- `integration_ai_test.go` - AI features
+- `integration_ai_test.go` - AI features (summarize, smart compose, thread analysis)
 - `integration_middleware_test.go` - Middleware tests
+- `integration_bundles_test.go` - Email bundles, categorization
+- `integration_productivity_test.go` - Scheduled send, undo send, snooze
 
 ---
 
@@ -157,9 +161,10 @@ make test-cleanup    # Manual cleanup if needed
 
 ## Commands
 
+**See:** `.claude/commands/run-tests.md` for full command details.
+
 ```bash
-make ci-full                     # Complete CI pipeline (RECOMMENDED)
-make test-integration            # CLI integration tests
-make test-air-integration        # Air web UI integration tests
-make test-cleanup                # Clean up test resources
+make ci-full              # Complete CI pipeline (RECOMMENDED)
+make test-integration     # CLI integration tests
+make test-air-integration # Air web UI integration tests
 ```

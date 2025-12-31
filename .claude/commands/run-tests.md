@@ -8,6 +8,8 @@ allowed-tools: Read, Bash(go test:*), Bash(go build:*), Bash(make test:*)
 
 Run unit tests and/or integration tests for the nylas CLI.
 
+> **This is the authoritative source for test commands.** Other files reference this document.
+
 ## Instructions
 
 ### Unit Tests
@@ -89,3 +91,18 @@ After fixing, always run full test suite:
 ```bash
 go build ./... && go test ./...
 ```
+
+### Make Targets (Recommended)
+
+```bash
+make ci-full              # Complete CI pipeline with cleanup (RECOMMENDED)
+make ci                   # Quick CI (no integration tests)
+make test-unit            # Unit tests only
+make test-race            # Unit tests with race detector
+make test-integration     # CLI integration tests
+make test-air-integration # Air web UI integration tests
+make test-coverage        # Generate coverage report
+make test-cleanup         # Clean up test resources
+```
+
+**CRITICAL:** Air tests create real resources. Always use `make ci-full` for automatic cleanup.

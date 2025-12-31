@@ -1,8 +1,12 @@
+// helpers.go provides shared utilities for Slack CLI commands including
+// token management, client creation, and channel resolution.
+
 package slack
 
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
@@ -14,7 +18,6 @@ import (
 
 const (
 	slackTokenKey  = "slack_user_token"
-	slackAuthKey   = "slack_auth_info"
 	defaultTimeout = 30 * time.Second
 )
 
@@ -78,29 +81,53 @@ func createContext() (context.Context, context.CancelFunc) {
 }
 
 // resolveChannelName resolves a channel name to its ID.
+// If name already looks like a channel ID (starts with C, G, or D), returns it directly.
+// NOTE: For workspaces with many channels, use channel ID directly to avoid rate limits.
 func resolveChannelName(ctx context.Context, client ports.SlackClient, name string) (string, error) {
+	// If it's already a channel ID, return it directly
+	if isChannelID(name) {
+		return name, nil
+	}
+
+	// Normalize name
+	name = strings.TrimPrefix(name, "#")
+	name = strings.ToLower(name)
+
+	// Try to resolve using the adapter (searches first page only for speed)
 	slackClient, ok := client.(*slackadapter.Client)
-	if !ok {
-		resp, err := client.ListChannels(ctx, &domain.SlackChannelQueryParams{
-			Types:           []string{"public_channel", "private_channel"},
-			ExcludeArchived: true,
-			Limit:           200,
-		})
+	if ok {
+		ch, err := slackClient.ResolveChannelByName(ctx, name)
 		if err != nil {
 			return "", err
 		}
-
-		for _, ch := range resp.Channels {
-			if ch.Name == name {
-				return ch.ID, nil
-			}
-		}
-		return "", domain.ErrSlackChannelNotFound
+		return ch.ID, nil
 	}
 
-	ch, err := slackClient.ResolveChannelByName(ctx, name)
+	// Fallback for mock: search first page only
+	resp, err := client.ListChannels(ctx, &domain.SlackChannelQueryParams{
+		Types:           []string{"public_channel", "private_channel"},
+		ExcludeArchived: true,
+		Limit:           200,
+	})
 	if err != nil {
 		return "", err
 	}
-	return ch.ID, nil
+
+	for _, ch := range resp.Channels {
+		if strings.ToLower(ch.Name) == name {
+			return ch.ID, nil
+		}
+	}
+
+	return "", domain.ErrSlackChannelNotFound
+}
+
+// isChannelID checks if a string looks like a Slack channel ID.
+// Channel IDs start with C (public), G (private/group), or D (DM).
+func isChannelID(s string) bool {
+	if len(s) < 9 {
+		return false
+	}
+	first := s[0]
+	return first == 'C' || first == 'G' || first == 'D'
 }
