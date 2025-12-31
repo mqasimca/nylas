@@ -138,7 +138,7 @@ internal/air/static/css/
 
 **Integration Tests:** `integration_*_test.go` - Split by feature (core, email, calendar, contacts, cache, ai, middleware, productivity, bundles)
 
-**CLI Commands (18 directories in internal/cli/):**
+**CLI Commands (19 directories in internal/cli/):**
 | Directory | Files | Purpose |
 |-----------|-------|---------|
 | `admin/` | 6 | Applications, connectors, credentials, grants |
@@ -149,11 +149,12 @@ internal/air/static/css/
 | `contacts/` | 13 | CRUD, groups, photos, sync |
 | `demo/` | 18 | Interactive demos for all features |
 | `email/` | 19 | CRUD, AI, drafts, attachments, threads |
-| `integration/` | 48 | Integration tests split by feature |
+| `integration/` | 49 | Integration tests split by feature |
 | `mcp/` | 7 | Install, serve, status, uninstall, assistants |
 | `notetaker/` | 8 | CRUD, media management |
 | `otp/` | 7 | OTP/SMS operations |
 | `scheduler/` | 6 | Bookings, configurations, pages |
+| `slack/` | 8 | Channels, messages, users, send, reply, search |
 | `timezone/` | 10 | Convert, DST, find, info |
 
 **CLI pattern:**
@@ -167,7 +168,7 @@ internal/cli/<feature>/
   └── helpers.go      # Shared helpers
 ```
 
-**Adapter Directories (11 in internal/adapters/):**
+**Adapter Directories (12 in internal/adapters/):**
 | Adapter | Files | Purpose |
 |---------|-------|---------|
 | `ai/` | 18 | AI clients (Claude, OpenAI, Groq, Ollama), email analyzer, pattern learner |
@@ -178,6 +179,7 @@ internal/cli/<feature>/
 | `mcp/` | 7 | MCP proxy server |
 | `nylas/` | 85 | Nylas API client (main adapter) |
 | `oauth/` | 3 | OAuth server |
+| `slack/` | 9 | Slack API client (channels, messages, users, search) |
 | `tunnel/` | 2 | Cloudflare tunnel |
 | `utilities/` | 12 | Services (contacts, email, scheduling, timezone, webhook) |
 | `webhookserver/` | 2 | Webhook server |
@@ -428,6 +430,55 @@ Before performing these operations, check if a matching `.local.md` rule exists 
 ```bash
 # Pattern: Check if local rule exists before operation
 ls .claude/rules/<operation>.local.md 2>/dev/null && Read it
+```
+
+---
+
+## Session Continuity (Auto-Update)
+
+**CRITICAL:** Automatically maintain `claude-progress.txt` for session continuity.
+
+### When to Update `claude-progress.txt`:
+
+| Trigger | Action |
+|---------|--------|
+| After completing a major task | Update with what was done |
+| After making significant progress | Update current state |
+| Before context feels full | Save everything important |
+| When switching focus areas | Document where you left off |
+
+### Update Format:
+
+```markdown
+# Claude Progress - [DATE]
+
+## Current Branch
+[branch name]
+
+## Last Session Summary
+[1-3 sentences of what was accomplished]
+
+## In Progress
+- [Current task being worked on]
+
+## Next Steps
+1. [Immediate next action]
+2. [Following action]
+
+## Key Decisions Made
+- [Important choices and rationale]
+
+## Blockers/Notes
+- [Any issues or things to remember]
+```
+
+### Auto-Update Rule:
+
+**After completing any task or making significant progress, proactively update `claude-progress.txt` without being asked.** This ensures session continuity when a new conversation starts.
+
+Quick update command pattern:
+```
+Write current progress to claude-progress.txt
 ```
 
 ---

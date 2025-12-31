@@ -21,6 +21,7 @@ A unified command-line tool for Nylas API authentication, email management, cale
 - **Folder Management**: Create, rename, and delete folders/labels
 - **Thread Management**: View and manage email conversations
 - **OTP Extraction**: Automatically extract one-time passwords from emails
+- **Slack Integration**: List channels, read/send messages, search, and manage users
 - **Multi-Account Support**: Manage multiple email accounts with grant switching
 - **Secure Credential Storage**: Uses system keyring for credentials
 

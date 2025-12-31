@@ -15,10 +15,12 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/demo"
 	"github.com/mqasimca/nylas/internal/cli/email"
 	"github.com/mqasimca/nylas/internal/cli/inbound"
+	"github.com/mqasimca/nylas/internal/cli/plugin"
 	"github.com/mqasimca/nylas/internal/cli/mcp"
 	"github.com/mqasimca/nylas/internal/cli/notetaker"
 	"github.com/mqasimca/nylas/internal/cli/otp"
 	"github.com/mqasimca/nylas/internal/cli/scheduler"
+	"github.com/mqasimca/nylas/internal/cli/slack"
 	"github.com/mqasimca/nylas/internal/cli/timezone"
 	"github.com/mqasimca/nylas/internal/cli/ui"
 	"github.com/mqasimca/nylas/internal/cli/update"
@@ -41,11 +43,13 @@ func main() {
 	rootCmd.AddCommand(inbound.NewInboundCmd())
 	rootCmd.AddCommand(timezone.NewTimezoneCmd())
 	rootCmd.AddCommand(mcp.NewMCPCmd())
+	rootCmd.AddCommand(slack.NewSlackCmd())
 	rootCmd.AddCommand(demo.NewDemoCmd())
 	rootCmd.AddCommand(cli.NewTUICmd())
 	rootCmd.AddCommand(ui.NewUICmd())
 	rootCmd.AddCommand(air.NewAirCmd())
 	rootCmd.AddCommand(update.NewUpdateCmd())
+	rootCmd.AddCommand(plugin.NewPluginCmd(cli.Version))
 
 	if err := cli.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

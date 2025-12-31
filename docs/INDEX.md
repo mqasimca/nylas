@@ -66,6 +66,7 @@ Quick navigation guide to find the right documentation for your needs.
 - **Timezone handling** → [TIMEZONE.md](TIMEZONE.md) or [timezone/](timezone/)
 - **Calendar commands** → [commands/calendar.md](commands/calendar.md)
 - **Email commands** → [commands/email.md](commands/email.md)
+- **Slack integration** → [COMMANDS.md#slack-integration](COMMANDS.md#slack-integration)
 - **Webhooks** → [WEBHOOKS.md](WEBHOOKS.md) or [commands/webhooks.md](commands/webhooks.md)
 - **TUI (Terminal UI)** → [TUI.md](TUI.md)
 

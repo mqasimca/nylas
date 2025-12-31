@@ -264,6 +264,81 @@ nylas mcp serve                            # Start MCP server (used by assistant
 
 ---
 
+## Slack Integration
+
+Interact with Slack workspaces directly from the CLI.
+
+### Authentication
+
+```bash
+nylas slack auth set --token xoxp-...      # Store Slack user token
+nylas slack auth status                     # Check authentication status
+nylas slack auth remove                     # Remove stored token
+```
+
+**Token sources (checked in order):**
+1. `SLACK_USER_TOKEN` environment variable
+2. System keyring (set via `nylas slack auth set`)
+
+**Get your token:** [api.slack.com/apps](https://api.slack.com/apps) → Your App → OAuth & Permissions → User OAuth Token
+
+### Channels
+
+```bash
+nylas slack channels                        # List all channels
+nylas slack channels --type public_channel  # List public channels only
+nylas slack channels --type private_channel # List private channels
+nylas slack channels --exclude-archived     # Exclude archived channels
+nylas slack channels --limit 20             # Limit results
+nylas slack channels --id                   # Show channel IDs
+```
+
+### Messages
+
+```bash
+nylas slack messages --channel general      # List messages from channel
+nylas slack messages --channel C01234567    # Use channel ID
+nylas slack messages --channel general --limit 10  # Limit results
+nylas slack messages --channel general --id # Show message timestamps
+```
+
+### Send & Reply
+
+```bash
+# Send a message
+nylas slack send --channel general --text "Hello team!"
+nylas slack send --channel general --text "Message" --yes  # Skip confirmation
+
+# Reply to a thread
+nylas slack reply --channel general --thread 1234567890.123456 --text "Reply"
+```
+
+### Users
+
+```bash
+nylas slack users                           # List all users
+nylas slack users --limit 50                # Limit results
+nylas slack users --id                      # Show user IDs
+```
+
+### Search
+
+```bash
+nylas slack search --query "project update" # Search messages
+nylas slack search --query "from:@john"     # Search with Slack modifiers
+nylas slack search --query "in:#general"    # Search in specific channel
+nylas slack search --query "meeting" --limit 20
+```
+
+**Required OAuth Scopes:**
+- `channels:read`, `groups:read`, `im:read`, `mpim:read` - List channels
+- `channels:history`, `groups:history`, `im:history`, `mpim:history` - Read messages
+- `chat:write` - Send messages
+- `users:read` - List users
+- `search:read` - Search messages
+
+---
+
 ## Utility Commands
 
 ```bash
@@ -299,6 +374,7 @@ All commands follow consistent pattern:
 - Calendar: `docs/commands/calendar.md`
 - Contacts: `docs/commands/contacts.md`
 - Webhooks: `docs/commands/webhooks.md`
+- Slack: `docs/COMMANDS.md#slack-integration`
 - Timezone: `docs/TIMEZONE.md`
 - AI: `docs/AI.md`
 - MCP: `docs/MCP.md`
