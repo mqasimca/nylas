@@ -713,7 +713,7 @@ See: [CONTRIBUTING.md](../../CONTRIBUTING.md)
 - **Language:** Go 1.21+
 - **Architecture:** Hexagonal (ports and adapters)
 - **CLI framework:** Cobra
-- **TUI framework:** Bubble Tea
+- **TUI framework:** tview
 - **API:** Nylas v3
 
 ---

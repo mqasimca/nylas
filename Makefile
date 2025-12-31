@@ -1,4 +1,4 @@
-.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-vhs test-vhs-all test-vhs-clean test-e2e test-e2e-air test-e2e-ui test-playwright test-playwright-air test-playwright-ui test-playwright-interactive test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
+.PHONY: build test-unit test-race test-integration test-integration-fast test-cleanup test-coverage test-air test-air-integration test-e2e test-e2e-air test-e2e-ui test-playwright test-playwright-air test-playwright-ui test-playwright-interactive test-playwright-headed clean clean-cache install fmt vet lint vuln deps security check-context ci ci-full help
 
 # Disable parallel Make execution - prevents Go build cache corruption on btrfs (CachyOS)
 .NOTPARALLEL:
@@ -177,60 +177,6 @@ test-cleanup:
 	done
 	@echo ""
 	@echo "✓ Test cleanup complete"
-
-# ============================================================================
-# VHS Visual Testing Targets
-# ============================================================================
-# VHS - Terminal recorder for visual testing
-# Install: sudo pacman -S vhs  (or from https://github.com/charmbracelet/vhs)
-
-test-vhs:
-	@echo "=== Running VHS Visual Tests ==="
-	@command -v vhs >/dev/null 2>&1 || { \
-		echo "ERROR: VHS not installed"; \
-		echo "Install with: sudo pacman -S vhs"; \
-		echo "Or visit: https://github.com/charmbracelet/vhs"; \
-		exit 1; \
-	}
-	@echo "Building latest binary..."
-	@$(MAKE) --no-print-directory build
-	@echo ""
-	@echo "Running dashboard test..."
-	@vhs internal/tui2/vhs-tests/tapes/dashboard.tape
-	@mv -f *.png *.gif internal/tui2/vhs-tests/output/ 2>/dev/null || true
-	@echo "✓ Dashboard test complete - check internal/tui2/vhs-tests/output/"
-
-test-vhs-all:
-	@echo "=== Running All VHS Visual Tests ==="
-	@command -v vhs >/dev/null 2>&1 || { \
-		echo "ERROR: VHS not installed"; \
-		echo "Install with: sudo pacman -S vhs"; \
-		exit 1; \
-	}
-	@echo "Building latest binary..."
-	@$(MAKE) --no-print-directory build
-	@echo ""
-	@echo "Running splash screen test..."
-	@vhs internal/tui2/vhs-tests/tapes/splash.tape
-	@echo ""
-	@echo "Running dashboard test..."
-	@vhs internal/tui2/vhs-tests/tapes/dashboard.tape
-	@echo ""
-	@echo "Running navigation test..."
-	@vhs internal/tui2/vhs-tests/tapes/navigation.tape
-	@echo ""
-	@echo "Running visual regression test..."
-	@vhs internal/tui2/vhs-tests/tapes/visual-regression.tape
-	@echo ""
-	@mv -f *.png *.gif *.txt internal/tui2/vhs-tests/output/ 2>/dev/null || true
-	@echo "✓ All VHS tests complete!"
-	@echo "  Output: internal/tui2/vhs-tests/output/"
-	@ls -lh internal/tui2/vhs-tests/output/
-
-test-vhs-clean:
-	@echo "=== Cleaning VHS Test Output ==="
-	@rm -f internal/tui2/vhs-tests/output/*
-	@echo "✓ VHS output cleaned"
 
 # ============================================================================
 # Playwright E2E Tests (Air + UI Web Interfaces)

@@ -14,14 +14,12 @@ import (
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/mqasimca/nylas/internal/tui"
-	"github.com/mqasimca/nylas/internal/tui2"
 )
 
 // NewTUICmd creates the tui command.
 func NewTUICmd() *cobra.Command {
 	var refreshInterval int
 	var theme string
-	var engine string
 
 	cmd := &cobra.Command{
 		Use:   "tui [resource]",
@@ -60,11 +58,7 @@ Resources:
   events      Calendar events
   contacts    Contacts
   webhooks    Webhooks
-  grants      Connected accounts
-
-Engines:
-  tview       Current tview-based TUI (default)
-  bubbletea   New Bubble Tea-based TUI (experimental)`,
+  grants      Connected accounts`,
 		Example: `  # Launch TUI at dashboard
   nylas tui
 
@@ -78,23 +72,19 @@ Engines:
   nylas tui messages --theme green
 
   # Launch directly to events with custom refresh
-  nylas tui events --refresh 5
-
-  # Launch with Bubble Tea engine (experimental)
-  nylas tui --engine bubbletea`,
+  nylas tui events --refresh 5`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			initialView := ""
 			if len(args) > 0 {
 				initialView = args[0]
 			}
 			themeExplicitlySet := cmd.Flags().Changed("theme")
-			return runTUI(time.Duration(refreshInterval)*time.Second, initialView, tui.ThemeName(theme), themeExplicitlySet, engine)
+			return runTUI(time.Duration(refreshInterval)*time.Second, initialView, tui.ThemeName(theme), themeExplicitlySet)
 		},
 	}
 
 	cmd.Flags().IntVar(&refreshInterval, "refresh", 3, "Refresh interval in seconds")
 	cmd.Flags().StringVar(&theme, "theme", "k9s", "Color theme (k9s, amber, green, apple2, vintage, ibm, futuristic, matrix, norton, or custom)")
-	cmd.Flags().StringVar(&engine, "engine", "tview", "TUI engine (tview, bubbletea)")
 
 	// Add subcommands for direct navigation
 	cmd.AddCommand(newTUIResourceCmd("messages", "m", "Launch TUI directly to messages view"))
@@ -355,7 +345,6 @@ func newTUIResourceCmd(resource, alias, desc string) *cobra.Command {
 func newTUIResourceCmdWithAliases(resource string, aliases []string, desc string) *cobra.Command {
 	var refreshInterval int
 	var theme string
-	var engine string
 
 	cmd := &cobra.Command{
 		Use:     resource,
@@ -364,17 +353,16 @@ func newTUIResourceCmdWithAliases(resource string, aliases []string, desc string
 		Example: fmt.Sprintf("  nylas tui %s\n  nylas tui %s --refresh 5\n  nylas tui %s --theme amber", resource, aliases[0], resource),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			themeExplicitlySet := cmd.Flags().Changed("theme")
-			return runTUI(time.Duration(refreshInterval)*time.Second, resource, tui.ThemeName(theme), themeExplicitlySet, engine)
+			return runTUI(time.Duration(refreshInterval)*time.Second, resource, tui.ThemeName(theme), themeExplicitlySet)
 		},
 	}
 
 	cmd.Flags().IntVar(&refreshInterval, "refresh", 3, "Refresh interval in seconds")
 	cmd.Flags().StringVar(&theme, "theme", "k9s", "Color theme (k9s, amber, green, apple2, vintage, ibm, futuristic, matrix, norton, or custom)")
-	cmd.Flags().StringVar(&engine, "engine", "tview", "TUI engine (tview, bubbletea)")
 	return cmd
 }
 
-func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeName, themeExplicitlySet bool, engine string) error {
+func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeName, themeExplicitlySet bool) error {
 	// Load config
 	configStore := config.NewDefaultFileStore()
 	cfg, err := configStore.Load()
@@ -385,7 +373,7 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 		cfg = &domain.Config{}
 	}
 
-	// Initialize credentials and client (common for both engines)
+	// Initialize credentials and client
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
 	if err != nil {
 		return fmt.Errorf("failed to initialize secret store: %w", err)
@@ -419,30 +407,7 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 		return fmt.Errorf("failed to get grant info: %w", err)
 	}
 
-	// Route to appropriate engine
-	switch engine {
-	case "bubbletea":
-		// Use new Bubble Tea engine
-		return runBubbleTeaTUI(client, grantStore, grantID, grantInfo, string(theme))
-
-	case "tview":
-		fallthrough
-	default:
-		// Use existing tview engine
-		return runTViewTUI(client, grantStore, grantID, grantInfo, cfg, theme, themeExplicitlySet, refreshInterval, initialView)
-	}
-}
-
-func runBubbleTeaTUI(client ports.NylasClient, grantStore ports.GrantStore, grantID string, grantInfo *domain.GrantInfo, theme string) error {
-	// Run Bubble Tea TUI
-	return tui2.Run(tui2.Config{
-		Client:     client,
-		GrantStore: grantStore,
-		GrantID:    grantID,
-		Email:      grantInfo.Email,
-		Provider:   string(grantInfo.Provider),
-		Theme:      theme,
-	})
+	return runTViewTUI(client, grantStore, grantID, grantInfo, cfg, theme, themeExplicitlySet, refreshInterval, initialView)
 }
 
 func runTViewTUI(client ports.NylasClient, grantStore ports.GrantStore, grantID string, grantInfo *domain.GrantInfo, cfg *domain.Config, theme tui.ThemeName, themeExplicitlySet bool, refreshInterval time.Duration, initialView string) error {
