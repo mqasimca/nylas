@@ -35,7 +35,7 @@ func GetConfigPath() (string, error) {
 	}
 
 	configDir := filepath.Join(homeDir, ".config", "nylas")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0750); err != nil {
 		return "", err
 	}
 

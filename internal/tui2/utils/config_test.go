@@ -66,9 +66,9 @@ func TestGetConfigPath(t *testing.T) {
 		t.Error("config path is not a directory")
 	}
 
-	// Verify permissions
-	if info.Mode().Perm() != 0755 {
-		t.Errorf("config directory permissions = %o, want 0755", info.Mode().Perm())
+	// Verify permissions (0750 for security - gosec G301)
+	if info.Mode().Perm() != 0750 {
+		t.Errorf("config directory permissions = %o, want 0750", info.Mode().Perm())
 	}
 }
 
@@ -242,7 +242,7 @@ func TestLoadConfig_InvalidJSON(t *testing.T) {
 
 	// Create config directory
 	configDir := filepath.Join(tmpDir, ".config", "nylas")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0750); err != nil {
 		t.Fatalf("failed to create config dir: %v", err)
 	}
 
@@ -284,7 +284,7 @@ func TestLoadConfig_FilePermissionError(t *testing.T) {
 
 	// Create config directory and file
 	configDir := filepath.Join(tmpDir, ".config", "nylas")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0750); err != nil {
 		t.Fatalf("failed to create config dir: %v", err)
 	}
 
