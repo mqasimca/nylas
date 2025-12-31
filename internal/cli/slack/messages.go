@@ -142,7 +142,8 @@ Examples:
 				return nil
 			}
 
-			if slackClient, ok := client.(*slack.Client); ok {
+			slackClient, isSlackClient := client.(*slack.Client)
+			if isSlackClient {
 				_ = slackClient.GetUsersForMessages(ctx, allMessages)
 			}
 
@@ -150,13 +151,31 @@ Examples:
 			threadReplies := make(map[string][]domain.SlackMessage)
 			if expandThreads {
 				dim := color.New(color.Faint)
+				var allReplies []domain.SlackMessage
 				for _, msg := range allMessages {
 					if msg.ReplyCount > 0 {
 						replies, threadErr := client.GetThreadReplies(ctx, resolvedChannelID, msg.ID, 100)
 						if threadErr == nil && len(replies) > 1 {
 							// Skip first reply (it's the parent message)
 							threadReplies[msg.ID] = replies[1:]
+							allReplies = append(allReplies, replies[1:]...)
 						}
+					}
+				}
+				// Resolve usernames for thread replies
+				if isSlackClient && len(allReplies) > 0 {
+					_ = slackClient.GetUsersForMessages(ctx, allReplies)
+					// Update the threadReplies map with resolved usernames
+					for msgID, replies := range threadReplies {
+						for i := range replies {
+							for _, resolved := range allReplies {
+								if replies[i].ID == resolved.ID {
+									replies[i].Username = resolved.Username
+									break
+								}
+							}
+						}
+						threadReplies[msgID] = replies
 					}
 				}
 				if len(threadReplies) > 0 {
