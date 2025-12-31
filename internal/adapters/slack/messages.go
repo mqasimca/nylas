@@ -1,3 +1,5 @@
+// messages.go provides message operations for Slack channels.
+
 package slack
 
 import (

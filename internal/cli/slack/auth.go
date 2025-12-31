@@ -1,3 +1,5 @@
+// auth.go provides authentication commands for Slack workspace connections.
+
 package slack
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
+// newAuthCmd creates the auth command for managing Slack authentication.
 func newAuthCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
@@ -31,6 +34,7 @@ Get your User OAuth Token from:
 	return cmd
 }
 
+// newAuthSetCmd creates the set subcommand for storing a Slack token.
 func newAuthSetCmd() *cobra.Command {
 	var token string
 
@@ -80,6 +84,7 @@ Example:
 	return cmd
 }
 
+// newAuthStatusCmd creates the status subcommand for showing auth state.
 func newAuthStatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
@@ -119,6 +124,7 @@ func newAuthStatusCmd() *cobra.Command {
 	}
 }
 
+// newAuthRemoveCmd creates the remove subcommand for deleting stored credentials.
 func newAuthRemoveCmd() *cobra.Command {
 	var force bool
 

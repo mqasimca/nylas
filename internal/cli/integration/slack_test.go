@@ -101,8 +101,19 @@ func TestSlack_Help(t *testing.T) {
 			args: []string{"slack", "channels", "--help"},
 			contains: []string{
 				"channels",
+				"list",
+				"info",
+			},
+		},
+		{
+			name: "slack channels list help",
+			args: []string{"slack", "channels", "list", "--help"},
+			contains: []string{
+				"list",
 				"--type",
 				"--limit",
+				"--all-workspace",
+				"--created-after",
 			},
 		},
 		{
@@ -110,8 +121,18 @@ func TestSlack_Help(t *testing.T) {
 			args: []string{"slack", "messages", "--help"},
 			contains: []string{
 				"messages",
+				"list",
+			},
+		},
+		{
+			name: "slack messages list help",
+			args: []string{"slack", "messages", "list", "--help"},
+			contains: []string{
+				"list",
 				"--channel",
 				"--limit",
+				"--all",
+				"--expand-threads",
 			},
 		},
 		{
@@ -137,7 +158,16 @@ func TestSlack_Help(t *testing.T) {
 			args: []string{"slack", "users", "--help"},
 			contains: []string{
 				"users",
+				"list",
+			},
+		},
+		{
+			name: "slack users list help",
+			args: []string{"slack", "users", "list", "--help"},
+			contains: []string{
+				"list",
 				"--limit",
+				"--id",
 			},
 		},
 		{
@@ -204,28 +234,33 @@ func TestSlack_ChannelsList(t *testing.T) {
 		contains []string
 	}{
 		{
-			name:     "list all channels",
-			args:     []string{"slack", "channels"},
+			name:     "list all channels (subcommand)",
+			args:     []string{"slack", "channels", "list"},
 			contains: []string{}, // Just verify it runs
 		},
 		{
 			name:     "list with limit",
-			args:     []string{"slack", "channels", "--limit", "5"},
+			args:     []string{"slack", "channels", "list", "--limit", "5"},
 			contains: []string{},
 		},
 		{
 			name:     "list public channels only",
-			args:     []string{"slack", "channels", "--type", "public_channel"},
+			args:     []string{"slack", "channels", "list", "--type", "public_channel"},
 			contains: []string{},
 		},
 		{
 			name:     "list with IDs",
-			args:     []string{"slack", "channels", "--id"},
+			args:     []string{"slack", "channels", "list", "--id"},
 			contains: []string{"[C"}, // Channel IDs start with C
 		},
 		{
 			name:     "exclude archived",
-			args:     []string{"slack", "channels", "--exclude-archived"},
+			args:     []string{"slack", "channels", "list", "--exclude-archived"},
+			contains: []string{},
+		},
+		{
+			name:     "list all workspace channels",
+			args:     []string{"slack", "channels", "list", "--all-workspace", "--limit", "5"},
 			contains: []string{},
 		},
 	}
@@ -252,6 +287,33 @@ func TestSlack_ChannelsList(t *testing.T) {
 	}
 }
 
+func TestSlack_ChannelInfo(t *testing.T) {
+	skipIfMissingSlackCreds(t)
+
+	// Test channel info command
+	stdout, stderr, err := runSlackCLI(t, "slack", "channels", "info", slackUserChannel)
+
+	if err != nil {
+		if strings.Contains(stderr, "not authenticated") {
+			t.Skip("Not authenticated with Slack")
+		}
+		if strings.Contains(stderr, "channel_not_found") {
+			t.Skipf("Channel %s not found", slackUserChannel)
+		}
+		t.Fatalf("Command failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show channel details
+	expectedFields := []string{"ID:", "Is Channel:", "Is Private:"}
+	for _, field := range expectedFields {
+		if !strings.Contains(stdout, field) {
+			t.Errorf("Expected output to contain %q\nGot: %s", field, stdout)
+		}
+	}
+
+	t.Logf("Output:\n%s", stdout)
+}
+
 // =============================================================================
 // SLACK MESSAGES TESTS
 // =============================================================================
@@ -266,23 +328,23 @@ func TestSlack_MessagesList(t *testing.T) {
 		contains []string
 	}{
 		{
-			name:     "list messages from channel",
-			args:     []string{"slack", "messages", "--channel", slackUserChannel},
+			name:     "list messages from channel (subcommand)",
+			args:     []string{"slack", "messages", "list", "--channel-id", slackUserChannel},
 			contains: []string{}, // Just verify it runs
 		},
 		{
 			name:     "list messages with limit",
-			args:     []string{"slack", "messages", "--channel", slackUserChannel, "--limit", "5"},
+			args:     []string{"slack", "messages", "list", "--channel-id", slackUserChannel, "--limit", "5"},
 			contains: []string{},
 		},
 		{
 			name:     "list messages with IDs",
-			args:     []string{"slack", "messages", "--channel", slackUserChannel, "--id"},
+			args:     []string{"slack", "messages", "list", "--channel-id", slackUserChannel, "--id"},
 			contains: []string{}, // Should show message timestamps
 		},
 		{
 			name:    "missing channel",
-			args:    []string{"slack", "messages"},
+			args:    []string{"slack", "messages", "list"},
 			wantErr: true,
 		},
 	}
@@ -332,18 +394,18 @@ func TestSlack_UsersList(t *testing.T) {
 		contains []string
 	}{
 		{
-			name:     "list users",
-			args:     []string{"slack", "users"},
+			name:     "list users (subcommand)",
+			args:     []string{"slack", "users", "list", "--limit", "5"},
 			contains: []string{}, // Just verify it runs
 		},
 		{
 			name:     "list users with limit",
-			args:     []string{"slack", "users", "--limit", "10"},
+			args:     []string{"slack", "users", "list", "--limit", "5"},
 			contains: []string{},
 		},
 		{
 			name:     "list users with IDs",
-			args:     []string{"slack", "users", "--id"},
+			args:     []string{"slack", "users", "list", "--id", "--limit", "5"},
 			contains: []string{"[U"}, // User IDs start with U
 		},
 	}
@@ -535,7 +597,7 @@ func TestSlack_Workflow(t *testing.T) {
 	})
 
 	t.Run("list_channels", func(t *testing.T) {
-		stdout, stderr, err := runSlackCLI(t, "slack", "channels", "--limit", "5")
+		stdout, stderr, err := runSlackCLI(t, "slack", "channels", "list", "--limit", "5")
 		if err != nil {
 			t.Fatalf("List channels failed: %v\nstderr: %s", err, stderr)
 		}
@@ -548,7 +610,7 @@ func TestSlack_Workflow(t *testing.T) {
 	})
 
 	t.Run("read_messages", func(t *testing.T) {
-		stdout, stderr, err := runSlackCLI(t, "slack", "messages", "--channel", slackUserChannel, "--limit", "3")
+		stdout, stderr, err := runSlackCLI(t, "slack", "messages", "list", "--channel-id", slackUserChannel, "--limit", "3")
 		if err != nil {
 			if strings.Contains(stderr, "channel not found") {
 				t.Skipf("Channel %s not found", slackUserChannel)
@@ -561,7 +623,7 @@ func TestSlack_Workflow(t *testing.T) {
 	})
 
 	t.Run("list_users", func(t *testing.T) {
-		stdout, stderr, err := runSlackCLI(t, "slack", "users", "--limit", "5")
+		stdout, stderr, err := runSlackCLI(t, "slack", "users", "list", "--limit", "5")
 		if err != nil {
 			t.Fatalf("List users failed: %v\nstderr: %s", err, stderr)
 		}

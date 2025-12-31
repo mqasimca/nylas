@@ -285,21 +285,35 @@ nylas slack auth remove                     # Remove stored token
 ### Channels
 
 ```bash
-nylas slack channels                        # List all channels
-nylas slack channels --type public_channel  # List public channels only
-nylas slack channels --type private_channel # List private channels
-nylas slack channels --exclude-archived     # Exclude archived channels
-nylas slack channels --limit 20             # Limit results
-nylas slack channels --id                   # Show channel IDs
+# List channels you're a member of
+nylas slack channels list                   # List your channels
+nylas slack channels list --type public_channel  # List public channels only
+nylas slack channels list --type private_channel # List private channels
+nylas slack channels list --exclude-archived     # Exclude archived channels
+nylas slack channels list --limit 20             # Limit results
+nylas slack channels list --id                   # Show channel IDs
+
+# Filter by creation date
+nylas slack channels list --created-after 24h    # Channels created in last 24 hours
+nylas slack channels list --created-after 7d     # Channels created in last 7 days
+nylas slack channels list --created-after 2w     # Channels created in last 2 weeks
+
+# Workspace-wide listing (slower, may hit rate limits)
+nylas slack channels list --all-workspace        # List all workspace channels
+nylas slack channels list --all                  # Fetch all pages
+
+# Get channel info
+nylas slack channels info C01234567890           # Get detailed channel info
 ```
 
 ### Messages
 
 ```bash
-nylas slack messages --channel general      # List messages from channel
-nylas slack messages --channel C01234567    # Use channel ID
-nylas slack messages --channel general --limit 10  # Limit results
-nylas slack messages --channel general --id # Show message timestamps
+nylas slack messages list --channel general       # List messages from channel
+nylas slack messages list --channel-id C01234567  # Use channel ID
+nylas slack messages list --channel general --limit 10  # Limit results
+nylas slack messages list --channel general --id  # Show message timestamps
+nylas slack messages list --channel general --thread 1234567890.123456  # Show thread replies
 ```
 
 ### Send & Reply
@@ -316,9 +330,9 @@ nylas slack reply --channel general --thread 1234567890.123456 --text "Reply"
 ### Users
 
 ```bash
-nylas slack users                           # List all users
-nylas slack users --limit 50                # Limit results
-nylas slack users --id                      # Show user IDs
+nylas slack users list                      # List all users
+nylas slack users list --limit 50           # Limit results
+nylas slack users list --id                 # Show user IDs
 ```
 
 ### Search

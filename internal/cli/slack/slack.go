@@ -20,11 +20,17 @@ Examples:
   # Check authentication status
   nylas slack auth status
 
-  # List channels
-  nylas slack channels
+  # List your channels
+  nylas slack channels list
+
+  # Get channel info
+  nylas slack channels info C1234567890
 
   # Read messages from a channel
-  nylas slack messages --channel general
+  nylas slack messages list --channel general
+
+  # List workspace users
+  nylas slack users list
 
   # Send a message
   nylas slack send --channel general --text "Hello!"

@@ -1,3 +1,5 @@
+// users.go provides user listing commands for Slack workspaces.
+
 package slack
 
 import (
@@ -9,27 +11,42 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
+// newUsersCmd creates the users command for managing workspace users.
 func newUsersCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "users",
+		Aliases: []string{"user", "members"},
+		Short:   "Manage workspace users",
+		Long:    `Commands for listing and managing Slack workspace users.`,
+	}
+
+	cmd.AddCommand(newUserListCmd())
+
+	return cmd
+}
+
+// newUserListCmd creates the list subcommand for listing workspace users.
+func newUserListCmd() *cobra.Command {
 	var (
 		limit  int
 		showID bool
 	)
 
 	cmd := &cobra.Command{
-		Use:     "users",
-		Aliases: []string{"user", "members"},
+		Use:     "list",
+		Aliases: []string{"ls"},
 		Short:   "List workspace users",
 		Long: `List members of your Slack workspace.
 
 Examples:
   # List users
-  nylas slack users
+  nylas slack users list
 
   # Show user IDs
-  nylas slack users --id
+  nylas slack users list --id
 
   # Limit results
-  nylas slack users --limit 20`,
+  nylas slack users list --limit 20`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getSlackClientFromKeyring()
 			if err != nil {
