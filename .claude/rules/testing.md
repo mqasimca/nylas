@@ -30,18 +30,17 @@ Consolidated testing rules for the Nylas CLI project.
 
 ## Rate Limiting (CRITICAL)
 
+**See:** `.claude/shared/patterns/integration-test-patterns.md` for full details.
+
 ```go
 acquireRateLimit(t)  // Call before each API operation
 ```
 
-| Command Type | Rate Limit |
-|--------------|------------|
-| API commands (calendar, email, contacts) | ✅ Required |
-| Offline commands (timezone, version, help) | ❌ Not needed |
-
 ---
 
 ## Test Coverage
+
+> **This is the authoritative source for coverage goals.** Other files reference this section.
 
 | Package Type | Minimum | Target |
 |--------------|---------|--------|
@@ -58,16 +57,14 @@ make test-coverage  # Generates coverage.html and opens in browser
 
 ## Quick Reference
 
-### Run Tests
+**See:** `.claude/commands/run-tests.md` for full command details.
+
 ```bash
 make ci-full                     # Complete CI pipeline (RECOMMENDED)
 make test-unit                   # Unit tests only
 make test-integration            # CLI integration tests
-make test-air-integration        # Air web UI integration tests
 make test-cleanup                # Clean up test resources
 ```
-
-**CRITICAL:** Air tests create real resources. Always use `make ci-full` for automatic cleanup.
 
 ---
 

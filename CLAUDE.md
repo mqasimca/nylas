@@ -38,14 +38,9 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 ### Test Coverage Goals:
 
-| Package Type | Minimum | Target |
-|--------------|---------|--------|
-| Core Adapters | 70% | 85%+ |
-| Business Logic | 60% | 80%+ |
-| CLI Commands | 50% | 70%+ |
-| Utilities | 90% | 100% |
+**See:** `.claude/rules/testing.md` for coverage targets by package type.
 
-**Check coverage:** `make test-coverage` (opens coverage.html in browser)
+**Check coverage:** `make test-coverage`
 
 ### Docs to Update:
 - `docs/COMMANDS.md` → New/changed commands or flags
@@ -477,32 +472,18 @@ Write current progress to claude-progress.txt
 
 ### Essential Make Targets
 
-| Target | Description | When to Use |
-|--------|-------------|-------------|
-| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) | Before PRs, releases |
-| `make ci` | Quality checks only (no integration) | Quick pre-commit |
-| `make build` | Build binary | Development |
-| `make test-unit` | Unit tests only | Fast feedback |
-| `make test-coverage` | Coverage report | Check test coverage |
-| `make clean` | Remove artifacts | Clean workspace |
+**See:** `docs/DEVELOPMENT.md` for complete make target list.
 
-**Run `make help` for all available targets**
-
-### Common Workflows
+| Target | Description |
+|--------|-------------|
+| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) |
+| `make ci` | Quality checks only (no integration) |
+| `make build` | Build binary |
+| `make test-unit` | Unit tests only |
 
 ```bash
 # Before committing code
 make ci-full
-
-# Quick pre-commit check
-make ci
-
-# Build and test locally
-make build
-./bin/nylas --help
-
-# Check test coverage
-make test-coverage
 ```
 
 **Debugging:**

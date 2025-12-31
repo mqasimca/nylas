@@ -8,7 +8,9 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(go test:*), Bash(go build:*)
 
 Add a new integration test to the CLI test suite.
 
-**See also:** `.claude/rules/testing.md` for test patterns and conventions.
+**See also:**
+- `.claude/rules/testing.md` - Test patterns and conventions
+- `.claude/shared/patterns/integration-test-patterns.md` - Rate limiting (CRITICAL)
 
 ## Instructions
 

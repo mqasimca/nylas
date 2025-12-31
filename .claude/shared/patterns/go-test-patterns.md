@@ -148,11 +148,10 @@ func TestWithResources(t *testing.T) {
 
 ## Commands
 
+**See:** `.claude/commands/run-tests.md` for full command details.
+
 ```bash
 go test -v ./path/to/...           # Run specific tests
-go test -short ./...               # Skip integration
-go test -race ./...                # Race detection
-go test -cover ./...               # Coverage
 go test -run TestName ./...        # Run by name
 make test-unit                     # All unit tests
 ```
