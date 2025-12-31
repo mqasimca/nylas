@@ -15,7 +15,6 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/demo"
 	"github.com/mqasimca/nylas/internal/cli/email"
 	"github.com/mqasimca/nylas/internal/cli/inbound"
-	"github.com/mqasimca/nylas/internal/cli/plugin"
 	"github.com/mqasimca/nylas/internal/cli/mcp"
 	"github.com/mqasimca/nylas/internal/cli/notetaker"
 	"github.com/mqasimca/nylas/internal/cli/otp"
@@ -49,7 +48,6 @@ func main() {
 	rootCmd.AddCommand(ui.NewUICmd())
 	rootCmd.AddCommand(air.NewAirCmd())
 	rootCmd.AddCommand(update.NewUpdateCmd())
-	rootCmd.AddCommand(plugin.NewPluginCmd(cli.Version))
 
 	if err := cli.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)

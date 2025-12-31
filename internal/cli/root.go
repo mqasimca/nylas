@@ -2,9 +2,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/mqasimca/nylas/internal/cli/plugin"
 	"github.com/spf13/cobra"
 )
 
@@ -65,41 +62,9 @@ OTP MANAGEMENT:
   nylas otp list       List configured accounts
 
 INTERACTIVE TUI:
-  nylas tui            Launch k9s-style terminal UI for emails
-
-PLUGIN MANAGEMENT:
-  nylas plugin list                List installed plugins
-  nylas plugin install <name>      Install a plugin
-  nylas plugin uninstall <name>    Uninstall a plugin
-
-  Plugins extend the CLI with additional features. Use 'nylas <plugin-name>'
-  to run a plugin (e.g., 'nylas air serve').`,
+  nylas tui            Launch k9s-style terminal UI for emails`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	// Handle unknown commands by checking if they're plugins
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// If no subcommand provided, show help
-		if len(args) == 0 {
-			return cmd.Help()
-		}
-
-		// Check if the first argument is a plugin
-		pluginName := args[0]
-		p, err := plugin.Find(pluginName)
-		if err != nil {
-			// Not a plugin, show error
-			return fmt.Errorf("unknown command %q for %q\nRun 'nylas --help' for usage", pluginName, cmd.CommandPath())
-		}
-
-		// Execute plugin
-		cfg, err := plugin.LoadConfig()
-		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
-		}
-
-		executor := plugin.NewExecutor(cfg, Version)
-		return executor.Execute(p, args[1:])
-	},
 }
 
 func init() {
