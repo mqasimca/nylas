@@ -3,6 +3,7 @@ package ports
 
 import (
 	"context"
+	"io"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -60,4 +61,16 @@ type SlackClient interface {
 	// SearchMessages searches for messages matching a query string.
 	// Query supports Slack search syntax (e.g., "from:@user", "in:#channel").
 	SearchMessages(ctx context.Context, query string, limit int) ([]domain.SlackMessage, error)
+
+	// ListFiles returns files uploaded to a channel or workspace.
+	// Use params to filter by channel, user, or file type.
+	ListFiles(ctx context.Context, params *domain.SlackFileQueryParams) (*domain.SlackFileListResponse, error)
+
+	// GetFileInfo returns metadata for a single file by its ID.
+	// Returns an error if the file doesn't exist or is not accessible.
+	GetFileInfo(ctx context.Context, fileID string) (*domain.SlackAttachment, error)
+
+	// DownloadFile downloads file content from a private download URL.
+	// The caller must close the returned ReadCloser when done.
+	DownloadFile(ctx context.Context, downloadURL string) (io.ReadCloser, error)
 }

@@ -15,17 +15,51 @@ import (
 // convertMessage converts slack-go Message to domain.SlackMessage.
 func convertMessage(msg slack.Message, channelID string) domain.SlackMessage {
 	return domain.SlackMessage{
-		ID:         msg.Timestamp,
-		ChannelID:  channelID,
-		UserID:     msg.User,
-		Username:   msg.Username,
-		Text:       msg.Text,
-		Timestamp:  parseTimestamp(msg.Timestamp),
-		ThreadTS:   msg.ThreadTimestamp,
-		ReplyCount: msg.ReplyCount,
-		IsReply:    msg.ThreadTimestamp != "" && msg.ThreadTimestamp != msg.Timestamp,
-		Edited:     msg.Edited != nil,
-		Reactions:  convertReactions(msg.Reactions),
+		ID:          msg.Timestamp,
+		ChannelID:   channelID,
+		UserID:      msg.User,
+		Username:    msg.Username,
+		Text:        msg.Text,
+		Timestamp:   parseTimestamp(msg.Timestamp),
+		ThreadTS:    msg.ThreadTimestamp,
+		ReplyCount:  msg.ReplyCount,
+		IsReply:     msg.ThreadTimestamp != "" && msg.ThreadTimestamp != msg.Timestamp,
+		Edited:      msg.Edited != nil,
+		Attachments: convertFiles(msg.Files),
+		Reactions:   convertReactions(msg.Reactions),
+	}
+}
+
+// convertFiles converts slack-go Files to domain.SlackAttachment slice.
+func convertFiles(files []slack.File) []domain.SlackAttachment {
+	if len(files) == 0 {
+		return nil
+	}
+
+	result := make([]domain.SlackAttachment, len(files))
+	for i, f := range files {
+		result[i] = ConvertFile(f)
+	}
+	return result
+}
+
+// ConvertFile converts a single slack-go File to domain.SlackAttachment.
+func ConvertFile(f slack.File) domain.SlackAttachment {
+	return domain.SlackAttachment{
+		ID:          f.ID,
+		Name:        f.Name,
+		Title:       f.Title,
+		MimeType:    f.Mimetype,
+		FileType:    f.Filetype,
+		Size:        int64(f.Size),
+		DownloadURL: f.URLPrivateDownload,
+		Permalink:   f.Permalink,
+		UserID:      f.User,
+		Created:     int64(f.Created.Time().Unix()),
+		ImageWidth:  f.OriginalW,
+		ImageHeight: f.OriginalH,
+		Thumb360:    f.Thumb360,
+		Thumb480:    f.Thumb480,
 	}
 }
 

@@ -54,14 +54,39 @@ type SlackUser struct {
 	Timezone    string `json:"timezone,omitempty"` // User's timezone in IANA format (e.g., "America/New_York")
 }
 
-// SlackAttachment represents a message attachment.
+// SlackAttachment represents a file attached to a message.
 type SlackAttachment struct {
-	ID       string `json:"id"`        // Unique attachment identifier
-	Type     string `json:"type"`      // Attachment type (e.g., "file", "image", "video")
-	Title    string `json:"title"`     // Display title or filename
-	URL      string `json:"url"`       // URL to download or view the attachment
-	MimeType string `json:"mime_type"` // MIME type (e.g., "image/png", "application/pdf")
-	Size     int64  `json:"size"`      // File size in bytes
+	ID          string `json:"id"`           // Unique file identifier (e.g., "F1234567890")
+	Name        string `json:"name"`         // Original filename
+	Title       string `json:"title"`        // Display title (may differ from name)
+	MimeType    string `json:"mime_type"`    // MIME type (e.g., "image/png", "application/pdf")
+	FileType    string `json:"file_type"`    // Slack file type (e.g., "png", "pdf")
+	Size        int64  `json:"size"`         // File size in bytes
+	DownloadURL string `json:"download_url"` // Private download URL (requires auth)
+	Permalink   string `json:"permalink"`    // Permanent link to file in Slack
+	UserID      string `json:"user_id"`      // User who uploaded the file
+	Created     int64  `json:"created"`      // Unix timestamp when uploaded
+	// Image-specific fields
+	ImageWidth  int `json:"image_width,omitempty"`  // Original width in pixels
+	ImageHeight int `json:"image_height,omitempty"` // Original height in pixels
+	// Thumbnail URLs (for images)
+	Thumb360 string `json:"thumb_360,omitempty"` // 360px thumbnail URL
+	Thumb480 string `json:"thumb_480,omitempty"` // 480px thumbnail URL
+}
+
+// SlackFileQueryParams defines filters for listing files in a workspace.
+type SlackFileQueryParams struct {
+	ChannelID string   `json:"channel_id,omitempty"` // Filter by channel
+	UserID    string   `json:"user_id,omitempty"`    // Filter by uploader
+	Types     []string `json:"types,omitempty"`      // File types: images, pdfs, docs, etc.
+	Limit     int      `json:"limit,omitempty"`      // Max files to return (default: 20)
+	Cursor    string   `json:"cursor,omitempty"`     // Pagination cursor
+}
+
+// SlackFileListResponse represents a paginated list of files.
+type SlackFileListResponse struct {
+	Files      []SlackAttachment `json:"files"`
+	NextCursor string            `json:"next_cursor,omitempty"`
 }
 
 // SlackReaction represents an emoji reaction.

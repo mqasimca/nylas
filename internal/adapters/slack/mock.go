@@ -4,6 +4,8 @@ package slack
 
 import (
 	"context"
+	"io"
+	"strings"
 
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
@@ -27,6 +29,9 @@ type MockClient struct {
 	GetUserFunc          func(ctx context.Context, userID string) (*domain.SlackUser, error)
 	GetCurrentUserFunc   func(ctx context.Context) (*domain.SlackUser, error)
 	SearchMessagesFunc   func(ctx context.Context, query string, limit int) ([]domain.SlackMessage, error)
+	ListFilesFunc        func(ctx context.Context, params *domain.SlackFileQueryParams) (*domain.SlackFileListResponse, error)
+	GetFileInfoFunc      func(ctx context.Context, fileID string) (*domain.SlackAttachment, error)
+	DownloadFileFunc     func(ctx context.Context, downloadURL string) (io.ReadCloser, error)
 }
 
 // NewMockClient creates a new mock client with default implementations.
@@ -189,4 +194,41 @@ func (m *MockClient) SearchMessages(ctx context.Context, query string, limit int
 	return []domain.SlackMessage{
 		{ID: "1234567890.123456", Text: "Message matching: " + query, Username: "testuser"},
 	}, nil
+}
+
+// ListFiles returns files in a channel or workspace.
+func (m *MockClient) ListFiles(ctx context.Context, params *domain.SlackFileQueryParams) (*domain.SlackFileListResponse, error) {
+	if m.ListFilesFunc != nil {
+		return m.ListFilesFunc(ctx, params)
+	}
+	return &domain.SlackFileListResponse{
+		Files: []domain.SlackAttachment{
+			{ID: "F123456", Name: "test.png", Title: "Test Image", MimeType: "image/png", Size: 1024},
+			{ID: "F234567", Name: "doc.pdf", Title: "Document", MimeType: "application/pdf", Size: 2048},
+		},
+	}, nil
+}
+
+// GetFileInfo returns metadata for a single file.
+func (m *MockClient) GetFileInfo(ctx context.Context, fileID string) (*domain.SlackAttachment, error) {
+	if m.GetFileInfoFunc != nil {
+		return m.GetFileInfoFunc(ctx, fileID)
+	}
+	return &domain.SlackAttachment{
+		ID:          fileID,
+		Name:        "test.png",
+		Title:       "Test Image",
+		MimeType:    "image/png",
+		Size:        1024,
+		DownloadURL: "https://files.slack.com/test.png",
+	}, nil
+}
+
+// DownloadFile downloads file content from a URL.
+func (m *MockClient) DownloadFile(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
+	if m.DownloadFileFunc != nil {
+		return m.DownloadFileFunc(ctx, downloadURL)
+	}
+	// Return a mock file content
+	return io.NopCloser(strings.NewReader("mock file content")), nil
 }

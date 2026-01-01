@@ -39,12 +39,19 @@ Examples:
   nylas slack reply --channel general --thread 1234567890.123456 --text "Got it!"
 
   # Search messages
-  nylas slack search --query "important"`,
+  nylas slack search --query "important"
+
+  # List files in a channel
+  nylas slack files list --channel general
+
+  # Download a file
+  nylas slack files download F1234567890`,
 	}
 
 	cmd.AddCommand(newAuthCmd())
 	cmd.AddCommand(newChannelsCmd())
 	cmd.AddCommand(newMessagesCmd())
+	cmd.AddCommand(newFilesCmd())
 	cmd.AddCommand(newSendCmd())
 	cmd.AddCommand(newReplyCmd())
 	cmd.AddCommand(newUsersCmd())
