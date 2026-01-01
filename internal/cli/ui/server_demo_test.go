@@ -376,7 +376,11 @@ func TestStaticFilesEmbedded(t *testing.T) {
 
 	// Verify that critical static files are embedded
 	expectedFiles := []string{
-		"static/js/commands.js", // Consolidated commands file
+		"static/js/commands.js",      // Main entry point
+		"static/js/commands-core.js", // Core cache and parsing
+		"static/js/commands-auth.js",
+		"static/js/commands-email.js",
+		"static/js/commands-calendar.js",
 		"static/css/base.css",
 		"static/css/commands.css",
 	}
@@ -398,12 +402,24 @@ func TestStaticFilesEmbedded(t *testing.T) {
 func TestCommandsJSContainsRequiredFlags(t *testing.T) {
 	t.Parallel()
 
-	// Read consolidated commands.js file
-	data, err := staticFiles.ReadFile("static/js/commands.js")
-	if err != nil {
-		t.Fatalf("Failed to read static/js/commands.js: %v", err)
+	// Read all command JS files and combine content
+	commandFiles := []string{
+		"static/js/commands-email.js",
+		"static/js/commands-calendar.js",
+		"static/js/commands-webhook.js",
+		"static/js/commands-contacts.js",
+		"static/js/commands-scheduler.js",
 	}
-	content := string(data)
+
+	var allContent strings.Builder
+	for _, path := range commandFiles {
+		data, err := staticFiles.ReadFile(path)
+		if err != nil {
+			t.Fatalf("Failed to read %s: %v", path, err)
+		}
+		allContent.Write(data)
+	}
+	content := allContent.String()
 
 	// Verify key commands have flags defined
 	flagPatterns := []struct {
@@ -421,7 +437,7 @@ func TestCommandsJSContainsRequiredFlags(t *testing.T) {
 	for _, tt := range flagPatterns {
 		t.Run(tt.command, func(t *testing.T) {
 			if !strings.Contains(content, tt.contains) {
-				t.Errorf("commands.js should contain %q for %s", tt.contains, tt.command)
+				t.Errorf("command files should contain %q for %s", tt.contains, tt.command)
 			}
 		})
 	}
@@ -430,15 +446,33 @@ func TestCommandsJSContainsRequiredFlags(t *testing.T) {
 func TestCommandsJSContainsNoDashboardOldURL(t *testing.T) {
 	t.Parallel()
 
-	// Check consolidated commands.js for old dashboard URL
-	data, err := staticFiles.ReadFile("static/js/commands.js")
-	if err != nil {
-		t.Fatalf("Failed to read static/js/commands.js: %v", err)
+	// Check all command JS files for old dashboard URL
+	commandFiles := []string{
+		"static/js/commands.js",
+		"static/js/commands-core.js",
+		"static/js/commands-auth.js",
+		"static/js/commands-email.js",
+		"static/js/commands-calendar.js",
+		"static/js/commands-contacts.js",
+		"static/js/commands-scheduler.js",
+		"static/js/commands-inbound.js",
+		"static/js/commands-timezone.js",
+		"static/js/commands-webhook.js",
+		"static/js/commands-otp.js",
+		"static/js/commands-admin.js",
+		"static/js/commands-notetaker.js",
 	}
-	content := string(data)
 
-	// Verify old dashboard URL is not present
-	if strings.Contains(content, "dashboard.nylas.com") && !strings.Contains(content, "dashboardv3.nylas.com") {
-		t.Error("commands.js contains old dashboard URL (dashboard.nylas.com instead of dashboardv3.nylas.com)")
+	for _, path := range commandFiles {
+		data, err := staticFiles.ReadFile(path)
+		if err != nil {
+			t.Fatalf("Failed to read %s: %v", path, err)
+		}
+		content := string(data)
+
+		// Verify old dashboard URL is not present
+		if strings.Contains(content, "dashboard.nylas.com") && !strings.Contains(content, "dashboardv3.nylas.com") {
+			t.Errorf("%s contains old dashboard URL (dashboard.nylas.com instead of dashboardv3.nylas.com)", path)
+		}
 	}
 }
