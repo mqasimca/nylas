@@ -4,7 +4,6 @@ package browser
 import (
 	"os/exec"
 	"runtime"
-	"syscall"
 )
 
 // DefaultBrowser opens URLs in the system default browser.
@@ -22,35 +21,22 @@ func (b *DefaultBrowser) Open(url string) error {
 	return openURL(url)
 }
 
-// openURL opens a URL in the default browser with proper process isolation.
-func openURL(url string) error {
-	var cmd *exec.Cmd
-
+// createCommand creates the appropriate command to open a URL based on the OS.
+func createCommand(url string) *exec.Cmd {
 	switch runtime.GOOS {
 	case "linux":
 		// Use xdg-open on Linux
-		cmd = exec.Command("xdg-open", url)
+		return exec.Command("xdg-open", url)
 	case "darwin":
 		// Use open on macOS
-		cmd = exec.Command("open", url)
+		return exec.Command("open", url)
 	case "windows":
 		// Use start on Windows
-		cmd = exec.Command("cmd", "/c", "start", url)
+		return exec.Command("cmd", "/c", "start", url)
 	default:
 		// Fallback to xdg-open
-		cmd = exec.Command("xdg-open", url)
+		return exec.Command("xdg-open", url)
 	}
-
-	// On Unix systems, start the browser in its own process group.
-	// This prevents SIGINT (Ctrl+C) from propagating to the browser
-	// when the user stops the CLI.
-	if runtime.GOOS != "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Setpgid: true,
-		}
-	}
-
-	return cmd.Start()
 }
 
 // MockBrowser is a mock implementation for testing.
