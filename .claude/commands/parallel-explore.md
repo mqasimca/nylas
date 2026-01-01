@@ -20,7 +20,7 @@ Search scope: $ARGUMENTS
 | `internal/cli/` | Commands, flags, user interactions |
 | `internal/adapters/` | API integrations, external services |
 | `internal/air/` | Web UI handlers, templates |
-| `internal/tui2/` | Bubble Tea TUI components |
+| `internal/tui/` | Terminal UI components |
 | `internal/domain/` | Core types, business logic |
 | `internal/ports/` | Interface definitions |
 
@@ -32,7 +32,7 @@ Search scope: $ARGUMENTS
 |------------|-------------|
 | "Where is X implemented?" | All directories |
 | "How does feature Y work?" | cli + adapters + domain |
-| "Find all Z handlers" | cli + air + tui2 |
+| "Find all Z handlers" | cli + air + tui |
 | "API integration for W" | adapters + ports |
 
 ### 2. Launch 4-5 Parallel Agents

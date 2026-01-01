@@ -96,10 +96,6 @@ HISTORY.md
 **/*.mp4
 **/*.svg
 
-# VHS test tapes and output (large files, load on-demand)
-internal/tui2/vhs-tests/tapes/**
-internal/tui2/vhs-tests/output/**
-
 # Generated files (load on-demand)
 ci-full.txt
 ci.txt

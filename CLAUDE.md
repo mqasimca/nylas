@@ -201,22 +201,7 @@ internal/cli/<feature>/
 
 **TUI (Terminal UI):**
 - `internal/tui/` - tview-based TUI (77 files: commands, compose, views)
-- `internal/tui2/` - Bubble Tea TUI (81+ files: models/, components/, styles/, state/, utils/)
-- `internal/tui2/vhs-tests/` - VHS visual testing (tapes/, output/)
-- **Themes:** Catppuccin, Cyberpunk, Dracula, Gruvbox, Nord, Tokyo Night
-
-**Switch between TUI engines:**
-```bash
-nylas tui                      # Default: tview
-nylas tui --engine bubbletea   # Experimental: Bubble Tea
-```
-
-**Visual testing with VHS:**
-```bash
-make test-vhs                  # Run dashboard visual test
-make test-vhs-all              # Run all visual tests (splash, dashboard, navigation)
-make test-vhs-clean            # Clean test outputs
-```
+- **Themes:** k9s, amber, green, apple2, vintage, ibm, futuristic, matrix, norton
 
 ---
 
@@ -337,13 +322,12 @@ Use parallel agents to explore or review the 745-file codebase without exhaustin
 ### Invocation Patterns
 
 ```
-# Full exploration (5 agents)
-"Explore using 5 parallel agents:
+# Full exploration (4 agents)
+"Explore using 4 parallel agents:
  - Agent 1: internal/cli/
  - Agent 2: internal/adapters/
  - Agent 3: internal/air/
- - Agent 4: internal/tui2/
- - Agent 5: internal/domain/ + ports/"
+ - Agent 4: internal/domain/ + ports/ + tui/"
 
 # Feature search (4 agents)
 "Find all email-related code using 4 agents across cli, adapters, air, tui"
@@ -359,7 +343,7 @@ Use parallel agents to explore or review the 745-file codebase without exhaustin
 | `internal/cli/` | 268 | HIGH |
 | `internal/adapters/` | 158 | HIGH |
 | `internal/air/` | 117 | HIGH |
-| `internal/tui2/` | 81 | MEDIUM |
+| `internal/tui/` | 77 | MEDIUM |
 | `internal/domain/` | 21 | LOW (shared) |
 
 ### Safe vs Unsafe
