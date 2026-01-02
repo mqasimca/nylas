@@ -3,6 +3,7 @@ package notetaker
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -45,6 +46,12 @@ record the meeting, and generate a transcript when complete.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if meetingLink == "" {
 				return fmt.Errorf("meeting link is required (use --meeting-link)")
+			}
+
+			// Validate meeting link URL format
+			u, err := url.Parse(meetingLink)
+			if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+				return fmt.Errorf("invalid meeting link URL: %s (must be a valid http/https URL)", meetingLink)
 			}
 
 			client, err := getClient()

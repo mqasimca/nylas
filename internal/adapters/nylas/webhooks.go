@@ -252,8 +252,16 @@ func convertWebhook(w webhookResponse) domain.Webhook {
 		WebhookSecret:              w.WebhookSecret,
 		Status:                     w.Status,
 		NotificationEmailAddresses: w.NotificationEmailAddresses,
-		StatusUpdatedAt:            time.Unix(w.StatusUpdatedAt, 0),
-		CreatedAt:                  time.Unix(w.CreatedAt, 0),
-		UpdatedAt:                  time.Unix(w.UpdatedAt, 0),
+		StatusUpdatedAt:            unixToTime(w.StatusUpdatedAt),
+		CreatedAt:                  unixToTime(w.CreatedAt),
+		UpdatedAt:                  unixToTime(w.UpdatedAt),
 	}
+}
+
+// unixToTime converts a Unix timestamp to time.Time, returning zero time if timestamp is 0.
+func unixToTime(ts int64) time.Time {
+	if ts == 0 {
+		return time.Time{}
+	}
+	return time.Unix(ts, 0)
 }

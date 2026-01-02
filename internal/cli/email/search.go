@@ -148,7 +148,7 @@ Examples:
 	return cmd
 }
 
-// parseDate parses a date string in YYYY-MM-DD format.
+// parseDate parses a date string in YYYY-MM-DD format using local timezone.
 func parseDate(s string) (time.Time, error) {
-	return time.Parse("2006-01-02", s)
+	return time.ParseInLocation("2006-01-02", s, time.Local)
 }

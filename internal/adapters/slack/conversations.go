@@ -4,6 +4,8 @@ package slack
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/slack-go/slack"
@@ -126,6 +128,8 @@ func (c *Client) ResolveChannelByName(ctx context.Context, name string) (*domain
 	name = strings.ToLower(name)
 
 	cursor := ""
+	channelsSearched := 0
+	warnedLargeWorkspace := false
 	for {
 		resp, err := c.ListChannels(ctx, &domain.SlackChannelQueryParams{
 			Types:           []string{"public_channel", "private_channel"},
@@ -135,6 +139,14 @@ func (c *Client) ResolveChannelByName(ctx context.Context, name string) (*domain
 		})
 		if err != nil {
 			return nil, err
+		}
+
+		channelsSearched += len(resp.Channels)
+
+		// Warn once when searching through many channels
+		if channelsSearched > 500 && !warnedLargeWorkspace {
+			warnedLargeWorkspace = true
+			fmt.Fprintf(os.Stderr, "Warning: Large workspace detected (%d+ channels). Consider using channel ID instead of name for better performance.\n", channelsSearched)
 		}
 
 		for _, ch := range resp.Channels {

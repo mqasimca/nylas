@@ -50,6 +50,18 @@ Analyzes participant timezones and suggests meeting times with a 100-point scori
 				)
 			}
 
+			// Validate participant emails are not empty
+			for i, email := range participants {
+				email = strings.TrimSpace(email)
+				if email == "" {
+					return common.NewUserError(
+						fmt.Sprintf("participant email at position %d cannot be empty", i+1),
+						"Ensure all participant emails are valid",
+					)
+				}
+				participants[i] = email
+			}
+
 			// Parse duration
 			dur, err := parseDuration(duration)
 			if err != nil {

@@ -318,6 +318,20 @@ Examples:
 				outputPath = filepath.Join(outputPath, safeFilename)
 			}
 
+			// Security: Ensure output path is within current directory or temp directory
+			absPath, err := filepath.Abs(outputPath)
+			if err != nil {
+				return fmt.Errorf("failed to resolve output path: %w", err)
+			}
+			cwd, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("failed to get current directory: %w", err)
+			}
+			tempDir := os.TempDir()
+			if !strings.HasPrefix(absPath, cwd) && !strings.HasPrefix(absPath, tempDir) {
+				return fmt.Errorf("output path must be within current directory or temp directory (got: %s)", absPath)
+			}
+
 			// Validate the final path is not a directory
 			if info, statErr := os.Stat(outputPath); statErr == nil && info.IsDir() {
 				return fmt.Errorf("output path is a directory: %s", outputPath)

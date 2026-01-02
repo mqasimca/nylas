@@ -3,6 +3,7 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -158,6 +159,18 @@ func newConfigCreateCmd() *cobra.Command {
 		Short: "Create a scheduler configuration",
 		Long:  "Create a new scheduler configuration (meeting type).",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Validate participants
+			if len(participants) == 0 {
+				return fmt.Errorf("at least one participant email is required")
+			}
+			for i, p := range participants {
+				p = strings.TrimSpace(p)
+				if p == "" {
+					return fmt.Errorf("participant email at position %d cannot be empty", i+1)
+				}
+				participants[i] = p
+			}
+
 			client, err := getClient()
 			if err != nil {
 				return err
@@ -249,11 +262,16 @@ func newConfigUpdateCmd() *cobra.Command {
 				}
 			}
 
-			if title != "" || description != "" {
-				req.EventBooking = &domain.EventBooking{
-					Title:       title,
-					Description: description,
+			// Only set EventBooking fields that were explicitly changed
+			if cmd.Flags().Changed("title") || cmd.Flags().Changed("description") {
+				eventBooking := &domain.EventBooking{}
+				if cmd.Flags().Changed("title") {
+					eventBooking.Title = title
 				}
+				if cmd.Flags().Changed("description") {
+					eventBooking.Description = description
+				}
+				req.EventBooking = eventBooking
 			}
 
 			ctx, cancel := createContext()
