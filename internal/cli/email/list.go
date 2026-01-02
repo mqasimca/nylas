@@ -69,15 +69,24 @@ Use --max to limit total messages when using --all.`,
 			if folder != "" {
 				// Resolve folder name to ID if needed (for Microsoft accounts)
 				resolvedFolder, err := resolveFolderName(ctx, client, grantID, folder)
-				if err == nil && resolvedFolder != "" {
+				if err != nil {
+					// API error - warn user but continue with literal name
+					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve folder '%s': %v\n", folder, err)
+					params.In = []string{folder}
+				} else if resolvedFolder != "" {
 					params.In = []string{resolvedFolder}
 				} else {
+					// Folder not found by name, use literal
 					params.In = []string{folder}
 				}
 			} else if !allFolders {
 				// Try to find inbox folder ID (works for both Google and Microsoft)
 				inboxID, err := resolveFolderName(ctx, client, grantID, "INBOX")
-				if err == nil && inboxID != "" {
+				if err != nil {
+					// API error - warn but fallback to literal INBOX
+					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve INBOX folder: %v\n", err)
+					params.In = []string{"INBOX"}
+				} else if inboxID != "" {
 					params.In = []string{inboxID}
 				} else {
 					// Fallback to INBOX (works for Google)

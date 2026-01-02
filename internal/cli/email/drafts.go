@@ -154,15 +154,25 @@ func newDraftsCreateCmd() *cobra.Command {
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
+			// Parse and validate recipients
+			toContacts, err := parseContacts(to)
+			if err != nil {
+				return fmt.Errorf("invalid 'to' recipient: %w", err)
+			}
+
 			req := &domain.CreateDraftRequest{
 				Subject:      subject,
 				Body:         body,
-				To:           parseContacts(to),
+				To:           toContacts,
 				ReplyToMsgID: replyTo,
 			}
 
 			if len(cc) > 0 {
-				req.Cc = parseContacts(cc)
+				ccContacts, err := parseContacts(cc)
+				if err != nil {
+					return fmt.Errorf("invalid 'cc' recipient: %w", err)
+				}
+				req.Cc = ccContacts
 			}
 
 			// Load attachments from files

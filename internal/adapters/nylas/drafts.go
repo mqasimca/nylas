@@ -158,7 +158,10 @@ func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, re
 		payload["metadata"] = req.Metadata
 	}
 
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -220,7 +223,10 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 	writer := multipart.NewWriter(&buf)
 
 	// Add message as JSON field
-	messageJSON, _ := json.Marshal(message)
+	messageJSON, err := json.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal message: %w", err)
+	}
 	if err := writer.WriteField("message", string(messageJSON)); err != nil {
 		return nil, fmt.Errorf("failed to write message field: %w", err)
 	}
@@ -318,7 +324,11 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 		defer func() { _ = writer.Close() }()
 
 		// Add message as JSON field
-		messageJSON, _ := json.Marshal(message)
+		messageJSON, err := json.Marshal(message)
+		if err != nil {
+			errCh <- fmt.Errorf("failed to marshal message: %w", err)
+			return
+		}
 		if err := writer.WriteField("message", string(messageJSON)); err != nil {
 			errCh <- fmt.Errorf("failed to write message field: %w", err)
 			return
@@ -379,60 +389,6 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 	return &draft, nil
 }
 
-// UpdateDraft updates an existing draft.
-func (c *HTTPClient) UpdateDraft(ctx context.Context, grantID, draftID string, req *domain.CreateDraftRequest) (*domain.Draft, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts/%s", c.baseURL, grantID, draftID)
-
-	payload := map[string]interface{}{
-		"subject": req.Subject,
-		"body":    req.Body,
-	}
-
-	if len(req.To) > 0 {
-		payload["to"] = convertContactsToAPI(req.To)
-	}
-	if len(req.Cc) > 0 {
-		payload["cc"] = convertContactsToAPI(req.Cc)
-	}
-	if len(req.Bcc) > 0 {
-		payload["bcc"] = convertContactsToAPI(req.Bcc)
-	}
-	if len(req.ReplyTo) > 0 {
-		payload["reply_to"] = convertContactsToAPI(req.ReplyTo)
-	}
-	if req.ReplyToMsgID != "" {
-		payload["reply_to_message_id"] = req.ReplyToMsgID
-	}
-
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
-	var result struct {
-		Data draftResponse `json:"data"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
-	draft := convertDraft(result.Data)
-	return &draft, nil
-}
-
 // DeleteDraft deletes a draft.
 func (c *HTTPClient) DeleteDraft(ctx context.Context, grantID, draftID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts/%s", c.baseURL, grantID, draftID)
@@ -465,6 +421,7 @@ func (c *HTTPClient) SendDraft(ctx context.Context, grantID, draftID string) (*d
 		return nil, err
 	}
 	c.setAuthHeader(req)
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {

@@ -17,6 +17,12 @@ import (
 // Ensure Client implements ports.SlackClient.
 var _ ports.SlackClient = (*Client)(nil)
 
+// cachedUser stores a user with its cache timestamp.
+type cachedUser struct {
+	user     *domain.SlackUser
+	cachedAt time.Time
+}
+
 // Client wraps the slack-go client with rate limiting.
 type Client struct {
 	api         *slack.Client
@@ -24,7 +30,7 @@ type Client struct {
 	rateLimiter *rate.Limiter
 
 	// Cache for user lookups (reduce API calls).
-	userCache    map[string]*domain.SlackUser
+	userCache    map[string]*cachedUser
 	userCacheMu  sync.RWMutex
 	userCacheTTL time.Duration
 }
@@ -79,7 +85,7 @@ func NewClient(config *ClientConfig) (*Client, error) {
 		api:          api,
 		userToken:    config.UserToken,
 		rateLimiter:  rate.NewLimiter(config.RateLimit, config.RateBurst),
-		userCache:    make(map[string]*domain.SlackUser),
+		userCache:    make(map[string]*cachedUser),
 		userCacheTTL: config.UserCacheTTL,
 	}, nil
 }
@@ -141,14 +147,26 @@ func (c *Client) getCachedUser(userID string) (*domain.SlackUser, bool) {
 	c.userCacheMu.RLock()
 	defer c.userCacheMu.RUnlock()
 
-	user, ok := c.userCache[userID]
-	return user, ok
+	cached, ok := c.userCache[userID]
+	if !ok {
+		return nil, false
+	}
+
+	// Check TTL expiration
+	if time.Since(cached.cachedAt) > c.userCacheTTL {
+		return nil, false
+	}
+
+	return cached.user, true
 }
 
-// setCachedUser stores a user in the cache.
+// setCachedUser stores a user in the cache with current timestamp.
 func (c *Client) setCachedUser(user *domain.SlackUser) {
 	c.userCacheMu.Lock()
 	defer c.userCacheMu.Unlock()
 
-	c.userCache[user.ID] = user
+	c.userCache[user.ID] = &cachedUser{
+		user:     user,
+		cachedAt: time.Now(),
+	}
 }

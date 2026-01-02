@@ -187,7 +187,7 @@ func TestHandleSlackError(t *testing.T) {
 
 func TestUserCache(t *testing.T) {
 	client := &Client{
-		userCache:    make(map[string]*domain.SlackUser),
+		userCache:    make(map[string]*cachedUser),
 		userCacheTTL: 5 * time.Minute,
 	}
 
@@ -229,6 +229,35 @@ func TestUserCache(t *testing.T) {
 		user, ok := client.getCachedUser("U12345")
 		assert.True(t, ok)
 		assert.Equal(t, "updated", user.Name)
+	})
+
+	t.Run("expired cache entry returns not found", func(t *testing.T) {
+		// Create client with very short TTL
+		shortTTLClient := &Client{
+			userCache:    make(map[string]*cachedUser),
+			userCacheTTL: 1 * time.Millisecond,
+		}
+
+		testUser := &domain.SlackUser{
+			ID:       "U_EXPIRE",
+			Name:     "expiring",
+			RealName: "Expiring User",
+		}
+
+		shortTTLClient.setCachedUser(testUser)
+
+		// Immediately should be cached
+		user, ok := shortTTLClient.getCachedUser("U_EXPIRE")
+		assert.True(t, ok)
+		assert.Equal(t, "expiring", user.Name)
+
+		// Wait for TTL to expire
+		time.Sleep(5 * time.Millisecond)
+
+		// Should no longer be found after TTL expired
+		user, ok = shortTTLClient.getCachedUser("U_EXPIRE")
+		assert.False(t, ok)
+		assert.Nil(t, user)
 	})
 }
 

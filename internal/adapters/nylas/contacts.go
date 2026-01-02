@@ -177,7 +177,10 @@ func (c *HTTPClient) GetContactWithPicture(ctx context.Context, grantID, contact
 func (c *HTTPClient) CreateContact(ctx context.Context, grantID string, req *domain.CreateContactRequest) (*domain.Contact, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts", c.baseURL, grantID)
 
-	body, _ := json.Marshal(req)
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -210,7 +213,10 @@ func (c *HTTPClient) CreateContact(ctx context.Context, grantID string, req *dom
 func (c *HTTPClient) UpdateContact(ctx context.Context, grantID, contactID string, req *domain.UpdateContactRequest) (*domain.Contact, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/%s", c.baseURL, grantID, contactID)
 
-	body, _ := json.Marshal(req)
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -347,7 +353,10 @@ func (c *HTTPClient) GetContactGroup(ctx context.Context, grantID, groupID strin
 func (c *HTTPClient) CreateContactGroup(ctx context.Context, grantID string, req *domain.CreateContactGroupRequest) (*domain.ContactGroup, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/groups", c.baseURL, grantID)
 
-	body, _ := json.Marshal(req)
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -386,7 +395,10 @@ func (c *HTTPClient) CreateContactGroup(ctx context.Context, grantID string, req
 func (c *HTTPClient) UpdateContactGroup(ctx context.Context, grantID, groupID string, req *domain.UpdateContactGroupRequest) (*domain.ContactGroup, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/groups/%s", c.baseURL, grantID, groupID)
 
-	body, _ := json.Marshal(req)
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
