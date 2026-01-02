@@ -141,12 +141,12 @@ func outputTable(webhooks any, fullIDs bool) error {
 	for _, item := range items {
 		id := fmt.Sprintf("%v", item["id"])
 		if !fullIDs {
-			id = truncate(id, 20)
+			id = common.Truncate(id, 20)
 		}
 		r := row{
 			id:     id,
-			desc:   truncate(fmt.Sprintf("%v", item["description"]), 25),
-			url:    truncate(fmt.Sprintf("%v", item["webhook_url"]), 35),
+			desc:   common.Truncate(fmt.Sprintf("%v", item["description"]), 25),
+			url:    common.Truncate(fmt.Sprintf("%v", item["webhook_url"]), 35),
 			status: fmt.Sprintf("%v", item["status"]),
 		}
 
@@ -156,7 +156,7 @@ func outputTable(webhooks any, fullIDs bool) error {
 				triggers = append(triggers, fmt.Sprintf("%v", t))
 			}
 		}
-		r.triggers = truncate(strings.Join(triggers, ", "), 30)
+		r.triggers = common.Truncate(strings.Join(triggers, ", "), 30)
 
 		rows = append(rows, r)
 
@@ -207,13 +207,6 @@ func outputTable(webhooks any, fullIDs bool) error {
 
 	fmt.Printf("\nTotal: %d webhooks\n", len(rows))
 	return nil
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max-3] + "..."
 }
 
 func getStatusIcon(status string) string {

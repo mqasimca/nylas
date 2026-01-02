@@ -22,6 +22,7 @@ func newEventsCreateCmd() *cobra.Command {
 		allDay             bool
 		participants       []string
 		busy               bool
+		free               bool
 		ignoreDSTWarning   bool
 		ignoreWorkingHours bool
 		lockTimezone       bool
@@ -158,6 +159,11 @@ Examples:
 				}
 			}
 
+			// --free flag overrides --busy
+			if free {
+				busy = false
+			}
+
 			req := &domain.CreateEventRequest{
 				Title:       title,
 				Description: description,
@@ -215,6 +221,7 @@ Examples:
 	cmd.Flags().BoolVar(&allDay, "all-day", false, "Create an all-day event")
 	cmd.Flags().StringArrayVarP(&participants, "participant", "p", nil, "Add participant email (can be used multiple times)")
 	cmd.Flags().BoolVar(&busy, "busy", true, "Mark time as busy")
+	cmd.Flags().BoolVar(&free, "free", false, "Mark time as free (not busy)")
 	cmd.Flags().BoolVar(&ignoreDSTWarning, "ignore-dst-warning", false, "Skip DST conflict warnings")
 	cmd.Flags().BoolVar(&ignoreWorkingHours, "ignore-working-hours", false, "Skip working hours validation")
 	cmd.Flags().BoolVar(&lockTimezone, "lock-timezone", false, "Lock event to its timezone (always display in this timezone)")
@@ -319,6 +326,7 @@ func newEventsUpdateCmd() *cobra.Command {
 		allDay         bool
 		participants   []string
 		busy           bool
+		free           bool
 		visibility     string
 		lockTimezone   bool
 		unlockTimezone bool
@@ -390,6 +398,11 @@ Examples:
 			}
 			if cmd.Flags().Changed("busy") {
 				req.Busy = &busy
+			}
+			// --free flag overrides --busy
+			if free {
+				f := false
+				req.Busy = &f
 			}
 			if cmd.Flags().Changed("visibility") {
 				req.Visibility = &visibility
@@ -469,6 +482,7 @@ Examples:
 	cmd.Flags().BoolVar(&allDay, "all-day", false, "Set as all-day event")
 	cmd.Flags().StringArrayVarP(&participants, "participant", "p", nil, "Set participant emails (replaces existing)")
 	cmd.Flags().BoolVar(&busy, "busy", true, "Mark time as busy")
+	cmd.Flags().BoolVar(&free, "free", false, "Mark time as free (not busy)")
 	cmd.Flags().StringVar(&visibility, "visibility", "", "Event visibility (public, private, default)")
 	cmd.Flags().BoolVar(&lockTimezone, "lock-timezone", false, "Lock event to its timezone")
 	cmd.Flags().BoolVar(&unlockTimezone, "unlock-timezone", false, "Remove timezone lock from event")

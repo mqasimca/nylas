@@ -198,7 +198,7 @@ type NylasClient interface {
 	ListBookings(ctx context.Context, configID string) ([]domain.Booking, error)
 	GetBooking(ctx context.Context, bookingID string) (*domain.Booking, error)
 	ConfirmBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error)
-	RescheduleBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error)
+	RescheduleBooking(ctx context.Context, bookingID string, req *domain.RescheduleBookingRequest) (*domain.Booking, error)
 	CancelBooking(ctx context.Context, bookingID string, reason string) error
 
 	// Scheduler Pages

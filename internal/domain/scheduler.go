@@ -170,6 +170,14 @@ type ConfirmBookingRequest struct {
 	AdditionalData map[string]any `json:"additional_data,omitempty"`
 }
 
+// RescheduleBookingRequest represents a request to reschedule a booking
+type RescheduleBookingRequest struct {
+	StartTime int64  `json:"start_time"`         // Unix timestamp for new start time
+	EndTime   int64  `json:"end_time"`           // Unix timestamp for new end time
+	Timezone  string `json:"timezone,omitempty"` // Timezone for the booking (e.g., "America/New_York")
+	Reason    string `json:"reason,omitempty"`   // Reason for rescheduling
+}
+
 // SchedulerPage represents a hosted scheduling page
 type SchedulerPage struct {
 	ID              string    `json:"id,omitempty"`

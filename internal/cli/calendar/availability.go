@@ -371,13 +371,17 @@ func parseTimeInput(input string) (time.Time, error) {
 		}
 	}
 
-	// Try standard formats
+	// Try standard formats (most specific first)
 	formats := []string{
-		"2006-01-02 15:04",
-		"2006-01-02T15:04",
-		"2006-01-02 3:04pm",
-		"Jan 2 15:04",
-		"Jan 2 3:04pm",
+		time.RFC3339,           // "2006-01-02T15:04:05Z07:00"
+		"2006-01-02T15:04:05Z", // ISO8601 UTC
+		"2006-01-02T15:04:05",  // ISO8601 with seconds
+		"2006-01-02T15:04",     // ISO8601 without seconds
+		"2006-01-02 15:04:05",  // Space separator with seconds
+		"2006-01-02 15:04",     // Space separator
+		"2006-01-02 3:04pm",    // 12-hour format
+		"Jan 2 15:04",          // Month name
+		"Jan 2 3:04pm",         // Month name 12-hour
 	}
 
 	for _, format := range formats {

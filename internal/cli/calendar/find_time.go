@@ -50,6 +50,18 @@ Analyzes participant timezones and suggests meeting times with a 100-point scori
 				)
 			}
 
+			// Validate participant emails are not empty
+			for i, email := range participants {
+				email = strings.TrimSpace(email)
+				if email == "" {
+					return common.NewUserError(
+						fmt.Sprintf("participant email at position %d cannot be empty", i+1),
+						"Ensure all participant emails are valid",
+					)
+				}
+				participants[i] = email
+			}
+
 			// Parse duration
 			dur, err := parseDuration(duration)
 			if err != nil {
@@ -320,7 +332,7 @@ func parseWorkingTime(s string) (int, error) {
 		return 0, err
 	}
 	if hour < 0 || hour > 23 {
-		return 0, fmt.Errorf("hour must be 0-23")
+		return 0, fmt.Errorf("hour must be 0-23, got %d from input %q", hour, s)
 	}
 	return hour, nil
 }

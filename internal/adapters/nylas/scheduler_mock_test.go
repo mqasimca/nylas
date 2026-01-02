@@ -68,7 +68,10 @@ func TestMockClient_SchedulerOperations(t *testing.T) {
 	assert.Equal(t, "confirmed", confirmed.Status)
 
 	// Test RescheduleBooking
-	rescheduleReq := &domain.ConfirmBookingRequest{}
+	rescheduleReq := &domain.RescheduleBookingRequest{
+		StartTime: 1704067200,
+		EndTime:   1704070800,
+	}
 	rescheduled, err := mock.RescheduleBooking(ctx, "booking-456", rescheduleReq)
 	require.NoError(t, err)
 	assert.NotEmpty(t, rescheduled.BookingID)

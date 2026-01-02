@@ -175,7 +175,7 @@ Examples:
 	cmd.Flags().StringVar(&channelID, "channel-id", "", "Channel ID")
 	cmd.Flags().StringVarP(&userID, "user", "u", "", "Filter by user ID")
 	cmd.Flags().StringVar(&fileTypes, "types", "", "Filter by file types (comma-separated: images,pdfs,docs)")
-	cmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum number of files to return")
+	cmd.Flags().IntVarP(&limit, "limit", "l", 50, "Maximum number of files to return")
 
 	return cmd
 }
@@ -316,6 +316,20 @@ Examples:
 			// If outputPath is a directory, append sanitized filename
 			if info, statErr := os.Stat(outputPath); statErr == nil && info.IsDir() {
 				outputPath = filepath.Join(outputPath, safeFilename)
+			}
+
+			// Security: Ensure output path is within current directory or temp directory
+			absPath, err := filepath.Abs(outputPath)
+			if err != nil {
+				return fmt.Errorf("failed to resolve output path: %w", err)
+			}
+			cwd, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("failed to get current directory: %w", err)
+			}
+			tempDir := os.TempDir()
+			if !strings.HasPrefix(absPath, cwd) && !strings.HasPrefix(absPath, tempDir) {
+				return fmt.Errorf("output path must be within current directory or temp directory (got: %s)", absPath)
 			}
 
 			// Validate the final path is not a directory

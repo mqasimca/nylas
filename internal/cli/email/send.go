@@ -3,6 +3,7 @@ package email
 import (
 	"bufio"
 	"fmt"
+	"net/mail"
 	"os"
 	"strconv"
 	"strings"
@@ -114,18 +115,32 @@ Supports custom metadata:
 				return fmt.Errorf("subject is required (use --subject)")
 			}
 
+			// Parse and validate recipients
+			toContacts, err := parseContacts(to)
+			if err != nil {
+				return fmt.Errorf("invalid 'to' recipient: %w", err)
+			}
+
 			// Build request
 			req := &domain.SendMessageRequest{
 				Subject: subject,
 				Body:    body,
-				To:      parseContacts(to),
+				To:      toContacts,
 			}
 
 			if len(cc) > 0 {
-				req.Cc = parseContacts(cc)
+				ccContacts, err := parseContacts(cc)
+				if err != nil {
+					return fmt.Errorf("invalid 'cc' recipient: %w", err)
+				}
+				req.Cc = ccContacts
 			}
 			if len(bcc) > 0 {
-				req.Bcc = parseContacts(bcc)
+				bccContacts, err := parseContacts(bcc)
+				if err != nil {
+					return fmt.Errorf("invalid 'bcc' recipient: %w", err)
+				}
+				req.Bcc = bccContacts
 			}
 			if replyTo != "" {
 				req.ReplyToMsgID = replyTo
@@ -262,21 +277,32 @@ func parseEmails(s string) []string {
 	return result
 }
 
-// parseContacts converts email strings to EmailParticipant objects.
-func parseContacts(emails []string) []domain.EmailParticipant {
+// parseContacts converts email strings to EmailParticipant objects with validation.
+func parseContacts(emails []string) ([]domain.EmailParticipant, error) {
 	contacts := make([]domain.EmailParticipant, len(emails))
 	for i, email := range emails {
 		email = strings.TrimSpace(email)
-		// Check for "Name <email>" format
-		if idx := strings.Index(email, "<"); idx > 0 && strings.HasSuffix(email, ">") {
-			name := strings.TrimSpace(email[:idx])
-			addr := email[idx+1 : len(email)-1]
-			contacts[i] = domain.EmailParticipant{Name: name, Email: addr}
+		if email == "" {
+			return nil, fmt.Errorf("email address cannot be empty")
+		}
+
+		// Try parsing as RFC 5322 address (handles "Name <email>" format)
+		addr, err := mail.ParseAddress(email)
+		if err == nil {
+			contacts[i] = domain.EmailParticipant{Name: addr.Name, Email: addr.Address}
 		} else {
+			// Check if it's a plain email without angle brackets
+			if !strings.Contains(email, "@") {
+				return nil, fmt.Errorf("invalid email address: %s", email)
+			}
+			// Basic validation for plain email
+			if strings.Count(email, "@") != 1 {
+				return nil, fmt.Errorf("invalid email address: %s", email)
+			}
 			contacts[i] = domain.EmailParticipant{Email: email}
 		}
 	}
-	return contacts
+	return contacts, nil
 }
 
 // parseScheduleTime parses various time formats for scheduling.
@@ -287,7 +313,11 @@ func parseScheduleTime(input string) (time.Time, error) {
 
 	// Try Unix timestamp first
 	if ts, err := strconv.ParseInt(input, 10, 64); err == nil && ts > 1000000000 {
-		return time.Unix(ts, 0), nil
+		t := time.Unix(ts, 0)
+		if t.Before(now) {
+			return time.Time{}, fmt.Errorf("scheduled time is in the past")
+		}
+		return t, nil
 	}
 
 	// Duration formats: 30m, 2h, 1d

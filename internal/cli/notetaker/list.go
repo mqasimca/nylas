@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"golang.org/x/text/cases"
@@ -85,7 +86,7 @@ func newListCmd() *cobra.Command {
 					fmt.Printf("  Title:   %s\n", n.MeetingTitle)
 				}
 				if n.MeetingLink != "" {
-					fmt.Printf("  Link:    %s\n", truncate(n.MeetingLink, 60))
+					fmt.Printf("  Link:    %s\n", common.Truncate(n.MeetingLink, 60))
 				}
 				if n.MeetingInfo != nil && n.MeetingInfo.Provider != "" {
 					caser := cases.Title(language.English)

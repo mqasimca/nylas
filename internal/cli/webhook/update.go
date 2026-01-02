@@ -96,12 +96,22 @@ You can update the URL, triggers, description, notification emails, or status.`,
 			ctx, cancel := createContext()
 			defer cancel()
 
-			req := &domain.UpdateWebhookRequest{
-				WebhookURL:                 url,
-				Description:                description,
-				TriggerTypes:               allTriggers,
-				NotificationEmailAddresses: notifyEmails,
-				Status:                     status,
+			// Only set fields that were explicitly provided to avoid clearing existing values
+			req := &domain.UpdateWebhookRequest{}
+			if url != "" {
+				req.WebhookURL = url
+			}
+			if description != "" {
+				req.Description = description
+			}
+			if len(allTriggers) > 0 {
+				req.TriggerTypes = allTriggers
+			}
+			if len(notifyEmails) > 0 {
+				req.NotificationEmailAddresses = notifyEmails
+			}
+			if status != "" {
+				req.Status = status
 			}
 
 			spinner := common.NewSpinner("Updating webhook...")

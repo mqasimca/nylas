@@ -45,7 +45,10 @@ func (c *HTTPClient) SendMessage(ctx context.Context, grantID string, req *domai
 		payload["metadata"] = req.Metadata
 	}
 
-	body, _ := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, err

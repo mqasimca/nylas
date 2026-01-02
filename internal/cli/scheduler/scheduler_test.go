@@ -305,6 +305,88 @@ func TestBookingRescheduleCmd(t *testing.T) {
 	t.Run("requires_exactly_one_arg", func(t *testing.T) {
 		assert.NotNil(t, cmd.Args)
 	})
+
+	t.Run("has_start_time_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("start-time")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "0", flag.DefValue)
+	})
+
+	t.Run("has_end_time_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("end-time")
+		assert.NotNil(t, flag)
+		assert.Equal(t, "0", flag.DefValue)
+	})
+
+	t.Run("has_timezone_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("timezone")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_reason_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("reason")
+		assert.NotNil(t, flag)
+	})
+}
+
+func TestBookingRescheduleCmd_Validation(t *testing.T) {
+	tests := []struct {
+		name          string
+		startTime     string
+		endTime       string
+		expectError   bool
+		errorContains string
+	}{
+		{
+			name:          "missing both times",
+			startTime:     "0",
+			endTime:       "0",
+			expectError:   true,
+			errorContains: "--start-time and --end-time are required",
+		},
+		{
+			name:          "missing start time",
+			startTime:     "0",
+			endTime:       "1704070800",
+			expectError:   true,
+			errorContains: "--start-time and --end-time are required",
+		},
+		{
+			name:          "missing end time",
+			startTime:     "1704067200",
+			endTime:       "0",
+			expectError:   true,
+			errorContains: "--start-time and --end-time are required",
+		},
+		{
+			name:          "end time before start time",
+			startTime:     "1704070800",
+			endTime:       "1704067200",
+			expectError:   true,
+			errorContains: "end-time must be after start-time",
+		},
+		{
+			name:          "end time equals start time",
+			startTime:     "1704067200",
+			endTime:       "1704067200",
+			expectError:   true,
+			errorContains: "end-time must be after start-time",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := newBookingRescheduleCmd()
+			cmd.SetArgs([]string{"test-booking-id", "--start-time", tt.startTime, "--end-time", tt.endTime})
+
+			err := cmd.Execute()
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorContains)
+			}
+		})
+	}
 }
 
 func TestBookingCancelCmd(t *testing.T) {

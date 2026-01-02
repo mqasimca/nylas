@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -224,7 +225,7 @@ func TestTruncate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			result := truncate(tt.input, tt.length)
+			result := common.Truncate(tt.input, tt.length)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

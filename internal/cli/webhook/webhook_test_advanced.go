@@ -3,6 +3,7 @@ package webhook
 import (
 	"testing"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,17 +44,17 @@ func TestTriggersCommand(t *testing.T) {
 
 func TestHelperFunctions(t *testing.T) {
 	t.Run("truncate_short_string", func(t *testing.T) {
-		result := truncate("hello", 10)
+		result := common.Truncate("hello", 10)
 		assert.Equal(t, "hello", result)
 	})
 
 	t.Run("truncate_long_string", func(t *testing.T) {
-		result := truncate("hello world this is long", 10)
+		result := common.Truncate("hello world this is long", 10)
 		assert.Equal(t, "hello w...", result)
 	})
 
 	t.Run("truncate_exact_length", func(t *testing.T) {
-		result := truncate("hello", 5)
+		result := common.Truncate("hello", 5)
 		assert.Equal(t, "hello", result)
 	})
 

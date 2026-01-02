@@ -3,6 +3,7 @@ package nylas
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -86,10 +87,12 @@ func (m *MockClient) ConfirmBooking(ctx context.Context, bookingID string, req *
 	}, nil
 }
 
-func (m *MockClient) RescheduleBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error) {
+func (m *MockClient) RescheduleBooking(ctx context.Context, bookingID string, req *domain.RescheduleBookingRequest) (*domain.Booking, error) {
 	return &domain.Booking{
 		BookingID: bookingID,
 		Status:    "confirmed",
+		StartTime: time.Unix(req.StartTime, 0),
+		EndTime:   time.Unix(req.EndTime, 0),
 	}, nil
 }
 

@@ -5,14 +5,6 @@ import (
 	"time"
 )
 
-// truncate truncates a string to the given length.
-func truncate(s string, length int) string {
-	if len(s) <= length {
-		return s
-	}
-	return s[:length-3] + "..."
-}
-
 // formatTimeAgo formats a time as a relative time string.
 func formatTimeAgo(t time.Time) string {
 	diff := time.Since(t)

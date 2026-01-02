@@ -1,6 +1,7 @@
 package email
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -213,9 +214,18 @@ func TestHelperFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			got := parseContacts(tt.input)
+			got, err := parseContacts(tt.input)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, got)
 		}
+
+		// Test invalid email
+		_, err := parseContacts([]string{"invalid-email"})
+		assert.Error(t, err)
+
+		// Test empty email
+		_, err = parseContacts([]string{""})
+		assert.Error(t, err)
 	})
 
 	t.Run("parseDate", func(t *testing.T) {
@@ -252,10 +262,18 @@ func TestSendCommandScheduleFlags(t *testing.T) {
 
 func TestParseScheduleTime(t *testing.T) {
 	t.Run("parses_unix_timestamp", func(t *testing.T) {
-		// A valid Unix timestamp (Jan 15, 2024)
-		result, err := parseScheduleTime("1705320600")
+		// A valid Unix timestamp in the future
+		futureTs := time.Now().Add(24 * time.Hour).Unix()
+		result, err := parseScheduleTime(fmt.Sprintf("%d", futureTs))
 		assert.NoError(t, err)
-		assert.Equal(t, 2024, result.Year())
+		assert.True(t, result.After(time.Now()))
+	})
+
+	t.Run("rejects_past_unix_timestamp", func(t *testing.T) {
+		// A Unix timestamp in the past (Jan 15, 2024)
+		_, err := parseScheduleTime("1705320600")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "in the past")
 	})
 
 	t.Run("parses_duration_minutes", func(t *testing.T) {

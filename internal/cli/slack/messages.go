@@ -5,6 +5,7 @@ package slack
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/fatih/color"
@@ -144,7 +145,9 @@ Examples:
 
 			slackClient, isSlackClient := client.(*slack.Client)
 			if isSlackClient {
-				_ = slackClient.GetUsersForMessages(ctx, allMessages)
+				if err := slackClient.GetUsersForMessages(ctx, allMessages); err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: could not resolve all usernames: %v\n", err)
+				}
 			}
 
 			// If expanding threads, fetch replies for messages with threads
