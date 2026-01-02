@@ -5,7 +5,6 @@ package slack
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/fatih/color"
@@ -82,7 +81,7 @@ Examples:
 			// Parse created-after duration if provided
 			var createdAfterTime time.Time
 			if createdAfter != "" {
-				duration, parseErr := parseDuration(createdAfter)
+				duration, parseErr := common.ParseDuration(createdAfter)
 				if parseErr != nil {
 					return common.NewUserError(
 						"invalid duration format",
@@ -176,33 +175,6 @@ Examples:
 	cmd.Flags().StringVar(&createdAfter, "created-after", "", "Show channels created after duration (e.g., 24h, 7d, 2w)")
 
 	return cmd
-}
-
-// parseDuration parses duration strings like "24h", "7d", "2w".
-// Supported units: h (hours), d (days), w (weeks).
-func parseDuration(s string) (time.Duration, error) {
-	if len(s) < 2 {
-		return 0, fmt.Errorf("invalid duration: %s", s)
-	}
-
-	unit := s[len(s)-1]
-	value := s[:len(s)-1]
-
-	num, err := strconv.Atoi(value)
-	if err != nil {
-		return 0, fmt.Errorf("invalid duration number: %s", value)
-	}
-
-	switch unit {
-	case 'h':
-		return time.Duration(num) * time.Hour, nil
-	case 'd':
-		return time.Duration(num) * 24 * time.Hour, nil
-	case 'w':
-		return time.Duration(num) * 7 * 24 * time.Hour, nil
-	default:
-		return 0, fmt.Errorf("invalid duration unit: %c (use h, d, or w)", unit)
-	}
 }
 
 // printChannels formats and prints a list of Slack channels to stdout.

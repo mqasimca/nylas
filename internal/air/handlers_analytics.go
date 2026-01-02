@@ -137,7 +137,7 @@ func (s *Server) handleGetAnalyticsTrends(w http.ResponseWriter, r *http.Request
 	aStore.mu.RLock()
 	defer aStore.mu.RUnlock()
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"period":       period,
 		"weeklyTrend":  aStore.analytics.WeeklyTrend,
 		"hourlyVolume": aStore.analytics.HourlyVolume,
@@ -209,7 +209,7 @@ func (s *Server) handleGetProductivityStats(w http.ResponseWriter, r *http.Reque
 	aStore.mu.RLock()
 	defer aStore.mu.RUnlock()
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"responseRate":    aStore.analytics.ResponseRate,
 		"avgResponseTime": aStore.analytics.AvgResponseTime,
 		"inboxZeroCount":  aStore.analytics.InboxZeroCount,

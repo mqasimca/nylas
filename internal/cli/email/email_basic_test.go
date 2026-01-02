@@ -260,3 +260,21 @@ func TestThreadsCommand(t *testing.T) {
 		}
 	})
 }
+
+func TestSmartComposeCommand(t *testing.T) {
+	cmd := newSmartComposeCmd()
+
+	t.Run("command_name", func(t *testing.T) {
+		assert.Equal(t, "smart-compose", cmd.Use)
+	})
+
+	t.Run("has_prompt_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("prompt")
+		assert.NotNil(t, flag)
+	})
+
+	t.Run("has_message_id_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("message-id")
+		assert.NotNil(t, flag)
+	})
+}

@@ -161,7 +161,7 @@ func newConfigCreateCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Validate participants
 			if len(participants) == 0 {
-				return fmt.Errorf("at least one participant email is required")
+				return common.NewUserError("at least one participant email is required", "Use --participant to specify email addresses")
 			}
 			for i, p := range participants {
 				p = strings.TrimSpace(p)

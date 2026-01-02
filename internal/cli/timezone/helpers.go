@@ -49,15 +49,6 @@ func parseTimeZones(zonesStr string) []string {
 	return result
 }
 
-// parseDuration parses a duration string (e.g., "1h", "30m", "1h30m").
-func parseDuration(durationStr string) (time.Duration, error) {
-	duration, err := time.ParseDuration(durationStr)
-	if err != nil {
-		return 0, fmt.Errorf("invalid duration format (use 1h, 30m, 1h30m, etc.): %w", err)
-	}
-	return duration, nil
-}
-
 // parseWorkingHours parses working hours in HH:MM format.
 func parseWorkingHours(start, end string) (string, string, error) {
 	// Validate format

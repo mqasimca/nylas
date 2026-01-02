@@ -63,11 +63,11 @@ Analyzes participant timezones and suggests meeting times with a 100-point scori
 			}
 
 			// Parse duration
-			dur, err := parseDuration(duration)
+			dur, err := common.ParseDuration(duration)
 			if err != nil {
 				return common.NewUserError(
 					fmt.Sprintf("invalid duration: %s", duration),
-					"Use formats like: 30m, 1h, 1h30m",
+					"Use formats like: 30m, 1h, 1h30m, 7d",
 				)
 			}
 

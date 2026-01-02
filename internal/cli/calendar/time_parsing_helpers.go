@@ -309,11 +309,57 @@ func parseISOTime(input string, loc *time.Location, now time.Time) (*ParsedTime,
 	return nil, fmt.Errorf("not an ISO time")
 }
 
-// parseTimeOfDay parses time of day like "3pm", "2:30pm", "14:00".
+// timezoneAbbreviations maps common timezone abbreviations to IANA names.
+var timezoneAbbreviations = map[string]string{
+	"PST":  "America/Los_Angeles",
+	"PDT":  "America/Los_Angeles",
+	"EST":  "America/New_York",
+	"EDT":  "America/New_York",
+	"CST":  "America/Chicago",
+	"CDT":  "America/Chicago",
+	"MST":  "America/Denver",
+	"MDT":  "America/Denver",
+	"GMT":  "Europe/London",
+	"BST":  "Europe/London",
+	"IST":  "Asia/Kolkata",
+	"JST":  "Asia/Tokyo",
+	"AEST": "Australia/Sydney",
+	"AEDT": "Australia/Sydney",
+	"UTC":  "UTC",
+}
+
+// extractTimezoneFromInput extracts a timezone abbreviation from input and returns
+// the location and cleaned input string. If no timezone found, returns nil location.
+func extractTimezoneFromInput(input string) (*time.Location, string) {
+	upperInput := strings.ToUpper(input)
+
+	// Check for timezone abbreviations at the end of input
+	for abbrev, iana := range timezoneAbbreviations {
+		// Check if input ends with the abbreviation (with space before)
+		suffix := " " + abbrev
+		if strings.HasSuffix(upperInput, suffix) {
+			cleanInput := strings.TrimSuffix(input, input[len(input)-len(suffix):])
+			cleanInput = strings.TrimSpace(cleanInput)
+			if loc, err := time.LoadLocation(iana); err == nil {
+				return loc, cleanInput
+			}
+		}
+	}
+
+	return nil, input
+}
+
+// parseTimeOfDay parses time of day like "3pm", "2:30pm", "14:00", "3pm PST".
 func parseTimeOfDay(input string, loc *time.Location) (time.Time, error) {
+	// Extract timezone from input if present (e.g., "3pm PST")
+	extractedLoc, cleanInput := extractTimezoneFromInput(input)
+	if extractedLoc != nil {
+		loc = extractedLoc
+	}
+
 	// Normalize to lowercase, then try both lowercase and uppercase formats
-	originalInput := input
-	lowerInput := strings.ToLower(input)
+	originalInput := cleanInput
+	lowerInput := strings.ToLower(cleanInput)
 
 	formats := []string{
 		"3pm",

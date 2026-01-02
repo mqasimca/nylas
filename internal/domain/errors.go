@@ -16,6 +16,7 @@ var (
 	ErrTokenExpired    = errors.New("token expired")
 	ErrAPIError        = errors.New("nylas API error")
 	ErrNetworkError    = errors.New("network error")
+	ErrInvalidInput    = errors.New("invalid input")
 
 	// Secret store errors
 	ErrSecretNotFound    = errors.New("secret not found")

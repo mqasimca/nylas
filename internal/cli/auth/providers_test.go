@@ -29,6 +29,11 @@ func hasAPIKey() bool {
 }
 
 func TestProvidersCmd(t *testing.T) {
+	// Skip in short mode - this test requires valid API credentials
+	if testing.Short() {
+		t.Skip("Skipping API test in short mode")
+	}
+
 	// Skip if API key is not configured
 	if !hasAPIKey() {
 		t.Skip("API key not configured - run 'nylas auth config' to set it")

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +46,7 @@ record the meeting, and generate a transcript when complete.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if meetingLink == "" {
-				return fmt.Errorf("meeting link is required (use --meeting-link)")
+				return common.NewUserError("meeting link is required", "Use --meeting-link with a Zoom, Google Meet, or Teams URL")
 			}
 
 			// Validate meeting link URL format
@@ -159,7 +160,7 @@ func parseJoinTime(input string) (time.Time, error) {
 		if rest == "" {
 			return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 9, 0, 0, 0, now.Location()), nil
 		}
-		if t, err := parseTimeOfDay(rest); err == nil {
+		if t, err := common.ParseTimeOfDay(rest); err == nil {
 			return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), t.Hour(), t.Minute(), 0, 0, now.Location()), nil
 		}
 	}
@@ -184,7 +185,7 @@ func parseJoinTime(input string) (time.Time, error) {
 	}
 
 	// Try just time of day
-	if t, err := parseTimeOfDay(lower); err == nil {
+	if t, err := common.ParseTimeOfDay(lower); err == nil {
 		result := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
 		if result.Before(now) {
 			result = result.AddDate(0, 0, 1)
@@ -193,22 +194,4 @@ func parseJoinTime(input string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("could not parse time format: %s", input)
-}
-
-// parseTimeOfDay parses time strings like "9am", "14:30", "2:30pm".
-func parseTimeOfDay(s string) (time.Time, error) {
-	s = strings.ToLower(strings.TrimSpace(s))
-
-	if t, err := time.Parse("15:04", s); err == nil {
-		return t, nil
-	}
-
-	formats := []string{"3:04pm", "3:04 pm", "3pm", "3 pm"}
-	for _, format := range formats {
-		if t, err := time.Parse(format, s); err == nil {
-			return t, nil
-		}
-	}
-
-	return time.Time{}, fmt.Errorf("invalid time format: %s", s)
 }

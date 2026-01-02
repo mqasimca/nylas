@@ -91,7 +91,7 @@ func runFindMeeting(zonesStr, durationStr, startHour, endHour,
 	}
 
 	// Parse duration
-	duration, err := parseDuration(durationStr)
+	duration, err := common.ParseDuration(durationStr)
 	if err != nil {
 		return err
 	}

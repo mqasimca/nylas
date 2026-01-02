@@ -97,6 +97,50 @@ func (c *HTTPClient) parseError(resp *http.Response) error {
 	return fmt.Errorf("%w: status %d", domain.ErrAPIError, resp.StatusCode)
 }
 
+// validateGrantID validates that a grant ID is not empty.
+func validateGrantID(grantID string) error {
+	if grantID == "" {
+		return fmt.Errorf("%w: grant ID is required", domain.ErrInvalidInput)
+	}
+	return nil
+}
+
+// validateCalendarID validates that a calendar ID is not empty.
+func validateCalendarID(calendarID string) error {
+	if calendarID == "" {
+		return fmt.Errorf("%w: calendar ID is required", domain.ErrInvalidInput)
+	}
+	return nil
+}
+
+// validateMessageID validates that a message ID is not empty.
+func validateMessageID(messageID string) error {
+	if messageID == "" {
+		return fmt.Errorf("%w: message ID is required", domain.ErrInvalidInput)
+	}
+	return nil
+}
+
+// validateEventID validates that an event ID is not empty.
+func validateEventID(eventID string) error {
+	if eventID == "" {
+		return fmt.Errorf("%w: event ID is required", domain.ErrInvalidInput)
+	}
+	return nil
+}
+
+// getRequestID extracts the request ID from response headers.
+func getRequestID(resp *http.Response) string {
+	if resp == nil {
+		return ""
+	}
+	// Nylas uses X-Request-Id header
+	if id := resp.Header.Get("X-Request-Id"); id != "" {
+		return id
+	}
+	return resp.Header.Get("Request-Id")
+}
+
 // ensureContext ensures a context has a timeout.
 // If the context already has a deadline, it's returned as-is.
 // Otherwise, a new context with the default timeout is created.

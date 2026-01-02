@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,25 +59,25 @@ func TestParseTimeInput(t *testing.T) {
 
 func TestParseDuration(t *testing.T) {
 	t.Run("parses_hours", func(t *testing.T) {
-		result, err := parseDuration("8h")
+		result, err := common.ParseDuration("8h")
 		assert.NoError(t, err)
 		assert.Equal(t, 8*time.Hour, result)
 	})
 
 	t.Run("parses_days", func(t *testing.T) {
-		result, err := parseDuration("7d")
+		result, err := common.ParseDuration("7d")
 		assert.NoError(t, err)
 		assert.Equal(t, 7*24*time.Hour, result)
 	})
 
 	t.Run("parses_minutes", func(t *testing.T) {
-		result, err := parseDuration("30m")
+		result, err := common.ParseDuration("30m")
 		assert.NoError(t, err)
 		assert.Equal(t, 30*time.Minute, result)
 	})
 
 	t.Run("returns_error_for_invalid", func(t *testing.T) {
-		_, err := parseDuration("invalid")
+		_, err := common.ParseDuration("invalid")
 		assert.Error(t, err)
 	})
 }

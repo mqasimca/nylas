@@ -158,6 +158,74 @@ func TestParseNaturalTime(t *testing.T) {
 	}
 }
 
+func TestExtractTimezoneFromInput(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          string
+		wantTZ         string
+		wantCleanInput string
+	}{
+		{
+			name:           "3pm PST extracts Pacific time",
+			input:          "3pm PST",
+			wantTZ:         "America/Los_Angeles",
+			wantCleanInput: "3pm",
+		},
+		{
+			name:           "3pm pst lowercase",
+			input:          "3pm pst",
+			wantTZ:         "America/Los_Angeles",
+			wantCleanInput: "3pm",
+		},
+		{
+			name:           "2:30pm EST extracts Eastern time",
+			input:          "2:30pm EST",
+			wantTZ:         "America/New_York",
+			wantCleanInput: "2:30pm",
+		},
+		{
+			name:           "14:00 UTC extracts UTC",
+			input:          "14:00 UTC",
+			wantTZ:         "UTC",
+			wantCleanInput: "14:00",
+		},
+		{
+			name:           "3pm without timezone returns nil",
+			input:          "3pm",
+			wantTZ:         "",
+			wantCleanInput: "3pm",
+		},
+		{
+			name:           "10am JST extracts Japan time",
+			input:          "10am JST",
+			wantTZ:         "Asia/Tokyo",
+			wantCleanInput: "10am",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			loc, cleanInput := extractTimezoneFromInput(tt.input)
+
+			if tt.wantTZ == "" {
+				if loc != nil {
+					t.Errorf("Expected nil location, got %v", loc)
+				}
+			} else {
+				if loc == nil {
+					t.Errorf("Expected location %s, got nil", tt.wantTZ)
+				} else if loc.String() != tt.wantTZ {
+					t.Errorf("Location = %s, want %s", loc.String(), tt.wantTZ)
+				}
+			}
+
+			if cleanInput != tt.wantCleanInput {
+				t.Errorf("CleanInput = %q, want %q", cleanInput, tt.wantCleanInput)
+			}
+		})
+	}
+}
+
 func TestParseTimeOfDay(t *testing.T) {
 	loc, _ := time.LoadLocation("America/New_York")
 
@@ -197,6 +265,18 @@ func TestParseTimeOfDay(t *testing.T) {
 			input:    "14:00",
 			wantHour: 14,
 			wantMin:  0,
+		},
+		{
+			name:     "3pm PST (with timezone)",
+			input:    "3pm PST",
+			wantHour: 15,
+			wantMin:  0,
+		},
+		{
+			name:     "2:30pm EST (with timezone)",
+			input:    "2:30pm EST",
+			wantHour: 14,
+			wantMin:  30,
 		},
 		{
 			name:      "invalid format",

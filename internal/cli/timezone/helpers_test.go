@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func TestParseTimeZones(t *testing.T) {
@@ -104,7 +106,7 @@ func TestParseDuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := parseDuration(tt.input)
+			result, err := common.ParseDuration(tt.input)
 
 			if tt.wantErr {
 				if err == nil {
