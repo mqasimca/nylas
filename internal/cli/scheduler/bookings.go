@@ -164,6 +164,8 @@ func newBookingShowCmd() *cobra.Command {
 }
 
 func newBookingConfirmCmd() *cobra.Command {
+	var reason string
+
 	cmd := &cobra.Command{
 		Use:   "confirm <booking-id>",
 		Short: "Confirm a booking",
@@ -175,7 +177,10 @@ func newBookingConfirmCmd() *cobra.Command {
 				return err
 			}
 
-			req := &domain.ConfirmBookingRequest{}
+			req := &domain.ConfirmBookingRequest{
+				Status: "confirmed",
+				Reason: reason,
+			}
 
 			ctx, cancel := createContext()
 			defer cancel()
@@ -193,22 +198,51 @@ func newBookingConfirmCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&reason, "reason", "", "Reason for confirmation")
+
 	return cmd
 }
 
 func newBookingRescheduleCmd() *cobra.Command {
+	var (
+		startTime int64
+		endTime   int64
+		timezone  string
+		reason    string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "reschedule <booking-id>",
 		Short: "Reschedule a booking",
-		Long:  "Reschedule an existing booking to a new time.",
-		Args:  cobra.ExactArgs(1),
+		Long: `Reschedule an existing booking to a new time.
+
+You must provide the new start and end times as Unix timestamps.`,
+		Example: `  # Reschedule to a new time
+  nylas scheduler bookings reschedule abc123 --start-time 1704067200 --end-time 1704070800
+
+  # Reschedule with timezone
+  nylas scheduler bookings reschedule abc123 --start-time 1704067200 --end-time 1704070800 --timezone "America/New_York"`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if startTime == 0 || endTime == 0 {
+				return fmt.Errorf("both --start-time and --end-time are required")
+			}
+
+			if endTime <= startTime {
+				return fmt.Errorf("end-time must be after start-time")
+			}
+
 			client, err := getClient()
 			if err != nil {
 				return err
 			}
 
-			req := &domain.ConfirmBookingRequest{}
+			req := &domain.RescheduleBookingRequest{
+				StartTime: startTime,
+				EndTime:   endTime,
+				Timezone:  timezone,
+				Reason:    reason,
+			}
 
 			ctx, cancel := createContext()
 			defer cancel()
@@ -220,10 +254,17 @@ func newBookingRescheduleCmd() *cobra.Command {
 
 			green := color.New(color.FgGreen)
 			_, _ = green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
+			fmt.Printf("  New start: %s\n", booking.StartTime.Format(time.RFC1123))
+			fmt.Printf("  New end: %s\n", booking.EndTime.Format(time.RFC1123))
 
 			return nil
 		},
 	}
+
+	cmd.Flags().Int64Var(&startTime, "start-time", 0, "New start time (Unix timestamp, required)")
+	cmd.Flags().Int64Var(&endTime, "end-time", 0, "New end time (Unix timestamp, required)")
+	cmd.Flags().StringVar(&timezone, "timezone", "", "Timezone for the booking (e.g., America/New_York)")
+	cmd.Flags().StringVar(&reason, "reason", "", "Reason for rescheduling")
 
 	return cmd
 }

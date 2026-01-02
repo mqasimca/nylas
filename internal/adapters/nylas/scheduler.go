@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -228,7 +229,7 @@ func (c *HTTPClient) GetSchedulerSession(ctx context.Context, sessionID string) 
 func (c *HTTPClient) ListBookings(ctx context.Context, configID string) ([]domain.Booking, error) {
 	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings", c.baseURL)
 	if configID != "" {
-		queryURL = fmt.Sprintf("%s?configuration_id=%s", queryURL, configID)
+		queryURL = fmt.Sprintf("%s?configuration_id=%s", queryURL, url.QueryEscape(configID))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
@@ -320,8 +321,8 @@ func (c *HTTPClient) ConfirmBooking(ctx context.Context, bookingID string, req *
 }
 
 // RescheduleBooking reschedules a booking.
-func (c *HTTPClient) RescheduleBooking(ctx context.Context, bookingID string, req *domain.ConfirmBookingRequest) (*domain.Booking, error) {
-	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s/reschedule", c.baseURL, bookingID)
+func (c *HTTPClient) RescheduleBooking(ctx context.Context, bookingID string, req *domain.RescheduleBookingRequest) (*domain.Booking, error) {
+	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s/reschedule", c.baseURL, url.PathEscape(bookingID))
 
 	body, _ := json.Marshal(req)
 	httpReq, err := http.NewRequestWithContext(ctx, "PATCH", queryURL, bytes.NewReader(body))
@@ -352,9 +353,9 @@ func (c *HTTPClient) RescheduleBooking(ctx context.Context, bookingID string, re
 
 // CancelBooking cancels a booking.
 func (c *HTTPClient) CancelBooking(ctx context.Context, bookingID string, reason string) error {
-	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s", c.baseURL, bookingID)
+	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s", c.baseURL, url.PathEscape(bookingID))
 	if reason != "" {
-		queryURL = fmt.Sprintf("%s?reason=%s", queryURL, reason)
+		queryURL = fmt.Sprintf("%s?reason=%s", queryURL, url.QueryEscape(reason))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
