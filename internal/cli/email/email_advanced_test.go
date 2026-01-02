@@ -342,33 +342,33 @@ func TestParseScheduleTime(t *testing.T) {
 
 func TestParseTimeOfDay(t *testing.T) {
 	t.Run("parses_24_hour_format", func(t *testing.T) {
-		result, err := parseTimeOfDay("14:30")
+		result, err := common.ParseTimeOfDay("14:30")
 		assert.NoError(t, err)
 		assert.Equal(t, 14, result.Hour())
 		assert.Equal(t, 30, result.Minute())
 	})
 
 	t.Run("parses_12_hour_format_pm", func(t *testing.T) {
-		result, err := parseTimeOfDay("2:30pm")
+		result, err := common.ParseTimeOfDay("2:30pm")
 		assert.NoError(t, err)
 		assert.Equal(t, 14, result.Hour())
 		assert.Equal(t, 30, result.Minute())
 	})
 
 	t.Run("parses_12_hour_format_am", func(t *testing.T) {
-		result, err := parseTimeOfDay("9am")
+		result, err := common.ParseTimeOfDay("9am")
 		assert.NoError(t, err)
 		assert.Equal(t, 9, result.Hour())
 	})
 
 	t.Run("parses_12_hour_format_with_space", func(t *testing.T) {
-		result, err := parseTimeOfDay("3 pm")
+		result, err := common.ParseTimeOfDay("3 pm")
 		assert.NoError(t, err)
 		assert.Equal(t, 15, result.Hour())
 	})
 
 	t.Run("returns_error_for_invalid_format", func(t *testing.T) {
-		_, err := parseTimeOfDay("invalid")
+		_, err := common.ParseTimeOfDay("invalid")
 		assert.Error(t, err)
 	})
 }

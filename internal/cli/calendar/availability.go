@@ -89,7 +89,7 @@ Shows busy time slots within the specified time range.`,
 					return fmt.Errorf("invalid end time: %w", err)
 				}
 			} else if duration != "" {
-				dur, err := parseDuration(duration)
+				dur, err := common.ParseDuration(duration)
 				if err != nil {
 					return fmt.Errorf("invalid duration: %w", err)
 				}
@@ -354,7 +354,7 @@ func parseTimeInput(input string) (time.Time, error) {
 		if rest == "" {
 			return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 9, 0, 0, 0, now.Location()), nil
 		}
-		if t, err := parseTimeOfDayInput(rest); err == nil {
+		if t, err := common.ParseTimeOfDay(rest); err == nil {
 			return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), t.Hour(), t.Minute(), 0, 0, now.Location()), nil
 		}
 	}
@@ -366,7 +366,7 @@ func parseTimeInput(input string) (time.Time, error) {
 		if rest == "" {
 			return now, nil
 		}
-		if t, err := parseTimeOfDayInput(rest); err == nil {
+		if t, err := common.ParseTimeOfDay(rest); err == nil {
 			return time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location()), nil
 		}
 	}
@@ -394,7 +394,7 @@ func parseTimeInput(input string) (time.Time, error) {
 	}
 
 	// Try just time of day
-	if t, err := parseTimeOfDayInput(lower); err == nil {
+	if t, err := common.ParseTimeOfDay(lower); err == nil {
 		result := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
 		if result.Before(now) {
 			result = result.AddDate(0, 0, 1)
@@ -403,31 +403,4 @@ func parseTimeInput(input string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("could not parse time: %s", input)
-}
-
-func parseTimeOfDayInput(s string) (time.Time, error) {
-	s = strings.ToLower(strings.TrimSpace(s))
-	formats := []string{"15:04", "3:04pm", "3:04 pm", "3pm", "3 pm"}
-	for _, format := range formats {
-		if t, err := time.Parse(format, s); err == nil {
-			return t, nil
-		}
-	}
-	return time.Time{}, fmt.Errorf("invalid time format: %s", s)
-}
-
-func parseDuration(input string) (time.Duration, error) {
-	input = strings.ToLower(strings.TrimSpace(input))
-
-	// Check for day suffix
-	if strings.HasSuffix(input, "d") {
-		numStr := input[:len(input)-1]
-		var days int
-		if _, err := fmt.Sscanf(numStr, "%d", &days); err == nil {
-			return time.Duration(days) * 24 * time.Hour, nil
-		}
-	}
-
-	// Try standard duration parsing
-	return time.ParseDuration(input)
 }

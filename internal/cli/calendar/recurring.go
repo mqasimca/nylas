@@ -123,7 +123,7 @@ The master event ID is the ID of the parent recurring event.`,
 	cmd.Flags().IntVar(&limit, "limit", 50, "Maximum number of instances to retrieve")
 	cmd.Flags().Int64Var(&startUnix, "start", 0, "Start time (Unix timestamp)")
 	cmd.Flags().Int64Var(&endUnix, "end", 0, "End time (Unix timestamp)")
-	_ = cmd.MarkFlagRequired("calendar") // Hardcoded flag name, won't fail
+	// Note: --calendar validation is done in RunE for better error messages
 
 	return cmd
 }

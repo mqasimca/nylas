@@ -346,7 +346,7 @@ func parseScheduleTime(input string) (time.Time, error) {
 			return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 9, 0, 0, 0, now.Location()), nil
 		}
 		// Parse time part
-		if t, err := parseTimeOfDay(rest); err == nil {
+		if t, err := common.ParseTimeOfDay(rest); err == nil {
 			return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), t.Hour(), t.Minute(), 0, 0, now.Location()), nil
 		}
 	}
@@ -358,7 +358,7 @@ func parseScheduleTime(input string) (time.Time, error) {
 		if rest == "" {
 			return time.Time{}, fmt.Errorf("please specify a time, e.g., 'today 3pm'")
 		}
-		if t, err := parseTimeOfDay(rest); err == nil {
+		if t, err := common.ParseTimeOfDay(rest); err == nil {
 			result := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
 			if result.Before(now) {
 				return time.Time{}, fmt.Errorf("scheduled time is in the past")
@@ -393,7 +393,7 @@ func parseScheduleTime(input string) (time.Time, error) {
 	}
 
 	// Try just time of day (today or tomorrow)
-	if t, err := parseTimeOfDay(lower); err == nil {
+	if t, err := common.ParseTimeOfDay(lower); err == nil {
 		result := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
 		if result.Before(now) {
 			// If time is in the past, assume tomorrow
@@ -403,30 +403,4 @@ func parseScheduleTime(input string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("could not parse time format: %s", input)
-}
-
-// parseTimeOfDay parses time strings like "9am", "14:30", "2:30pm".
-func parseTimeOfDay(s string) (time.Time, error) {
-	s = strings.ToLower(strings.TrimSpace(s))
-
-	// Try 24-hour format: 14:30
-	if t, err := time.Parse("15:04", s); err == nil {
-		return t, nil
-	}
-
-	// Try 12-hour format: 2:30pm, 9am
-	formats := []string{
-		"3:04pm",
-		"3:04 pm",
-		"3pm",
-		"3 pm",
-	}
-
-	for _, format := range formats {
-		if t, err := time.Parse(format, s); err == nil {
-			return t, nil
-		}
-	}
-
-	return time.Time{}, fmt.Errorf("invalid time format: %s", s)
 }
