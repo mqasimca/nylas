@@ -353,6 +353,77 @@ nylas slack search --query "meeting" --limit 20
 
 ---
 
+## Notetaker (AI Meeting Bot)
+
+Manage Nylas Notetaker bots that join video meetings to record and transcribe.
+
+```bash
+# List all notetakers
+nylas notetaker list                              # List all notetakers
+nylas notetaker list --state scheduled            # Filter by state
+nylas notetaker list --limit 10                   # Limit results
+
+# Create a notetaker to join a meeting
+nylas notetaker create --meeting-link "https://zoom.us/j/123456789"
+nylas notetaker create --meeting-link "https://meet.google.com/abc-defg" --join-time "tomorrow 2pm"
+nylas notetaker create --meeting-link "https://zoom.us/j/123" --bot-name "Meeting Recorder"
+
+# Show notetaker details
+nylas notetaker show <notetaker-id>
+
+# Get recording and transcript URLs
+nylas notetaker media <notetaker-id>
+
+# Delete/cancel a notetaker
+nylas notetaker delete <notetaker-id>             # With confirmation
+nylas notetaker delete <notetaker-id> --yes       # Skip confirmation
+```
+
+**Aliases:** `nylas nt`, `nylas bot`
+
+**Supported Providers:** Zoom, Google Meet, Microsoft Teams
+
+**States:** `scheduled`, `connecting`, `waiting`, `attending`, `processing`, `complete`, `cancelled`, `failed`
+
+**Join Time Formats:**
+- ISO: `2024-01-15 14:00`
+- Relative: `30m`, `2h`, `1d`
+- Natural: `tomorrow 9am`, `tomorrow 2:30pm`
+
+---
+
+## OTP (One-Time Password)
+
+Retrieve OTP/verification codes from email automatically.
+
+```bash
+# Get the latest OTP code (auto-copies to clipboard)
+nylas otp get                                     # From default account
+nylas otp get user@example.com                    # From specific account
+nylas otp get --no-copy                           # Don't copy to clipboard
+nylas otp get --raw                               # Output only the code
+
+# Watch for new OTP codes (continuous polling)
+nylas otp watch                                   # Poll every 10 seconds
+nylas otp watch --interval 5                      # Poll every 5 seconds
+nylas otp watch user@example.com                  # Watch specific account
+
+# List configured accounts
+nylas otp list
+
+# Debug: Show recent messages with OTP detection
+nylas otp messages                                # Show last 10 messages
+nylas otp messages --limit 20                     # Show more messages
+```
+
+**Features:**
+- Auto-copies OTP to clipboard
+- Supports 4-8 digit codes
+- Detects OTPs from common providers (Google, Microsoft, banks, etc.)
+- Pretty-printed display with sender info
+
+---
+
 ## Utility Commands
 
 ```bash
@@ -389,6 +460,8 @@ All commands follow consistent pattern:
 - Contacts: `docs/commands/contacts.md`
 - Webhooks: `docs/commands/webhooks.md`
 - Slack: `docs/COMMANDS.md#slack-integration`
+- Notetaker: `docs/COMMANDS.md#notetaker-ai-meeting-bot`
+- OTP: `docs/COMMANDS.md#otp-one-time-password`
 - Timezone: `docs/TIMEZONE.md`
 - AI: `docs/AI.md`
 - MCP: `docs/MCP.md`
