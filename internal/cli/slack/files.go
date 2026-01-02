@@ -175,7 +175,7 @@ Examples:
 	cmd.Flags().StringVar(&channelID, "channel-id", "", "Channel ID")
 	cmd.Flags().StringVarP(&userID, "user", "u", "", "Filter by user ID")
 	cmd.Flags().StringVar(&fileTypes, "types", "", "Filter by file types (comma-separated: images,pdfs,docs)")
-	cmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum number of files to return")
+	cmd.Flags().IntVarP(&limit, "limit", "l", 50, "Maximum number of files to return")
 
 	return cmd
 }

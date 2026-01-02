@@ -271,10 +271,10 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 				if obj, ok := data["object"].(map[string]any); ok {
 					// Print key fields based on event type
 					if subject, ok := obj["subject"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), truncate(subject, 60))
+						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), common.Truncate(subject, 60))
 					}
 					if title, ok := obj["title"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Title:"), truncate(title, 60))
+						fmt.Printf("  %s %s\n", dim.Sprint("Title:"), common.Truncate(title, 60))
 					}
 					if email, ok := obj["email"].(string); ok {
 						fmt.Printf("  %s %s\n", dim.Sprint("Email:"), email)

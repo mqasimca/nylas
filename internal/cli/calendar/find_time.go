@@ -332,7 +332,7 @@ func parseWorkingTime(s string) (int, error) {
 		return 0, err
 	}
 	if hour < 0 || hour > 23 {
-		return 0, fmt.Errorf("hour must be 0-23")
+		return 0, fmt.Errorf("hour must be 0-23, got %d from input %q", hour, s)
 	}
 	return hour, nil
 }
