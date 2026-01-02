@@ -13,6 +13,7 @@ import (
 	"golang.org/x/term"
 
 	nylasadapter "github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -66,7 +67,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			}
 
 			if apiKey == "" {
-				return fmt.Errorf("API key is required")
+				return common.NewUserError("API key is required", "Enter your Nylas API key when prompted or use --api-key")
 			}
 
 			// Get region if not provided
@@ -131,7 +132,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			}
 
 			if clientID == "" {
-				return fmt.Errorf("client ID is required")
+				return common.NewUserError("client ID is required", "Client ID should be auto-detected or can be entered manually")
 			}
 
 			if err := configSvc.SetupConfig(region, clientID, "", apiKey); err != nil {

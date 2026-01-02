@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -60,7 +61,7 @@ This command uses AI to:
 			}
 
 			if threadID == "" {
-				return fmt.Errorf("thread ID is required (use --thread flag or provide as argument)")
+				return common.NewUserError("thread ID is required", "Use --thread flag or provide as argument")
 			}
 
 			// Get Nylas client

@@ -46,7 +46,7 @@ record the meeting, and generate a transcript when complete.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if meetingLink == "" {
-				return fmt.Errorf("meeting link is required (use --meeting-link)")
+				return common.NewUserError("meeting link is required", "Use --meeting-link with a Zoom, Google Meet, or Teams URL")
 			}
 
 			// Validate meeting link URL format

@@ -13,6 +13,12 @@ import (
 )
 
 func (c *HTTPClient) GetEvents(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
+	if err := validateCalendarID(calendarID); err != nil {
+		return nil, err
+	}
 	result, err := c.GetEventsWithCursor(ctx, grantID, calendarID, params)
 	if err != nil {
 		return nil, err
@@ -99,6 +105,15 @@ func (c *HTTPClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 
 // GetEvent retrieves a single event by ID.
 func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID string) (*domain.Event, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
+	if err := validateCalendarID(calendarID); err != nil {
+		return nil, err
+	}
+	if err := validateEventID(eventID); err != nil {
+		return nil, err
+	}
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)

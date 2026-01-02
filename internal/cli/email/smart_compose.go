@@ -34,7 +34,7 @@ Examples:
 			jsonOutput, _ := cmd.Flags().GetBool("json")
 
 			if prompt == "" {
-				return fmt.Errorf("--prompt is required")
+				return common.NewUserError("prompt is required", "Use --prompt to describe the email you want to compose")
 			}
 
 			client, err := getClient()

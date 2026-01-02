@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -61,7 +62,7 @@ The master event ID is the ID of the parent recurring event.`,
 			}
 
 			if calendarID == "" {
-				return fmt.Errorf("--calendar is required")
+				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
 			client, err := getClient()
@@ -162,7 +163,7 @@ This creates an exception for that particular instance.`,
 			}
 
 			if calendarID == "" {
-				return fmt.Errorf("--calendar is required")
+				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
 			client, err := getClient()
@@ -274,7 +275,7 @@ This adds an exception to the recurrence rule.`,
 			}
 
 			if calendarID == "" {
-				return fmt.Errorf("--calendar is required")
+				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
 			if !skipConfirm {

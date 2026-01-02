@@ -61,12 +61,18 @@ type messageResponse struct {
 
 // GetMessages retrieves recent messages for a grant (simple version).
 func (c *HTTPClient) GetMessages(ctx context.Context, grantID string, limit int) ([]domain.Message, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
 	params := &domain.MessageQueryParams{Limit: limit}
 	return c.GetMessagesWithParams(ctx, grantID, params)
 }
 
 // GetMessagesWithParams retrieves messages with query parameters.
 func (c *HTTPClient) GetMessagesWithParams(ctx context.Context, grantID string, params *domain.MessageQueryParams) ([]domain.Message, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
 	resp, err := c.GetMessagesWithCursor(ctx, grantID, params)
 	if err != nil {
 		return nil, err
@@ -76,6 +82,9 @@ func (c *HTTPClient) GetMessagesWithParams(ctx context.Context, grantID string, 
 
 // GetMessagesWithCursor retrieves messages with pagination cursor support.
 func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, params *domain.MessageQueryParams) (*domain.MessageListResponse, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
 	if params == nil {
 		params = &domain.MessageQueryParams{Limit: 10}
 	}
@@ -173,6 +182,12 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 
 // GetMessage retrieves a single message by ID.
 func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) (*domain.Message, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
+	if err := validateMessageID(messageID); err != nil {
+		return nil, err
+	}
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)

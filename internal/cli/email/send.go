@@ -108,11 +108,11 @@ Supports custom metadata:
 			}
 
 			if len(to) == 0 {
-				return fmt.Errorf("at least one recipient is required (use --to)")
+				return common.NewUserError("at least one recipient is required", "Use --to to specify recipient email addresses")
 			}
 
 			if subject == "" {
-				return fmt.Errorf("subject is required (use --subject)")
+				return common.NewUserError("subject is required", "Use --subject to specify the email subject")
 			}
 
 			// Parse and validate recipients

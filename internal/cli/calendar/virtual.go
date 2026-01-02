@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +96,7 @@ The email can be any identifier - it doesn't need to be a real email address.`,
   nylas calendar virtual create --email projector-1@company.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if email == "" {
-				return fmt.Errorf("--email is required")
+				return common.NewUserError("email is required", "Use --email to specify an identifier for the virtual calendar")
 			}
 
 			client, err := getClient()
