@@ -30,7 +30,7 @@ func newDeleteCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}

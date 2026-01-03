@@ -94,6 +94,14 @@ type SendMessageRequest struct {
 	Metadata     map[string]string  `json:"metadata,omitempty"`
 }
 
+// Validate checks that SendMessageRequest has at least one recipient.
+func (r SendMessageRequest) Validate() error {
+	if len(r.To) == 0 && len(r.Cc) == 0 && len(r.Bcc) == 0 {
+		return ErrInvalidInput
+	}
+	return nil
+}
+
 // ScheduledMessage represents a scheduled email.
 type ScheduledMessage struct {
 	ScheduleID string `json:"schedule_id"`

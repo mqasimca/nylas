@@ -126,6 +126,32 @@ func (w EventWhen) IsAllDay() bool {
 	return w.Object == "date" || w.Object == "datespan" || w.Date != "" || w.StartDate != ""
 }
 
+// Validate checks that EventWhen has exactly one valid time specification.
+func (w EventWhen) Validate() error {
+	hasTimespan := w.StartTime > 0 && w.EndTime > 0
+	hasDate := w.Date != ""
+	hasDatespan := w.StartDate != "" && w.EndDate != ""
+
+	count := 0
+	if hasTimespan {
+		count++
+	}
+	if hasDate {
+		count++
+	}
+	if hasDatespan {
+		count++
+	}
+
+	if count == 0 {
+		return ErrInvalidInput
+	}
+	if count > 1 {
+		return ErrInvalidInput
+	}
+	return nil
+}
+
 // IsTimezoneLocked returns true if the event has timezone locking enabled.
 func (e Event) IsTimezoneLocked() bool {
 	if e.Metadata == nil {
@@ -148,9 +174,9 @@ func (e Event) GetLockedTimezone() string {
 }
 
 // Participant represents an event participant.
+// Embeds Person for name/email and adds RSVP status.
 type Participant struct {
-	Name    string `json:"name,omitempty"`
-	Email   string `json:"email"`
+	Person
 	Status  string `json:"status,omitempty"` // yes, no, maybe, noreply
 	Comment string `json:"comment,omitempty"`
 }

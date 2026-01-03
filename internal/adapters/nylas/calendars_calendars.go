@@ -10,7 +10,7 @@ import (
 )
 
 func (c *HTTPClient) GetCalendars(ctx context.Context, grantID string) ([]domain.Calendar, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 
@@ -33,10 +33,10 @@ func (c *HTTPClient) GetCalendars(ctx context.Context, grantID string) ([]domain
 
 // GetCalendar retrieves a single calendar by ID.
 func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string) (*domain.Calendar, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
-	if err := validateCalendarID(calendarID); err != nil {
+	if err := validateRequired("calendar ID", calendarID); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string
 
 // CreateCalendar creates a new calendar.
 func (c *HTTPClient) CreateCalendar(ctx context.Context, grantID string, req *domain.CreateCalendarRequest) (*domain.Calendar, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 
@@ -111,10 +111,10 @@ func (c *HTTPClient) CreateCalendar(ctx context.Context, grantID string, req *do
 
 // UpdateCalendar updates an existing calendar.
 func (c *HTTPClient) UpdateCalendar(ctx context.Context, grantID, calendarID string, req *domain.UpdateCalendarRequest) (*domain.Calendar, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
-	if err := validateCalendarID(calendarID); err != nil {
+	if err := validateRequired("calendar ID", calendarID); err != nil {
 		return nil, err
 	}
 
@@ -155,22 +155,14 @@ func (c *HTTPClient) UpdateCalendar(ctx context.Context, grantID, calendarID str
 
 // DeleteCalendar deletes a calendar.
 func (c *HTTPClient) DeleteCalendar(ctx context.Context, grantID, calendarID string) error {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return err
 	}
-	if err := validateCalendarID(calendarID); err != nil {
+	if err := validateRequired("calendar ID", calendarID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars/%s", c.baseURL, grantID, calendarID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // GetEvents retrieves events for a calendar.

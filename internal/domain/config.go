@@ -106,6 +106,22 @@ type BreakBlock struct {
 	Type  string `yaml:"type,omitempty"` // Optional type: "lunch", "coffee", "custom"
 }
 
+// Validate checks that BreakBlock has valid time format and end is after start.
+func (b BreakBlock) Validate() error {
+	start, err := time.Parse("15:04", b.Start)
+	if err != nil {
+		return ErrInvalidInput
+	}
+	end, err := time.Parse("15:04", b.End)
+	if err != nil {
+		return ErrInvalidInput
+	}
+	if !end.After(start) {
+		return ErrInvalidInput
+	}
+	return nil
+}
+
 // GetScheduleForDay returns the schedule for a given weekday.
 // Checks day-specific, weekend, then default in order of precedence.
 // Weekday is case-insensitive (e.g., "Monday", "monday", "MONDAY" all work).

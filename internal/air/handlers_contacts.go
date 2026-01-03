@@ -1,10 +1,8 @@
 package air
 
 import (
-	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/air/cache"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -24,23 +22,12 @@ func (s *Server) handleContactsRoute(w http.ResponseWriter, r *http.Request) {
 
 // handleListContacts returns contacts with optional filtering.
 func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
-	// Demo mode: return mock contacts
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, ContactsResponse{
-			Contacts: demoContacts(),
-			HasMore:  false,
-		})
+	if s.handleDemoMode(w, ContactsResponse{Contacts: demoContacts(), HasMore: false}) {
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
@@ -92,7 +79,7 @@ func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch contacts from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	result, err := s.nylasClient.GetContactsWithCursor(ctx, grantID, params)

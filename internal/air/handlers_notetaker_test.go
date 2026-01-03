@@ -339,7 +339,7 @@ func TestHandleListNotetakers_NilClient(t *testing.T) {
 	var result map[string]string
 	err := json.NewDecoder(resp.Body).Decode(&result)
 	require.NoError(t, err)
-	assert.Equal(t, "API client not available", result["error"])
+	assert.Equal(t, "Not configured. Run 'nylas auth login' first.", result["error"])
 }
 
 func TestHandleCreateNotetaker_NilClient(t *testing.T) {

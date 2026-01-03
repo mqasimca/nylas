@@ -82,11 +82,7 @@ func (s *Server) handleNotetakerByID(w http.ResponseWriter, r *http.Request) {
 
 // handleListNotetakers returns all notetakers from the Nylas API
 func (s *Server) handleListNotetakers(w http.ResponseWriter, r *http.Request) {
-	// Check if API client is available
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "API client not available",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -108,7 +104,7 @@ func (s *Server) handleListNotetakers(w http.ResponseWriter, r *http.Request) {
 		sources = []NotetakerSource{}
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	response := make([]*NotetakerResponse, 0)
@@ -173,11 +169,7 @@ func domainToNotetakerResponse(nt *domain.Notetaker) *NotetakerResponse {
 
 // handleCreateNotetaker creates a new notetaker via the Nylas API
 func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
-	// Check if API client is available
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "API client not available",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -187,17 +179,16 @@ func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CreateNotetakerRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
 	if req.MeetingLink == "" {
-		http.Error(w, "meetingLink is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "meetingLink is required")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	// Build API request
@@ -230,11 +221,7 @@ func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
 
 // handleGetNotetaker returns a single notetaker from the Nylas API
 func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
-	// Check if API client is available
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "API client not available",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -245,11 +232,11 @@ func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "id is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "id is required")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	nt, err := s.nylasClient.GetNotetaker(ctx, grantID, id)
@@ -266,11 +253,7 @@ func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
 
 // handleGetNotetakerMedia returns media for a notetaker from the Nylas API
 func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request) {
-	// Check if API client is available
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "API client not available",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -281,11 +264,11 @@ func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request)
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "id is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "id is required")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	// Get media from Nylas API
@@ -314,11 +297,7 @@ func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request)
 
 // handleDeleteNotetaker cancels a notetaker via the Nylas API
 func (s *Server) handleDeleteNotetaker(w http.ResponseWriter, r *http.Request) {
-	// Check if API client is available
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "API client not available",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -329,11 +308,11 @@ func (s *Server) handleDeleteNotetaker(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		http.Error(w, "id is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "id is required")
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	err := s.nylasClient.DeleteNotetaker(ctx, grantID, id)

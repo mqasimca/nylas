@@ -356,7 +356,7 @@ func TestHTTPClient_CreateEvent(t *testing.T) {
 				Busy:       true,
 				Visibility: "private",
 				Participants: []domain.Participant{
-					{Email: "bob@example.com", Name: "Bob"},
+					{Person: domain.Person{Name: "Bob", Email: "bob@example.com"}},
 				},
 				Recurrence: []string{"RRULE:FREQ=WEEKLY;COUNT=10"},
 				Conferencing: &domain.Conferencing{
@@ -489,7 +489,7 @@ func TestHTTPClient_UpdateEvent(t *testing.T) {
 			name: "updates participants",
 			request: &domain.UpdateEventRequest{
 				Participants: []domain.Participant{
-					{Email: "new@example.com", Name: "New Person"},
+					{Person: domain.Person{Name: "New Person", Email: "new@example.com"}},
 				},
 			},
 			wantFields: []string{"participants"},

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/domain"
 	"gopkg.in/yaml.v3"
 )
 
@@ -396,4 +397,66 @@ func Confirm(prompt string, defaultYes bool) bool {
 	}
 
 	return response == "y" || response == "yes"
+}
+
+// FormatParticipant formats an email participant for display.
+func FormatParticipant(p domain.EmailParticipant) string {
+	if p.Name != "" {
+		return p.Name
+	}
+	return p.Email
+}
+
+// FormatParticipants formats a slice of email participants.
+func FormatParticipants(participants []domain.EmailParticipant) string {
+	names := make([]string, len(participants))
+	for i, p := range participants {
+		names[i] = FormatParticipant(p)
+	}
+	return strings.Join(names, ", ")
+}
+
+// FormatSize formats a file size in bytes to a human-readable string.
+func FormatSize(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// PrintEmptyState prints a consistent "no items found" message.
+func PrintEmptyState(resourceName string) {
+	if IsQuiet() {
+		return
+	}
+	fmt.Printf("No %s found.\n", resourceName)
+}
+
+// PrintEmptyStateWithHint prints empty state with a helpful hint.
+func PrintEmptyStateWithHint(resourceName, hint string) {
+	if IsQuiet() {
+		return
+	}
+	fmt.Printf("No %s found.\n", resourceName)
+	if hint != "" {
+		PrintInfo(hint)
+	}
+}
+
+// PrintListHeader prints a consistent "found N items" header.
+func PrintListHeader(count int, resourceName string) {
+	if IsQuiet() {
+		return
+	}
+	if count == 1 {
+		fmt.Printf("Found 1 %s:\n\n", resourceName)
+	} else {
+		fmt.Printf("Found %d %ss:\n\n", count, resourceName)
+	}
 }

@@ -37,7 +37,7 @@ func newFoldersListCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -122,7 +122,7 @@ func newFoldersShowCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -190,7 +190,7 @@ func newFoldersCreateCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -246,7 +246,7 @@ func newFoldersRenameCmd() *cobra.Command {
 			if len(args) > 2 {
 				grantID = args[2]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -305,7 +305,7 @@ func newFoldersDeleteCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}

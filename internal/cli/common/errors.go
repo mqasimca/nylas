@@ -240,3 +240,33 @@ func NewInputError(message string) error {
 		Code:    ErrCodeInvalidInput,
 	}
 }
+
+// WrapGetError wraps an error from a GET operation.
+func WrapGetError(resource string, err error) error {
+	return fmt.Errorf("failed to get %s: %w", resource, err)
+}
+
+// WrapFetchError wraps an error from a fetch/list operation.
+func WrapFetchError(resource string, err error) error {
+	return fmt.Errorf("failed to fetch %s: %w", resource, err)
+}
+
+// WrapCreateError wraps an error from a create operation.
+func WrapCreateError(resource string, err error) error {
+	return fmt.Errorf("failed to create %s: %w", resource, err)
+}
+
+// WrapUpdateError wraps an error from an update operation.
+func WrapUpdateError(resource string, err error) error {
+	return fmt.Errorf("failed to update %s: %w", resource, err)
+}
+
+// WrapDeleteError wraps an error from a delete operation.
+func WrapDeleteError(resource string, err error) error {
+	return fmt.Errorf("failed to delete %s: %w", resource, err)
+}
+
+// WrapSendError wraps an error from a send operation.
+func WrapSendError(resource string, err error) error {
+	return fmt.Errorf("failed to send %s: %w", resource, err)
+}

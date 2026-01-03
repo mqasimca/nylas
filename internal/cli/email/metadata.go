@@ -53,7 +53,7 @@ This shows all metadata stored on the message, including both indexed
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}

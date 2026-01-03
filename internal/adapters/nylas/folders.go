@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // folderResponse represents an API folder response.
@@ -26,7 +27,7 @@ type folderResponse struct {
 
 // GetFolders retrieves all folders for a grant.
 func (c *HTTPClient) GetFolders(ctx context.Context, grantID string) ([]domain.Folder, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +50,7 @@ func (c *HTTPClient) GetFolders(ctx context.Context, grantID string) ([]domain.F
 
 // GetFolder retrieves a single folder by ID.
 func (c *HTTPClient) GetFolder(ctx context.Context, grantID, folderID string) (*domain.Folder, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 	if err := validateRequired("folder ID", folderID); err != nil {
@@ -90,7 +91,7 @@ func (c *HTTPClient) GetFolder(ctx context.Context, grantID, folderID string) (*
 
 // CreateFolder creates a new folder.
 func (c *HTTPClient) CreateFolder(ctx context.Context, grantID string, req *domain.CreateFolderRequest) (*domain.Folder, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +128,7 @@ func (c *HTTPClient) CreateFolder(ctx context.Context, grantID string, req *doma
 
 // UpdateFolder updates an existing folder.
 func (c *HTTPClient) UpdateFolder(ctx context.Context, grantID, folderID string, req *domain.UpdateFolderRequest) (*domain.Folder, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 	if err := validateRequired("folder ID", folderID); err != nil {
@@ -168,31 +169,19 @@ func (c *HTTPClient) UpdateFolder(ctx context.Context, grantID, folderID string,
 
 // DeleteFolder deletes a folder.
 func (c *HTTPClient) DeleteFolder(ctx context.Context, grantID, folderID string) error {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return err
 	}
 	if err := validateRequired("folder ID", folderID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/folders/%s", c.baseURL, grantID, folderID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // convertFolders converts API folder responses to domain models.
 func convertFolders(folders []folderResponse) []domain.Folder {
-	result := make([]domain.Folder, len(folders))
-	for i, f := range folders {
-		result[i] = convertFolder(f)
-	}
-	return result
+	return util.Map(folders, convertFolder)
 }
 
 // convertFolder converts an API folder response to domain model.

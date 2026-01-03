@@ -33,9 +33,9 @@ func (d *DemoClient) getDemoEvents() []domain.Event {
 			Status:   "confirmed",
 			Location: "Conference Room A",
 			Participants: []domain.Participant{
-				{Name: "Sarah Chen", Email: "sarah@company.com", Status: "yes"},
-				{Name: "Mike Johnson", Email: "mike@company.com", Status: "yes"},
-				{Name: "Demo User", Email: "demo@example.com", Status: "yes"},
+				{Person: domain.Person{Name: "Sarah Chen", Email: "sarah@company.com"}, Status: "yes"},
+				{Person: domain.Person{Name: "Mike Johnson", Email: "mike@company.com"}, Status: "yes"},
+				{Person: domain.Person{Name: "Demo User", Email: "demo@example.com"}, Status: "yes"},
 			},
 		},
 		{
@@ -72,8 +72,8 @@ func (d *DemoClient) getDemoEvents() []domain.Event {
 			Location:    "Main Office - Room 302",
 			Description: "Quarterly project review with stakeholders",
 			Participants: []domain.Participant{
-				{Name: "Product Team", Email: "product@company.com", Status: "yes"},
-				{Name: "Engineering", Email: "eng@company.com", Status: "maybe"},
+				{Person: domain.Person{Name: "Product Team", Email: "product@company.com"}, Status: "yes"},
+				{Person: domain.Person{Name: "Engineering", Email: "eng@company.com"}, Status: "maybe"},
 			},
 		},
 		{

@@ -43,7 +43,7 @@ func newDraftsListCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -68,7 +68,7 @@ func newDraftsListCmd() *cobra.Command {
 			for _, d := range drafts {
 				toStr := ""
 				if len(d.To) > 0 {
-					toStr = formatContacts(d.To)
+					toStr = common.FormatParticipants(d.To)
 				}
 				if len(toStr) > 23 {
 					toStr = toStr[:20] + "..."
@@ -121,7 +121,7 @@ func newDraftsCreateCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -309,7 +309,7 @@ func newDraftsShowCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -329,10 +329,10 @@ func newDraftsShowCmd() *cobra.Command {
 
 			fmt.Printf("ID:      %s\n", draft.ID)
 			if len(draft.To) > 0 {
-				fmt.Printf("To:      %s\n", formatContacts(draft.To))
+				fmt.Printf("To:      %s\n", common.FormatParticipants(draft.To))
 			}
 			if len(draft.Cc) > 0 {
-				fmt.Printf("Cc:      %s\n", formatContacts(draft.Cc))
+				fmt.Printf("Cc:      %s\n", common.FormatParticipants(draft.Cc))
 			}
 			fmt.Printf("Updated: %s\n", draft.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
 
@@ -340,14 +340,14 @@ func newDraftsShowCmd() *cobra.Command {
 			if len(draft.Attachments) > 0 {
 				fmt.Printf("\nAttachments (%d):\n", len(draft.Attachments))
 				for i, a := range draft.Attachments {
-					fmt.Printf("  %d. %s (%s, %s)\n", i+1, a.Filename, a.ContentType, formatSize(a.Size))
+					fmt.Printf("  %d. %s (%s, %s)\n", i+1, a.Filename, a.ContentType, common.FormatSize(a.Size))
 				}
 			}
 
 			if draft.Body != "" {
 				fmt.Println("\nBody:")
 				fmt.Println("────────────────────────────────────────────────────────────")
-				fmt.Println(stripHTML(draft.Body))
+				fmt.Println(common.StripHTML(draft.Body))
 			}
 
 			return nil
@@ -374,7 +374,7 @@ func newDraftsSendCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -392,7 +392,7 @@ func newDraftsSendCmd() *cobra.Command {
 			// Confirmation
 			if !force {
 				fmt.Println("Send this draft?")
-				fmt.Printf("  To:      %s\n", formatContacts(draft.To))
+				fmt.Printf("  To:      %s\n", common.FormatParticipants(draft.To))
 				fmt.Printf("  Subject: %s\n", draft.Subject)
 				fmt.Print("\n[y/N]: ")
 
@@ -438,7 +438,7 @@ func newDraftsDeleteCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}

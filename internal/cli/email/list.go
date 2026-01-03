@@ -40,7 +40,7 @@ Use --max to limit total messages when using --all.`,
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}

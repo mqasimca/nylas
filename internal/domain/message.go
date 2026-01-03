@@ -33,18 +33,8 @@ type Header struct {
 }
 
 // EmailParticipant represents an email participant (sender/recipient).
-type EmailParticipant struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
-// String returns a formatted contact string.
-func (c EmailParticipant) String() string {
-	if c.Name != "" {
-		return c.Name + " <" + c.Email + ">"
-	}
-	return c.Email
-}
+// This is an alias for Person, which provides String() and DisplayName() methods.
+type EmailParticipant = Person
 
 // OTPResult represents an extracted OTP code.
 type OTPResult struct {

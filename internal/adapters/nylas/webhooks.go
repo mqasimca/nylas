@@ -2,12 +2,12 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // webhookResponse represents a webhook from the API.
@@ -40,12 +40,7 @@ func (c *HTTPClient) ListWebhooks(ctx context.Context) ([]domain.Webhook, error)
 		return nil, err
 	}
 
-	webhooks := make([]domain.Webhook, len(result.Data))
-	for i, w := range result.Data {
-		webhooks[i] = convertWebhook(w)
-	}
-
-	return webhooks, nil
+	return util.Map(result.Data, convertWebhook), nil
 }
 
 // GetWebhook retrieves a single webhook by ID.
@@ -56,29 +51,10 @@ func (c *HTTPClient) GetWebhook(ctx context.Context, webhookID string) (*domain.
 
 	queryURL := fmt.Sprintf("%s/v3/webhooks/%s", c.baseURL, webhookID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: webhook not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data webhookResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: webhook not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 
@@ -135,16 +111,8 @@ func (c *HTTPClient) DeleteWebhook(ctx context.Context, webhookID string) error 
 	if err := validateRequired("webhook ID", webhookID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/webhooks/%s", c.baseURL, webhookID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // SendWebhookTestEvent sends a test event to a webhook URL.

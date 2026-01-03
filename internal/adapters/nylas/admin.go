@@ -69,29 +69,10 @@ func (c *HTTPClient) GetApplication(ctx context.Context, appID string) (*domain.
 
 	queryURL := fmt.Sprintf("%s/v3/applications/%s", c.baseURL, appID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: application not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.Application `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: application not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -142,16 +123,8 @@ func (c *HTTPClient) DeleteApplication(ctx context.Context, appID string) error 
 	if err := validateRequired("application ID", appID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/applications/%s", c.baseURL, appID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // Admin Connectors
@@ -182,29 +155,10 @@ func (c *HTTPClient) GetConnector(ctx context.Context, connectorID string) (*dom
 
 	queryURL := fmt.Sprintf("%s/v3/connectors/%s", c.baseURL, connectorID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: connector not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.Connector `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: connector not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -255,16 +209,8 @@ func (c *HTTPClient) DeleteConnector(ctx context.Context, connectorID string) er
 	if err := validateRequired("connector ID", connectorID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/connectors/%s", c.baseURL, connectorID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // Admin Credentials
@@ -299,29 +245,10 @@ func (c *HTTPClient) GetCredential(ctx context.Context, credentialID string) (*d
 
 	queryURL := fmt.Sprintf("%s/v3/credentials/%s", c.baseURL, credentialID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: credential not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.ConnectorCredential `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: credential not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -376,16 +303,8 @@ func (c *HTTPClient) DeleteCredential(ctx context.Context, credentialID string) 
 	if err := validateRequired("credential ID", credentialID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/credentials/%s", c.baseURL, credentialID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // Admin Grant Operations

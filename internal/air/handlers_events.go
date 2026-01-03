@@ -1,8 +1,6 @@
 package air
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -13,23 +11,12 @@ import (
 
 // handleListEvents returns events for a calendar with optional date filtering.
 func (s *Server) handleListEvents(w http.ResponseWriter, r *http.Request) {
-	// Demo mode: return mock events
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, EventsResponse{
-			Events:  demoEvents(),
-			HasMore: false,
-		})
+	if s.handleDemoMode(w, EventsResponse{Events: demoEvents(), HasMore: false}) {
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
@@ -94,7 +81,7 @@ func (s *Server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch events from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	result, err := s.nylasClient.GetEventsWithCursor(ctx, grantID, calendarID, params)
@@ -155,7 +142,6 @@ func (s *Server) handleEventByID(w http.ResponseWriter, r *http.Request) {
 
 // handleCreateEvent creates a new event.
 func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
-	// Demo mode: simulate success
 	if s.demoMode {
 		now := time.Now()
 		writeJSON(w, http.StatusOK, EventActionResponse{
@@ -173,33 +159,16 @@ func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, EventActionResponse{
-			Success: false,
-			Error:   "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, EventActionResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Parse request body
 	var req CreateEventRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, EventActionResponse{
-			Success: false,
-			Error:   "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
@@ -249,13 +218,12 @@ func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Convert participants
 	for _, p := range req.Participants {
 		createReq.Participants = append(createReq.Participants, domain.Participant{
-			Name:  p.Name,
-			Email: p.Email,
+			Person: domain.Person{Name: p.Name, Email: p.Email},
 		})
 	}
 
 	// Create event via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	event, err := s.nylasClient.CreateEvent(ctx, grantID, calendarID, createReq)
@@ -281,35 +249,25 @@ func (s *Server) handleGetEvent(w http.ResponseWriter, r *http.Request, eventID 
 	if calendarID == "" {
 		calendarID = "primary"
 	}
-
-	// Demo mode: return mock event
 	if s.demoMode {
-		events := demoEvents()
-		for _, e := range events {
+		for _, e := range demoEvents() {
 			if e.ID == eventID {
 				writeJSON(w, http.StatusOK, e)
 				return
 			}
 		}
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "Event not found"})
+		writeError(w, http.StatusNotFound, "Event not found")
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
 	}
 
-	// Fetch event from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	event, err := s.nylasClient.GetEvent(ctx, grantID, calendarID, eventID)
@@ -329,48 +287,23 @@ func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request, event
 	if calendarID == "" {
 		calendarID = "primary"
 	}
-
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, EventActionResponse{
-			Success: true,
-			Event: &EventResponse{
-				ID:         eventID,
-				CalendarID: calendarID,
-				Title:      "Updated Event",
-				Status:     "confirmed",
-			},
-			Message: "Event updated (demo mode)",
-		})
+	if s.handleDemoMode(w, EventActionResponse{
+		Success: true,
+		Event:   &EventResponse{ID: eventID, CalendarID: calendarID, Title: "Updated Event", Status: "confirmed"},
+		Message: "Event updated (demo mode)",
+	}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, EventActionResponse{
-			Success: false,
-			Error:   "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, EventActionResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Parse request body
 	var req UpdateEventRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, EventActionResponse{
-			Success: false,
-			Error:   "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
@@ -409,14 +342,13 @@ func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request, event
 	if len(req.Participants) > 0 {
 		for _, p := range req.Participants {
 			updateReq.Participants = append(updateReq.Participants, domain.Participant{
-				Name:  p.Name,
-				Email: p.Email,
+				Person: domain.Person{Name: p.Name, Email: p.Email},
 			})
 		}
 	}
 
 	// Update event via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	event, err := s.nylasClient.UpdateEvent(ctx, grantID, calendarID, eventID, updateReq)
@@ -442,40 +374,21 @@ func (s *Server) handleDeleteEvent(w http.ResponseWriter, r *http.Request, event
 	if calendarID == "" {
 		calendarID = "primary"
 	}
-
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, EventActionResponse{
-			Success: true,
-			Message: "Event deleted (demo mode)",
-		})
+	if s.handleDemoMode(w, EventActionResponse{Success: true, Message: "Event deleted (demo mode)"}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, EventActionResponse{
-			Success: false,
-			Error:   "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, EventActionResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Delete event via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
-	err = s.nylasClient.DeleteEvent(ctx, grantID, calendarID, eventID)
+	err := s.nylasClient.DeleteEvent(ctx, grantID, calendarID, eventID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, EventActionResponse{
 			Success: false,

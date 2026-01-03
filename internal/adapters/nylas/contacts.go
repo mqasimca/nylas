@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // contactResponse represents a contact from the API.
@@ -115,13 +116,8 @@ func (c *HTTPClient) GetContactsWithCursor(ctx context.Context, grantID string, 
 		return nil, err
 	}
 
-	contacts := make([]domain.Contact, len(result.Data))
-	for i, c := range result.Data {
-		contacts[i] = convertContact(c)
-	}
-
 	return &domain.ContactListResponse{
-		Data: contacts,
+		Data: util.Map(result.Data, convertContact),
 		Pagination: domain.Pagination{
 			NextCursor: result.NextCursor,
 			HasMore:    result.NextCursor != "",
@@ -215,24 +211,7 @@ func (c *HTTPClient) UpdateContact(ctx context.Context, grantID, contactID strin
 // DeleteContact deletes a contact.
 func (c *HTTPClient) DeleteContact(ctx context.Context, grantID, contactID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/%s", c.baseURL, grantID, contactID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
-	if err != nil {
-		return err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // GetContactGroups retrieves contact groups for a grant.
@@ -262,18 +241,15 @@ func (c *HTTPClient) GetContactGroups(ctx context.Context, grantID string) ([]do
 		return nil, err
 	}
 
-	groups := make([]domain.ContactGroup, len(result.Data))
-	for i, g := range result.Data {
-		groups[i] = domain.ContactGroup{
+	return util.Map(result.Data, func(g contactGroupResponse) domain.ContactGroup {
+		return domain.ContactGroup{
 			ID:      g.ID,
 			GrantID: g.GrantID,
 			Name:    g.Name,
 			Path:    g.Path,
 			Object:  g.Object,
 		}
-	}
-
-	return groups, nil
+	}), nil
 }
 
 // GetContactGroup retrieves a single contact group by ID.
@@ -371,24 +347,7 @@ func (c *HTTPClient) UpdateContactGroup(ctx context.Context, grantID, groupID st
 // DeleteContactGroup deletes a contact group.
 func (c *HTTPClient) DeleteContactGroup(ctx context.Context, grantID, groupID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/groups/%s", c.baseURL, grantID, groupID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
-	if err != nil {
-		return err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // convertContact converts an API contact response to domain model.

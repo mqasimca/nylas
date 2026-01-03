@@ -1,10 +1,8 @@
 package air
 
 import (
-	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -25,10 +23,7 @@ func (s *Server) handleContactGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -38,7 +33,7 @@ func (s *Server) handleContactGroups(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch contact groups from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	groups, err := s.nylasClient.GetContactGroups(ctx, grantID)
@@ -99,10 +94,7 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -144,7 +136,7 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch contacts from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	result, err := s.nylasClient.GetContactsWithCursor(ctx, grantID, params)

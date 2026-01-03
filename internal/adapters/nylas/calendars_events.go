@@ -12,10 +12,10 @@ import (
 )
 
 func (c *HTTPClient) GetEvents(ctx context.Context, grantID, calendarID string, params *domain.EventQueryParams) ([]domain.Event, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
-	if err := validateCalendarID(calendarID); err != nil {
+	if err := validateRequired("calendar ID", calendarID); err != nil {
 		return nil, err
 	}
 	result, err := c.GetEventsWithCursor(ctx, grantID, calendarID, params)
@@ -93,13 +93,13 @@ func (c *HTTPClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 
 // GetEvent retrieves a single event by ID.
 func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID string) (*domain.Event, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
-	if err := validateCalendarID(calendarID); err != nil {
+	if err := validateRequired("calendar ID", calendarID); err != nil {
 		return nil, err
 	}
-	if err := validateEventID(eventID); err != nil {
+	if err := validateRequired("event ID", eventID); err != nil {
 		return nil, err
 	}
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
@@ -240,14 +240,7 @@ func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 // DeleteEvent deletes an event.
 func (c *HTTPClient) DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // SendRSVP sends an RSVP response to an event invitation.

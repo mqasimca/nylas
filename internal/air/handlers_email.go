@@ -1,8 +1,6 @@
 package air
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -13,28 +11,15 @@ import (
 
 // handleListEmails returns emails with optional filtering.
 func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode: return mock emails
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, EmailsResponse{
-			Emails:  demoEmails(),
-			HasMore: false,
-		})
+	if s.handleDemoMode(w, EmailsResponse{Emails: demoEmails(), HasMore: false}) {
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
@@ -110,7 +95,7 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch messages from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	result, err := s.nylasClient.GetMessagesWithCursor(ctx, grantID, params)
@@ -187,25 +172,18 @@ func (s *Server) handleEmailByID(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleGetEmail(w http.ResponseWriter, r *http.Request, emailID string) {
 	// Demo mode: return mock email
 	if s.demoMode {
-		emails := demoEmails()
-		for _, e := range emails {
+		for _, e := range demoEmails() {
 			if e.ID == emailID {
 				writeJSON(w, http.StatusOK, e)
 				return
 			}
 		}
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "Email not found"})
+		writeError(w, http.StatusNotFound, "Email not found")
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
@@ -227,7 +205,7 @@ func (s *Server) handleGetEmail(w http.ResponseWriter, r *http.Request, emailID 
 	}
 
 	// Fetch message from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	msg, err := s.nylasClient.GetMessage(ctx, grantID, emailID)
@@ -261,45 +239,23 @@ func (s *Server) handleGetEmail(w http.ResponseWriter, r *http.Request, emailID 
 
 // handleUpdateEmail updates an email (mark read/unread, star/unstar).
 func (s *Server) handleUpdateEmail(w http.ResponseWriter, r *http.Request, emailID string) {
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, UpdateEmailResponse{
-			Success: true,
-			Message: "Email updated (demo mode)",
-		})
+	if s.handleDemoMode(w, UpdateEmailResponse{Success: true, Message: "Email updated (demo mode)"}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, UpdateEmailResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Parse request body
 	var req UpdateEmailRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, UpdateEmailResponse{
-			Success: false,
-			Error:   "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
-	// Update message via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	updateReq := &domain.UpdateMessageRequest{
@@ -308,7 +264,7 @@ func (s *Server) handleUpdateEmail(w http.ResponseWriter, r *http.Request, email
 		Folders: req.Folders,
 	}
 
-	_, err = s.nylasClient.UpdateMessage(ctx, grantID, emailID, updateReq)
+	_, err := s.nylasClient.UpdateMessage(ctx, grantID, emailID, updateReq)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, UpdateEmailResponse{
 			Success: false,
@@ -325,38 +281,21 @@ func (s *Server) handleUpdateEmail(w http.ResponseWriter, r *http.Request, email
 
 // handleDeleteEmail moves an email to trash.
 func (s *Server) handleDeleteEmail(w http.ResponseWriter, r *http.Request, emailID string) {
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, UpdateEmailResponse{
-			Success: true,
-			Message: "Email deleted (demo mode)",
-		})
+	if s.handleDemoMode(w, UpdateEmailResponse{Success: true, Message: "Email deleted (demo mode)"}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, UpdateEmailResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Delete message via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
-	err = s.nylasClient.DeleteMessage(ctx, grantID, emailID)
+	err := s.nylasClient.DeleteMessage(ctx, grantID, emailID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, UpdateEmailResponse{
 			Success: false,

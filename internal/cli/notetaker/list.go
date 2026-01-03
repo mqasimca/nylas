@@ -96,7 +96,7 @@ func newListCmd() *cobra.Command {
 					_, _ = yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM"))
 				}
 				if !n.CreatedAt.IsZero() {
-					_, _ = dim.Printf("  Created: %s\n", formatTimeAgo(n.CreatedAt))
+					_, _ = dim.Printf("  Created: %s\n", common.FormatTimeAgo(n.CreatedAt))
 				}
 				fmt.Println()
 			}

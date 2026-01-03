@@ -175,7 +175,7 @@ Examples:
 			// Add participants
 			for _, email := range participants {
 				req.Participants = append(req.Participants, domain.Participant{
-					Email: email,
+					Person: domain.Person{Email: email},
 				})
 			}
 
@@ -421,7 +421,7 @@ Examples:
 			if len(participants) > 0 {
 				for _, email := range participants {
 					req.Participants = append(req.Participants, domain.Participant{
-						Email: email,
+						Person: domain.Person{Email: email},
 					})
 				}
 			}

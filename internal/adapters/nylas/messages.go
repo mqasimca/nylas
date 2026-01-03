@@ -60,7 +60,7 @@ type messageResponse struct {
 
 // GetMessages retrieves recent messages for a grant (simple version).
 func (c *HTTPClient) GetMessages(ctx context.Context, grantID string, limit int) ([]domain.Message, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 	params := &domain.MessageQueryParams{Limit: limit}
@@ -69,7 +69,7 @@ func (c *HTTPClient) GetMessages(ctx context.Context, grantID string, limit int)
 
 // GetMessagesWithParams retrieves messages with query parameters.
 func (c *HTTPClient) GetMessagesWithParams(ctx context.Context, grantID string, params *domain.MessageQueryParams) ([]domain.Message, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 	resp, err := c.GetMessagesWithCursor(ctx, grantID, params)
@@ -81,7 +81,7 @@ func (c *HTTPClient) GetMessagesWithParams(ctx context.Context, grantID string, 
 
 // GetMessagesWithCursor retrieves messages with pagination cursor support.
 func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, params *domain.MessageQueryParams) (*domain.MessageListResponse, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 	if params == nil {
@@ -181,10 +181,10 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 
 // GetMessage retrieves a single message by ID.
 func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) (*domain.Message, error) {
-	if err := validateGrantID(grantID); err != nil {
+	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
-	if err := validateMessageID(messageID); err != nil {
+	if err := validateRequired("message ID", messageID); err != nil {
 		return nil, err
 	}
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
@@ -253,24 +253,7 @@ func (c *HTTPClient) UpdateMessage(ctx context.Context, grantID, messageID strin
 // DeleteMessage deletes a message (moves to trash).
 func (c *HTTPClient) DeleteMessage(ctx context.Context, grantID, messageID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
-	if err != nil {
-		return err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // convertMessages converts API message responses to domain models.
