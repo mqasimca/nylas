@@ -27,7 +27,7 @@ internal/
     tunnel/                   # Cloudflare tunnel
     webhookserver/            # Webhook server
   cli/                        # CLI commands
-    common/                   # Shared helpers (context, config, colors)
+    common/                   # Shared helpers (client, context, errors, flags, format, html)
     admin/                    # API key management
     ai/                       # AI commands
     auth/                     # Authentication
@@ -96,9 +96,39 @@ docs/                         # Documentation
 |-------|----------|---------|
 | **App Services** | `internal/app/` | Orchestrates adapters for workflows (auth login, OTP extraction) |
 | **CLI Helpers** | `internal/cli/common/` | Reusable utilities (context, format, colors, pagination) |
-| **Adapter Helpers** | `internal/adapters/nylas/` | HTTP helpers, request building, response handling |
+| **Adapter Helpers** | `internal/adapters/nylas/client_helpers.go` | HTTP helpers, request building, response handling |
+| **Air Helpers** | `internal/air/handlers_helpers.go` | Handler utilities (config checks, JSON parsing, demo mode) |
 
 > **Key difference:** App services coordinate multiple adapters. CLI helpers are stateless utilities. Adapter helpers handle API specifics.
+
+#### CLI Common Helpers (`internal/cli/common/`)
+
+| File | Helpers | Purpose |
+|------|---------|---------|
+| `client.go` | `GetCachedNylasClient()` | Thread-safe cached Nylas client |
+| `errors.go` | `WrapGetError()`, `WrapFetchError()`, `WrapCreateError()`, `WrapUpdateError()`, `WrapDeleteError()` | Consistent error wrapping |
+| `flags.go` | `AddLimitFlag()`, `AddFormatFlag()`, `AddIDFlag()`, `AddPageTokenFlag()` | Common CLI flag definitions |
+| `format.go` | `FormatParticipant()`, `FormatParticipants()`, `FormatFileSize()` | Display formatting |
+| `html.go` | `StripHTML()`, `StripHTMLPreserveLinks()` | HTML-to-text conversion |
+| `context.go` | `CreateContext()` | Standard context creation with timeout |
+
+#### Adapter Helpers (`internal/adapters/nylas/client_helpers.go`)
+
+| Helper | Purpose |
+|--------|---------|
+| `doGet(ctx, url, &result)` | GET request with JSON decoding |
+| `doGetWithNotFound(ctx, url, &result, notFoundErr)` | GET with 404 handling |
+| `doDelete(ctx, url)` | DELETE request (accepts 200/204) |
+| `QueryBuilder` | Fluent URL query parameter builder |
+
+**QueryBuilder usage:**
+```go
+qb := NewQueryBuilder().
+    Add("limit", "50").
+    AddInt("offset", params.Offset).
+    AddBoolPtr("unread", params.Unread)
+url := qb.BuildURL(baseURL)
+```
 
 ---
 
@@ -108,11 +138,17 @@ docs/                         # Documentation
 
 **Three layers:**
 
-1. **Domain** (`internal/domain/`) - 28 files
+1. **Domain** (`internal/domain/`) - 29 files
    - Pure business logic, no external dependencies
    - Core types: Message, Email, Calendar, Event, Contact, Grant, Webhook
    - Feature types: AI, Analytics, Admin, Scheduler, Notetaker, Slack, Inbound
    - Support types: Config, Errors, Provider, Utilities
+   - Shared interfaces: `interfaces.go` (Paginated, QueryParams, Resource, Timestamped, Validator)
+
+   **Key type relationships:**
+   - `Person` - Base type with Name/Email (in `calendar.go`)
+   - `EmailParticipant` - Type alias for `Person` (in `email.go`)
+   - `Participant` - Embeds `Person`, adds Status/Comment for calendar events
 
 2. **Ports** (`internal/ports/`) - 7 interface files
    - `nylas.go` - NylasClient interface (main API operations)
@@ -161,6 +197,39 @@ Calendar enforces working hours (soft warnings) and break blocks (hard constrain
 **Tests:** `internal/cli/calendar/helpers_test.go`
 
 **Details:** See [commands/timezone.md](commands/timezone.md#working-hours--break-management)
+
+---
+
+## Domain Interfaces
+
+Shared interfaces in `internal/domain/interfaces.go` enable generic programming:
+
+| Interface | Purpose | Implemented By |
+|-----------|---------|----------------|
+| `Paginated` | Resources with pagination info | `MessageListResponse`, `EventListResponse`, etc. |
+| `QueryParams` | Query parameter types | `MessageQueryParams`, `EventQueryParams`, etc. |
+| `Resource` | Resources with ID and GrantID | `Message`, `Event`, `Contact`, etc. |
+| `Timestamped` | Resources with timestamps | `Message`, `Event`, `Draft`, etc. |
+| `Validator` | Self-validating types | `EventWhen`, `SendMessageRequest`, `BreakBlock` |
+
+**Type embedding example:**
+```go
+// Person is the base type for email/calendar participants
+type Person struct {
+    Name  string `json:"name,omitempty"`
+    Email string `json:"email"`
+}
+
+// Participant embeds Person and adds calendar-specific fields
+type Participant struct {
+    Person
+    Status  string `json:"status,omitempty"`
+    Comment string `json:"comment,omitempty"`
+}
+
+// EmailParticipant is an alias for Person (backward compatibility)
+type EmailParticipant = Person
+```
 
 ---
 
