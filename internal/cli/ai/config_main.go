@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -54,7 +55,7 @@ func newConfigShowCmd() *cobra.Command {
 		Short: "Show full AI configuration",
 		Long:  "Display the complete AI configuration in YAML format",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getConfigStore(cmd)
+			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
@@ -85,7 +86,7 @@ func newConfigListCmd() *cobra.Command {
 		Short: "List all AI configuration keys and values",
 		Long:  "Display all AI configuration settings as key-value pairs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getConfigStore(cmd)
+			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
@@ -214,7 +215,7 @@ Examples:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
-			store := getConfigStore(cmd)
+			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)

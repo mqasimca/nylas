@@ -64,8 +64,10 @@ func (p *Proxy) handleLocalToolCall(req *rpcRequest) ([]byte, bool) {
 }
 
 // createToolSuccessResponse creates a successful MCP tool call response.
+// Returns an MCP-formatted JSON-RPC response with the result embedded as text content.
 func (p *Proxy) createToolSuccessResponse(id any, result map[string]any) []byte {
-	// Format result as text content (MCP tool response format)
+	// Format result as text content (MCP tool response format).
+	// json.Marshal can't fail on simple map[string]any with string/primitive values.
 	resultJSON, _ := json.Marshal(result)
 
 	response := map[string]any{
@@ -81,6 +83,7 @@ func (p *Proxy) createToolSuccessResponse(id any, result map[string]any) []byte 
 		},
 	}
 
+	// json.Marshal can't fail on this well-formed map structure.
 	resp, _ := json.Marshal(response)
 	return resp
 }
@@ -101,6 +104,7 @@ func (p *Proxy) createToolErrorResponse(id any, message string) []byte {
 		},
 	}
 
+	// json.Marshal can't fail on this well-formed map structure.
 	resp, _ := json.Marshal(response)
 	return resp
 }
@@ -122,8 +126,9 @@ func (p *Proxy) createErrorResponse(req *rpcRequest, err error) []byte {
 		},
 	}
 
-	result, _ := json.Marshal(errorResp)
-	return result
+	// json.Marshal can't fail on this well-formed map structure.
+	respBytes, _ := json.Marshal(errorResp)
+	return respBytes
 }
 
 // modifyToolsListResponse modifies the tools/list response to make get_grant email optional.

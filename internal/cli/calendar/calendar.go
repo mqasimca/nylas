@@ -4,7 +4,6 @@ package calendar
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/adapters/config"
@@ -64,7 +63,7 @@ func getGrantID(args []string) (string, error) {
 }
 
 func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	return common.CreateContext()
 }
 
 func getLLMRouter() (ports.LLMRouter, error) {
@@ -97,31 +96,4 @@ func getLLMRouter() (ports.LLMRouter, error) {
 	// Create and cache router
 	llmRouter = ai.NewRouter(cfg.AI)
 	return llmRouter, nil
-}
-
-// getConfigStore returns the appropriate config store based on the --config flag
-func getConfigStore(cmd *cobra.Command) ports.ConfigStore {
-	// Try to get custom config path from flag
-	configPath, _ := cmd.Flags().GetString("config")
-	if configPath == "" {
-		// Try to get from parent (persistent flag)
-		if cmd.Parent() != nil {
-			configPath, _ = cmd.Parent().Flags().GetString("config")
-		}
-	}
-
-	// Walk up parent chain to find config flag
-	if configPath == "" {
-		for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
-			if p, _ := parent.Flags().GetString("config"); p != "" {
-				configPath = p
-				break
-			}
-		}
-	}
-
-	if configPath != "" {
-		return config.NewFileStore(configPath)
-	}
-	return config.NewDefaultFileStore()
 }

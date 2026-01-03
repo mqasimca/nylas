@@ -141,7 +141,7 @@ func (s *Server) handleTestAIConnection(w http.ResponseWriter, r *http.Request) 
 	aiStore.mu.RUnlock()
 
 	// Simulate connection test
-	result := map[string]interface{}{
+	result := map[string]any{
 		"success":  true,
 		"provider": config.Provider,
 		"model":    config.Model,
@@ -164,7 +164,7 @@ func (s *Server) handleGetAIUsage(w http.ResponseWriter, r *http.Request) {
 	aiStore.mu.RLock()
 	defer aiStore.mu.RUnlock()
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"stats":       aiStore.stats,
 		"budget":      aiStore.config.UsageBudget,
 		"spent":       aiStore.config.UsageSpent,
@@ -180,7 +180,7 @@ func (s *Server) handleGetAIUsage(w http.ResponseWriter, r *http.Request) {
 
 // GetAIProviders returns available AI providers
 func (s *Server) handleGetAIProviders(w http.ResponseWriter, r *http.Request) {
-	providers := []map[string]interface{}{
+	providers := []map[string]any{
 		{
 			"id":          "claude",
 			"name":        "Anthropic Claude",

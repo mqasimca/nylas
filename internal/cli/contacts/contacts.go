@@ -3,7 +3,6 @@ package contacts
 
 import (
 	"context"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
@@ -67,5 +66,5 @@ func getGrantID(args []string) (string, error) {
 }
 
 func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	return common.CreateContext()
 }

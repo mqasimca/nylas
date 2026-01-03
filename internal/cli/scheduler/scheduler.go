@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
@@ -79,5 +79,5 @@ func getClient() (ports.NylasClient, error) {
 }
 
 func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	return common.CreateContext()
 }

@@ -1,5 +1,7 @@
 package domain
 
+import "strings"
+
 // Config represents the application configuration.
 // Note: client_id is stored in keystore, not config file.
 type Config struct {
@@ -76,10 +78,14 @@ type BreakBlock struct {
 
 // GetScheduleForDay returns the schedule for a given weekday.
 // Checks day-specific, weekend, then default in order of precedence.
+// Weekday is case-insensitive (e.g., "Monday", "monday", "MONDAY" all work).
 func (w *WorkingHoursConfig) GetScheduleForDay(weekday string) *DaySchedule {
 	if w == nil {
 		return DefaultWorkingHours()
 	}
+
+	// Normalize weekday to lowercase for case-insensitive matching
+	weekday = strings.ToLower(weekday)
 
 	// Check day-specific schedule first
 	var daySchedule *DaySchedule

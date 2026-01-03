@@ -42,7 +42,7 @@ func TestCLI_AI_FocusTime_BreakAwareness(t *testing.T) {
 	// Create config with breaks
 	fakeHome := t.TempDir()
 	fakeConfigDir := filepath.Join(fakeHome, ".config", "nylas")
-	if err := os.MkdirAll(fakeConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(fakeConfigDir, 0750); err != nil {
 		t.Fatalf("Failed to create config directory: %v", err)
 	}
 
@@ -158,7 +158,7 @@ func TestCLI_AI_Scheduling_BreakAwareness(t *testing.T) {
 	// Create config with breaks
 	fakeHome := t.TempDir()
 	fakeConfigDir := filepath.Join(fakeHome, ".config", "nylas")
-	if err := os.MkdirAll(fakeConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(fakeConfigDir, 0750); err != nil {
 		t.Fatalf("Failed to create config directory: %v", err)
 	}
 
@@ -285,7 +285,7 @@ func TestCLI_AI_ConflictDetection_BreakAwareness(t *testing.T) {
 	// Create config with breaks
 	fakeHome := t.TempDir()
 	fakeConfigDir := filepath.Join(fakeHome, ".config", "nylas")
-	if err := os.MkdirAll(fakeConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(fakeConfigDir, 0750); err != nil {
 		t.Fatalf("Failed to create config directory: %v", err)
 	}
 

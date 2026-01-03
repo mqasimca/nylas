@@ -90,12 +90,8 @@ func (s *Server) handleListNotetakers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -185,12 +181,8 @@ func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -246,12 +238,8 @@ func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -286,12 +274,8 @@ func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -338,12 +322,8 @@ func (s *Server) handleDeleteNotetaker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -356,7 +336,7 @@ func (s *Server) handleDeleteNotetaker(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
-	err = s.nylasClient.DeleteNotetaker(ctx, grantID, id)
+	err := s.nylasClient.DeleteNotetaker(ctx, grantID, id)
 	if err != nil {
 		http.Error(w, "Failed to cancel notetaker: "+err.Error(), http.StatusInternalServerError)
 		return

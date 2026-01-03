@@ -25,7 +25,7 @@ func (c *HTTPClient) UpdateDraft(ctx context.Context, grantID, draftID string, r
 func (c *HTTPClient) updateDraftWithJSON(ctx context.Context, grantID, draftID string, req *domain.CreateDraftRequest) (*domain.Draft, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts/%s", c.baseURL, grantID, draftID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 	}
@@ -86,7 +86,7 @@ func (c *HTTPClient) updateDraftWithMultipart(ctx context.Context, grantID, draf
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts/%s", c.baseURL, grantID, draftID)
 
 	// Build the message JSON
-	message := map[string]interface{}{
+	message := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 	}

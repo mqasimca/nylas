@@ -121,7 +121,7 @@ func (c *HTTPClient) CreateInboundInbox(ctx context.Context, email string) (*dom
 	queryURL := fmt.Sprintf("%s/v3/grants", c.baseURL)
 
 	// Create the request payload for custom auth with inbox provider
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"provider": "inbox",
 		"settings": map[string]string{
 			"email": email,

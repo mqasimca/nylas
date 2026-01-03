@@ -100,7 +100,7 @@ func (s *Server) handleGetFocusModeState(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Calculate remaining time
-	response := map[string]interface{}{
+	response := map[string]any{
 		"state": state,
 	}
 
@@ -172,7 +172,7 @@ func (s *Server) handleStopFocusMode(w http.ResponseWriter, r *http.Request) {
 	fmStore.state.InBreak = false
 
 	w.Header().Set("Content-Type", "application/json")
-	resp := map[string]interface{}{
+	resp := map[string]any{
 		"status":       "stopped",
 		"sessionCount": fmStore.state.SessionCount,
 	}

@@ -2,9 +2,24 @@ package air
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/mqasimca/nylas/internal/air/cache"
 )
+
+// requireDefaultGrant gets the default grant ID, writing an error response if not available.
+// Returns the grant ID and true if successful, or empty string and false if error written.
+// Callers should return immediately when ok is false.
+func (s *Server) requireDefaultGrant(w http.ResponseWriter) (grantID string, ok bool) {
+	grantID, err := s.grantStore.GetDefaultGrant()
+	if err != nil || grantID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "No default account. Please select an account first.",
+		})
+		return "", false
+	}
+	return grantID, true
+}
 
 // getEmailStore returns the email store for the given email account.
 func (s *Server) getEmailStore(email string) (*cache.EmailStore, error) {

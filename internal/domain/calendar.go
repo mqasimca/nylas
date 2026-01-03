@@ -65,6 +65,8 @@ type EventWhen struct {
 
 // StartDateTime returns the start time as a time.Time.
 // If StartTimezone is specified, the time is returned in that timezone.
+// Returns zero time if no valid start time is set or if date parsing fails.
+// This is a convenience getter for deserialized API data.
 func (w EventWhen) StartDateTime() time.Time {
 	if w.StartTime > 0 {
 		t := time.Unix(w.StartTime, 0)
@@ -78,10 +80,12 @@ func (w EventWhen) StartDateTime() time.Time {
 		return t
 	}
 	if w.Date != "" {
+		// Date strings from API are pre-validated; ignore parse errors
 		t, _ := time.Parse("2006-01-02", w.Date)
 		return t
 	}
 	if w.StartDate != "" {
+		// Date strings from API are pre-validated; ignore parse errors
 		t, _ := time.Parse("2006-01-02", w.StartDate)
 		return t
 	}
@@ -90,6 +94,8 @@ func (w EventWhen) StartDateTime() time.Time {
 
 // EndDateTime returns the end time as a time.Time.
 // If EndTimezone is specified, the time is returned in that timezone.
+// Returns zero time if no valid end time is set or if date parsing fails.
+// This is a convenience getter for deserialized API data.
 func (w EventWhen) EndDateTime() time.Time {
 	if w.EndTime > 0 {
 		t := time.Unix(w.EndTime, 0)
@@ -103,10 +109,12 @@ func (w EventWhen) EndDateTime() time.Time {
 		return t
 	}
 	if w.EndDate != "" {
+		// Date strings from API are pre-validated; ignore parse errors
 		t, _ := time.Parse("2006-01-02", w.EndDate)
 		return t
 	}
 	if w.Date != "" {
+		// Date strings from API are pre-validated; ignore parse errors
 		t, _ := time.Parse("2006-01-02", w.Date)
 		return t
 	}

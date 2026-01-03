@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
@@ -61,7 +62,7 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 			defer cancel()
 
 			// Load config to get working hours - respect --config flag
-			configStore := getConfigStore(cmd)
+			configStore := common.GetConfigStore(cmd)
 			cfg, _ := configStore.Load()
 
 			// Get working hours from config (use default if not set)

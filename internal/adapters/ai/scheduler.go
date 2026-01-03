@@ -256,7 +256,10 @@ func (s *AIScheduler) findMeetingTime(ctx context.Context, args map[string]any, 
 		},
 	}
 
-	bytes, _ := json.Marshal(result)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
 	return string(bytes), nil
 }
 
@@ -272,7 +275,10 @@ func (s *AIScheduler) checkDST(ctx context.Context, args map[string]any) (string
 		"warning":  "",
 	}
 
-	bytes, _ := json.Marshal(result)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
 	return string(bytes), nil
 }
 
@@ -283,7 +289,10 @@ func (s *AIScheduler) validateWorkingHours(ctx context.Context, args map[string]
 		"violations": []string{},
 	}
 
-	bytes, _ := json.Marshal(result)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
 	return string(bytes), nil
 }
 
@@ -297,7 +306,10 @@ func (s *AIScheduler) createEvent(ctx context.Context, args map[string]any, req 
 		"message": "Event created successfully",
 	}
 
-	bytes, _ := json.Marshal(result)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
 	return string(bytes), nil
 }
 
@@ -308,7 +320,10 @@ func (s *AIScheduler) getAvailability(ctx context.Context, args map[string]any, 
 		"busySlots":      []string{},
 	}
 
-	bytes, _ := json.Marshal(result)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
 	return string(bytes), nil
 }
 
@@ -323,7 +338,10 @@ func (s *AIScheduler) getTimezoneInfo(ctx context.Context, args map[string]any) 
 		"isDST":    false,
 	}
 
-	bytes, _ := json.Marshal(result)
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
 	return string(bytes), nil
 }
 

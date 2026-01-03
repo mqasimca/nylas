@@ -134,7 +134,7 @@ func (c *HTTPClient) CreateDraft(ctx context.Context, grantID string, req *domai
 func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, req *domain.CreateDraftRequest) (*domain.Draft, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 	}
@@ -195,7 +195,7 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
 
 	// Build the message JSON
-	message := map[string]interface{}{
+	message := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 	}
@@ -293,7 +293,7 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
 
 	// Build the message JSON
-	message := map[string]interface{}{
+	message := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 	}

@@ -3,7 +3,6 @@ package admin
 
 import (
 	"context"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
@@ -41,5 +40,5 @@ func getClient() (ports.NylasClient, error) {
 }
 
 func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	return common.CreateContext()
 }
