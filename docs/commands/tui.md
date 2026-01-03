@@ -2,7 +2,7 @@
 
 Interactive terminal interface for Nylas email, calendar, and contacts.
 
-> **Quick Links:** [README](../README.md) | [Commands](COMMANDS.md) | [Development](DEVELOPMENT.md)
+> **Quick Links:** [README](../../README.md) | [Commands](../COMMANDS.md) | [Development](../DEVELOPMENT.md)
 
 ---
 
