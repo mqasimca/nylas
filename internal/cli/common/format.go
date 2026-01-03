@@ -429,3 +429,34 @@ func FormatSize(bytes int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
+
+// PrintEmptyState prints a consistent "no items found" message.
+func PrintEmptyState(resourceName string) {
+	if IsQuiet() {
+		return
+	}
+	fmt.Printf("No %s found.\n", resourceName)
+}
+
+// PrintEmptyStateWithHint prints empty state with a helpful hint.
+func PrintEmptyStateWithHint(resourceName, hint string) {
+	if IsQuiet() {
+		return
+	}
+	fmt.Printf("No %s found.\n", resourceName)
+	if hint != "" {
+		PrintInfo(hint)
+	}
+}
+
+// PrintListHeader prints a consistent "found N items" header.
+func PrintListHeader(count int, resourceName string) {
+	if IsQuiet() {
+		return
+	}
+	if count == 1 {
+		fmt.Printf("Found 1 %s:\n\n", resourceName)
+	} else {
+		fmt.Printf("Found %d %ss:\n\n", count, resourceName)
+	}
+}

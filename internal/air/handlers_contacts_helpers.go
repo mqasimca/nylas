@@ -5,9 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-
-	"context"
 
 	"github.com/mqasimca/nylas/internal/air/cache"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -35,8 +32,7 @@ func (s *Server) handleContactPhoto(w http.ResponseWriter, r *http.Request, cont
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		http.Error(w, "Not configured", http.StatusServiceUnavailable)
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -53,14 +49,13 @@ func (s *Server) handleContactPhoto(w http.ResponseWriter, r *http.Request, cont
 	}
 
 	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		http.Error(w, "No default account", http.StatusBadRequest)
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
 	// Fetch contact with picture from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	contact, err := s.nylasClient.GetContactWithPicture(ctx, grantID, contactID, true)

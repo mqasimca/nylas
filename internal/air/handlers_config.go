@@ -1,11 +1,9 @@
 package air
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"slices"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -196,10 +194,7 @@ func (s *Server) handleListFolders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -209,7 +204,7 @@ func (s *Server) handleListFolders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch folders from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	folders, err := s.nylasClient.GetFolders(ctx, grantID)

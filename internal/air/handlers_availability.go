@@ -1,8 +1,6 @@
 package air
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -99,20 +97,14 @@ func (s *Server) handleAvailability(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
 	// Parse request
 	var req AvailabilityRequest
 	if r.Method == http.MethodPost {
-		if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "Invalid request body",
-			})
+		if !parseJSONBody(w, r, &req) {
 			return
 		}
 	} else {
@@ -183,7 +175,7 @@ func (s *Server) handleAvailability(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	result, err := s.nylasClient.GetAvailability(ctx, domainReq)
@@ -236,10 +228,7 @@ func (s *Server) handleFreeBusy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -251,10 +240,7 @@ func (s *Server) handleFreeBusy(w http.ResponseWriter, r *http.Request) {
 	// Parse request
 	var req FreeBusyRequest
 	if r.Method == http.MethodPost {
-		if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "Invalid request body",
-			})
+		if !parseJSONBody(w, r, &req) {
 			return
 		}
 	} else {
@@ -302,7 +288,7 @@ func (s *Server) handleFreeBusy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	result, err := s.nylasClient.GetFreeBusy(ctx, grantID, domainReq)
@@ -371,10 +357,7 @@ func (s *Server) handleConflicts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
@@ -410,7 +393,7 @@ func (s *Server) handleConflicts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch events
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	params := &domain.EventQueryParams{

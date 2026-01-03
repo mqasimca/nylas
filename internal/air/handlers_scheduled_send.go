@@ -50,22 +50,18 @@ func (s *Server) listScheduledMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
 
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	ctx := r.Context()
+	ctx, cancel := s.withTimeout(r)
+	defer cancel()
+
 	scheduled, err := s.nylasClient.ListScheduledMessages(ctx, grantID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
@@ -151,18 +147,18 @@ func (s *Server) cancelScheduledMessage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "Not configured"})
+	if !s.requireConfig(w) {
 		return
 	}
 
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "No default account"})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	ctx := r.Context()
+	ctx, cancel := s.withTimeout(r)
+	defer cancel()
+
 	if err := s.nylasClient.CancelScheduledMessage(ctx, grantID, scheduleID); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
 			"error": "Failed to cancel: " + err.Error(),

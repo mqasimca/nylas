@@ -27,7 +27,7 @@ internal/
     tunnel/                   # Cloudflare tunnel
     webhookserver/            # Webhook server
   cli/                        # CLI commands
-    common/                   # Shared helpers (client, context, errors, flags, format, html)
+    common/                   # Shared helpers (client, context, errors, flags, format, html, timeutil)
     admin/                    # API key management
     ai/                       # AI commands
     auth/                     # Authentication
@@ -108,9 +108,10 @@ docs/                         # Documentation
 | `client.go` | `GetCachedNylasClient()` | Thread-safe cached Nylas client |
 | `errors.go` | `WrapGetError()`, `WrapFetchError()`, `WrapCreateError()`, `WrapUpdateError()`, `WrapDeleteError()` | Consistent error wrapping |
 | `flags.go` | `AddLimitFlag()`, `AddFormatFlag()`, `AddIDFlag()`, `AddPageTokenFlag()` | Common CLI flag definitions |
-| `format.go` | `FormatParticipant()`, `FormatParticipants()`, `FormatFileSize()` | Display formatting |
+| `format.go` | `FormatParticipant()`, `FormatParticipants()`, `FormatSize()`, `PrintEmptyState()`, `PrintListHeader()` | Display formatting and output helpers |
 | `html.go` | `StripHTML()`, `StripHTMLPreserveLinks()` | HTML-to-text conversion |
 | `context.go` | `CreateContext()` | Standard context creation with timeout |
+| `timeutil.go` | `ParseDate()`, `FormatDate()`, `FormatDisplayDate()` + constants | Time parsing, formatting, and standard timeouts |
 
 #### Adapter Helpers (`internal/adapters/nylas/client_helpers.go`)
 
