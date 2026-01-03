@@ -218,8 +218,7 @@ func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 	// Convert participants
 	for _, p := range req.Participants {
 		createReq.Participants = append(createReq.Participants, domain.Participant{
-			Name:  p.Name,
-			Email: p.Email,
+			Person: domain.Person{Name: p.Name, Email: p.Email},
 		})
 	}
 
@@ -343,8 +342,7 @@ func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request, event
 	if len(req.Participants) > 0 {
 		for _, p := range req.Participants {
 			updateReq.Participants = append(updateReq.Participants, domain.Participant{
-				Name:  p.Name,
-				Email: p.Email,
+				Person: domain.Person{Name: p.Name, Email: p.Email},
 			})
 		}
 	}

@@ -94,7 +94,7 @@ func newCheckConflictsCmd() *cobra.Command {
 			// Add participants
 			for _, email := range participants {
 				proposedEvent.Participants = append(proposedEvent.Participants, domain.Participant{
-					Email: email,
+					Person: domain.Person{Email: email},
 				})
 			}
 

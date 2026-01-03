@@ -436,8 +436,7 @@ func TestParticipant_Creation(t *testing.T) {
 		{
 			name: "creates participant with all fields",
 			participant: Participant{
-				Name:    "John Doe",
-				Email:   "john@example.com",
+				Person:  Person{Name: "John Doe", Email: "john@example.com"},
 				Status:  "yes",
 				Comment: "Looking forward to it",
 			},
@@ -447,7 +446,7 @@ func TestParticipant_Creation(t *testing.T) {
 		{
 			name: "creates participant with minimal fields",
 			participant: Participant{
-				Email: "jane@example.com",
+				Person: Person{Email: "jane@example.com"},
 			},
 			wantEmail:  "jane@example.com",
 			wantStatus: "",

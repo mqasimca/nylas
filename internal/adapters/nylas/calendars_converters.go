@@ -42,8 +42,7 @@ func convertEvent(e eventResponse) domain.Event {
 		Comment string `json:"comment"`
 	}) domain.Participant {
 		return domain.Participant{
-			Name:    p.Name,
-			Email:   p.Email,
+			Person:  domain.Person{Name: p.Name, Email: p.Email},
 			Status:  p.Status,
 			Comment: p.Comment,
 		}
@@ -52,8 +51,7 @@ func convertEvent(e eventResponse) domain.Event {
 	var organizer *domain.Participant
 	if e.Organizer != nil {
 		organizer = &domain.Participant{
-			Name:    e.Organizer.Name,
-			Email:   e.Organizer.Email,
+			Person:  domain.Person{Name: e.Organizer.Name, Email: e.Organizer.Email},
 			Status:  e.Organizer.Status,
 			Comment: e.Organizer.Comment,
 		}

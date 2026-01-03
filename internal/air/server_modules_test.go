@@ -93,8 +93,8 @@ func TestDomainEventToCached(t *testing.T) {
 		Status: "confirmed",
 		Busy:   true,
 		Participants: []domain.Participant{
-			{Name: "Alice", Email: "alice@example.com"},
-			{Name: "Bob", Email: "bob@example.com"},
+			{Person: domain.Person{Name: "Alice", Email: "alice@example.com"}},
+			{Person: domain.Person{Name: "Bob", Email: "bob@example.com"}},
 		},
 	}
 
@@ -219,8 +219,8 @@ func TestEventParticipantsToStrings(t *testing.T) {
 	t.Parallel()
 
 	participants := []domain.Participant{
-		{Name: "Alice", Email: "alice@example.com"},
-		{Name: "", Email: "calendar@example.com"},
+		{Person: domain.Person{Name: "Alice", Email: "alice@example.com"}},
+		{Person: domain.Person{Name: "", Email: "calendar@example.com"}},
 	}
 
 	result := eventParticipantsToStrings(participants)

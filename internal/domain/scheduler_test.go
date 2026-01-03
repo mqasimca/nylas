@@ -420,11 +420,10 @@ func TestBooking_Creation(t *testing.T) {
 		EventID:   "event-456",
 		Title:     "Strategy Meeting",
 		Organizer: Participant{
-			Name:  "Host User",
-			Email: "host@example.com",
+			Person: Person{Name: "Host User", Email: "host@example.com"},
 		},
 		Participants: []Participant{
-			{Name: "Guest User", Email: "guest@example.com", Status: "yes"},
+			{Person: Person{Name: "Guest User", Email: "guest@example.com"}, Status: "yes"},
 		},
 		StartTime:   now.Add(24 * time.Hour),
 		EndTime:     now.Add(25 * time.Hour),

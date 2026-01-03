@@ -174,7 +174,7 @@ func (v *AvailabilityView) createEventFromSlot(slot domain.AvailableSlot) {
 	// Add participants
 	for _, email := range v.participants {
 		event.Participants = append(event.Participants, domain.Participant{
-			Email:  email,
+			Person: domain.Person{Email: email},
 			Status: "noreply",
 		})
 	}

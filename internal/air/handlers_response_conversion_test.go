@@ -291,8 +291,8 @@ func TestEventToResponse(t *testing.T) {
 				ID:    "evt-004",
 				Title: "Team Meeting",
 				Participants: []domain.Participant{
-					{Name: "Alice", Email: "alice@example.com", Status: "yes"},
-					{Name: "Bob", Email: "bob@example.com", Status: "maybe"},
+					{Person: domain.Person{Name: "Alice", Email: "alice@example.com"}, Status: "yes"},
+					{Person: domain.Person{Name: "Bob", Email: "bob@example.com"}, Status: "maybe"},
 				},
 			},
 			checkFunc: func(resp EventResponse) bool {
