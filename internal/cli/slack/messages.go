@@ -82,7 +82,7 @@ Examples:
 			if fetchAll || expandThreads {
 				ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 			} else {
-				ctx, cancel = createContext()
+				ctx, cancel = common.CreateContext()
 			}
 			defer cancel()
 

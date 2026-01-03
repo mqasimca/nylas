@@ -241,18 +241,21 @@ type MeetingMetadata struct {
 // ============================================================================
 
 // FocusTimeSettings represents user preferences for focus time protection.
+// Field order optimized for memory alignment (8-byte fields first, bools grouped at end).
 type FocusTimeSettings struct {
-	Enabled              bool                       `json:"enabled"`
-	AutoBlock            bool                       `json:"auto_block"`            // Auto-create focus blocks
-	AutoDecline          bool                       `json:"auto_decline"`          // Auto-decline meeting requests
+	// 8-byte aligned fields
+	TargetHoursPerWeek   float64                    `json:"target_hours_per_week"` // Target focus hours per week
 	MinBlockDuration     int                        `json:"min_block_duration"`    // Minimum focus block minutes
 	MaxBlockDuration     int                        `json:"max_block_duration"`    // Maximum focus block minutes
-	TargetHoursPerWeek   float64                    `json:"target_hours_per_week"` // Target focus hours per week
-	AllowUrgentOverride  bool                       `json:"allow_urgent_override"` // Allow override for urgent meetings
-	RequireApproval      bool                       `json:"require_approval"`      // Require approval for overrides
 	ProtectedDays        []string                   `json:"protected_days"`        // Days to protect (e.g., "Wednesday")
 	ExcludedTimeRanges   []TimeRange                `json:"excluded_time_ranges"`  // Times to exclude from protection
 	NotificationSettings FocusTimeNotificationPrefs `json:"notification_settings"`
+	// Bool fields grouped to minimize padding
+	Enabled             bool `json:"enabled"`
+	AutoBlock           bool `json:"auto_block"`            // Auto-create focus blocks
+	AutoDecline         bool `json:"auto_decline"`          // Auto-decline meeting requests
+	AllowUrgentOverride bool `json:"allow_urgent_override"` // Allow override for urgent meetings
+	RequireApproval     bool `json:"require_approval"`      // Require approval for overrides
 }
 
 // TimeRange represents a time range within a day.
@@ -287,32 +290,38 @@ type FocusTimeAnalysis struct {
 }
 
 // ProtectedBlock represents an active focus time block on the calendar.
+// Field order optimized for memory alignment (8-byte fields first, bools grouped at end).
 type ProtectedBlock struct {
+	// 8-byte aligned fields
 	ID                string              `json:"id"`
 	CalendarEventID   string              `json:"calendar_event_id,omitempty"` // Linked calendar event
 	StartTime         time.Time           `json:"start_time"`
 	EndTime           time.Time           `json:"end_time"`
-	Duration          int                 `json:"duration"` // Minutes
-	IsRecurring       bool                `json:"is_recurring"`
-	RecurrencePattern string              `json:"recurrence_pattern,omitempty"` // e.g., "weekly"
-	Priority          MeetingPriority     `json:"priority"`
-	Reason            string              `json:"reason"`            // Why this block is protected
-	AllowOverride     bool                `json:"allow_override"`    // Can be overridden
-	OverrideApproved  bool                `json:"override_approved"` // Override was approved
-	OverrideReason    string              `json:"override_reason,omitempty"`
-	ProtectionRules   FocusProtectionRule `json:"protection_rules"`
 	CreatedAt         time.Time           `json:"created_at"`
 	UpdatedAt         time.Time           `json:"updated_at"`
+	RecurrencePattern string              `json:"recurrence_pattern,omitempty"` // e.g., "weekly"
+	Priority          MeetingPriority     `json:"priority"`
+	Reason            string              `json:"reason"` // Why this block is protected
+	OverrideReason    string              `json:"override_reason,omitempty"`
+	ProtectionRules   FocusProtectionRule `json:"protection_rules"`
+	Duration          int                 `json:"duration"` // Minutes
+	// Bool fields grouped to minimize padding
+	IsRecurring      bool `json:"is_recurring"`
+	AllowOverride    bool `json:"allow_override"`    // Can be overridden
+	OverrideApproved bool `json:"override_approved"` // Override was approved
 }
 
 // FocusProtectionRule defines how a focus block is protected.
+// Field order optimized for memory alignment.
 type FocusProtectionRule struct {
-	AutoDecline          bool     `json:"auto_decline"`           // Auto-decline meeting requests
-	SuggestAlternatives  bool     `json:"suggest_alternatives"`   // Suggest alternative times
-	AllowCriticalMeeting bool     `json:"allow_critical_meeting"` // Allow critical priority meetings
-	RequireApproval      bool     `json:"require_approval"`       // Require manual approval
-	DeclineMessage       string   `json:"decline_message"`        // Custom decline message
-	AlternativeTimes     []string `json:"alternative_times"`      // Suggested alternative time slots
+	// 8-byte aligned fields
+	DeclineMessage   string   `json:"decline_message"`   // Custom decline message
+	AlternativeTimes []string `json:"alternative_times"` // Suggested alternative time slots
+	// Bool fields grouped to minimize padding
+	AutoDecline          bool `json:"auto_decline"`           // Auto-decline meeting requests
+	SuggestAlternatives  bool `json:"suggest_alternatives"`   // Suggest alternative times
+	AllowCriticalMeeting bool `json:"allow_critical_meeting"` // Allow critical priority meetings
+	RequireApproval      bool `json:"require_approval"`       // Require manual approval
 }
 
 // OverrideRequest represents a request to override a protected focus block.

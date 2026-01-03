@@ -64,7 +64,7 @@ Examples:
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get calendar ID if not specified

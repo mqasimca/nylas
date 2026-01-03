@@ -187,7 +187,7 @@ func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CreateNotetakerRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

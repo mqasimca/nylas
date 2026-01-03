@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +45,7 @@ func newSessionCreateCmd() *cobra.Command {
 				TimeToLive:      ttl,
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			session, err := client.CreateSchedulerSession(ctx, req)
@@ -85,7 +86,7 @@ func newSessionShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			session, err := client.GetSchedulerSession(ctx, args[0])

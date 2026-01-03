@@ -204,7 +204,7 @@ func (c *HTTPClient) SmartCompose(ctx context.Context, grantID string, req *doma
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (c *HTTPClient) SmartComposeReply(ctx context.Context, grantID, messageID s
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}

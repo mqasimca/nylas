@@ -170,7 +170,7 @@ func (s *Server) handleBundleCategorize(w http.ResponseWriter, r *http.Request) 
 		EmailID string `json:"emailId"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -271,7 +271,7 @@ func extractDomain(email string) string {
 // handleUpdateBundle updates a bundle configuration
 func (s *Server) handleUpdateBundle(w http.ResponseWriter, r *http.Request) {
 	var bundle Bundle
-	if err := json.NewDecoder(r.Body).Decode(&bundle); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&bundle); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

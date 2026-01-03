@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +47,7 @@ automatically blocks focus time to protect deep work sessions.`,
 				return fmt.Errorf("get grant ID: %w", err)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			optimizer := analytics.NewFocusOptimizer(client)
@@ -300,7 +301,7 @@ suggests optimizations to protect focus time and reduce meeting overload.`,
 				return fmt.Errorf("get grant ID: %w", err)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			optimizer := analytics.NewFocusOptimizer(client)

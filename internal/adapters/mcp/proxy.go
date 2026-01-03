@@ -12,8 +12,8 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
@@ -22,10 +22,10 @@ const (
 	NylasMCPEndpointUS = "https://mcp.us.nylas.com"
 	// NylasMCPEndpointEU is the EU regional MCP endpoint.
 	NylasMCPEndpointEU = "https://mcp.eu.nylas.com"
-
-	// DefaultTimeout for HTTP requests.
-	DefaultTimeout = 90 * time.Second
 )
+
+// DefaultTimeout for HTTP requests - uses centralized domain constant.
+var DefaultTimeout = domain.TimeoutMCP
 
 // GetMCPEndpoint returns the appropriate MCP endpoint for the given region.
 func GetMCPEndpoint(region string) string {

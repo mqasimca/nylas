@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,7 @@ that haven't been saved will be lost.`,
 			}
 
 			// Get notetaker details first for confirmation
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			notetaker, err := client.GetNotetaker(ctx, grantID, notetakerID)
@@ -67,7 +68,7 @@ that haven't been saved will be lost.`,
 			}
 
 			// Delete
-			ctx2, cancel2 := createContext()
+			ctx2, cancel2 := common.CreateContext()
 			defer cancel2()
 
 			if err := client.DeleteNotetaker(ctx2, grantID, notetakerID); err != nil {

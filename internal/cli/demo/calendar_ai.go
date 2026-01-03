@@ -7,6 +7,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newDemoCalendarAICmd() *cobra.Command {
@@ -31,23 +33,23 @@ func newDemoAIAnalyzeCmd() *cobra.Command {
 		Short: "Analyze calendar patterns",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Calendar Analysis"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Calendar Analysis"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Weekly Calendar Analysis")
+			_, _ = common.BoldWhite.Println("Weekly Calendar Analysis")
 			fmt.Println()
 
 			fmt.Println("📊 Meeting Statistics:")
-			fmt.Printf("  Total meetings:        %s\n", cyan.Sprint("23"))
-			fmt.Printf("  Total meeting hours:   %s\n", cyan.Sprint("18.5 hours"))
-			fmt.Printf("  Average meeting length: %s\n", cyan.Sprint("48 minutes"))
-			fmt.Printf("  Focus time available:  %s\n", yellow.Sprint("12 hours"))
+			fmt.Printf("  Total meetings:        %s\n", common.Cyan.Sprint("23"))
+			fmt.Printf("  Total meeting hours:   %s\n", common.Cyan.Sprint("18.5 hours"))
+			fmt.Printf("  Average meeting length: %s\n", common.Cyan.Sprint("48 minutes"))
+			fmt.Printf("  Focus time available:  %s\n", common.Yellow.Sprint("12 hours"))
 			fmt.Println()
 
 			fmt.Println("💡 AI Suggestions:")
-			fmt.Printf("  • %s Consider batching 1:1s on Tuesdays\n", green.Sprint("●"))
-			fmt.Printf("  • %s Move recurring standup 30min later for focus time\n", green.Sprint("●"))
-			fmt.Printf("  • %s 3 meetings could be consolidated\n", yellow.Sprint("●"))
+			fmt.Printf("  • %s Consider batching 1:1s on Tuesdays\n", common.Green.Sprint("●"))
+			fmt.Printf("  • %s Move recurring standup 30min later for focus time\n", common.Green.Sprint("●"))
+			fmt.Printf("  • %s 3 meetings could be consolidated\n", common.Yellow.Sprint("●"))
 
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
@@ -63,20 +65,20 @@ func newDemoAIConflictsCmd() *cobra.Command {
 		Short: "Detect scheduling conflicts",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Conflict Detection"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Conflict Detection"))
 			fmt.Println()
 
 			now := time.Now()
 
 			fmt.Println("⚠️  Conflicts Found:")
 			fmt.Println()
-			fmt.Printf("  %s %s\n", color.New(color.FgRed).Sprint("●"), boldWhite.Sprint("Double-booked: Project Review + Client Call"))
-			_, _ = dim.Printf("    %s at 2:00 PM - 3:00 PM\n", now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
+			fmt.Printf("  %s %s\n", color.New(color.FgRed).Sprint("●"), common.BoldWhite.Sprint("Double-booked: Project Review + Client Call"))
+			_, _ = common.Dim.Printf("    %s at 2:00 PM - 3:00 PM\n", now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
 			fmt.Printf("    Suggestion: Move Project Review to 3:30 PM\n")
 			fmt.Println()
 
-			fmt.Printf("  %s %s\n", yellow.Sprint("●"), boldWhite.Sprint("Back-to-back: 4 meetings without break"))
-			_, _ = dim.Printf("    %s from 9:00 AM - 1:00 PM\n", now.AddDate(0, 0, 3).Format("Mon, Jan 2"))
+			fmt.Printf("  %s %s\n", common.Yellow.Sprint("●"), common.BoldWhite.Sprint("Back-to-back: 4 meetings without break"))
+			_, _ = common.Dim.Printf("    %s from 9:00 AM - 1:00 PM\n", now.AddDate(0, 0, 3).Format("Mon, Jan 2"))
 			fmt.Printf("    Suggestion: Add 15-min buffer between meetings\n")
 
 			return nil
@@ -95,17 +97,17 @@ func newDemoAIRescheduleCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Reschedule Suggestions"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Reschedule Suggestions"))
 			fmt.Println()
 			fmt.Printf("Event: %s\n", eventID)
 			fmt.Println()
 
 			now := time.Now()
 			fmt.Println("📅 Suggested Alternative Times:")
-			fmt.Printf("  %s %s at 10:00 AM %s\n", green.Sprint("1."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"), green.Sprint("(Recommended)"))
+			fmt.Printf("  %s %s at 10:00 AM %s\n", common.Green.Sprint("1."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"), common.Green.Sprint("(Recommended)"))
 			fmt.Printf("     Reason: All attendees available, minimal disruption\n")
 			fmt.Println()
-			fmt.Printf("  %s %s at 3:00 PM\n", cyan.Sprint("2."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"))
+			fmt.Printf("  %s %s at 3:00 PM\n", common.Cyan.Sprint("2."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"))
 			fmt.Printf("     Reason: Good focus time afterwards\n")
 
 			return nil
@@ -119,10 +121,10 @@ func newDemoAIFocusTimeCmd() *cobra.Command {
 		Short: "Find focus time blocks",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Focus Time Finder"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Focus Time Finder"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Available Focus Time Blocks This Week")
+			_, _ = common.BoldWhite.Println("Available Focus Time Blocks This Week")
 			fmt.Println()
 
 			now := time.Now()
@@ -139,10 +141,10 @@ func newDemoAIFocusTimeCmd() *cobra.Command {
 
 			for _, b := range blocks {
 				fmt.Printf("  %s %s  %s %s\n",
-					green.Sprint("●"),
+					common.Green.Sprint("●"),
 					b.day.Format("Mon, Jan 2"),
-					cyan.Sprint(b.time),
-					dim.Sprintf("(%s)", b.duration))
+					common.Cyan.Sprint(b.time),
+					common.Dim.Sprintf("(%s)", b.duration))
 			}
 
 			fmt.Println()
@@ -160,7 +162,7 @@ func newDemoAIAdaptCmd() *cobra.Command {
 		Short: "Get adaptive scheduling suggestions",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Adaptive Scheduling"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Adaptive Scheduling"))
 			fmt.Println()
 
 			fmt.Println("📊 Learning from your patterns...")
@@ -171,9 +173,9 @@ func newDemoAIAdaptCmd() *cobra.Command {
 			fmt.Printf("  • Thursdays have the most focus time\n")
 			fmt.Println()
 			fmt.Println("Recommendations:")
-			fmt.Printf("  %s Schedule important work for morning blocks\n", green.Sprint("●"))
-			fmt.Printf("  %s Set default meeting duration to 25 minutes\n", green.Sprint("●"))
-			fmt.Printf("  %s Protect Thursday mornings for deep work\n", green.Sprint("●"))
+			fmt.Printf("  %s Schedule important work for morning blocks\n", common.Green.Sprint("●"))
+			fmt.Printf("  %s Set default meeting duration to 25 minutes\n", common.Green.Sprint("●"))
+			fmt.Printf("  %s Protect Thursday mornings for deep work\n", common.Green.Sprint("●"))
 
 			return nil
 		},

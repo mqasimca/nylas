@@ -41,7 +41,7 @@ func newAppListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			apps, err := client.ListApplications(ctx)
@@ -100,7 +100,7 @@ func newAppShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			app, err := client.GetApplication(ctx, args[0])
@@ -184,7 +184,7 @@ func newAppCreateCmd() *cobra.Command {
 				req.CallbackURIs = callbackURIs
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			app, err := client.CreateApplication(ctx, req)
@@ -247,7 +247,7 @@ func newAppUpdateCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			app, err := client.UpdateApplication(ctx, args[0], req)
@@ -294,7 +294,7 @@ func newAppDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteApplication(ctx, args[0]); err != nil {

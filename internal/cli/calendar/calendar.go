@@ -2,7 +2,6 @@
 package calendar
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
@@ -60,10 +59,6 @@ func getClient() (ports.NylasClient, error) {
 func getGrantID(args []string) (string, error) {
 	// Use common helper that supports environment variables
 	return common.GetGrantID(args)
-}
-
-func createContext() (context.Context, context.CancelFunc) {
-	return common.CreateContext()
 }
 
 func getLLMRouter() (ports.LLMRouter, error) {

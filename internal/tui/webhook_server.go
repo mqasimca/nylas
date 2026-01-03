@@ -239,12 +239,14 @@ func (v *WebhookServerView) stopServer() {
 func (v *WebhookServerView) renderStatus() {
 	v.statusPanel.Clear()
 
-	title := colorToHex(v.app.styles.TitleFg)
-	info := colorToHex(v.app.styles.InfoColor)
-	success := colorToHex(v.app.styles.SuccessColor)
-	warn := colorToHex(v.app.styles.WarnColor)
-	muted := colorToHex(v.app.styles.BorderColor)
-	value := colorToHex(v.app.styles.FgColor)
+	// Use cached hex colors for better performance
+	s := v.app.styles
+	title := s.Hex(s.TitleFg)
+	info := s.Hex(s.InfoColor)
+	success := s.Hex(s.SuccessColor)
+	warn := s.Hex(s.WarnColor)
+	muted := s.Hex(s.BorderColor)
+	value := s.Hex(s.FgColor)
 
 	// Server status
 	statusColor := warn
@@ -287,8 +289,11 @@ func (v *WebhookServerView) renderStatus() {
 func (v *WebhookServerView) renderEvents() {
 	v.eventsPanel.Clear()
 
+	// Use cached hex colors for better performance
+	s := v.app.styles
+	muted := s.Hex(s.BorderColor)
+
 	if len(v.events) == 0 {
-		muted := colorToHex(v.app.styles.BorderColor)
 		_, _ = fmt.Fprintf(v.eventsPanel, "\n  [%s]No webhook events received yet.[-]\n", muted)
 		if v.serverRunning {
 			_, _ = fmt.Fprintf(v.eventsPanel, "\n  [%s]Waiting for incoming webhooks...[-]\n", muted)
@@ -298,13 +303,12 @@ func (v *WebhookServerView) renderEvents() {
 		return
 	}
 
-	title := colorToHex(v.app.styles.TitleFg)
-	info := colorToHex(v.app.styles.InfoColor)
-	success := colorToHex(v.app.styles.SuccessColor)
-	warn := colorToHex(v.app.styles.WarnColor)
-	errColor := colorToHex(v.app.styles.ErrorColor)
-	muted := colorToHex(v.app.styles.BorderColor)
-	value := colorToHex(v.app.styles.FgColor)
+	title := s.Hex(s.TitleFg)
+	info := s.Hex(s.InfoColor)
+	success := s.Hex(s.SuccessColor)
+	warn := s.Hex(s.WarnColor)
+	errColor := s.Hex(s.ErrorColor)
+	value := s.Hex(s.FgColor)
 
 	for i, event := range v.events {
 		timestamp := event.ReceivedAt.Format("15:04:05")

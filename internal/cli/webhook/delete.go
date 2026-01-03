@@ -33,7 +33,7 @@ This permanently removes the webhook and stops all event notifications.`,
 			}
 
 			// Get webhook details first for confirmation
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			webhook, err := c.GetWebhook(ctx, webhookID)
 			cancel()
 
@@ -63,7 +63,7 @@ This permanently removes the webhook and stops all event notifications.`,
 				}
 			}
 
-			ctx, cancel = createContext()
+			ctx, cancel = common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Deleting webhook...")

@@ -2,10 +2,6 @@
 package contacts
 
 import (
-	"context"
-
-	"github.com/mqasimca/nylas/internal/adapters/config"
-	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
@@ -51,20 +47,8 @@ func getClient() (ports.NylasClient, error) {
 	return client, nil
 }
 
+// getGrantID gets the grant ID from args or default.
+// Delegates to common.GetGrantID for consistent behavior across CLI commands.
 func getGrantID(args []string) (string, error) {
-	if len(args) > 0 {
-		return args[0], nil
-	}
-
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err != nil {
-		return "", err
-	}
-
-	grantStore := keyring.NewGrantStore(secretStore)
-	return grantStore.GetDefaultGrant()
-}
-
-func createContext() (context.Context, context.CancelFunc) {
-	return common.CreateContext()
+	return common.GetGrantID(args)
 }

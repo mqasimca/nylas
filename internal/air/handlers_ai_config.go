@@ -90,7 +90,7 @@ func (s *Server) handleGetAIConfig(w http.ResponseWriter, r *http.Request) {
 // handleUpdateAIConfig updates AI configuration
 func (s *Server) handleUpdateAIConfig(w http.ResponseWriter, r *http.Request) {
 	var req AIConfig
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

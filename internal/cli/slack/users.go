@@ -56,7 +56,7 @@ Examples:
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			resp, err := client.ListUsers(ctx, limit, "")

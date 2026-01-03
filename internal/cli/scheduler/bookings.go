@@ -45,7 +45,7 @@ func newBookingListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			bookings, err := client.ListBookings(ctx, configID)
@@ -109,7 +109,7 @@ func newBookingShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			booking, err := client.GetBooking(ctx, args[0])
@@ -182,7 +182,7 @@ func newBookingConfirmCmd() *cobra.Command {
 				Reason: reason,
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			booking, err := client.ConfirmBooking(ctx, args[0], req)
@@ -244,7 +244,7 @@ You must provide the new start and end times as Unix timestamps.`,
 				Reason:    reason,
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			booking, err := client.RescheduleBooking(ctx, args[0], req)
@@ -296,7 +296,7 @@ func newBookingCancelCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.CancelBooking(ctx, args[0], reason); err != nil {

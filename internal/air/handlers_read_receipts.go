@@ -140,7 +140,7 @@ func (s *Server) handleGetReadReceiptSettings(w http.ResponseWriter, r *http.Req
 // handleUpdateReadReceiptSettings updates settings
 func (s *Server) handleUpdateReadReceiptSettings(w http.ResponseWriter, r *http.Request) {
 	var settings ReadReceiptSettings
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

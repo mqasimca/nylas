@@ -46,7 +46,7 @@ that your webhook endpoint is properly configured and receiving events.`,
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Sending test event...")
@@ -142,7 +142,7 @@ so you can properly handle them in your application.`,
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Fetching mock payload...")

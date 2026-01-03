@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newDemoCalendarsListCmd() *cobra.Command {
@@ -28,20 +29,20 @@ func newDemoCalendarsListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Sample Calendars"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Sample Calendars"))
 			fmt.Println()
 
 			for _, cal := range calendars {
 				primary := ""
 				if cal.IsPrimary {
-					primary = green.Sprint(" (primary)")
+					primary = common.Green.Sprint(" (primary)")
 				}
-				fmt.Printf("  %s %s%s\n", cal.HexColor, boldWhite.Sprint(cal.Name), primary)
-				_, _ = dim.Printf("    ID: %s\n", cal.ID)
+				fmt.Printf("  %s %s%s\n", cal.HexColor, common.BoldWhite.Sprint(cal.Name), primary)
+				_, _ = common.Dim.Printf("    ID: %s\n", cal.ID)
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To connect your real calendar: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To connect your real calendar: nylas auth login"))
 
 			return nil
 		},
@@ -68,23 +69,23 @@ func newDemoCalendarShowCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Calendar Details"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Calendar Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 
 			// Show sample calendar details
-			_, _ = boldWhite.Println("Work Calendar")
+			_, _ = common.BoldWhite.Println("Work Calendar")
 			fmt.Printf("  ID:          %s\n", calID)
 			fmt.Printf("  Owner:       demo@example.com\n")
 			fmt.Printf("  Timezone:    America/New_York\n")
-			fmt.Printf("  Color:       %s\n", cyan.Sprint("●"))
-			fmt.Printf("  Primary:     %s\n", green.Sprint("Yes"))
+			fmt.Printf("  Color:       %s\n", common.Cyan.Sprint("●"))
+			fmt.Printf("  Primary:     %s\n", common.Green.Sprint("Yes"))
 			fmt.Printf("  Read-only:   No\n")
 			fmt.Printf("  Description: Work meetings and appointments\n")
 
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To view your real calendars: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To view your real calendars: nylas auth login"))
 
 			return nil
 		},
@@ -125,8 +126,8 @@ func newDemoCalendarListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Sample Events"))
-			fmt.Println(dim.Sprint("These are sample events for demonstration purposes."))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Sample Events"))
+			fmt.Println(common.Dim.Sprint("These are sample events for demonstration purposes."))
 			fmt.Println()
 			fmt.Printf("Found %d events:\n\n", len(events))
 
@@ -135,7 +136,7 @@ func newDemoCalendarListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To connect your real calendar: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To connect your real calendar: nylas auth login"))
 
 			return nil
 		},
@@ -178,10 +179,10 @@ No actual event is created - this is just a demonstration of the command flow.`,
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Simulated Event Creation"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Simulated Event Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("Title:    %s\n", title)
+			_, _ = common.BoldWhite.Printf("Title:    %s\n", title)
 			fmt.Printf("Start:    %s\n", startTime)
 			fmt.Printf("Duration: %d minutes\n", duration)
 			if location != "" {
@@ -192,10 +193,10 @@ No actual event is created - this is just a demonstration of the command flow.`,
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Event would be created (demo mode - no actual event created)")
-			_, _ = dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
+			_, _ = common.Green.Println("✓ Event would be created (demo mode - no actual event created)")
+			_, _ = common.Dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
 			fmt.Println()
-			fmt.Println(dim.Sprint("To create real events, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To create real events, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -232,12 +233,12 @@ func newDemoCalendarUpdateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Simulated Event Update"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Simulated Event Update"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = dim.Printf("Event ID: %s\n", eventID)
+			_, _ = common.Dim.Printf("Event ID: %s\n", eventID)
 			fmt.Println()
-			_, _ = boldWhite.Println("Changes:")
+			_, _ = common.BoldWhite.Println("Changes:")
 			if title != "" {
 				fmt.Printf("  Title:    %s\n", title)
 			}
@@ -249,9 +250,9 @@ func newDemoCalendarUpdateCmd() *cobra.Command {
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Event would be updated (demo mode - no actual changes made)")
+			_, _ = common.Green.Println("✓ Event would be updated (demo mode - no actual changes made)")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To update real events, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To update real events, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -284,18 +285,18 @@ func newDemoCalendarDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Simulated Event Deletion"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Simulated Event Deletion"))
 			fmt.Println()
 
 			if !force {
-				_, _ = yellow.Println("⚠ Would prompt for confirmation in real mode")
+				_, _ = common.Yellow.Println("⚠ Would prompt for confirmation in real mode")
 			}
 
 			fmt.Printf("Event ID: %s\n", eventID)
 			fmt.Println()
-			_, _ = green.Println("✓ Event would be deleted (demo mode - no actual deletion)")
+			_, _ = common.Green.Println("✓ Event would be deleted (demo mode - no actual deletion)")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To delete real events, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To delete real events, connect your account: nylas auth login"))
 
 			return nil
 		},

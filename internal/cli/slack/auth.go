@@ -60,7 +60,7 @@ Example:
 				return fmt.Errorf("failed to create client: %w", err)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			auth, err := client.TestAuth(ctx)
@@ -100,7 +100,7 @@ func newAuthStatusCmd() *cobra.Command {
 				return nil
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			auth, err := client.TestAuth(ctx)

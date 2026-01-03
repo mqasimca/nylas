@@ -5,20 +5,11 @@ import (
 	"html"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-)
-
-var (
-	boldWhite = color.New(color.FgWhite, color.Bold)
-	cyan      = color.New(color.FgCyan)
-	green     = color.New(color.FgGreen)
-	yellow    = color.New(color.FgYellow)
-	dim       = color.New(color.Faint)
 )
 
 // getClient creates and configures a Nylas client.
@@ -83,15 +74,15 @@ func printMessage(msg domain.Message, showBody bool) {
 	// Status indicators
 	status := ""
 	if msg.Unread {
-		status += cyan.Sprint("●") + " "
+		status += common.Cyan.Sprint("●") + " "
 	}
 	if msg.Starred {
-		status += yellow.Sprint("★") + " "
+		status += common.Yellow.Sprint("★") + " "
 	}
 
 	// Print header
 	fmt.Println(strings.Repeat("─", 60))
-	_, _ = boldWhite.Printf("Subject: %s\n", msg.Subject)
+	_, _ = common.BoldWhite.Printf("Subject: %s\n", msg.Subject)
 	fmt.Printf("From:    %s\n", formatContacts(msg.From))
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatContacts(msg.To))
@@ -103,7 +94,7 @@ func printMessage(msg domain.Message, showBody bool) {
 	if len(msg.Attachments) > 0 {
 		fmt.Printf("Attachments: %d files\n", len(msg.Attachments))
 		for _, a := range msg.Attachments {
-			_, _ = dim.Printf("  - %s (%s)\n", a.Filename, formatSize(a.Size))
+			_, _ = common.Dim.Printf("  - %s (%s)\n", a.Filename, formatSize(a.Size))
 		}
 	}
 
@@ -124,7 +115,7 @@ func printMessage(msg domain.Message, showBody bool) {
 func printMessageRaw(msg domain.Message) {
 	// Print header
 	fmt.Println(strings.Repeat("─", 60))
-	_, _ = boldWhite.Printf("Subject: %s\n", msg.Subject)
+	_, _ = common.BoldWhite.Printf("Subject: %s\n", msg.Subject)
 	fmt.Printf("From:    %s\n", formatContacts(msg.From))
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatContacts(msg.To))
@@ -151,12 +142,12 @@ func printMessageSummary(msg domain.Message, index int) {
 func printMessageSummaryWithID(msg domain.Message, index int, showID bool) {
 	status := " "
 	if msg.Unread {
-		status = cyan.Sprint("●")
+		status = common.Cyan.Sprint("●")
 	}
 
 	star := " "
 	if msg.Starred {
-		star = yellow.Sprint("★")
+		star = common.Yellow.Sprint("★")
 	}
 
 	from := formatContacts(msg.From)
@@ -176,10 +167,10 @@ func printMessageSummaryWithID(msg domain.Message, index int, showID bool) {
 
 	if showID {
 		// Show full ID on its own line for easy copying
-		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
-		_, _ = dim.Printf("      ID: %s\n", msg.ID)
+		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, common.Dim.Sprint(dateStr))
+		_, _ = common.Dim.Printf("      ID: %s\n", msg.ID)
 	} else {
-		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
+		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, common.Dim.Sprint(dateStr))
 	}
 }
 
@@ -287,5 +278,5 @@ func removeTagWithContent(s, tag string) string {
 
 // printSuccess prints a success message in green.
 func printSuccess(format string, args ...any) {
-	_, _ = green.Printf(format+"\n", args...)
+	_, _ = common.Green.Printf(format+"\n", args...)
 }

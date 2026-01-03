@@ -26,7 +26,7 @@ func newChannelInfoCmd() *cobra.Command {
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			channelID := args[0]

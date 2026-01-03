@@ -35,7 +35,7 @@ status, and notification settings.`,
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Fetching webhook...")

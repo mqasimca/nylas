@@ -23,7 +23,7 @@ type CompleteResponse struct {
 // handleAIComplete handles smart compose autocomplete requests
 func (s *Server) handleAIComplete(w http.ResponseWriter, r *http.Request) {
 	var req CompleteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -115,7 +115,7 @@ type NLSearchResponse struct {
 // handleNLSearch handles natural language search queries
 func (s *Server) handleNLSearch(w http.ResponseWriter, r *http.Request) {
 	var req NLSearchRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

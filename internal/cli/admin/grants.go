@@ -51,7 +51,7 @@ func newGrantListCmd() *cobra.Command {
 				Status:      status,
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grants, err := client.ListAllGrants(ctx, params)
@@ -122,7 +122,7 @@ func newGrantStatsCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			stats, err := client.GetGrantStats(ctx)

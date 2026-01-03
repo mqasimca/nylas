@@ -160,7 +160,16 @@ func (v *AvailabilityView) removeSelectedParticipant() {
 
 	email := v.participants[idx]
 	v.app.ShowConfirmDialog("Remove Participant", fmt.Sprintf("Remove %s?", email), func() {
-		v.participants = append(v.participants[:idx], v.participants[idx+1:]...)
+		// Re-validate bounds since participants may have changed before callback
+		if idx < 0 || idx >= len(v.participants) {
+			return
+		}
+		// Safe slice removal: handle last element case explicitly
+		if idx == len(v.participants)-1 {
+			v.participants = v.participants[:idx]
+		} else {
+			v.participants = append(v.participants[:idx], v.participants[idx+1:]...)
+		}
 		v.renderParticipants()
 		v.updateInfoPanel()
 		v.fetchAvailability()

@@ -1,14 +1,6 @@
 package notetaker
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"strings"
-
-	"github.com/mqasimca/nylas/internal/adapters/config"
-	"github.com/mqasimca/nylas/internal/adapters/keyring"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
@@ -54,75 +46,15 @@ Use subcommands to create, list, show, delete notetakers and retrieve media.`,
 }
 
 // getClient creates and configures a Nylas client.
+// Delegates to common.GetNylasClient() for consistent credential handling.
 func getClient() (ports.NylasClient, error) {
-	configStore := config.NewDefaultFileStore()
-	cfg, _ := configStore.Load()
-
-	// Check environment variables first (highest priority)
-	apiKey := os.Getenv("NYLAS_API_KEY")
-	clientID := os.Getenv("NYLAS_CLIENT_ID")
-	clientSecret := os.Getenv("NYLAS_CLIENT_SECRET")
-
-	// If API key not in env, try keyring/file store
-	if apiKey == "" {
-		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-		if err == nil {
-			apiKey, _ = secretStore.Get(ports.KeyAPIKey)
-			if clientID == "" {
-				clientID, _ = secretStore.Get(ports.KeyClientID)
-			}
-			if clientSecret == "" {
-				clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
-			}
-		}
-	}
-
-	if apiKey == "" {
-		return nil, fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
-	}
-
-	client := nylas.NewHTTPClient()
-	client.SetRegion(cfg.Region)
-	client.SetCredentials(clientID, clientSecret, apiKey)
-
-	return client, nil
+	return common.GetNylasClient()
 }
 
 // getGrantID gets the grant ID from args or default.
-// If the argument contains '@', it's treated as an email and looked up.
+// Delegates to common.GetGrantID for consistent behavior across CLI commands.
 func getGrantID(args []string) (string, error) {
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err != nil {
-		return "", fmt.Errorf("couldn't access secret store: %w", err)
-	}
-	grantStore := keyring.NewGrantStore(secretStore)
-
-	if len(args) > 0 {
-		identifier := args[0]
-
-		// If it looks like an email, try to find by email
-		if strings.Contains(identifier, "@") {
-			grant, err := grantStore.GetGrantByEmail(identifier)
-			if err != nil {
-				return "", fmt.Errorf("no grant found for email: %s", identifier)
-			}
-			return grant.ID, nil
-		}
-
-		// Otherwise treat as grant ID
-		return identifier, nil
-	}
-
-	// Try to get default grant
-	defaultGrant, err := grantStore.GetDefaultGrant()
-	if err != nil {
-		return "", fmt.Errorf("no grant ID provided and no default grant set. Use 'nylas auth list' to see available grants")
-	}
-
-	return defaultGrant, nil
+	return common.GetGrantID(args)
 }
 
 // createContext creates a context with timeout.
-func createContext() (context.Context, context.CancelFunc) {
-	return common.CreateContext()
-}

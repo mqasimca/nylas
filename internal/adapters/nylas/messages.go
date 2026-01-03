@@ -223,7 +223,7 @@ func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) 
 func (c *HTTPClient) UpdateMessage(ctx context.Context, grantID, messageID string, req *domain.UpdateMessageRequest) (*domain.Message, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
 
-	payload := make(map[string]any)
+	payload := make(map[string]any, 3) // Pre-allocate for up to 3 fields
 	if req.Unread != nil {
 		payload["unread"] = *req.Unread
 	}

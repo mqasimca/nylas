@@ -46,7 +46,7 @@ func newDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Deleting contact...")

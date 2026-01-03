@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -39,9 +40,9 @@ func newDemoEmailSearchCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🔍 Demo Mode - Email Search"))
+			fmt.Println(common.Dim.Sprint("🔍 Demo Mode - Email Search"))
 			if query != "" {
-				fmt.Printf("Searching for: %s\n", boldWhite.Sprint(query))
+				fmt.Printf("Searching for: %s\n", common.BoldWhite.Sprint(query))
 			}
 			fmt.Println()
 			fmt.Printf("Found %d messages:\n\n", len(messages))
@@ -51,7 +52,7 @@ func newDemoEmailSearchCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To search your real emails: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To search your real emails: nylas auth login"))
 
 			return nil
 		},
@@ -69,7 +70,7 @@ func newDemoEmailMarkCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mark [message-id]",
 		Short: "Mark sample emails (simulated)",
-		Long:  "Simulate marking emails as read/unread/starred.",
+		Long:  "Simulate marking emails as read/unread/starcommon.Red.",
 		Example: `  # Mark as read
   nylas demo email mark msg-001 --read
 
@@ -82,20 +83,20 @@ func newDemoEmailMarkCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Mark Email (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Mark Email (Simulated)"))
 			fmt.Println()
 
 			if read {
-				_, _ = green.Printf("✓ Message %s would be marked as read\n", messageID)
+				_, _ = common.Green.Printf("✓ Message %s would be marked as read\n", messageID)
 			}
 			if unread {
-				_, _ = green.Printf("✓ Message %s would be marked as unread\n", messageID)
+				_, _ = common.Green.Printf("✓ Message %s would be marked as unread\n", messageID)
 			}
 			if starred {
-				_, _ = green.Printf("✓ Message %s would be starred\n", messageID)
+				_, _ = common.Green.Printf("✓ Message %s would be starred\n", messageID)
 			}
 			if unstarred {
-				_, _ = green.Printf("✓ Message %s would be unstarred\n", messageID)
+				_, _ = common.Green.Printf("✓ Message %s would be unstarred\n", messageID)
 			}
 
 			if !read && !unread && !starred && !unstarred {
@@ -103,7 +104,7 @@ func newDemoEmailMarkCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage your real emails: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage your real emails: nylas auth login"))
 
 			return nil
 		},
@@ -132,11 +133,11 @@ func newDemoEmailDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Delete Email (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Delete Email (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Message %s would be deleted\n", messageID)
+			_, _ = common.Green.Printf("✓ Message %s would be deleted\n", messageID)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage your real emails: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage your real emails: nylas auth login"))
 
 			return nil
 		},

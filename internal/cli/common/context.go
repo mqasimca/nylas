@@ -3,12 +3,14 @@ package common
 import (
 	"context"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
-// CreateContext creates a context with a 30-second timeout.
+// CreateContext creates a context with the standard API timeout.
 // Returns the context and a cancel function that should be deferred.
 func CreateContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	return context.WithTimeout(context.Background(), domain.TimeoutAPI)
 }
 
 // CreateContextWithTimeout creates a context with a custom timeout.

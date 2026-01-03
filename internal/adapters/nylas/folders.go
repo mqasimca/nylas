@@ -136,7 +136,7 @@ func (c *HTTPClient) UpdateFolder(ctx context.Context, grantID, folderID string,
 
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/folders/%s", c.baseURL, grantID, folderID)
 
-	payload := make(map[string]any)
+	payload := make(map[string]any, 4) // Pre-allocate for up to 4 fields
 	if req.Name != "" {
 		payload["name"] = req.Name
 	}

@@ -19,7 +19,7 @@ func (s *Server) handleAIThreadSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req ThreadSummaryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, ThreadSummaryResponse{
 			Success: false,
 			Error:   "Invalid request body",

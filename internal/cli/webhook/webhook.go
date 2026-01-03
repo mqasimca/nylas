@@ -2,8 +2,6 @@
 package webhook
 
 import (
-	"context"
-
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
@@ -44,8 +42,4 @@ func getClient() (ports.NylasClient, error) {
 
 	// Use common client initialization which supports both keyring and env vars
 	return common.GetNylasClient()
-}
-
-func createContext() (context.Context, context.CancelFunc) {
-	return common.CreateContext()
 }

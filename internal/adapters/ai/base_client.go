@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 // BaseClient provides common HTTP client functionality for AI providers.
@@ -23,7 +25,7 @@ type BaseClient struct {
 // NewBaseClient creates a new base client with common configuration.
 func NewBaseClient(apiKey, model, baseURL string, timeout time.Duration) *BaseClient {
 	if timeout == 0 {
-		timeout = 120 * time.Second
+		timeout = domain.TimeoutAI
 	}
 
 	return &BaseClient{

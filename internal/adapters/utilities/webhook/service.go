@@ -20,11 +20,12 @@ import (
 // Service implements ports.WebhookService.
 // Provides local webhook server for testing without ngrok.
 type Service struct {
-	mu       sync.RWMutex
-	server   *http.Server
-	webhooks []domain.WebhookPayload
-	config   *domain.WebhookServerConfig
-	nextID   int
+	mu         sync.RWMutex
+	server     *http.Server
+	httpClient *http.Client // Reused for ReplayWebhook calls
+	webhooks   []domain.WebhookPayload
+	config     *domain.WebhookServerConfig
+	nextID     int
 }
 
 // NewService creates a new webhook service.
@@ -32,6 +33,10 @@ func NewService() *Service {
 	return &Service{
 		webhooks: make([]domain.WebhookPayload, 0),
 		nextID:   1,
+		// Single HTTP client for all replay requests (connection pooling)
+		httpClient: &http.Client{
+			Timeout: domain.TimeoutAPI,
+		},
 	}
 }
 
@@ -141,9 +146,8 @@ func (s *Service) ReplayWebhook(ctx context.Context, webhookID string, targetURL
 		req.Header.Set(k, v)
 	}
 
-	// Send request
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	// Send request using reusable HTTP client
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("send request: %w", err)
 	}

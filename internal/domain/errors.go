@@ -38,4 +38,27 @@ var (
 	ErrSlackChannelNotFound  = errors.New("slack channel not found")
 	ErrSlackMessageNotFound  = errors.New("slack message not found")
 	ErrSlackPermissionDenied = errors.New("slack permission denied")
+
+	// Resource not found errors - use these instead of creating ad-hoc errors.
+	// Wrap with additional context: fmt.Errorf("%w: %s", domain.ErrContactNotFound, id)
+	ErrContactNotFound     = errors.New("contact not found")
+	ErrEventNotFound       = errors.New("event not found")
+	ErrCalendarNotFound    = errors.New("calendar not found")
+	ErrMessageNotFound     = errors.New("message not found")
+	ErrFolderNotFound      = errors.New("folder not found")
+	ErrDraftNotFound       = errors.New("draft not found")
+	ErrThreadNotFound      = errors.New("thread not found")
+	ErrAttachmentNotFound  = errors.New("attachment not found")
+	ErrWebhookNotFound     = errors.New("webhook not found")
+	ErrNotetakerNotFound   = errors.New("notetaker not found")
+	ErrTemplateNotFound    = errors.New("template not found")
+	ErrApplicationNotFound = errors.New("application not found")
+	ErrConnectorNotFound   = errors.New("connector not found")
+	ErrCredentialNotFound  = errors.New("credential not found")
+
+	// Scheduler errors
+	ErrBookingNotFound       = errors.New("booking not found")
+	ErrSessionNotFound       = errors.New("session not found")
+	ErrConfigurationNotFound = errors.New("configuration not found")
+	ErrPageNotFound          = errors.New("page not found")
 )

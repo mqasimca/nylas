@@ -79,12 +79,12 @@ func newFoldersListCmd() *cobra.Command {
 
 				unreadStr := fmt.Sprintf("%d", f.UnreadCount)
 				if f.UnreadCount > 0 {
-					unreadStr = cyan.Sprintf("%d", f.UnreadCount)
+					unreadStr = common.Cyan.Sprintf("%d", f.UnreadCount)
 				}
 
 				if showID {
 					fmt.Printf("%-36s %-30s %-12s %8d %8s\n",
-						dim.Sprint(f.ID), name, folderType, f.TotalCount, unreadStr)
+						common.Dim.Sprint(f.ID), name, folderType, f.TotalCount, unreadStr)
 				} else {
 					fmt.Printf("%-30s %-12s %8d %8s\n",
 						name, folderType, f.TotalCount, unreadStr)
@@ -93,7 +93,7 @@ func newFoldersListCmd() *cobra.Command {
 
 			fmt.Println()
 			if !showID {
-				_, _ = dim.Printf("Use --id to see folder IDs for --folder flag\n")
+				_, _ = common.Dim.Printf("Use --id to see folder IDs for --folder flag\n")
 			}
 
 			return nil
@@ -137,7 +137,7 @@ func newFoldersShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = boldWhite.Printf("Folder: %s\n", folder.Name)
+			_, _ = common.BoldWhite.Printf("Folder: %s\n", folder.Name)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("ID:           %s\n", folder.ID)
@@ -152,7 +152,7 @@ func newFoldersShowCmd() *cobra.Command {
 
 			fmt.Printf("Total Count:  %d\n", folder.TotalCount)
 			if folder.UnreadCount > 0 {
-				_, _ = cyan.Printf("Unread Count: %d\n", folder.UnreadCount)
+				_, _ = common.Cyan.Printf("Unread Count: %d\n", folder.UnreadCount)
 			} else {
 				fmt.Printf("Unread Count: %d\n", folder.UnreadCount)
 			}

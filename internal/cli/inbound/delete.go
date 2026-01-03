@@ -71,10 +71,10 @@ func runDelete(args []string, skipConfirm bool) error {
 	// Confirm deletion unless --yes flag is set
 	if !skipConfirm {
 		fmt.Printf("You are about to delete the inbound inbox:\n")
-		fmt.Printf("  Email: %s\n", cyan.Sprint(inbox.Email))
+		fmt.Printf("  Email: %s\n", common.Cyan.Sprint(inbox.Email))
 		fmt.Printf("  ID:    %s\n", inbox.ID)
 		fmt.Println()
-		_, _ = yellow.Println("This action cannot be undone. All messages in this inbox will be deleted.")
+		_, _ = common.Yellow.Println("This action cannot be undone. All messages in this inbox will be deleted.")
 		fmt.Println()
 
 		fmt.Print("Type 'delete' to confirm: ")

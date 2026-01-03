@@ -70,9 +70,9 @@ func newReadCmd() *cobra.Command {
 					Unread: &unread,
 				})
 				if err != nil {
-					_, _ = dim.Printf("(Failed to mark as read: %v)\n", err)
+					_, _ = common.Dim.Printf("(Failed to mark as read: %v)\n", err)
 				} else {
-					_, _ = dim.Println("(Marked as read)")
+					_, _ = common.Dim.Println("(Marked as read)")
 				}
 			}
 

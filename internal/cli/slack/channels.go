@@ -99,7 +99,7 @@ Examples:
 			if fetchAll {
 				ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
 			} else {
-				ctx, cancel = createContext()
+				ctx, cancel = common.CreateContext()
 			}
 			defer cancel()
 

@@ -52,31 +52,17 @@ func NewAvailabilityView(app *App) *AvailabilityView {
 func (v *AvailabilityView) init() {
 	styles := v.app.styles
 
-	// Participants list
-	v.participantsList = tview.NewList()
-	v.participantsList.SetBackgroundColor(styles.BgColor)
-	v.participantsList.SetMainTextColor(styles.FgColor)
-	v.participantsList.SetSecondaryTextColor(styles.InfoColor)
-	v.participantsList.SetSelectedBackgroundColor(styles.FocusColor)
-	v.participantsList.SetSelectedTextColor(styles.BgColor)
-	v.participantsList.SetBorder(true)
-	v.participantsList.SetBorderColor(styles.BorderColor)
-	v.participantsList.SetTitle(" Participants (a=add, d=delete) ")
-	v.participantsList.SetTitleColor(styles.TitleFg)
-	v.participantsList.ShowSecondaryText(false)
+	// Participants list - uses helper to eliminate ~10 lines of styling
+	v.participantsList = NewStyledList(styles, ListViewConfig{
+		Title:             "Participants (a=add, d=delete)",
+		ShowSecondaryText: false,
+	})
 
-	// Available slots list
-	v.slotsList = tview.NewList()
-	v.slotsList.SetBackgroundColor(styles.BgColor)
-	v.slotsList.SetMainTextColor(styles.FgColor)
-	v.slotsList.SetSecondaryTextColor(styles.InfoColor)
-	v.slotsList.SetSelectedBackgroundColor(styles.FocusColor)
-	v.slotsList.SetSelectedTextColor(styles.BgColor)
-	v.slotsList.SetBorder(true)
-	v.slotsList.SetBorderColor(styles.BorderColor)
-	v.slotsList.SetTitle(" Available Slots ")
-	v.slotsList.SetTitleColor(styles.TitleFg)
-	v.slotsList.ShowSecondaryText(true)
+	// Available slots list - uses helper
+	v.slotsList = NewStyledList(styles, ListViewConfig{
+		Title:             "Available Slots",
+		ShowSecondaryText: true,
+	})
 
 	// Handle slot selection to create event
 	v.slotsList.SetSelectedFunc(func(index int, _, _ string, _ rune) {
@@ -85,25 +71,11 @@ func (v *AvailabilityView) init() {
 		}
 	})
 
-	// Timeline visualization
-	v.timeline = tview.NewTextView()
-	v.timeline.SetDynamicColors(true)
-	v.timeline.SetBackgroundColor(styles.BgColor)
-	v.timeline.SetBorder(true)
-	v.timeline.SetBorderColor(styles.BorderColor)
-	v.timeline.SetTitle(" Timeline (Free/Busy) ")
-	v.timeline.SetTitleColor(styles.TitleFg)
-	v.timeline.SetBorderPadding(0, 0, 1, 1)
+	// Timeline visualization - uses helper
+	v.timeline = NewStyledInfoPanel(styles, "Timeline (Free/Busy)")
 
-	// Info panel
-	v.infoPanel = tview.NewTextView()
-	v.infoPanel.SetDynamicColors(true)
-	v.infoPanel.SetBackgroundColor(styles.BgColor)
-	v.infoPanel.SetBorder(true)
-	v.infoPanel.SetBorderColor(styles.BorderColor)
-	v.infoPanel.SetTitle(" Settings ")
-	v.infoPanel.SetTitleColor(styles.TitleFg)
-	v.infoPanel.SetBorderPadding(0, 0, 1, 1)
+	// Info panel - uses helper
+	v.infoPanel = NewStyledInfoPanel(styles, "Settings")
 	v.updateInfoPanel()
 
 	// Layout:

@@ -67,7 +67,7 @@ This command fetches your recent emails and uses AI to provide:
 			}
 
 			if cfg.AI == nil || !cfg.AI.IsConfigured() {
-				return fmt.Errorf("AI is not configured. Run 'nylas config ai setup' to configure AI providers")
+				return fmt.Errorf("AI is not configucommon.Red. Run 'nylas config ai setup' to configure AI providers")
 			}
 
 			// Fetch emails

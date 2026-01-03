@@ -18,9 +18,6 @@ const (
 	baseURLUS = "https://api.us.nylas.com"
 	baseURLEU = "https://api.eu.nylas.com"
 
-	// defaultRequestTimeout is the default timeout for individual API requests
-	defaultRequestTimeout = 30 * time.Second
-
 	// defaultRateLimit is the default rate limit (requests per second)
 	// Set to 10 requests per second to avoid API quota exhaustion
 	defaultRateLimit = 10
@@ -49,7 +46,7 @@ func NewHTTPClient() *HTTPClient {
 		baseURL: baseURLUS,
 		// Create token bucket rate limiter: 10 requests/second, burst of 20
 		rateLimiter:    rate.NewLimiter(rate.Limit(defaultRateLimit), defaultRateLimit*2),
-		requestTimeout: defaultRequestTimeout,
+		requestTimeout: domain.TimeoutAPI,
 	}
 }
 

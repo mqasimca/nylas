@@ -34,7 +34,7 @@ func newListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			params := &domain.ContactQueryParams{

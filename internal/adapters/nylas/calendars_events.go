@@ -117,7 +117,7 @@ func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: event not found", domain.ErrAPIError)
+		return nil, domain.ErrEventNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)

@@ -85,7 +85,7 @@ record the meeting, and generate a transcript when complete.`,
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			notetaker, err := client.CreateNotetaker(ctx, grantID, req)

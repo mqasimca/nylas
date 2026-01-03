@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newDemoEventsCmd() *cobra.Command {
@@ -41,7 +42,7 @@ func newDemoEventsListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Events List"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Events List"))
 			fmt.Println()
 			fmt.Printf("Found %d events:\n\n", len(events))
 
@@ -65,15 +66,15 @@ func newDemoEventsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Event Details"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Event Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Team Standup Meeting")
+			_, _ = common.BoldWhite.Println("Team Standup Meeting")
 			fmt.Printf("  ID:          %s\n", eventID)
 			fmt.Printf("  Calendar:    Work Calendar\n")
 			fmt.Printf("  Start:       Tomorrow at 9:00 AM\n")
 			fmt.Printf("  End:         Tomorrow at 9:30 AM\n")
-			fmt.Printf("  Status:      %s\n", green.Sprint("confirmed"))
+			fmt.Printf("  Status:      %s\n", common.Green.Sprint("confirmed"))
 			fmt.Printf("  Location:    Zoom Meeting\n")
 			fmt.Printf("  Organizer:   demo@example.com\n")
 			fmt.Printf("  Attendees:   3 participants\n")
@@ -91,8 +92,8 @@ func newDemoEventsCreateCmd() *cobra.Command {
 		Short: "Create an event",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			_, _ = green.Println("✓ Event would be created (demo mode)")
-			_, _ = dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
+			_, _ = common.Green.Println("✓ Event would be created (demo mode)")
+			_, _ = common.Dim.Printf("  Event ID: evt-demo-%d\n", time.Now().Unix())
 			return nil
 		},
 	}
@@ -108,7 +109,7 @@ func newDemoEventsUpdateCmd() *cobra.Command {
 				eventID = args[0]
 			}
 			fmt.Println()
-			_, _ = green.Printf("✓ Event %s would be updated (demo mode)\n", eventID)
+			_, _ = common.Green.Printf("✓ Event %s would be updated (demo mode)\n", eventID)
 			return nil
 		},
 	}
@@ -124,7 +125,7 @@ func newDemoEventsDeleteCmd() *cobra.Command {
 				eventID = args[0]
 			}
 			fmt.Println()
-			_, _ = green.Printf("✓ Event %s would be deleted (demo mode)\n", eventID)
+			_, _ = common.Green.Printf("✓ Event %s would be deleted (demo mode)\n", eventID)
 			return nil
 		},
 	}

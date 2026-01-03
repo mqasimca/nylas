@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -20,10 +21,10 @@ func newDemoAvailabilityCmd() *cobra.Command {
   nylas demo calendar availability --email john@example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Sample Availability"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Sample Availability"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Available Time Slots (Next 7 Days)")
+			_, _ = common.BoldWhite.Println("Available Time Slots (Next 7 Days)")
 			fmt.Println()
 
 			// Sample availability slots
@@ -40,13 +41,13 @@ func newDemoAvailabilityCmd() *cobra.Command {
 			}
 
 			for _, slot := range slots {
-				fmt.Printf("  %s %s  %s\n", green.Sprint("●"), slot.day, cyan.Sprint(slot.time))
+				fmt.Printf("  %s %s  %s\n", common.Green.Sprint("●"), slot.day, common.Cyan.Sprint(slot.time))
 			}
 
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To check your real availability: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To check your real availability: nylas auth login"))
 
 			return nil
 		},
@@ -68,21 +69,21 @@ func newDemoFindTimeCmd() *cobra.Command {
   nylas demo calendar find-time --attendee alice@example.com --attendee bob@example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Find Meeting Time"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Find Meeting Time"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Best Available Times for All Participants")
+			_, _ = common.BoldWhite.Println("Best Available Times for All Participants")
 			fmt.Println()
 
 			now := time.Now()
-			fmt.Printf("  %s %s at 10:00 AM %s\n", green.Sprint("1."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"), green.Sprint("(Best match)"))
-			fmt.Printf("  %s %s at 2:00 PM\n", cyan.Sprint("2."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"))
-			fmt.Printf("  %s %s at 11:00 AM\n", cyan.Sprint("3."), now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
+			fmt.Printf("  %s %s at 10:00 AM %s\n", common.Green.Sprint("1."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"), common.Green.Sprint("(Best match)"))
+			fmt.Printf("  %s %s at 2:00 PM\n", common.Cyan.Sprint("2."), now.AddDate(0, 0, 1).Format("Mon, Jan 2"))
+			fmt.Printf("  %s %s at 11:00 AM\n", common.Cyan.Sprint("3."), now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
 
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To find real meeting times: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To find real meeting times: nylas auth login"))
 
 			return nil
 		},
@@ -104,11 +105,11 @@ func newDemoScheduleCmd() *cobra.Command {
   nylas demo calendar schedule --title "Project Review" --attendee team@example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Smart Scheduling"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Smart Scheduling"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 
-			_, _ = boldWhite.Println("Scheduling: Project Review")
+			_, _ = common.BoldWhite.Println("Scheduling: Project Review")
 			fmt.Println()
 			fmt.Println("Checking availability for all participants...")
 			fmt.Println()
@@ -121,9 +122,9 @@ func newDemoScheduleCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Meeting would be scheduled (demo mode)")
+			_, _ = common.Green.Println("✓ Meeting would be scheduled (demo mode)")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To schedule real meetings: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To schedule real meetings: nylas auth login"))
 
 			return nil
 		},
@@ -153,17 +154,17 @@ func newDemoRecurringCmd() *cobra.Command {
 		Short: "Create a recurring event",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Create Recurring Event"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Create Recurring Event"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Weekly Team Standup")
+			_, _ = common.BoldWhite.Println("Weekly Team Standup")
 			fmt.Println()
 			fmt.Printf("  Pattern:     Every Monday, Wednesday, Friday\n")
 			fmt.Printf("  Time:        9:00 AM - 9:30 AM\n")
 			fmt.Printf("  Ends:        After 52 occurrences\n")
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Recurring event would be created (demo mode)")
+			_, _ = common.Green.Println("✓ Recurring event would be created (demo mode)")
 			return nil
 		},
 	})
@@ -173,7 +174,7 @@ func newDemoRecurringCmd() *cobra.Command {
 		Short: "List recurring events",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Recurring Events"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Recurring Events"))
 			fmt.Println()
 
 			events := []struct {
@@ -187,8 +188,8 @@ func newDemoRecurringCmd() *cobra.Command {
 			}
 
 			for _, e := range events {
-				fmt.Printf("  %s %s\n", green.Sprint("●"), boldWhite.Sprint(e.title))
-				_, _ = dim.Printf("    %s\n", e.pattern)
+				fmt.Printf("  %s %s\n", common.Green.Sprint("●"), common.BoldWhite.Sprint(e.title))
+				_, _ = common.Dim.Printf("    %s\n", e.pattern)
 				fmt.Println()
 			}
 
@@ -212,7 +213,7 @@ func newDemoVirtualCmd() *cobra.Command {
 		Short: "List virtual calendars",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📅 Demo Mode - Virtual Calendars"))
+			fmt.Println(common.Dim.Sprint("📅 Demo Mode - Virtual Calendars"))
 			fmt.Println()
 
 			calendars := []struct {
@@ -225,8 +226,8 @@ func newDemoVirtualCmd() *cobra.Command {
 			}
 
 			for _, cal := range calendars {
-				fmt.Printf("  %s %s\n", cyan.Sprint("●"), boldWhite.Sprint(cal.name))
-				_, _ = dim.Printf("    Source: %s\n", cal.source)
+				fmt.Printf("  %s %s\n", common.Cyan.Sprint("●"), common.BoldWhite.Sprint(cal.name))
+				_, _ = common.Dim.Printf("    Source: %s\n", cal.source)
 				fmt.Println()
 			}
 
@@ -239,7 +240,7 @@ func newDemoVirtualCmd() *cobra.Command {
 		Short: "Create virtual calendar",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			_, _ = green.Println("✓ Virtual calendar would be created (demo mode)")
+			_, _ = common.Green.Println("✓ Virtual calendar would be created (demo mode)")
 			return nil
 		},
 	})

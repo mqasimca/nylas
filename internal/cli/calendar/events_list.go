@@ -63,7 +63,7 @@ Examples:
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// If no calendar specified, try to get the primary calendar
