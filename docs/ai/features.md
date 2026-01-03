@@ -347,7 +347,7 @@ Tuesday:   ████████████░░░░░░░░███
 4. **Suggests break-friendly blocks** - Prefers longer morning/afternoon sessions with lunch in between
 
 **Configuration:**
-For working hours and break configuration, see [Timezone & Working Hours Guide](TIMEZONE.md#working-hours--break-management).
+For working hours and break configuration, see [Timezone & Working Hours Guide](../commands/timezone.md#working-hours--break-management).
 
 ---
 

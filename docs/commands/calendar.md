@@ -1299,3 +1299,124 @@ Master Event ID: event-master-123
 
 ---
 
+## Scheduling Workflows
+
+### Multi-Timezone Meeting Coordination
+
+```bash
+#!/bin/bash
+# multi-timezone-meeting.sh
+
+ZONES="America/New_York,Europe/London,Asia/Tokyo"
+
+echo "Finding optimal meeting time for global team..."
+
+# Find best time across all zones
+nylas timezone find-meeting \
+  --zones "$ZONES" \
+  --duration 60 \
+  --earliest 9 \
+  --latest 17
+
+# View schedule in multiple timezones
+nylas calendar events list --timezone America/Los_Angeles
+nylas calendar events list --timezone Europe/London --show-tz
+```
+
+---
+
+### Batch Create Events
+
+```bash
+#!/bin/bash
+# batch-create-events.sh
+
+# Read from CSV: title,start,duration,participants
+while IFS=, read -r title start duration participants; do
+  echo "Creating: $title"
+
+  nylas calendar events create \
+    --title "$title" \
+    --start "$start" \
+    --duration "$duration" \
+    --participant "$participants" \
+    --yes
+
+  sleep 1  # Rate limiting
+done < events.csv
+```
+
+---
+
+### Interview Scheduling Automation
+
+```bash
+#!/bin/bash
+# interview-scheduler.sh
+
+CANDIDATE_EMAIL="$1"
+CANDIDATE_NAME="$2"
+INTERVIEW_DATE="$3"
+
+# Schedule interview panel
+PANEL=(
+  "hiring-manager@company.com:30:Technical Screen"
+  "engineer@company.com:60:Technical Interview"
+  "hr@company.com:30:Culture Fit"
+)
+
+current_time="$INTERVIEW_DATE 09:00"
+
+for interview in "${PANEL[@]}"; do
+  IFS=: read -r interviewer duration title <<< "$interview"
+
+  nylas calendar events create \
+    --title "Interview: $CANDIDATE_NAME - $title" \
+    --start "$current_time" \
+    --duration "$duration" \
+    --participant "$CANDIDATE_EMAIL,$interviewer" \
+    --yes
+
+  sleep 1
+done
+```
+
+---
+
+### DST-Aware Scheduling
+
+```bash
+#!/bin/bash
+# dst-aware-schedule.sh
+
+# Check for DST transitions before scheduling
+nylas timezone dst --zone "America/New_York" --year 2025
+
+# Schedule with explicit timezone to avoid DST issues
+nylas calendar events create \
+  --title "Important Meeting" \
+  --start "2025-03-10 10:00" \
+  --timezone "America/New_York" \
+  --duration 60
+```
+
+---
+
+### Best Practices
+
+**Rate limiting:**
+```bash
+for event in "${events[@]}"; do
+  nylas calendar events create ...
+  sleep 1  # Wait between API calls
+done
+```
+
+**Timezone best practices:**
+1. Always specify timezone explicitly for multi-timezone teams
+2. Check DST transitions when scheduling near March/November
+3. Use IANA timezone names (not abbreviations like EST/PST)
+4. Use UTC as common reference for global teams
+
+---
+

@@ -8,23 +8,23 @@
 
 | Change Type | Update Files | Priority |
 |-------------|--------------|----------|
-| **New CLI command** | CLAUDE.md, COMMANDS.md, cmd/nylas/main.go | 🔴 CRITICAL |
-| **New integration test** | CLAUDE.md, DEVELOPMENT.md | 🔴 CRITICAL |
-| **New adapter/API method** | CLAUDE.md, ARCHITECTURE.md (if new file) | 🟡 IF NEEDED |
-| **New domain model** | CLAUDE.md, ARCHITECTURE.md (if major) | 🟡 IF NEEDED |
-| **Test structure change** | CLAUDE.md, DEVELOPMENT.md, all test rules | 🔴 CRITICAL |
+| **New CLI command** | CLAUDE.md, docs/COMMANDS.md, cmd/nylas/main.go | 🔴 CRITICAL |
+| **New integration test** | CLAUDE.md, docs/DEVELOPMENT.md | 🔴 CRITICAL |
+| **New adapter/API method** | CLAUDE.md, docs/ARCHITECTURE.md (if new file) | 🟡 IF NEEDED |
+| **New domain model** | CLAUDE.md, docs/ARCHITECTURE.md (if major) | 🟡 IF NEEDED |
+| **Test structure change** | CLAUDE.md, docs/DEVELOPMENT.md, .claude/rules/testing.md | 🔴 CRITICAL |
 | **New skill/workflow** | CLAUDE.md (if user-facing) | 🟡 IF NEEDED |
-| **Security change** | SECURITY.md | 🔴 CRITICAL |
-| **Architecture change** | ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
-| **Utility feature** | CLAUDE.md, COMMANDS.md | 🔴 CRITICAL |
-| **Timezone change** | TIMEZONE.md, COMMANDS.md, CLAUDE.md | 🔴 CRITICAL |
-| **Working hours/breaks** | TIMEZONE.md, ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
+| **Security change** | docs/security/overview.md | 🔴 CRITICAL |
+| **Architecture change** | docs/ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
+| **Utility feature** | CLAUDE.md, docs/COMMANDS.md | 🔴 CRITICAL |
+| **Timezone change** | docs/commands/timezone.md, docs/COMMANDS.md, CLAUDE.md | 🔴 CRITICAL |
+| **Working hours/breaks** | docs/commands/timezone.md, docs/ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
 
 ---
 
 ## Timezone & Working Hours Changes ⚠️ CRITICAL
 
-**Always update `docs/TIMEZONE.md` when modifying:**
+**Always update `docs/commands/timezone.md` when modifying:**
 - `internal/cli/calendar/helpers.go` (timezone conversion)
 - `internal/cli/calendar/events.go` (--timezone, --show-tz flags)
 - `internal/adapters/utilities/timezone/service.go` (timezone service)
@@ -61,7 +61,7 @@
 - [ ] Updated .claude/ rules if needed
 
 ### For Timezone/Calendar:
-- [ ] Updated docs/TIMEZONE.md
+- [ ] Updated docs/commands/timezone.md
 - [ ] Updated docs/COMMANDS.md calendar section
 - [ ] Verified examples work
 
@@ -88,4 +88,4 @@ grep -r "old-pattern" docs/ .claude/ *.md
 
 ---
 
-**Last Updated:** December 31, 2024
+**Last Updated:** January 3, 2025

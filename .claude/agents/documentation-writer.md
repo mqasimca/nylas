@@ -25,70 +25,36 @@ You maintain documentation for a public Go CLI repository. Good docs are critica
 
 ## Documentation Structure
 
-### Primary Docs (`docs/`)
+**📚 Source of truth: `docs/INDEX.md`**
 
-| File | Purpose | Update When |
-|------|---------|-------------|
-| `COMMANDS.md` | CLI command reference (summary) | New command, flag, or behavior change |
-| `ARCHITECTURE.md` | Code structure guide | New package, pattern, or layer |
-| `DEVELOPMENT.md` | Contributor guide | Build, test, or workflow changes |
-| `SECURITY.md` | Security practices | Auth, credential, or security changes |
-| `AI.md` | AI feature docs | AI provider or feature changes |
-| `MCP.md` | MCP server docs | MCP integration changes |
-| `TIMEZONE.md` | Timezone handling | Timezone or calendar changes |
-| `TUI.md` | Terminal UI docs | TUI feature changes |
-| `WEBHOOKS.md` | Webhook handling | Webhook feature changes |
-| `FAQ.md` | Common questions | New user confusion patterns |
-| `TROUBLESHOOTING.md` | Issue resolution | New error patterns or fixes |
-| `EXAMPLES.md` | Usage examples | New features or workflows |
+Always read `docs/INDEX.md` first to understand:
+- Current documentation structure
+- Which docs exist for each feature
+- Navigation paths for users and developers
 
-### Detailed Command Docs (`docs/commands/`)
-
-**IMPORTANT:** Each major feature has detailed documentation with examples.
-
-| File | Content | Update When |
-|------|---------|-------------|
-| `email.md` | List, read, send, search, drafts, AI analyze | Email command changes |
-| `calendar.md` | Events, availability, scheduling, AI features | Calendar command changes |
-| `contacts.md` | CRUD, groups, photos, sync | Contacts command changes |
-| `timezone.md` | Convert, DST, find, info utilities | Timezone utility changes |
-| `webhooks.md` | Create, test, monitor, server | Webhook command changes |
-| `scheduler.md` | Bookings, configurations, pages | Scheduler command changes |
-| `admin.md` | Applications, connectors, credentials | Admin command changes |
-
-**Pattern:** `COMMANDS.md` has quick reference → `docs/commands/<feature>.md` has full details with examples.
-
-### Root Docs
-
-| File | Purpose | Update When |
-|------|---------|-------------|
-| `README.md` | Project overview | Major features, install changes |
-| `CLAUDE.md` | AI assistant guide | New patterns, rules, or structure |
-| `CONTRIBUTING.md` | Contribution guide | Process or requirement changes |
-| `CHANGELOG.md` | Version history | Each release |
+**Pattern:** `docs/COMMANDS.md` has quick reference → `docs/commands/<feature>.md` has full details with examples.
 
 ---
 
 ## Update Matrix
 
-### What Triggers Doc Updates
-
 | Code Change | Docs to Update |
 |-------------|----------------|
-| New CLI command | `COMMANDS.md` + `docs/commands/<feature>.md` + `README.md` (if major) |
-| New CLI flag | `COMMANDS.md` + `docs/commands/<feature>.md` |
-| Flag behavior change | `docs/commands/<feature>.md`, `TROUBLESHOOTING.md` |
-| New API method | `ARCHITECTURE.md` |
-| New adapter | `ARCHITECTURE.md` |
-| Auth flow change | `SECURITY.md`, `COMMANDS.md` |
-| AI feature | `AI.md`, `COMMANDS.md`, `docs/commands/<feature>.md` |
-| MCP change | `MCP.md` |
-| Timezone feature | `TIMEZONE.md`, `docs/commands/timezone.md` |
-| Build/test change | `DEVELOPMENT.md` |
-| New error pattern | `TROUBLESHOOTING.md` |
+| New CLI command | `docs/COMMANDS.md` + `docs/commands/<feature>.md` + `README.md` (if major) |
+| New CLI flag | `docs/COMMANDS.md` + `docs/commands/<feature>.md` |
+| Flag behavior change | `docs/commands/<feature>.md`, `docs/troubleshooting/` |
+| New API method | `docs/ARCHITECTURE.md` |
+| Auth flow change | `docs/security/overview.md`, `docs/COMMANDS.md` |
+| AI feature | `docs/commands/ai.md`, `docs/COMMANDS.md` |
+| MCP change | `docs/commands/mcp.md` |
+| Build/test change | `docs/DEVELOPMENT.md` |
+| New error pattern | `docs/troubleshooting/` |
 | Breaking change | `CHANGELOG.md`, affected docs |
+| New doc file | `docs/INDEX.md` (add to navigation) |
 
-### Two-Level Documentation Rule
+---
+
+## Two-Level Documentation Rule
 
 **Always maintain both levels:**
 
@@ -105,9 +71,19 @@ You maintain documentation for a public Go CLI repository. Good docs are critica
 
 ---
 
-## Documentation Standards
+## Workflow
 
-**Full standards:** See `references/doc-standards.md` for writing style, formatting, and patterns.
+1. **Read `docs/INDEX.md`** - Understand current doc structure
+2. **Identify affected docs** - Use Update Matrix above
+3. **Read current state** - Understand existing documentation
+4. **Make updates** - Follow standards in `references/doc-standards.md`
+5. **Verify examples** - Test any code examples
+6. **Check links** - Ensure no broken references
+7. **Update INDEX.md** - If adding/removing/moving docs
+
+---
+
+## Documentation Standards
 
 **Key principles:**
 - Active voice, imperative mood, concise
@@ -119,29 +95,17 @@ You maintain documentation for a public Go CLI repository. Good docs are critica
 - [ ] Examples tested and working
 - [ ] Links valid
 - [ ] Consistent style
-
-**Patterns:** See `references/doc-standards.md` for command patterns, breaking changes, troubleshooting entries.
-
----
-
-## Workflow
-
-1. **Identify affected docs** - Use Update Matrix above
-2. **Read current state** - Understand existing documentation
-3. **Make updates** - Follow standards in `references/doc-standards.md`
-4. **Verify examples** - Test any code examples
-5. **Check links** - Ensure no broken references
-6. **Update CHANGELOG** - If user-facing change
+- [ ] INDEX.md updated if structure changed
 
 ---
 
 ## Rules
 
-1. **Docs follow code** - Every behavior change needs doc update
-2. **Examples must work** - Test before committing
-3. **No orphan links** - Check all references
-4. **Consistent style** - Match existing patterns
-5. **User perspective** - Write for the user, not developer
-6. **Keep current** - Outdated docs are worse than no docs
-7. **Be concise** - Respect reader's time
-8. **Public repo awareness** - No internal info
+1. **INDEX.md is source of truth** - Check it first, update it when structure changes
+2. **Docs follow code** - Every behavior change needs doc update
+3. **Examples must work** - Test before committing
+4. **No orphan links** - Check all references
+5. **Consistent style** - Match existing patterns
+6. **User perspective** - Write for the user, not developer
+7. **Keep current** - Outdated docs are worse than no docs
+8. **Be concise** - Respect reader's time

@@ -284,3 +284,148 @@ nylas email metadata info
 
 ---
 
+## Workflows & Automation
+
+### Daily Email Check
+
+```bash
+#!/bin/bash
+# morning-email-check.sh
+
+echo "=== Morning Email Summary ==="
+
+# Count unread emails
+unread=$(nylas email list --unread | grep -c "From:")
+echo "Unread emails: $unread"
+
+# Check for urgent/important
+urgent=$(nylas email list --unread | grep -ci "urgent\|important\|asap")
+echo "Urgent emails: $urgent"
+
+# List recent unread
+echo ""
+echo "Recent unread emails:"
+nylas email list --unread --limit 10
+```
+
+---
+
+### Bulk Email Operations
+
+```bash
+#!/bin/bash
+# bulk-send.sh
+
+# Read emails from file (one per line)
+while IFS= read -r email; do
+  echo "Sending to: $email"
+
+  nylas email send \
+    --to "$email" \
+    --subject "Newsletter - $(date +%B\ %Y)" \
+    --body "Dear subscriber, ..." \
+    --yes
+
+  sleep 2  # Rate limiting
+done < email-list.txt
+```
+
+---
+
+### Scheduled Email Automation
+
+```bash
+# Send in 2 hours
+nylas email send \
+  --to "team@company.com" \
+  --subject "Meeting Reminder" \
+  --body "Reminder: Team meeting in 1 hour" \
+  --schedule 2h
+
+# Send tomorrow morning
+nylas email send \
+  --to "team@company.com" \
+  --subject "Daily Standup" \
+  --body "Good morning! Today's standup at 9:30 AM" \
+  --schedule "tomorrow 9am"
+```
+
+---
+
+### Customer Onboarding Automation
+
+```bash
+#!/bin/bash
+# customer-onboarding.sh
+
+CUSTOMER_EMAIL="$1"
+CUSTOMER_NAME="$2"
+
+# Day 1: Welcome email
+nylas email send \
+  --to "$CUSTOMER_EMAIL" \
+  --subject "Welcome to Our Service!" \
+  --body "Hi $CUSTOMER_NAME, welcome aboard!" \
+  --yes
+
+# Day 3: Getting started tips (scheduled)
+nylas email send \
+  --to "$CUSTOMER_EMAIL" \
+  --subject "Getting Started Tips" \
+  --body "Hi $CUSTOMER_NAME, here are some tips..." \
+  --schedule "3 days" \
+  --yes
+
+# Day 7: Check-in (scheduled)
+nylas email send \
+  --to "$CUSTOMER_EMAIL" \
+  --subject "How's It Going?" \
+  --body "Hi $CUSTOMER_NAME, any questions?" \
+  --schedule "7 days" \
+  --yes
+```
+
+---
+
+### Email Notification Monitor
+
+```bash
+#!/bin/bash
+# email-monitor.sh
+
+while true; do
+  urgent=$(nylas email list --unread | grep -ci "urgent\|asap\|important")
+
+  if [ $urgent -gt 0 ]; then
+    # macOS notification
+    osascript -e "display notification \"You have $urgent urgent emails\" with title \"Email Alert\""
+  fi
+
+  sleep 300  # Check every 5 minutes
+done
+```
+
+---
+
+### Best Practices
+
+**Rate limiting:**
+```bash
+for email in "${emails[@]}"; do
+  nylas email send --to "$email" --subject "..." --body "..."
+  sleep 2  # Wait between sends
+done
+```
+
+**Error handling:**
+```bash
+if nylas email send --to "user@example.com" --subject "Test" --body "Test"; then
+  echo "Email sent successfully"
+else
+  echo "Failed to send email" >&2
+  exit 1
+fi
+```
+
+---
+

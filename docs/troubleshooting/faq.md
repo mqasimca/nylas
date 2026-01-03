@@ -339,7 +339,7 @@ nylas calendar events show <event-id> --timezone Asia/Tokyo
 nylas calendar events show <event-id> --timezone America/New_York
 ```
 
-See: [Timezone Guide](../TIMEZONE.md)
+See: [Timezone Guide](../commands/timezone.md)
 
 ---
 
@@ -518,7 +518,7 @@ q or :q     Quit
 Tab         Switch panels
 ```
 
-See: [TUI Documentation](../TUI.md)
+See: [TUI Documentation](../commands/tui.md)
 
 ---
 
@@ -579,7 +579,7 @@ nylas webhook list
 nylas webhook test <webhook-id>
 ```
 
-See: [Webhook Guide](../WEBHOOKS.md)
+See: [Webhook Guide](../commands/webhooks.md)
 
 ---
 
@@ -830,7 +830,6 @@ See: [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 ## Still Have Questions?
 
-- **Troubleshooting:** [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+- **Troubleshooting:** See guides in this folder
 - **Commands:** [COMMANDS.md](../COMMANDS.md)
-- **Examples:** [EXAMPLES.md](../EXAMPLES.md)
 - **GitHub Issues:** https://github.com/mqasimca/nylas/issues

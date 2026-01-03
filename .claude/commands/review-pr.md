@@ -40,7 +40,7 @@ gh pr diff <pr-number>
 - [ ] Tests pass: `go test ./...`
 
 ### Documentation
-- [ ] docs/COMMANDS.md or docs/TUI.md updated if user-facing changes
+- [ ] docs/COMMANDS.md or docs/commands/tui.md updated if user-facing changes
 - [ ] Code comments for non-obvious logic
 - [ ] Examples in command help text
 

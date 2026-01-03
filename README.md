@@ -15,6 +15,7 @@ A unified command-line tool for Nylas API authentication, email management, cale
 - **Calendar Management**: View calendars, list/create/delete events, check availability
 - **Contacts Management**: List, view, create, and delete contacts and contact groups
 - **Webhook Management**: Create, update, delete, and test webhooks for event notifications
+- **Inbound Email**: Receive emails at managed addresses without OAuth (e.g., support@yourapp.nylas.email)
 - **Scheduler Management**: Create and manage meeting configurations, booking pages, sessions, and bookings
 - **Admin Operations**: Manage applications, connectors, credentials, and grants across your organization
 - **Draft Management**: Create, edit, and send drafts
@@ -91,7 +92,7 @@ nylas calendar events show <event-id> --timezone Asia/Tokyo
 - ✅ Natural language time parsing ready for integration
 - 🔄 Timezone locking (planned - Task 1.5)
 
-**[Full Timezone Documentation](docs/TIMEZONE.md)**
+**[Full Timezone Documentation](docs/commands/timezone.md)**
 
 ### AI-Powered Scheduling (Coming Soon)
 
@@ -109,7 +110,7 @@ nylas calendar ai analyze --learn-patterns
 nylas calendar ai reschedule <event-id> --reason "Urgent task"
 ```
 
-**[Full AI Documentation](docs/AI.md)**
+**[Full AI Documentation](docs/commands/ai.md)**
 
 ### Email & Calendar (Requires API)
 
@@ -172,6 +173,7 @@ nylas admin applications list
 | `nylas calendar` | Calendar and event management | Yes |
 | `nylas contacts` | Contact management | Yes |
 | `nylas webhook` | Webhook configuration | Yes |
+| `nylas inbound` | Inbound email inboxes (managed addresses) | Yes |
 | `nylas scheduler` | Scheduler configurations, bookings, and pages | Yes |
 | `nylas admin` | Administration (applications, connectors, credentials, grants) | Yes |
 | `nylas otp` | OTP code extraction | Yes |
@@ -197,7 +199,7 @@ nylas tui --theme amber      # Retro amber CRT theme
 
 **Vim-style keys:** `j/k` navigate, `gg/G` first/last, `dd` delete, `:q` quit, `/` search
 
-**[Full TUI Documentation](docs/TUI.md)**
+**[Full TUI Documentation](docs/commands/tui.md)**
 
 ---
 
@@ -233,12 +235,12 @@ Config file location: `~/.config/nylas/config.yaml`
 | Document | Description |
 |----------|-------------|
 | [Commands](docs/COMMANDS.md) | CLI command reference with examples |
-| [Timezone](docs/TIMEZONE.md) | Comprehensive timezone utilities guide |
-| [Webhooks](docs/WEBHOOKS.md) | Webhook testing and development guide |
-| [TUI](docs/TUI.md) | Terminal UI themes, keys, customization |
+| [Timezone](docs/commands/timezone.md) | Comprehensive timezone utilities guide |
+| [Webhooks](docs/commands/webhooks.md) | Webhook testing and development guide |
+| [TUI](docs/commands/tui.md) | Terminal UI themes, keys, customization |
 | [Architecture](docs/ARCHITECTURE.md) | Hexagonal architecture overview |
 | [Development](docs/DEVELOPMENT.md) | Testing, building, and contributing |
-| [Security](docs/SECURITY.md) | Security practices and credential handling |
+| [Security](docs/security/overview.md) | Security practices and credential handling |
 
 ---
 

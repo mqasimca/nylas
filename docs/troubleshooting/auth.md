@@ -452,6 +452,6 @@ nylas doctor
    - Verify Grant ID exists
 
 4. **Get help:**
-   - Check [FAQ](../FAQ.md)
+   - Check [FAQ](faq.md)
    - Report issue: https://github.com/mqasimca/nylas/issues
    - Nylas support: https://support.nylas.com

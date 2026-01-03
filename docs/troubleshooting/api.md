@@ -556,6 +556,6 @@ nylas calendar list        # Calendar API
 1. **Check API status:** https://status.nylas.com
 2. **Review docs:** https://developer.nylas.com/docs/api/v3/
 3. **Run diagnostics:** `nylas doctor`
-4. **Check FAQ:** [FAQ.md](../FAQ.md)
+4. **Check FAQ:** [faq.md](faq.md)
 5. **Report issue:** https://github.com/mqasimca/nylas/issues
 6. **Nylas support:** https://support.nylas.com

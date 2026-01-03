@@ -10,7 +10,7 @@ Resource: $ARGUMENTS
 
 1. Gather: resource name, parent command, operations needed, API endpoint, key fields
 2. Use patterns from `../add-command/references/`
-3. Follow `templates/crud-checklist.md` for file generation
+3. Follow the Generation Steps below for file creation
 4. Run `make ci` to verify
 
 ---
@@ -22,7 +22,6 @@ Resource: $ARGUMENTS
 | `../add-command/references/domain-patterns.md` | Domain type templates |
 | `../add-command/references/adapter-patterns.md` | API implementation |
 | `../add-command/references/cli-patterns.md` | CLI command structure |
-| `templates/crud-checklist.md` | Complete file checklist |
 
 ---
 
@@ -71,4 +70,12 @@ make ci-full
 
 ## Checklist
 
-See `templates/crud-checklist.md` for complete file list.
+- [ ] Domain type created (`internal/domain/{resource}.go`)
+- [ ] Port methods added (`internal/ports/nylas.go`)
+- [ ] Adapter implementation (`internal/adapters/nylas/{resource}s.go`)
+- [ ] Mock functions (`internal/adapters/nylas/mock_{resource}.go`)
+- [ ] Demo data (`internal/adapters/nylas/demo_{resource}.go`)
+- [ ] CLI commands (`internal/cli/{resource}/`)
+- [ ] Registered in main (`cmd/nylas/main.go`)
+- [ ] Tests pass (`make ci-full`)
+- [ ] Help works (`./bin/nylas {resource} --help`)

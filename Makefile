@@ -285,24 +285,24 @@ ci-full:
 	@echo "Running Full CI Pipeline..."
 	@echo "================================="
 	@$(MAKE) --no-print-directory ci 2>&1 | tee ci-full.txt
-	@echo "" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@echo "Running Integration Tests..." | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@$(MAKE) --no-print-directory test-integration 2>&1 | tee -a ci-full.txt
-	@$(MAKE) --no-print-directory test-air-integration 2>&1 | tee -a ci-full.txt
-	@echo "" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@echo "Cleaning up test resources..." | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@$(MAKE) --no-print-directory test-cleanup 2>&1 | tee -a ci-full.txt
-	@echo "" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@echo "✓ Full CI pipeline completed!" | tee -a ci-full.txt
-	@echo "  - All quality checks passed" | tee -a ci-full.txt
-	@echo "  - All tests passed" | tee -a ci-full.txt
-	@echo "  - Test resources cleaned up" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
+	@echo "" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@echo "Running Integration Tests..." | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@$(MAKE) --no-print-directory test-integration 2>&1 | tee ci-full.txt
+	@$(MAKE) --no-print-directory test-air-integration 2>&1 | tee ci-full.txt
+	@echo "" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@echo "Cleaning up test resources..." | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@$(MAKE) --no-print-directory test-cleanup 2>&1 | tee ci-full.txt
+	@echo "" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@echo "✓ Full CI pipeline completed!" | tee ci-full.txt
+	@echo "  - All quality checks passed" | tee ci-full.txt
+	@echo "  - All tests passed" | tee ci-full.txt
+	@echo "  - Test resources cleaned up" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
 	@echo ""
 	@echo "Results saved to ci-full.txt"
 
@@ -315,13 +315,13 @@ check-context:
 	@echo "======================"
 	@echo ""
 	@echo "Auto-loaded files:"
-	@ls -lh CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
+	@ls -lh CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/security/overview.md 2>/dev/null | awk '{print $$5, $$9}'
 	@echo ""
 	@echo "On-demand files (excluded from auto-load):"
-	@ls -lh docs/COMMANDS.md docs/MCP.md docs/AI.md docs/ARCHITECTURE.md 2>/dev/null | awk '{print $$5, $$9}'
+	@ls -lh docs/COMMANDS.md docs/commands/mcp.md docs/commands/ai.md docs/ARCHITECTURE.md 2>/dev/null | awk '{print $$5, $$9}'
 	@echo ""
-	@TOTAL=$$(ls -l CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
-	ONDEMAND=$$(ls -l docs/COMMANDS.md docs/MCP.md docs/AI.md docs/ARCHITECTURE.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	@TOTAL=$$(ls -l CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/security/overview.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	ONDEMAND=$$(ls -l docs/COMMANDS.md docs/commands/mcp.md docs/commands/ai.md docs/ARCHITECTURE.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
 	echo "Auto-loaded context: $${TOTAL}KB (~$$((TOTAL / 4)) tokens)"; \
 	echo "On-demand available: $${ONDEMAND}KB"; \
 	echo ""; \

@@ -10,7 +10,7 @@ Quick navigation guide to find the right documentation for your needs.
 
 - **Learn about Nylas CLI** → [README.md](../README.md)
 - **Quick command reference** → [COMMANDS.md](COMMANDS.md)
-- **See examples** → [EXAMPLES.md](EXAMPLES.md) or [examples/](examples/)
+- **See examples** → [COMMANDS.md](COMMANDS.md) and [commands/](commands/)
 
 ### Understand the Project
 
@@ -44,12 +44,12 @@ Quick navigation guide to find the right documentation for your needs.
 
 - **Fix build errors** → [.claude/commands/fix-build.md](../.claude/commands/fix-build.md)
 - **Debug test failure** → [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md)
-- **Troubleshooting guide** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md) or [troubleshooting/](troubleshooting/)
+- **Troubleshooting guide** → [troubleshooting/](troubleshooting/)
 
 ### Quality & Security
 
 - **Security scan** → [.claude/commands/security-scan.md](../.claude/commands/security-scan.md)
-- **Security guidelines** → [SECURITY.md](SECURITY.md)
+- **Security guidelines** → [security/overview.md](security/overview.md)
 - **Code review** → [.claude/commands/review-pr.md](../.claude/commands/review-pr.md)
 - **Go quality & linting** → [.claude/rules/go-quality.md](../.claude/rules/go-quality.md)
 - **File size limits** → [.claude/rules/file-size-limits.md](../.claude/rules/file-size-limits.md)
@@ -60,15 +60,49 @@ Quick navigation guide to find the right documentation for your needs.
 - **Documentation rules** → [.claude/rules/documentation-maintenance.md](../.claude/rules/documentation-maintenance.md)
 - **Go quality rules** → [.claude/rules/go-quality.md](../.claude/rules/go-quality.md)
 
-### Specific Features
+### Command Guides
 
-- **AI features** → [AI.md](AI.md) or [ai/](ai/)
-- **Timezone handling** → [TIMEZONE.md](TIMEZONE.md) or [timezone/](timezone/)
-- **Calendar commands** → [commands/calendar.md](commands/calendar.md)
-- **Email commands** → [commands/email.md](commands/email.md)
-- **Slack integration** → [COMMANDS.md#slack-integration](COMMANDS.md#slack-integration)
-- **Webhooks** → [WEBHOOKS.md](WEBHOOKS.md) or [commands/webhooks.md](commands/webhooks.md)
-- **TUI (Terminal UI)** → [TUI.md](TUI.md)
+- **Email** → [commands/email.md](commands/email.md)
+- **Calendar** → [commands/calendar.md](commands/calendar.md)
+- **Contacts** → [commands/contacts.md](commands/contacts.md)
+- **Webhooks** → [commands/webhooks.md](commands/webhooks.md)
+- **Inbound email** → [commands/inbound.md](commands/inbound.md)
+- **Scheduler** → [commands/scheduler.md](commands/scheduler.md)
+- **Admin** → [commands/admin.md](commands/admin.md)
+- **Timezone** → [commands/timezone.md](commands/timezone.md)
+- **TUI** → [commands/tui.md](commands/tui.md)
+- **Workflows (OTP)** → [commands/workflows.md](commands/workflows.md)
+- **Slack** → [COMMANDS.md#slack-integration](COMMANDS.md#slack-integration)
+
+### AI & MCP
+
+- **AI features** → [commands/ai.md](commands/ai.md)
+- **MCP integration** → [commands/mcp.md](commands/mcp.md)
+- **AI configuration** → [ai/configuration.md](ai/configuration.md)
+- **AI providers** → [ai/providers.md](ai/providers.md)
+- **AI privacy** → [ai/privacy-security.md](ai/privacy-security.md)
+- **AI best practices** → [ai/best-practices.md](ai/best-practices.md)
+- **AI architecture** → [ai/architecture.md](ai/architecture.md)
+- **AI features list** → [ai/features.md](ai/features.md)
+- **AI FAQ** → [ai/faq.md](ai/faq.md)
+- **AI troubleshooting** → [ai/troubleshooting.md](ai/troubleshooting.md)
+
+### Development Guides
+
+- **Adding commands** → [development/adding-command.md](development/adding-command.md)
+- **Adding adapters** → [development/adding-adapter.md](development/adding-adapter.md)
+- **Testing guide** → [development/testing-guide.md](development/testing-guide.md)
+- **Debugging** → [development/debugging.md](development/debugging.md)
+
+### Security & Troubleshooting
+
+- **Security overview** → [security/overview.md](security/overview.md)
+- **Security practices** → [security/practices.md](security/practices.md)
+- **FAQ** → [troubleshooting/faq.md](troubleshooting/faq.md)
+- **Auth issues** → [troubleshooting/auth.md](troubleshooting/auth.md)
+- **API issues** → [troubleshooting/api.md](troubleshooting/api.md)
+- **Email issues** → [troubleshooting/email.md](troubleshooting/email.md)
+- **Timezone issues** → [troubleshooting/timezone.md](troubleshooting/timezone.md)
 
 ---
 
@@ -76,20 +110,49 @@ Quick navigation guide to find the right documentation for your needs.
 
 ```
 docs/
-├── *.md                    # Main documentation (auto-loaded by Claude)
-├── INDEX.md               # This file
-├── ai/                    # AI feature details (load on-demand)
-├── commands/              # Detailed command guides (load on-demand)
-├── development/           # Development guides (load on-demand)
-├── examples/              # Usage examples (load on-demand)
-├── timezone/              # Detailed timezone docs (load on-demand)
-└── troubleshooting/       # Debug guides (load on-demand)
-
-.claude/
-├── commands/              # 20 actionable skills
-├── rules/                 # 6 development rules (auto-loaded)
-├── agents/                # 6 specialized agents
-└── hooks/                 # 6 automation hooks
+├── INDEX.md               # This file - start here
+├── COMMANDS.md            # CLI quick reference
+├── ARCHITECTURE.md        # System design
+├── DEVELOPMENT.md         # Development setup
+│
+├── commands/              # Detailed command guides (12 files)
+│   ├── ai.md              # AI features
+│   ├── mcp.md             # MCP integration
+│   ├── calendar.md        # Calendar events
+│   ├── email.md           # Email operations
+│   ├── contacts.md        # Contact management
+│   ├── webhooks.md        # Webhook setup
+│   ├── inbound.md         # Inbound email
+│   ├── scheduler.md       # Booking pages
+│   ├── admin.md           # API management
+│   ├── timezone.md        # Timezone utilities
+│   ├── tui.md             # Terminal UI
+│   └── workflows.md       # OTP & automation
+│
+├── ai/                    # AI configuration (8 files)
+│   ├── configuration.md   # Setup guide
+│   ├── providers.md       # Provider options
+│   ├── privacy-security.md # Privacy controls
+│   └── ...
+│
+├── development/           # Dev guides (4 files)
+│   ├── adding-command.md  # Add CLI commands
+│   ├── adding-adapter.md  # Add API adapters
+│   ├── testing-guide.md   # Testing patterns
+│   └── debugging.md       # Debug tips
+│
+├── security/              # Security (2 files)
+│   ├── overview.md        # Quick reference
+│   └── practices.md       # Detailed practices
+│
+├── troubleshooting/       # Debug guides (5 files)
+│   ├── faq.md             # Common questions
+│   ├── auth.md            # Auth issues
+│   ├── api.md             # API errors
+│   ├── email.md           # Email issues
+│   └── timezone.md        # Timezone issues
+│
+└── images/                # Screenshots (5 PNGs)
 ```
 
 ---
@@ -110,7 +173,7 @@ docs/
 
 ### **Bug Fixers**
 1. [.claude/commands/debug-test-failure.md](../.claude/commands/debug-test-failure.md) - Test debugging
-2. [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+2. [troubleshooting/](troubleshooting/) - Common issues & FAQ
 3. [.claude/commands/fix-build.md](../.claude/commands/fix-build.md) - Fix build errors
 
 ### **Maintainers**
@@ -121,8 +184,7 @@ docs/
 ### **Users**
 1. [README.md](../README.md) - Getting started
 2. [COMMANDS.md](COMMANDS.md) - Command reference
-3. [EXAMPLES.md](EXAMPLES.md) - Usage examples
-4. [FAQ.md](FAQ.md) - Common questions
+3. [troubleshooting/faq.md](troubleshooting/faq.md) - Common questions
 
 ---
 
@@ -130,10 +192,10 @@ docs/
 
 - **For AI (Claude):** Most docs are in CLAUDE.md and .claude/ directory
 - **For humans:** Start with README.md and COMMANDS.md
-- **Need help?** Check FAQ.md or TROUBLESHOOTING.md
+- **Need help?** Check [troubleshooting/faq.md](troubleshooting/faq.md)
 - **Adding code?** Follow workflows in .claude/commands/
-- **Security concern?** See SECURITY.md
+- **Security concern?** See [security/overview.md](security/overview.md)
 
 ---
 
-**Last Updated:** December 30, 2024
+**Last Updated:** January 3, 2025

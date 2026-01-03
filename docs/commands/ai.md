@@ -2,7 +2,7 @@
 
 **Privacy-first AI assistant with multi-provider support**
 
-> **Quick Links:** [Configuration](ai/configuration.md) | [Providers](ai/providers.md) | [Privacy](ai/privacy-security.md)
+> **Quick Reference:** [COMMANDS.md](../COMMANDS.md#ai-features) | **Related:** [Calendar](calendar.md) | [Email](email.md)
 
 ---
 
@@ -23,17 +23,17 @@ AI assistant features:
 ## Privacy-First Design
 
 ### Local AI (Ollama) - Default
-- ✅ All data stays on your machine
-- ✅ No external API calls
-- ✅ GDPR/HIPAA compliant
-- ✅ Works offline
-- ✅ **Zero cost** (completely free)
+- All data stays on your machine
+- No external API calls
+- GDPR/HIPAA compliant
+- Works offline
+- **Zero cost** (completely free)
 
 ### Cloud AI - Opt-In
-- ⚠️ Requires explicit consent
-- ⚠️ Data sent to third-party API
-- ✅ Advanced reasoning
-- ✅ Faster processing
+- Requires explicit consent
+- Data sent to third-party API
+- Advanced reasoning
+- Faster processing
 
 ---
 
@@ -72,16 +72,16 @@ nylas calendar find-time --participants alice@example.com,bob@example.com --dura
 
 | Provider | Privacy | Cost | Best For |
 |----------|---------|------|----------|
-| **Ollama** | 🟢 Local | Free | Privacy, offline, zero cost |
-| **Claude** | 🟡 Cloud | $$ | Advanced reasoning |
-| **OpenAI** | 🟡 Cloud | $$ | Fast processing |
-| **Groq** | 🟡 Cloud | $ | Low latency |
+| **Ollama** | Local | Free | Privacy, offline, zero cost |
+| **Claude** | Cloud | $$ | Advanced reasoning |
+| **OpenAI** | Cloud | $$ | Fast processing |
+| **Groq** | Cloud | $ | Low latency |
 
 **Default:** Ollama (local, private, free)
 
 ---
 
-## Features
+## Calendar AI Features
 
 ### Natural Language Scheduling
 ```bash
@@ -97,7 +97,18 @@ nylas calendar analyze focus-time    # Deep work analysis
 nylas calendar analyze productivity  # Productivity insights
 ```
 
-### Smart Conflict Resolution
+### Conflict Detection & Resolution
+```bash
+nylas calendar ai conflicts --days 7              # Detect conflicts
+nylas calendar ai reschedule <event-id> --reason "Conflict"  # AI reschedule
+```
+
+### Smart Meeting Finder
+```bash
+nylas calendar find-time --participants alice@example.com,bob@example.com --duration 1h
+```
+
+**Features:**
 - Auto-detects scheduling conflicts
 - Suggests optimal rescheduling times
 - Respects working hours and breaks
@@ -130,39 +141,42 @@ nylas email ai analyze --provider claude  # Use specific AI provider
 
 ### Example Output
 ```
-📧 Email Analysis (10 emails)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Email Analysis (10 emails)
 
-📋 Summary
+Summary
 Your inbox contains mostly work-related emails. 3 emails require
 immediate attention, and you have 2 newsletter updates.
 
-📁 Categories
+Categories
   Work (5)
-    • Project Update - from alice@company.com
-    • Meeting Request - from bob@company.com
+    - Project Update - from alice@company.com
+    - Meeting Request - from bob@company.com
   Newsletters (3)
-    • Weekly Digest - from news@tech.com
+    - Weekly Digest - from news@tech.com
 
-⚡ Action Items
-  🔴 HIGH: "Urgent: Contract Review" from legal@company.com
-     → Needs response: Contract deadline approaching
-  🟡 MEDIUM: "Meeting Request" from bob@company.com
-     → Needs response: Awaiting confirmation
+Action Items
+  HIGH: "Urgent: Contract Review" from legal@company.com
+     -> Needs response: Contract deadline approaching
+  MEDIUM: "Meeting Request" from bob@company.com
+     -> Needs response: Awaiting confirmation
 
-✨ Highlights
-  • Project deadline moved to January 15
-  • Team meeting scheduled for Friday
+Highlights
+  - Project deadline moved to January 15
+  - Team meeting scheduled for Friday
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Provider: ollama | Tokens: 450
+```
+
+### Smart Compose
+```bash
+nylas email smart-compose --prompt "Reply to thank them for the meeting"
 ```
 
 ---
 
 ## Configuration
 
-**Basic config (`~/.config/nylas/config.yaml`):**
+### Basic Config (`~/.config/nylas/config.yaml`)
 ```yaml
 ai:
   default_provider: ollama  # Required for AI commands
@@ -174,12 +188,7 @@ ai:
     local_storage_only: true
 ```
 
-**For detailed configuration:** `docs/ai/configuration.md`
-
----
-
-## Privacy Controls
-
+### Privacy Controls
 ```yaml
 ai:
   privacy:
@@ -189,20 +198,18 @@ ai:
     anonymize_patterns: true     # Remove PII from learned patterns
 ```
 
-**Privacy details:** `docs/ai/privacy-security.md`
-
 ---
 
 ## Detailed Documentation
 
-- **Configuration:** `docs/ai/configuration.md`
-- **Provider Setup:** `docs/ai/providers.md`
-- **Features Reference:** `docs/ai/features.md`
-- **Privacy & Security:** `docs/ai/privacy-security.md`
-- **Architecture:** `docs/ai/architecture.md`
-- **Troubleshooting:** `docs/ai/troubleshooting.md`
-- **Best Practices:** `docs/ai/best-practices.md`
-- **FAQ:** `docs/ai/faq.md`
+- [Configuration Guide](../ai/configuration.md)
+- [Provider Setup](../ai/providers.md)
+- [Features Reference](../ai/features.md)
+- [Privacy & Security](../ai/privacy-security.md)
+- [Architecture](../ai/architecture.md)
+- [Troubleshooting](../ai/troubleshooting.md)
+- [Best Practices](../ai/best-practices.md)
+- [FAQ](../ai/faq.md)
 
 ---
 

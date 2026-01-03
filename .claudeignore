@@ -47,15 +47,11 @@ docs/timezone/
 # Detailed troubleshooting guides (load on-demand)
 docs/troubleshooting/
 
-# Usage examples (load on-demand)
-docs/examples/
-
 # Developer guides (load on-demand)
 docs/development/
 
 # User-facing guides (load on-demand)
 docs/FAQ.md
-docs/EXAMPLES.md
 docs/TROUBLESHOOTING.md
 docs/INDEX.md
 

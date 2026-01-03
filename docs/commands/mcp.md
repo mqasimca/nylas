@@ -1,8 +1,8 @@
-# MCP (Model Context Protocol) Integration
+# MCP (Model Context Protocol)
 
-Enable AI assistants to interact with your Nylas email and calendar through the Model Context Protocol.
+Enable AI assistants to interact with your Nylas email and calendar.
 
-> **Quick Links:** [Commands](COMMANDS.md) | [Architecture](ARCHITECTURE.md) | [README](../README.md)
+> **Quick Reference:** [COMMANDS.md](../COMMANDS.md#mcp-model-context-protocol) | **Related:** [AI Features](ai.md)
 
 ---
 
@@ -218,34 +218,34 @@ Run `nylas auth login` to authenticate first.
 
 ```
 AI Assistant (Claude/Cursor/etc.)
-        │
-        │ STDIO (JSON-RPC)
-        ▼
-┌─────────────────────────────────┐
-│     Nylas CLI MCP Proxy         │
-│  (nylas mcp serve)              │
-│                                 │
-│  - Reads region from config     │
-│  - Injects credentials          │
-│  - Detects timezone             │
-│  - Handles local get_grant      │
-│  - Modifies tool schemas        │
-└─────────────────────────────────┘
-        │
-        │ HTTPS (region-based)
-        ▼
-┌─────────────────────────────────┐
-│   Nylas MCP Server              │
-│   mcp.us.nylas.com (US)         │
-│   mcp.eu.nylas.com (EU)         │
-└─────────────────────────────────┘
-        │
-        │ Nylas API v3
-        ▼
-┌─────────────────────────────────┐
-│   Email/Calendar Providers      │
-│   (Google, Microsoft, etc.)     │
-└─────────────────────────────────┘
+        |
+        | STDIO (JSON-RPC)
+        v
++-------------------------------+
+|     Nylas CLI MCP Proxy       |
+|  (nylas mcp serve)            |
+|                               |
+|  - Reads region from config   |
+|  - Injects credentials        |
+|  - Detects timezone           |
+|  - Handles local get_grant    |
+|  - Modifies tool schemas      |
++-------------------------------+
+        |
+        | HTTPS (region-based)
+        v
++-------------------------------+
+|   Nylas MCP Server            |
+|   mcp.us.nylas.com (US)       |
+|   mcp.eu.nylas.com (EU)       |
++-------------------------------+
+        |
+        | Nylas API v3
+        v
++-------------------------------+
+|   Email/Calendar Providers    |
+|   (Google, Microsoft, etc.)   |
++-------------------------------+
 ```
 
 ---
@@ -254,4 +254,4 @@ AI Assistant (Claude/Cursor/etc.)
 
 - [Nylas MCP Documentation](https://developer.nylas.com/docs/dev-guide/mcp/)
 - [Model Context Protocol Spec](https://modelcontextprotocol.io/)
-- [Commands Reference](COMMANDS.md)
+- [AI Features](ai.md)

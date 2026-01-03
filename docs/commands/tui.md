@@ -2,7 +2,7 @@
 
 Interactive terminal interface for Nylas email, calendar, and contacts.
 
-> **Quick Links:** [README](../README.md) | [Commands](COMMANDS.md) | [Development](DEVELOPMENT.md)
+> **Quick Links:** [README](../../README.md) | [Commands](../COMMANDS.md) | [Development](../DEVELOPMENT.md)
 
 ---
 
@@ -68,4 +68,19 @@ nylas tui --theme matrix     # Matrix green
 
 ---
 
-**Detailed guide:** See `docs/tui/` for themes, vim keybindings, custom themes, and all keyboard shortcuts.
+## Screenshots
+
+### Dashboard
+![TUI Demo](../images/tui-demo.png)
+
+### Messages View
+![Messages View](../images/tui-view-messages.png)
+
+### Calendar View
+![Calendar View](../images/tui-view-calendar.png)
+
+### Contacts View
+![Contacts View](../images/tui-view-contacts.png)
+
+### Webhooks View
+![Webhooks View](../images/tui-view-webhooks.png)
