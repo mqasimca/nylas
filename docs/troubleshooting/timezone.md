@@ -506,7 +506,7 @@ nylas timezone dst --zone <timezone> --year 2025
 
 ## Still Having Issues?
 
-1. **Check FAQ:** [FAQ.md](../FAQ.md)
-2. **Review timezone docs:** [TIMEZONE.md](../TIMEZONE.md)
+1. **Check FAQ:** [faq.md](faq.md)
+2. **Review timezone docs:** [commands/timezone.md](../commands/timezone.md)
 3. **List available timezones:** `nylas timezone list`
 4. **Report issue:** https://github.com/mqasimca/nylas/issues

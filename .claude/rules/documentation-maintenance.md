@@ -14,17 +14,17 @@
 | **New domain model** | CLAUDE.md, ARCHITECTURE.md (if major) | 🟡 IF NEEDED |
 | **Test structure change** | CLAUDE.md, DEVELOPMENT.md, all test rules | 🔴 CRITICAL |
 | **New skill/workflow** | CLAUDE.md (if user-facing) | 🟡 IF NEEDED |
-| **Security change** | SECURITY.md | 🔴 CRITICAL |
+| **Security change** | security/overview.md | 🔴 CRITICAL |
 | **Architecture change** | ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
 | **Utility feature** | CLAUDE.md, COMMANDS.md | 🔴 CRITICAL |
-| **Timezone change** | TIMEZONE.md, COMMANDS.md, CLAUDE.md | 🔴 CRITICAL |
-| **Working hours/breaks** | TIMEZONE.md, ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
+| **Timezone change** | commands/timezone.md, COMMANDS.md, CLAUDE.md | 🔴 CRITICAL |
+| **Working hours/breaks** | commands/timezone.md, ARCHITECTURE.md, CLAUDE.md | 🔴 CRITICAL |
 
 ---
 
 ## Timezone & Working Hours Changes ⚠️ CRITICAL
 
-**Always update `docs/TIMEZONE.md` when modifying:**
+**Always update `docs/commands/timezone.md` when modifying:**
 - `internal/cli/calendar/helpers.go` (timezone conversion)
 - `internal/cli/calendar/events.go` (--timezone, --show-tz flags)
 - `internal/adapters/utilities/timezone/service.go` (timezone service)
@@ -61,7 +61,7 @@
 - [ ] Updated .claude/ rules if needed
 
 ### For Timezone/Calendar:
-- [ ] Updated docs/TIMEZONE.md
+- [ ] Updated docs/commands/timezone.md
 - [ ] Updated docs/COMMANDS.md calendar section
 - [ ] Verified examples work
 

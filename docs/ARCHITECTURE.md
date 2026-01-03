@@ -97,7 +97,7 @@ Calendar enforces working hours (soft warnings) and break blocks (hard constrain
 **Implementation:** `internal/cli/calendar/helpers.go` (`checkBreakViolation()`)
 **Tests:** `internal/cli/calendar/helpers_test.go`
 
-**Details:** See [TIMEZONE.md](TIMEZONE.md#working-hours--break-management)
+**Details:** See [commands/timezone.md](commands/timezone.md#working-hours--break-management)
 
 ---
 

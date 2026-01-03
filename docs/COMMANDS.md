@@ -11,9 +11,14 @@ Quick command reference. For detailed docs, see `docs/commands/<feature>.md`
 | Flag | Description | Example |
 |------|-------------|---------|
 | `--json` | Output as JSON | `nylas email list --json` |
-| `--limit N` | Limit results | `nylas email list --limit 10` |
-| `--yes` / `-y` | Skip confirmations | `nylas email delete ID --yes` |
+| `--no-color` | Disable color output | `nylas email list --no-color` |
+| `--verbose` / `-v` | Enable verbose output | `nylas -v email list` |
+| `--config` | Custom config file path | `nylas --config ~/.nylas/alt.yaml email list` |
 | `--help` / `-h` | Show help | `nylas email --help` |
+
+**Common per-command flags:**
+- `--limit N` - Limit results (most list commands)
+- `--yes` / `-y` - Skip confirmations (delete/send commands)
 
 ---
 
@@ -23,7 +28,16 @@ Quick command reference. For detailed docs, see `docs/commands/<feature>.md`
 nylas auth config                # Configure API credentials
 nylas auth login                 # Authenticate with provider
 nylas auth list                  # List connected accounts
-nylas auth logout <grant-id>     # Disconnect account
+nylas auth show [grant-id]       # Show account details
+nylas auth status                # Check authentication status
+nylas auth whoami                # Show current user info
+nylas auth switch <email>        # Switch active account
+nylas auth logout                # Logout current account
+nylas auth remove <grant-id>     # Remove account completely
+nylas auth token                 # Display current API token
+nylas auth scopes [grant-id]     # Show granted OAuth scopes
+nylas auth providers             # List available providers
+nylas auth migrate               # Migrate from v2 to v3
 ```
 
 ---
@@ -52,9 +66,15 @@ nylas email read <message-id>                                  # Read email
 nylas email send --to EMAIL --subject SUBJECT --body BODY      # Send email
 nylas email search --query "QUERY"                             # Search emails
 nylas email delete <message-id>                                # Delete email
+nylas email mark read <message-id>                             # Mark as read
+nylas email mark unread <message-id>                           # Mark as unread
+nylas email mark starred <message-id>                          # Star a message
+nylas email attachments list <message-id>                      # List attachments
+nylas email attachments download <message-id> <attachment-id>  # Download attachment
+nylas email metadata show <message-id>                         # Show message metadata
 ```
 
-**Filters:** `--unread`, `--starred`, `--from`, `--to`, `--subject`
+**Filters:** `--unread`, `--starred`, `--from`, `--to`, `--subject`, `--has-attachment`, `--metadata`
 
 **AI features:**
 ```bash
@@ -62,19 +82,29 @@ nylas email ai analyze                    # AI-powered inbox summary
 nylas email ai analyze --limit 25         # Analyze more emails
 nylas email ai analyze --unread           # Only unread emails
 nylas email ai analyze --provider claude  # Use specific AI provider
+nylas email smart-compose --prompt "..."  # AI-powered email generation
 ```
 
-**Details:** `docs/commands/email.md`, `docs/AI.md`
+**Details:** `docs/commands/email.md`, `docs/commands/ai.md`
 
 ---
 
 ## Folders & Threads
 
 ```bash
-nylas folders list               # List folders
-nylas folders create --name NAME # Create folder
-nylas threads list               # List threads
-nylas threads show <thread-id>   # Show thread
+# Folders
+nylas email folders list                           # List folders
+nylas email folders show <folder-id>               # Show folder details
+nylas email folders create <name>                  # Create folder
+nylas email folders rename <folder-id> <new-name>  # Rename folder
+nylas email folders delete <folder-id>             # Delete folder
+
+# Threads
+nylas email threads list                           # List threads
+nylas email threads show <thread-id>               # Show thread with all messages
+nylas email threads search --query "QUERY"         # Search threads
+nylas email threads mark <thread-id> --read        # Mark thread as read
+nylas email threads delete <thread-id>             # Delete thread
 ```
 
 ---
@@ -82,10 +112,23 @@ nylas threads show <thread-id>   # Show thread
 ## Drafts
 
 ```bash
-nylas drafts list                                 # List drafts
-nylas drafts create --to EMAIL --subject SUBJECT  # Create draft
-nylas drafts send <draft-id>                      # Send draft
-nylas drafts delete <draft-id>                    # Delete draft
+nylas email drafts list                           # List drafts
+nylas email drafts show <draft-id>                # Show draft details
+nylas email drafts create --to EMAIL --subject S  # Create draft
+nylas email drafts send <draft-id>                # Send draft
+nylas email drafts delete <draft-id>              # Delete draft
+```
+
+**Flags:** `--to`, `--cc`, `--bcc`, `--subject`, `--body`, `--reply-to`, `--attach`
+
+---
+
+## Scheduled Emails
+
+```bash
+nylas email scheduled list                        # List scheduled emails
+nylas email scheduled show <schedule-id>          # Show scheduled email
+nylas email scheduled cancel <schedule-id>        # Cancel scheduled email
 ```
 
 ---
@@ -95,8 +138,15 @@ nylas drafts delete <draft-id>                    # Delete draft
 ```bash
 nylas calendar list                                              # List calendars
 nylas calendar events list [--days N] [--timezone ZONE]          # List events
+nylas calendar events show <event-id>                            # Show event details
 nylas calendar events create --title T --start TIME --end TIME   # Create event
+nylas calendar events update <event-id> --title "New Title"      # Update event
 nylas calendar events delete <event-id>                          # Delete event
+nylas calendar events rsvp <event-id> --status yes               # RSVP to event
+nylas calendar availability check                                # Check availability
+nylas calendar recurring list                                    # List recurring events
+nylas calendar virtual list                                      # List virtual meetings
+nylas calendar focus-time list                                   # List focus time blocks
 ```
 
 **Timezone features:**
@@ -107,13 +157,15 @@ nylas calendar events list --timezone America/Los_Angeles --show-tz
 **AI scheduling:**
 ```bash
 nylas calendar schedule ai "meeting with John next Tuesday afternoon"
-nylas calendar analyze         # AI-powered analytics
+nylas calendar analyze                                           # AI-powered analytics
 nylas calendar find-time --participants email1,email2 --duration 1h
+nylas calendar ai conflicts --days 7                             # Detect conflicts
+nylas calendar ai reschedule <event-id> --reason "Conflict"      # AI reschedule
 ```
 
 **Key features:** DST detection, working hours validation, break protection, AI scheduling
 
-**Details:** `docs/commands/calendar.md`, `docs/TIMEZONE.md`, `docs/AI.md`
+**Details:** `docs/commands/calendar.md`, `docs/commands/timezone.md`, `docs/commands/ai.md`
 
 ---
 
@@ -121,9 +173,27 @@ nylas calendar find-time --participants email1,email2 --duration 1h
 
 ```bash
 nylas contacts list                                   # List contacts
+nylas contacts show <contact-id>                      # Show contact details
 nylas contacts create --name "NAME" --email "EMAIL"   # Create contact
-nylas contacts update <id> --name "NEW NAME"          # Update contact
+nylas contacts update <contact-id> --name "NEW NAME"  # Update contact
 nylas contacts delete <contact-id>                    # Delete contact
+nylas contacts search --query "QUERY"                 # Search contacts
+nylas contacts sync                                   # Sync contacts
+```
+
+**Contact groups:**
+```bash
+nylas contacts groups list                            # List contact groups
+nylas contacts groups show <group-id>                 # Show group details
+nylas contacts groups create <name>                   # Create group
+nylas contacts groups update <group-id> --name "NEW"  # Update group
+nylas contacts groups delete <group-id>               # Delete group
+```
+
+**Contact photos:**
+```bash
+nylas contacts photo download <contact-id>            # Download contact photo
+nylas contacts photo info                             # Photo info
 ```
 
 **Details:** `docs/commands/contacts.md`
@@ -133,25 +203,66 @@ nylas contacts delete <contact-id>                    # Delete contact
 ## Webhooks
 
 ```bash
+nylas webhook list                                    # List webhooks
+nylas webhook show <webhook-id>                       # Show webhook details
 nylas webhook create --url URL --triggers "event.created,event.updated"
-nylas webhook list               # List webhooks
-nylas webhook test <webhook-id>  # Test webhook
-nylas webhook delete <webhook-id> # Delete webhook
+nylas webhook update <webhook-id> --url NEW_URL       # Update webhook
+nylas webhook delete <webhook-id>                     # Delete webhook
+nylas webhook triggers                                # List available triggers
 ```
 
-**Details:** `docs/WEBHOOKS.md`, `docs/commands/webhooks.md`
+**Testing & development:**
+```bash
+nylas webhook test send <webhook-url>                 # Send test payload
+nylas webhook test payload [trigger-type]             # Generate test payload
+nylas webhook server                                  # Start local webhook server
+nylas webhook server --port 8080 --tunnel cloudflared # With public tunnel
+```
+
+**Details:** `docs/commands/webhooks.md`
+
+---
+
+## Inbound Email
+
+Receive emails at managed addresses without OAuth or third-party mailbox connections.
+
+```bash
+nylas inbound list                              # List inbound inboxes
+nylas inbound create <email-prefix>             # Create inbox (e.g., support@yourapp.nylas.email)
+nylas inbound show <inbox-id>                   # Show inbox details
+nylas inbound delete <inbox-id>                 # Delete inbox
+nylas inbound messages <inbox-id>               # List messages in inbox
+nylas inbound monitor <inbox-id>                # Real-time message monitoring
+```
+
+**Real-time monitoring with tunnel:**
+```bash
+nylas inbound monitor <inbox-id> --tunnel cloudflared
+```
+
+**Details:** `docs/commands/inbound.md`
 
 ---
 
 ## Timezone Utilities
 
+All timezone commands work **100% offline** - no API key required.
+
 ```bash
-nylas timezone convert --time "14:00" --from America/New_York --to Europe/London
-nylas timezone list              # List timezones
-nylas timezone now --zone "America/Los_Angeles"
+nylas timezone list                                   # List all timezones
+nylas timezone list --filter America                  # Filter by region
+nylas timezone info <zone>                            # Get timezone info
+nylas timezone convert --from PST --to EST            # Convert current time
+nylas timezone convert --from UTC --to EST --time "2025-01-01T12:00:00Z"
+nylas timezone dst --zone America/New_York            # Check DST transitions
+nylas timezone dst --zone PST --year 2026             # Check DST for year
+nylas timezone find-meeting --zones "NYC,London,Tokyo"  # Find meeting times
 ```
 
-**Details:** `docs/TIMEZONE.md`
+**Supported abbreviations:** PST, EST, CST, MST, GMT, IST, JST, AEST
+
+**Details:** `docs/commands/timezone.md`
 
 ---
 
@@ -163,7 +274,7 @@ nylas tui                        # Launch interactive UI
 
 **Navigation:** `↑/↓` navigate, `Enter` select, `q` quit, `?` help
 
-**Details:** `docs/TUI.md`
+**Details:** `docs/commands/tui.md`
 
 ---
 
@@ -424,6 +535,76 @@ nylas otp messages --limit 20                     # Show more messages
 
 ---
 
+## Scheduler (Booking Pages)
+
+Manage scheduling pages for appointment booking.
+
+```bash
+# Booking pages
+nylas scheduler pages list                            # List scheduling pages
+nylas scheduler pages show <page-id>                  # Show page details
+nylas scheduler pages create                          # Create booking page
+nylas scheduler pages update <page-id>                # Update page
+nylas scheduler pages delete <page-id>                # Delete page
+
+# Bookings
+nylas scheduler bookings list                         # List bookings
+nylas scheduler bookings show <booking-id>            # Show booking details
+nylas scheduler bookings confirm <booking-id>         # Confirm booking
+nylas scheduler bookings reschedule <booking-id>      # Reschedule booking
+nylas scheduler bookings cancel <booking-id>          # Cancel booking
+
+# Configurations
+nylas scheduler configurations list                   # List configurations
+nylas scheduler configurations show <config-id>       # Show configuration
+nylas scheduler configurations create                 # Create configuration
+nylas scheduler configurations update <config-id>     # Update configuration
+nylas scheduler configurations delete <config-id>     # Delete configuration
+
+# Sessions
+nylas scheduler sessions create                       # Create booking session
+nylas scheduler sessions show <session-id>            # Show session details
+```
+
+**Details:** `docs/commands/scheduler.md`
+
+---
+
+## Admin (API Management)
+
+Manage Nylas applications, connectors, credentials, and grants.
+
+```bash
+# Applications
+nylas admin applications list                         # List applications
+nylas admin applications show <app-id>                # Show app details
+nylas admin applications create                       # Create application
+nylas admin applications update <app-id>              # Update application
+nylas admin applications delete <app-id>              # Delete application
+
+# Connectors (provider integrations)
+nylas admin connectors list                           # List connectors
+nylas admin connectors show <connector-id>            # Show connector
+nylas admin connectors create                         # Create connector
+nylas admin connectors update <connector-id>          # Update connector
+nylas admin connectors delete <connector-id>          # Delete connector
+
+# Credentials
+nylas admin credentials list <connector-id>           # List credentials
+nylas admin credentials show <credential-id>          # Show credential
+nylas admin credentials create                        # Create credential
+nylas admin credentials update <credential-id>        # Update credential
+nylas admin credentials delete <credential-id>        # Delete credential
+
+# Grants
+nylas admin grants list                               # List all grants
+nylas admin grants stats                              # Grant statistics
+```
+
+**Details:** `docs/commands/admin.md`
+
+---
+
 ## Utility Commands
 
 ```bash
@@ -459,9 +640,11 @@ All commands follow consistent pattern:
 - Calendar: `docs/commands/calendar.md`
 - Contacts: `docs/commands/contacts.md`
 - Webhooks: `docs/commands/webhooks.md`
-- Slack: `docs/COMMANDS.md#slack-integration`
-- Notetaker: `docs/COMMANDS.md#notetaker-ai-meeting-bot`
-- OTP: `docs/COMMANDS.md#otp-one-time-password`
-- Timezone: `docs/TIMEZONE.md`
-- AI: `docs/AI.md`
-- MCP: `docs/MCP.md`
+- Inbound: `docs/commands/inbound.md`
+- Scheduler: `docs/commands/scheduler.md`
+- Admin: `docs/commands/admin.md`
+- Workflows: `docs/commands/workflows.md` (OTP, automation)
+- Timezone: `docs/commands/timezone.md`
+- AI: `docs/commands/ai.md`
+- MCP: `docs/commands/mcp.md`
+- TUI: `docs/commands/tui.md`

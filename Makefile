@@ -315,13 +315,13 @@ check-context:
 	@echo "======================"
 	@echo ""
 	@echo "Auto-loaded files:"
-	@ls -lh CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{print $$5, $$9}'
+	@ls -lh CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/security/overview.md 2>/dev/null | awk '{print $$5, $$9}'
 	@echo ""
 	@echo "On-demand files (excluded from auto-load):"
-	@ls -lh docs/COMMANDS.md docs/MCP.md docs/AI.md docs/ARCHITECTURE.md 2>/dev/null | awk '{print $$5, $$9}'
+	@ls -lh docs/COMMANDS.md docs/commands/mcp.md docs/commands/ai.md docs/ARCHITECTURE.md 2>/dev/null | awk '{print $$5, $$9}'
 	@echo ""
-	@TOTAL=$$(ls -l CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/SECURITY.md docs/TIMEZONE.md docs/TUI.md docs/WEBHOOKS.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
-	ONDEMAND=$$(ls -l docs/COMMANDS.md docs/MCP.md docs/AI.md docs/ARCHITECTURE.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	@TOTAL=$$(ls -l CLAUDE.md $$(ls .claude/rules/*.md 2>/dev/null | grep -v '.local.md') docs/DEVELOPMENT.md docs/security/overview.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
+	ONDEMAND=$$(ls -l docs/COMMANDS.md docs/commands/mcp.md docs/commands/ai.md docs/ARCHITECTURE.md 2>/dev/null | awk '{sum+=$$5} END {print int(sum/1024)}'); \
 	echo "Auto-loaded context: $${TOTAL}KB (~$$((TOTAL / 4)) tokens)"; \
 	echo "On-demand available: $${ONDEMAND}KB"; \
 	echo ""; \

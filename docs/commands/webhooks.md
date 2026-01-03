@@ -2,6 +2,41 @@
 
 Create and manage webhooks for real-time event notifications.
 
+### Built-in Webhook Server
+
+Start a local webhook server for development and testing:
+
+```bash
+# Start server (local only)
+nylas webhook server
+
+# Start with public tunnel (cloudflared required)
+nylas webhook server --tunnel cloudflared
+
+# Custom port
+nylas webhook server --port 8080 --tunnel cloudflared
+```
+
+**Install cloudflared:**
+```bash
+brew install cloudflared                    # macOS
+# Or download from: github.com/cloudflare/cloudflared
+```
+
+### TUI Webhook Server
+
+```bash
+nylas tui                    # Launch TUI
+# Then type: :ws or :server
+
+# Controls:
+# s - Start/stop server
+# t - Toggle tunnel
+# c - Clear events
+```
+
+---
+
 ### List Webhooks
 
 ```bash
@@ -249,6 +284,189 @@ $ nylas webhook test send https://api.myapp.com/webhook
   URL: https://api.myapp.com/webhook
 
 Check your webhook endpoint logs to verify the event was received.
+```
+
+---
+
+## Local Development
+
+### Using ngrok for local testing:
+
+```bash
+# 1. Install ngrok
+brew install ngrok
+
+# 2. Start local webhook server
+python webhook-server.py &
+
+# 3. Create ngrok tunnel
+ngrok http 8080
+
+# 4. Create webhook with ngrok URL
+nylas webhook create \
+  --url "https://abc123.ngrok.io/webhook" \
+  --triggers "message.created"
+```
+
+---
+
+### Simple webhook server (Python):
+
+```python
+#!/usr/bin/env python3
+# webhook-server.py
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+
+class WebhookHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        body = self.rfile.read(content_length)
+        data = json.loads(body)
+
+        print(f"Received: {data.get('trigger')}")
+
+        # Handle different event types
+        if data.get('trigger') == 'message.created':
+            self.handle_new_message(data)
+
+        self.send_response(200)
+        self.end_headers()
+
+    def handle_new_message(self, data):
+        print("New message received!")
+
+if __name__ == '__main__':
+    HTTPServer(('', 8080), WebhookHandler).serve_forever()
+```
+
+---
+
+### Simple webhook server (Node.js):
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.post('/webhook', (req, res) => {
+  const { trigger, data } = req.body;
+
+  switch (trigger) {
+    case 'message.created':
+      console.log('New message:', data);
+      break;
+    case 'calendar.created':
+      console.log('New event:', data);
+      break;
+  }
+
+  res.json({ status: 'ok' });
+});
+
+app.listen(8080, () => console.log('Webhook server on port 8080'));
+```
+
+---
+
+## Integration Examples
+
+### Slack notification on new email:
+
+```bash
+#!/bin/bash
+# slack-notifier.sh
+
+SLACK_WEBHOOK="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+send_to_slack() {
+  curl -X POST "$SLACK_WEBHOOK" \
+    -H 'Content-Type: application/json' \
+    -d "{\"text\": \"$1\"}"
+}
+
+# Example notifications
+send_to_slack "📧 New email from: john@example.com"
+send_to_slack "📅 New calendar event: Team Meeting"
+```
+
+---
+
+### Production webhook server (Flask):
+
+```python
+from flask import Flask, request, jsonify
+import hmac
+import hashlib
+import os
+
+app = Flask(__name__)
+WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', '')
+
+def verify_webhook(request):
+    if not WEBHOOK_SECRET:
+        return True
+    signature = request.headers.get('X-Nylas-Signature', '')
+    expected = hmac.new(
+        WEBHOOK_SECRET.encode(),
+        request.get_data(),
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(signature, expected)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    if not verify_webhook(request):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    data = request.get_json()
+    trigger = data.get('trigger')
+
+    handlers = {
+        'message.created': handle_message,
+        'calendar.created': handle_event,
+    }
+
+    if trigger in handlers:
+        handlers[trigger](data)
+
+    return jsonify({"status": "ok"})
+
+def handle_message(data):
+    print("New message")
+
+def handle_event(data):
+    print("New event")
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+```
+
+---
+
+## Best Practices
+
+**Security:**
+1. Always verify webhook signatures
+2. Use HTTPS for production webhooks
+3. Implement rate limiting on your endpoint
+
+**Performance:**
+1. Respond with 200 OK quickly, process async
+2. Queue webhooks for background processing
+3. Monitor for failures and latency
+
+**Debugging:**
+```bash
+# Test webhook locally
+curl -X POST http://localhost:8080/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"trigger": "message.created", "data": {}}'
+
+# Test with Nylas CLI
+nylas webhook test <webhook-id>
 ```
 
 ---

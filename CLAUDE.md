@@ -42,14 +42,10 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 **Check coverage:** `make test-coverage`
 
-### Docs to Update:
-- `docs/COMMANDS.md` → New/changed commands or flags
-- `docs/TIMEZONE.md` → Timezone-related changes, DST handling
-- `docs/AI.md` → AI features, provider setup
-- `docs/MCP.md` → MCP server, AI assistant integration
-- `README.md` → Major new features
+### Documentation:
+**📚 See `docs/INDEX.md` for all documentation.**
 
-**📋 Complete rules:** `.claude/rules/documentation-maintenance.md`
+**Rules:** `.claude/rules/documentation-maintenance.md`
 
 ### Do Not Touch:
 | Path | Reason |
@@ -63,7 +59,7 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 ## Project Overview
 
-- **Language**: Go 1.24.0 (use latest features!)
+- **Language**: Go 1.24.2 (use latest features!)
 - **Architecture**: Hexagonal (ports and adapters)
 - **CLI Framework**: Cobra
 - **API**: Nylas v3 ONLY (never use v1/v2)

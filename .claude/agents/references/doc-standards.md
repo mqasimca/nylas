@@ -137,7 +137,7 @@ Found 1 item
 
 1. **COMMANDS.md** - Add brief mention under existing section
 2. **README.md** - Add to features list if major feature
-3. **EXAMPLES.md** - Add workflow example if complex
+3. **docs/commands/<feature>.md** - Add workflow example if complex
 
 ### Documenting Breaking Changes
 

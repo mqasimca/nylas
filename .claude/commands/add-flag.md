@@ -82,7 +82,7 @@ func TestCommandHelp(t *testing.T) {
 }
 ```
 
-5. Update docs/COMMANDS.md if user-facing (or docs/TUI.md for TUI flags):
+5. Update docs/COMMANDS.md if user-facing (or docs/commands/tui.md for TUI flags):
 ```markdown
 ### Command Name
 \`\`\`bash

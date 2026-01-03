@@ -470,7 +470,7 @@ nylas doctor
 
 ## Still Having Issues?
 
-1. **Check FAQ:** [FAQ.md](../FAQ.md)
+1. **Check FAQ:** [faq.md](faq.md)
 2. **Run diagnostics:** `nylas doctor`
 3. **Verify credentials:** `nylas auth status`
 4. **Check provider status:** Nylas Dashboard
