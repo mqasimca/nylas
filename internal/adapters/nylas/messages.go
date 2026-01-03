@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -224,7 +223,7 @@ func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) 
 func (c *HTTPClient) UpdateMessage(ctx context.Context, grantID, messageID string, req *domain.UpdateMessageRequest) (*domain.Message, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
 
-	payload := make(map[string]interface{})
+	payload := make(map[string]any)
 	if req.Unread != nil {
 		payload["unread"] = *req.Unread
 	}
@@ -235,28 +234,15 @@ func (c *HTTPClient) UpdateMessage(ctx context.Context, grantID, messageID strin
 		payload["folders"] = req.Folders
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "PUT", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data messageResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 

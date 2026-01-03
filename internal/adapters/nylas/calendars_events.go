@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -70,27 +69,16 @@ func (c *HTTPClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 
 	queryURL += "?" + q.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
 		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data       []eventResponse `json:"data"`
 		NextCursor string          `json:"next_cursor,omitempty"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -124,7 +112,7 @@ func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -150,7 +138,7 @@ func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string, req *domain.CreateEventRequest) (*domain.Event, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events?calendar_id=%s", c.baseURL, grantID, calendarID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"title": req.Title,
 		"when":  req.When,
 	}
@@ -181,28 +169,15 @@ func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string
 		payload["metadata"] = req.Metadata
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data eventResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -214,7 +189,7 @@ func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string
 func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
 
-	payload := make(map[string]interface{})
+	payload := make(map[string]any)
 	if req.Title != nil {
 		payload["title"] = *req.Title
 	}
@@ -246,28 +221,15 @@ func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 		payload["reminders"] = req.Reminders
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "PUT", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data eventResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -279,21 +241,11 @@ func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 func (c *HTTPClient) DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 
 	return nil
 }
@@ -302,30 +254,18 @@ func (c *HTTPClient) DeleteEvent(ctx context.Context, grantID, calendarID, event
 func (c *HTTPClient) SendRSVP(ctx context.Context, grantID, calendarID, eventID string, req *domain.SendRSVPRequest) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s/send-rsvp?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"status": req.Status,
 	}
 	if req.Comment != "" {
 		payload["comment"] = req.Comment
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload, http.StatusOK, http.StatusAccepted)
 	if err != nil {
 		return err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return c.parseError(resp)
-	}
 
 	return nil
 }
@@ -334,26 +274,13 @@ func (c *HTTPClient) SendRSVP(ctx context.Context, grantID, calendarID, eventID 
 func (c *HTTPClient) GetFreeBusy(ctx context.Context, grantID string, freeBusyReq *domain.FreeBusyRequest) (*domain.FreeBusyResponse, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars/free-busy", c.baseURL, grantID)
 
-	body, _ := json.Marshal(freeBusyReq)
-	req, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, freeBusyReq)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
 
 	var result domain.FreeBusyResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -364,26 +291,13 @@ func (c *HTTPClient) GetFreeBusy(ctx context.Context, grantID string, freeBusyRe
 func (c *HTTPClient) GetAvailability(ctx context.Context, availReq *domain.AvailabilityRequest) (*domain.AvailabilityResponse, error) {
 	queryURL := fmt.Sprintf("%s/v3/calendars/availability", c.baseURL)
 
-	body, _ := json.Marshal(availReq)
-	req, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, availReq)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
 
 	var result domain.AvailabilityResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 

@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,7 +24,7 @@ func (c *HTTPClient) ListApplications(ctx context.Context) ([]domain.Application
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -33,7 +32,7 @@ func (c *HTTPClient) ListApplications(ctx context.Context) ([]domain.Application
 		return nil, c.parseError(resp)
 	}
 
-	// Read body once
+	// Read body once (special handling: API may return array or single object)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -64,6 +63,10 @@ func (c *HTTPClient) ListApplications(ctx context.Context) ([]domain.Application
 
 // GetApplication retrieves a specific application.
 func (c *HTTPClient) GetApplication(ctx context.Context, appID string) (*domain.Application, error) {
+	if err := validateRequired("application ID", appID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/applications/%s", c.baseURL, appID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
@@ -74,7 +77,7 @@ func (c *HTTPClient) GetApplication(ctx context.Context, appID string) (*domain.
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -98,28 +101,15 @@ func (c *HTTPClient) GetApplication(ctx context.Context, appID string) (*domain.
 func (c *HTTPClient) CreateApplication(ctx context.Context, req *domain.CreateApplicationRequest) (*domain.Application, error) {
 	queryURL := fmt.Sprintf("%s/v3/applications", c.baseURL)
 
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, req)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data domain.Application `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -127,30 +117,21 @@ func (c *HTTPClient) CreateApplication(ctx context.Context, req *domain.CreateAp
 
 // UpdateApplication updates an existing application.
 func (c *HTTPClient) UpdateApplication(ctx context.Context, appID string, req *domain.UpdateApplicationRequest) (*domain.Application, error) {
-	queryURL := fmt.Sprintf("%s/v3/applications/%s", c.baseURL, appID)
-
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "PATCH", queryURL, bytes.NewReader(body))
-	if err != nil {
+	if err := validateRequired("application ID", appID); err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
 
-	resp, err := c.doRequest(ctx, httpReq)
+	queryURL := fmt.Sprintf("%s/v3/applications/%s", c.baseURL, appID)
+
+	resp, err := c.doJSONRequest(ctx, "PATCH", queryURL, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data domain.Application `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -158,23 +139,18 @@ func (c *HTTPClient) UpdateApplication(ctx context.Context, appID string, req *d
 
 // DeleteApplication deletes an application.
 func (c *HTTPClient) DeleteApplication(ctx context.Context, appID string) error {
+	if err := validateRequired("application ID", appID); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/applications/%s", c.baseURL, appID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 	return nil
 }
 
@@ -184,26 +160,15 @@ func (c *HTTPClient) DeleteApplication(ctx context.Context, appID string) error 
 func (c *HTTPClient) ListConnectors(ctx context.Context) ([]domain.Connector, error) {
 	queryURL := fmt.Sprintf("%s/v3/connectors", c.baseURL)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
 		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data []domain.Connector `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -211,6 +176,10 @@ func (c *HTTPClient) ListConnectors(ctx context.Context) ([]domain.Connector, er
 
 // GetConnector retrieves a specific connector.
 func (c *HTTPClient) GetConnector(ctx context.Context, connectorID string) (*domain.Connector, error) {
+	if err := validateRequired("connector ID", connectorID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/connectors/%s", c.baseURL, connectorID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
@@ -221,7 +190,7 @@ func (c *HTTPClient) GetConnector(ctx context.Context, connectorID string) (*dom
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -245,28 +214,15 @@ func (c *HTTPClient) GetConnector(ctx context.Context, connectorID string) (*dom
 func (c *HTTPClient) CreateConnector(ctx context.Context, req *domain.CreateConnectorRequest) (*domain.Connector, error) {
 	queryURL := fmt.Sprintf("%s/v3/connectors", c.baseURL)
 
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, req)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data domain.Connector `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -274,30 +230,21 @@ func (c *HTTPClient) CreateConnector(ctx context.Context, req *domain.CreateConn
 
 // UpdateConnector updates an existing connector.
 func (c *HTTPClient) UpdateConnector(ctx context.Context, connectorID string, req *domain.UpdateConnectorRequest) (*domain.Connector, error) {
-	queryURL := fmt.Sprintf("%s/v3/connectors/%s", c.baseURL, connectorID)
-
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "PATCH", queryURL, bytes.NewReader(body))
-	if err != nil {
+	if err := validateRequired("connector ID", connectorID); err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
 
-	resp, err := c.doRequest(ctx, httpReq)
+	queryURL := fmt.Sprintf("%s/v3/connectors/%s", c.baseURL, connectorID)
+
+	resp, err := c.doJSONRequest(ctx, "PATCH", queryURL, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data domain.Connector `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -305,23 +252,18 @@ func (c *HTTPClient) UpdateConnector(ctx context.Context, connectorID string, re
 
 // DeleteConnector deletes a connector.
 func (c *HTTPClient) DeleteConnector(ctx context.Context, connectorID string) error {
+	if err := validateRequired("connector ID", connectorID); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/connectors/%s", c.baseURL, connectorID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 	return nil
 }
 
@@ -329,28 +271,21 @@ func (c *HTTPClient) DeleteConnector(ctx context.Context, connectorID string) er
 
 // ListCredentials retrieves all credentials for a connector.
 func (c *HTTPClient) ListCredentials(ctx context.Context, connectorID string) ([]domain.ConnectorCredential, error) {
-	queryURL := fmt.Sprintf("%s/v3/connectors/%s/credentials", c.baseURL, connectorID)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
+	if err := validateRequired("connector ID", connectorID); err != nil {
 		return nil, err
 	}
-	c.setAuthHeader(req)
 
-	resp, err := c.doRequest(ctx, req)
+	queryURL := fmt.Sprintf("%s/v3/connectors/%s/credentials", c.baseURL, connectorID)
+
+	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data []domain.ConnectorCredential `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -358,6 +293,10 @@ func (c *HTTPClient) ListCredentials(ctx context.Context, connectorID string) ([
 
 // GetCredential retrieves a specific credential.
 func (c *HTTPClient) GetCredential(ctx context.Context, credentialID string) (*domain.ConnectorCredential, error) {
+	if err := validateRequired("credential ID", credentialID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/credentials/%s", c.baseURL, credentialID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
@@ -368,7 +307,7 @@ func (c *HTTPClient) GetCredential(ctx context.Context, credentialID string) (*d
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -390,30 +329,21 @@ func (c *HTTPClient) GetCredential(ctx context.Context, credentialID string) (*d
 
 // CreateCredential creates a new credential.
 func (c *HTTPClient) CreateCredential(ctx context.Context, connectorID string, req *domain.CreateCredentialRequest) (*domain.ConnectorCredential, error) {
-	queryURL := fmt.Sprintf("%s/v3/connectors/%s/credentials", c.baseURL, connectorID)
-
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
-	if err != nil {
+	if err := validateRequired("connector ID", connectorID); err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
 
-	resp, err := c.doRequest(ctx, httpReq)
+	queryURL := fmt.Sprintf("%s/v3/connectors/%s/credentials", c.baseURL, connectorID)
+
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data domain.ConnectorCredential `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -421,30 +351,21 @@ func (c *HTTPClient) CreateCredential(ctx context.Context, connectorID string, r
 
 // UpdateCredential updates an existing credential.
 func (c *HTTPClient) UpdateCredential(ctx context.Context, credentialID string, req *domain.UpdateCredentialRequest) (*domain.ConnectorCredential, error) {
-	queryURL := fmt.Sprintf("%s/v3/credentials/%s", c.baseURL, credentialID)
-
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "PATCH", queryURL, bytes.NewReader(body))
-	if err != nil {
+	if err := validateRequired("credential ID", credentialID); err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
 
-	resp, err := c.doRequest(ctx, httpReq)
+	queryURL := fmt.Sprintf("%s/v3/credentials/%s", c.baseURL, credentialID)
+
+	resp, err := c.doJSONRequest(ctx, "PATCH", queryURL, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data domain.ConnectorCredential `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -452,23 +373,18 @@ func (c *HTTPClient) UpdateCredential(ctx context.Context, credentialID string, 
 
 // DeleteCredential deletes a credential.
 func (c *HTTPClient) DeleteCredential(ctx context.Context, credentialID string) error {
+	if err := validateRequired("credential ID", credentialID); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/credentials/%s", c.baseURL, credentialID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 	return nil
 }
 
@@ -497,26 +413,15 @@ func (c *HTTPClient) ListAllGrants(ctx context.Context, params *domain.GrantsQue
 		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
 		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data []domain.Grant `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil

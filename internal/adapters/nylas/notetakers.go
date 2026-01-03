@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -134,7 +133,7 @@ func (c *HTTPClient) GetNotetaker(ctx context.Context, grantID, notetakerID stri
 func (c *HTTPClient) CreateNotetaker(ctx context.Context, grantID string, req *domain.CreateNotetakerRequest) (*domain.Notetaker, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/notetakers", c.baseURL, grantID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"meeting_link": req.MeetingLink,
 	}
 
@@ -142,7 +141,7 @@ func (c *HTTPClient) CreateNotetaker(ctx context.Context, grantID string, req *d
 		payload["join_time"] = req.JoinTime
 	}
 	if req.BotConfig != nil {
-		botConfig := map[string]interface{}{}
+		botConfig := map[string]any{}
 		if req.BotConfig.Name != "" {
 			botConfig["name"] = req.BotConfig.Name
 		}
@@ -154,28 +153,15 @@ func (c *HTTPClient) CreateNotetaker(ctx context.Context, grantID string, req *d
 		}
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data notetakerResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
