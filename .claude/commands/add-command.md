@@ -61,12 +61,40 @@ make ci
 
 ---
 
+## For Full CRUD Commands
+
+When creating a complete resource with list, show, create, update, delete:
+
+### Additional Files Needed
+- `internal/adapters/nylas/demo_{resource}.go` - Demo data
+- `internal/adapters/nylas/mock_{resource}.go` - Mock functions
+
+### Domain Template
+```go
+type {Resource} struct {
+    ID string `json:"id"`
+    // Fields from API spec
+}
+type Create{Resource}Request struct { /* required fields */ }
+type Update{Resource}Request struct { /* optional fields */ }
+type {Resource}QueryParams struct { Limit int; PageToken string }
+```
+
+### Verification
+```bash
+make ci-full
+./bin/nylas {resource} --help
+```
+
+---
+
 ## Checklist
 
 - [ ] Domain types with JSON tags
 - [ ] Port interface updated
 - [ ] Adapter with all CRUD methods
 - [ ] Mock implementation
+- [ ] Demo data (for CRUD commands)
 - [ ] CLI with all subcommands
 - [ ] Tests passing
 - [ ] Registered in main.go

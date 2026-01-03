@@ -4,6 +4,9 @@
 # Local files (not auto-loaded)
 *.local.md
 
+# Go dependency files (auto-generated, large, not needed in context)
+go.sum
+
 # Example/sample files (load on-demand only)
 docs/examples/
 **/examples/**
@@ -64,7 +67,6 @@ docs/ARCHITECTURE.md
 
 # Historical planning documents
 plan.md
-AI_plan.md
 *.plan.md
 
 # Detailed test patterns (load on-demand when writing tests)
@@ -109,10 +111,18 @@ HISTORY.md
 **/*.mp4
 **/*.svg
 
-# Generated files (load on-demand)
+# Generated files and test output (load on-demand)
 ci-full.txt
 ci.txt
+ci-output.txt
+ci-results.txt
+test-integration.txt
+test-integration-verification.txt
+ci-full-verification.txt
 *.test.log
+
+# Package lock files (rarely needed, large)
+**/package-lock.json
 
 # Large integration test data
 tests/fixtures/large-*.json
@@ -126,6 +136,5 @@ REFACTORING_PROGRESS.md
 ENGINEERING_IMPROVEMENTS_SUMMARY.md
 COVERAGE_REPORT.md
 
-# Session and planning files (transient, load on-demand)
-agent_plan.md
+# Session file (transient, load on-demand)
 claude-progress.txt
