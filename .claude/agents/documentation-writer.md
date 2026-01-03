@@ -32,7 +32,7 @@ Always read `docs/INDEX.md` first to understand:
 - Which docs exist for each feature
 - Navigation paths for users and developers
 
-**Pattern:** `COMMANDS.md` has quick reference → `docs/commands/<feature>.md` has full details with examples.
+**Pattern:** `docs/COMMANDS.md` has quick reference → `docs/commands/<feature>.md` has full details with examples.
 
 ---
 
@@ -40,15 +40,15 @@ Always read `docs/INDEX.md` first to understand:
 
 | Code Change | Docs to Update |
 |-------------|----------------|
-| New CLI command | `COMMANDS.md` + `docs/commands/<feature>.md` + `README.md` (if major) |
-| New CLI flag | `COMMANDS.md` + `docs/commands/<feature>.md` |
-| Flag behavior change | `docs/commands/<feature>.md`, `troubleshooting/` |
-| New API method | `ARCHITECTURE.md` |
-| Auth flow change | `security/overview.md`, `COMMANDS.md` |
-| AI feature | `commands/ai.md`, `COMMANDS.md`, `docs/commands/<feature>.md` |
-| MCP change | `commands/mcp.md` |
-| Build/test change | `DEVELOPMENT.md` |
-| New error pattern | `troubleshooting/` |
+| New CLI command | `docs/COMMANDS.md` + `docs/commands/<feature>.md` + `README.md` (if major) |
+| New CLI flag | `docs/COMMANDS.md` + `docs/commands/<feature>.md` |
+| Flag behavior change | `docs/commands/<feature>.md`, `docs/troubleshooting/` |
+| New API method | `docs/ARCHITECTURE.md` |
+| Auth flow change | `docs/security/overview.md`, `docs/COMMANDS.md` |
+| AI feature | `docs/commands/ai.md`, `docs/COMMANDS.md` |
+| MCP change | `docs/commands/mcp.md` |
+| Build/test change | `docs/DEVELOPMENT.md` |
+| New error pattern | `docs/troubleshooting/` |
 | Breaking change | `CHANGELOG.md`, affected docs |
 | New doc file | `docs/INDEX.md` (add to navigation) |
 
