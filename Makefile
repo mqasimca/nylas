@@ -285,24 +285,24 @@ ci-full:
 	@echo "Running Full CI Pipeline..."
 	@echo "================================="
 	@$(MAKE) --no-print-directory ci 2>&1 | tee ci-full.txt
-	@echo "" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@echo "Running Integration Tests..." | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@$(MAKE) --no-print-directory test-integration 2>&1 | tee -a ci-full.txt
-	@$(MAKE) --no-print-directory test-air-integration 2>&1 | tee -a ci-full.txt
-	@echo "" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@echo "Cleaning up test resources..." | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@$(MAKE) --no-print-directory test-cleanup 2>&1 | tee -a ci-full.txt
-	@echo "" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
-	@echo "✓ Full CI pipeline completed!" | tee -a ci-full.txt
-	@echo "  - All quality checks passed" | tee -a ci-full.txt
-	@echo "  - All tests passed" | tee -a ci-full.txt
-	@echo "  - Test resources cleaned up" | tee -a ci-full.txt
-	@echo "=================================" | tee -a ci-full.txt
+	@echo "" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@echo "Running Integration Tests..." | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@$(MAKE) --no-print-directory test-integration 2>&1 | tee ci-full.txt
+	@$(MAKE) --no-print-directory test-air-integration 2>&1 | tee ci-full.txt
+	@echo "" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@echo "Cleaning up test resources..." | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@$(MAKE) --no-print-directory test-cleanup 2>&1 | tee ci-full.txt
+	@echo "" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
+	@echo "✓ Full CI pipeline completed!" | tee ci-full.txt
+	@echo "  - All quality checks passed" | tee ci-full.txt
+	@echo "  - All tests passed" | tee ci-full.txt
+	@echo "  - Test resources cleaned up" | tee ci-full.txt
+	@echo "=================================" | tee ci-full.txt
 	@echo ""
 	@echo "Results saved to ci-full.txt"
 
