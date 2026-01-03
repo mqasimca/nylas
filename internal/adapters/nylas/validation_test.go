@@ -9,138 +9,36 @@ import (
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
-func TestValidateGrantID(t *testing.T) {
-	tests := []struct {
-		name    string
-		grantID string
-		wantErr bool
-	}{
-		{
-			name:    "valid grant ID",
-			grantID: "grant-123",
-			wantErr: false,
-		},
-		{
-			name:    "empty grant ID",
-			grantID: "",
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateGrantID(tt.grantID)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
-				if !errors.Is(err, domain.ErrInvalidInput) {
-					t.Errorf("expected ErrInvalidInput, got %v", err)
-				}
-			} else {
-				if err != nil {
-					t.Errorf("unexpected error: %v", err)
-				}
-			}
-		})
-	}
-}
-
-func TestValidateCalendarID(t *testing.T) {
-	tests := []struct {
-		name       string
-		calendarID string
-		wantErr    bool
-	}{
-		{
-			name:       "valid calendar ID",
-			calendarID: "calendar-123",
-			wantErr:    false,
-		},
-		{
-			name:       "empty calendar ID",
-			calendarID: "",
-			wantErr:    true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateCalendarID(tt.calendarID)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
-				if !errors.Is(err, domain.ErrInvalidInput) {
-					t.Errorf("expected ErrInvalidInput, got %v", err)
-				}
-			} else {
-				if err != nil {
-					t.Errorf("unexpected error: %v", err)
-				}
-			}
-		})
-	}
-}
-
-func TestValidateMessageID(t *testing.T) {
+func TestValidateRequired(t *testing.T) {
 	tests := []struct {
 		name      string
-		messageID string
+		fieldName string
+		value     string
 		wantErr   bool
 	}{
 		{
-			name:      "valid message ID",
-			messageID: "message-123",
+			name:      "valid value",
+			fieldName: "grant ID",
+			value:     "grant-123",
 			wantErr:   false,
 		},
 		{
-			name:      "empty message ID",
-			messageID: "",
+			name:      "empty value",
+			fieldName: "grant ID",
+			value:     "",
 			wantErr:   true,
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateMessageID(tt.messageID)
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
-				if !errors.Is(err, domain.ErrInvalidInput) {
-					t.Errorf("expected ErrInvalidInput, got %v", err)
-				}
-			} else {
-				if err != nil {
-					t.Errorf("unexpected error: %v", err)
-				}
-			}
-		})
-	}
-}
-
-func TestValidateEventID(t *testing.T) {
-	tests := []struct {
-		name    string
-		eventID string
-		wantErr bool
-	}{
 		{
-			name:    "valid event ID",
-			eventID: "event-123",
-			wantErr: false,
-		},
-		{
-			name:    "empty event ID",
-			eventID: "",
-			wantErr: true,
+			name:      "whitespace only is valid",
+			fieldName: "field",
+			value:     "   ",
+			wantErr:   false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateEventID(tt.eventID)
+			err := validateRequired(tt.fieldName, tt.value)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")

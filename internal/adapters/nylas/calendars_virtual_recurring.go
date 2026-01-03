@@ -39,26 +39,10 @@ func (c *HTTPClient) CreateVirtualCalendarGrant(ctx context.Context, email strin
 func (c *HTTPClient) ListVirtualCalendarGrants(ctx context.Context) ([]domain.VirtualCalendarGrant, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants?provider=virtual-calendar", c.baseURL)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data []domain.VirtualCalendarGrant `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
@@ -69,29 +53,10 @@ func (c *HTTPClient) ListVirtualCalendarGrants(ctx context.Context) ([]domain.Vi
 func (c *HTTPClient) GetVirtualCalendarGrant(ctx context.Context, grantID string) (*domain.VirtualCalendarGrant, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s", c.baseURL, grantID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: virtual calendar grant not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.VirtualCalendarGrant `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: virtual calendar grant not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 
@@ -101,24 +66,7 @@ func (c *HTTPClient) GetVirtualCalendarGrant(ctx context.Context, grantID string
 // DeleteVirtualCalendarGrant deletes a virtual calendar grant.
 func (c *HTTPClient) DeleteVirtualCalendarGrant(ctx context.Context, grantID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s", c.baseURL, grantID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
-	if err != nil {
-		return err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // GetRecurringEventInstances retrieves all instances of a recurring event.

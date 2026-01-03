@@ -2,7 +2,6 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -38,29 +37,10 @@ func (c *HTTPClient) GetSchedulerConfiguration(ctx context.Context, configID str
 
 	queryURL := fmt.Sprintf("%s/v3/scheduling/configurations/%s", c.baseURL, configID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: configuration not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.SchedulerConfiguration `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: configuration not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -111,16 +91,8 @@ func (c *HTTPClient) DeleteSchedulerConfiguration(ctx context.Context, configID 
 	if err := validateRequired("configuration ID", configID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/scheduling/configurations/%s", c.baseURL, configID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // Scheduler Sessions
@@ -151,29 +123,10 @@ func (c *HTTPClient) GetSchedulerSession(ctx context.Context, sessionID string) 
 
 	queryURL := fmt.Sprintf("%s/v3/scheduling/sessions/%s", c.baseURL, sessionID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: session not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.SchedulerSession `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: session not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -210,29 +163,10 @@ func (c *HTTPClient) GetBooking(ctx context.Context, bookingID string) (*domain.
 
 	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s", c.baseURL, bookingID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: booking not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.Booking `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: booking not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -330,29 +264,10 @@ func (c *HTTPClient) GetSchedulerPage(ctx context.Context, pageID string) (*doma
 
 	queryURL := fmt.Sprintf("%s/v3/scheduling/pages/%s", c.baseURL, pageID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: page not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data domain.SchedulerPage `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: page not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -403,14 +318,6 @@ func (c *HTTPClient) DeleteSchedulerPage(ctx context.Context, pageID string) err
 	if err := validateRequired("page ID", pageID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/scheduling/pages/%s", c.baseURL, pageID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }

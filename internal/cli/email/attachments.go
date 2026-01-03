@@ -66,7 +66,7 @@ func newAttachmentsListCmd() *cobra.Command {
 				fmt.Printf("%d. %s\n", i+1, common.BoldWhite.Sprint(a.Filename))
 				fmt.Printf("   ID:   %s\n", a.ID)
 				fmt.Printf("   Type: %s\n", a.ContentType)
-				fmt.Printf("   Size: %s\n", formatSize(a.Size))
+				fmt.Printf("   Size: %s\n", common.FormatSize(a.Size))
 				if a.IsInline {
 					fmt.Printf("   Inline: yes\n")
 				}
@@ -118,7 +118,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 			_, _ = common.BoldWhite.Printf("Filename:     %s\n", attachment.Filename)
 			fmt.Printf("ID:           %s\n", attachment.ID)
 			fmt.Printf("Content Type: %s\n", attachment.ContentType)
-			fmt.Printf("Size:         %s (%d bytes)\n", formatSize(attachment.Size), attachment.Size)
+			fmt.Printf("Size:         %s (%d bytes)\n", common.FormatSize(attachment.Size), attachment.Size)
 			if attachment.ContentID != "" {
 				fmt.Printf("Content ID:   %s\n", attachment.ContentID)
 			}
@@ -209,7 +209,7 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 				return fmt.Errorf("failed to write file: %w", err)
 			}
 
-			printSuccess("Downloaded %s (%s) to %s", attachment.Filename, formatSize(written), outputPath)
+			printSuccess("Downloaded %s (%s) to %s", attachment.Filename, common.FormatSize(written), outputPath)
 			return nil
 		},
 	}

@@ -152,7 +152,7 @@ func TestHelperFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			got := stripHTML(tt.input)
+			got := common.StripHTML(tt.input)
 			assert.Equal(t, tt.expected, got)
 		}
 	})
@@ -169,7 +169,7 @@ func TestHelperFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			got := formatSize(tt.bytes)
+			got := common.FormatSize(tt.bytes)
 			assert.Equal(t, tt.expected, got)
 		}
 	})

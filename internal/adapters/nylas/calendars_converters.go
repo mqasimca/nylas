@@ -4,14 +4,11 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 func convertCalendars(cals []calendarResponse) []domain.Calendar {
-	result := make([]domain.Calendar, len(cals))
-	for i, c := range cals {
-		result[i] = convertCalendar(c)
-	}
-	return result
+	return util.Map(cals, convertCalendar)
 }
 
 // convertCalendar converts an API calendar response to domain model.
@@ -33,24 +30,24 @@ func convertCalendar(c calendarResponse) domain.Calendar {
 
 // convertEvents converts API event responses to domain models.
 func convertEvents(events []eventResponse) []domain.Event {
-	result := make([]domain.Event, len(events))
-	for i, e := range events {
-		result[i] = convertEvent(e)
-	}
-	return result
+	return util.Map(events, convertEvent)
 }
 
 // convertEvent converts an API event response to domain model.
 func convertEvent(e eventResponse) domain.Event {
-	participants := make([]domain.Participant, len(e.Participants))
-	for j, p := range e.Participants {
-		participants[j] = domain.Participant{
+	participants := util.Map(e.Participants, func(p struct {
+		Name    string `json:"name"`
+		Email   string `json:"email"`
+		Status  string `json:"status"`
+		Comment string `json:"comment"`
+	}) domain.Participant {
+		return domain.Participant{
 			Name:    p.Name,
 			Email:   p.Email,
 			Status:  p.Status,
 			Comment: p.Comment,
 		}
-	}
+	})
 
 	var organizer *domain.Participant
 	if e.Organizer != nil {
@@ -79,13 +76,15 @@ func convertEvent(e eventResponse) domain.Event {
 
 	var reminders *domain.Reminders
 	if e.Reminders != nil {
-		overrides := make([]domain.Reminder, len(e.Reminders.Overrides))
-		for j, o := range e.Reminders.Overrides {
-			overrides[j] = domain.Reminder{
+		overrides := util.Map(e.Reminders.Overrides, func(o struct {
+			ReminderMinutes int    `json:"reminder_minutes"`
+			ReminderMethod  string `json:"reminder_method"`
+		}) domain.Reminder {
+			return domain.Reminder{
 				ReminderMinutes: o.ReminderMinutes,
 				ReminderMethod:  o.ReminderMethod,
 			}
-		}
+		})
 		reminders = &domain.Reminders{
 			UseDefault: e.Reminders.UseDefault,
 			Overrides:  overrides,

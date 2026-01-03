@@ -124,7 +124,7 @@ func TestFormatSize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatSize(tt.bytes)
+			result := common.FormatSize(tt.bytes)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -245,7 +245,7 @@ func TestStripHTML(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := stripHTML(tt.input)
+			result := common.StripHTML(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -304,7 +304,7 @@ func TestRemoveTagWithContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := removeTagWithContent(tt.input, tt.tag)
+			result := common.RemoveTagWithContent(tt.input, tt.tag)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

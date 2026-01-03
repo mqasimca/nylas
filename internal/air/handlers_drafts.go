@@ -1,8 +1,6 @@
 package air
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -24,29 +22,18 @@ func (s *Server) handleDrafts(w http.ResponseWriter, r *http.Request) {
 
 // handleListDrafts returns all drafts.
 func (s *Server) handleListDrafts(w http.ResponseWriter, r *http.Request) {
-	// Demo mode: return mock drafts
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, DraftsResponse{
-			Drafts: demoDrafts(),
-		})
+	if s.handleDemoMode(w, DraftsResponse{Drafts: demoDrafts()}) {
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
 	}
 
-	// Fetch drafts from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	drafts, err := s.nylasClient.GetDrafts(ctx, grantID, 50)
@@ -70,40 +57,23 @@ func (s *Server) handleListDrafts(w http.ResponseWriter, r *http.Request) {
 
 // handleCreateDraft creates a new draft.
 func (s *Server) handleCreateDraft(w http.ResponseWriter, r *http.Request) {
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, DraftResponse{
-			ID:      "demo-draft-new",
-			Subject: "New Draft",
-			Date:    time.Now().Unix(),
-		})
+	if s.handleDemoMode(w, DraftResponse{ID: "demo-draft-new", Subject: "New Draft", Date: time.Now().Unix()}) {
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
 	}
 
-	// Parse request body
 	var req DraftRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
-	// Create draft via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	createReq := &domain.CreateDraftRequest{
@@ -157,34 +127,25 @@ func (s *Server) handleDraftByID(w http.ResponseWriter, r *http.Request) {
 
 // handleGetDraft retrieves a single draft.
 func (s *Server) handleGetDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	// Demo mode: return mock draft
 	if s.demoMode {
-		drafts := demoDrafts()
-		for _, d := range drafts {
+		for _, d := range demoDrafts() {
 			if d.ID == draftID {
 				writeJSON(w, http.StatusOK, d)
 				return
 			}
 		}
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "Draft not found"})
+		writeError(w, http.StatusNotFound, "Draft not found")
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
 	}
 
-	// Fetch draft from Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	draft, err := s.nylasClient.GetDraft(ctx, grantID, draftID)
@@ -200,40 +161,23 @@ func (s *Server) handleGetDraft(w http.ResponseWriter, r *http.Request, draftID 
 
 // handleUpdateDraft updates an existing draft.
 func (s *Server) handleUpdateDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, DraftResponse{
-			ID:      draftID,
-			Subject: "Updated Draft",
-			Date:    time.Now().Unix(),
-		})
+	if s.handleDemoMode(w, DraftResponse{ID: draftID, Subject: "Updated Draft", Date: time.Now().Unix()}) {
 		return
 	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
+	if !s.requireConfig(w) {
 		return
 	}
-
 	grantID, ok := s.requireDefaultGrant(w)
 	if !ok {
 		return
 	}
 
-	// Parse request body
 	var req DraftRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
-	// Update draft via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	updateReq := &domain.CreateDraftRequest{
@@ -258,38 +202,21 @@ func (s *Server) handleUpdateDraft(w http.ResponseWriter, r *http.Request, draft
 
 // handleDeleteDraft deletes a draft.
 func (s *Server) handleDeleteDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, UpdateEmailResponse{
-			Success: true,
-			Message: "Draft deleted (demo mode)",
-		})
+	if s.handleDemoMode(w, UpdateEmailResponse{Success: true, Message: "Draft deleted (demo mode)"}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, UpdateEmailResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Delete draft via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
-	err = s.nylasClient.DeleteDraft(ctx, grantID, draftID)
+	err := s.nylasClient.DeleteDraft(ctx, grantID, draftID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, UpdateEmailResponse{
 			Success: false,
@@ -306,36 +233,18 @@ func (s *Server) handleDeleteDraft(w http.ResponseWriter, r *http.Request, draft
 
 // handleSendDraft sends a draft.
 func (s *Server) handleSendDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, SendMessageResponse{
-			Success:   true,
-			MessageID: "demo-sent-" + draftID,
-			Message:   "Email sent (demo mode)",
-		})
+	if s.handleDemoMode(w, SendMessageResponse{Success: true, MessageID: "demo-sent-" + draftID, Message: "Email sent (demo mode)"}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, SendMessageResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Send draft via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	msg, err := s.nylasClient.SendDraft(ctx, grantID, draftID)
@@ -356,50 +265,25 @@ func (s *Server) handleSendDraft(w http.ResponseWriter, r *http.Request, draftID
 
 // handleSendMessage sends a message directly without creating a draft first.
 func (s *Server) handleSendMessage(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodPost) {
+		return
+	}
+	if s.handleDemoMode(w, SendMessageResponse{Success: true, MessageID: "demo-sent-" + time.Now().Format("20060102150405"), Message: "Email sent (demo mode)"}) {
+		return
+	}
+	if !s.requireConfig(w) {
+		return
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, SendMessageResponse{
-			Success:   true,
-			MessageID: "demo-sent-" + time.Now().Format("20060102150405"),
-			Message:   "Email sent (demo mode)",
-		})
-		return
-	}
-
-	// Check if configured
-	if s.nylasClient == nil {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
-			"error": "Not configured. Run 'nylas auth login' first.",
-		})
-		return
-	}
-
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, SendMessageResponse{
-			Success: false,
-			Error:   "No default account. Please select an account first.",
-		})
-		return
-	}
-
-	// Parse request body
 	var req SendMessageRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, SendMessageResponse{
-			Success: false,
-			Error:   "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
-	// Validate recipients
 	if len(req.To) == 0 {
 		writeJSON(w, http.StatusBadRequest, SendMessageResponse{
 			Success: false,
@@ -408,8 +292,7 @@ func (s *Server) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Send message via Nylas API
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := s.withTimeout(r)
 	defer cancel()
 
 	sendReq := &domain.SendMessageRequest{

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/util"
 )
 
 // SendMessage sends an email.
@@ -111,16 +112,20 @@ func (c *HTTPClient) ListScheduledMessages(ctx context.Context, grantID string) 
 		return nil, err
 	}
 
-	schedules := make([]domain.ScheduledMessage, len(result.Data))
-	for i, s := range result.Data {
-		schedules[i] = domain.ScheduledMessage{
+	return util.Map(result.Data, func(s struct {
+		ScheduleID string `json:"schedule_id"`
+		Status     struct {
+			Code        string `json:"code"`
+			Description string `json:"description"`
+		} `json:"status"`
+		CloseTime int64 `json:"close_time"`
+	}) domain.ScheduledMessage {
+		return domain.ScheduledMessage{
 			ScheduleID: s.ScheduleID,
 			Status:     s.Status.Code,
 			CloseTime:  s.CloseTime,
 		}
-	}
-
-	return schedules, nil
+	}), nil
 }
 
 // GetScheduledMessage retrieves a specific scheduled message.

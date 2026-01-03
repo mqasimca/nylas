@@ -392,24 +392,7 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 // DeleteDraft deletes a draft.
 func (c *HTTPClient) DeleteDraft(ctx context.Context, grantID, draftID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts/%s", c.baseURL, grantID, draftID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
-	if err != nil {
-		return err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // SendDraft sends a draft.

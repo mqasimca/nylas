@@ -340,14 +340,14 @@ func newDraftsShowCmd() *cobra.Command {
 			if len(draft.Attachments) > 0 {
 				fmt.Printf("\nAttachments (%d):\n", len(draft.Attachments))
 				for i, a := range draft.Attachments {
-					fmt.Printf("  %d. %s (%s, %s)\n", i+1, a.Filename, a.ContentType, formatSize(a.Size))
+					fmt.Printf("  %d. %s (%s, %s)\n", i+1, a.Filename, a.ContentType, common.FormatSize(a.Size))
 				}
 			}
 
 			if draft.Body != "" {
 				fmt.Println("\nBody:")
 				fmt.Println("────────────────────────────────────────────────────────────")
-				fmt.Println(stripHTML(draft.Body))
+				fmt.Println(common.StripHTML(draft.Body))
 			}
 
 			return nil

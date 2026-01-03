@@ -220,6 +220,9 @@ The CLI provides three different interfaces:
 - `server_template.go` - Template handling
 - `server_modules_test.go` - Unit tests
 
+**Handler Helpers:**
+- `handlers_helpers.go` - Common handler utilities (see pattern below)
+
 **Handlers** (organized by feature):
 - Email: `handlers_email.go`, `handlers_drafts.go`, `handlers_bundles.go`
 - Calendar: `handlers_calendars.go`, `handlers_events.go`, `handlers_calendar_helpers.go`
@@ -232,6 +235,33 @@ The CLI provides three different interfaces:
 - `data.go` - Data models
 - `templates/` - HTML templates
 - `integration_*.go` - Integration tests (organized by feature)
+
+### Handler Helper Pattern
+
+All HTTP handlers use common helpers for consistency and reduced boilerplate:
+
+| Helper | Location | Purpose |
+|--------|----------|---------|
+| `withTimeout(r)` | `handlers_helpers.go` | Creates context with 30s default timeout |
+| `requireConfig(w)` | `handlers_helpers.go` | Checks Nylas client is configured, writes error if not |
+| `parseJSONBody[T](w, r, &dest)` | `handlers_helpers.go` | Generic JSON body parsing with error handling |
+| `handleDemoMode(w, data)` | `handlers_helpers.go` | Returns demo response if in demo mode |
+| `requireMethod(w, r, method)` | `handlers_helpers.go` | Validates HTTP method |
+| `writeError(w, status, msg)` | `handlers_helpers.go` | Writes JSON error response |
+| `requireDefaultGrant(w)` | `server_stores.go` | Gets default grant ID, writes error if not set |
+
+**Standard handler pattern:**
+```go
+func (s *Server) handleX(w http.ResponseWriter, r *http.Request) {
+    if s.handleDemoMode(w, demoData) { return }
+    if !s.requireConfig(w) { return }
+    grantID, ok := s.requireDefaultGrant(w)
+    if !ok { return }
+    ctx, cancel := s.withTimeout(r)
+    defer cancel()
+    // ... handler logic
+}
+```
 
 **Complete file listing:** See `CLAUDE.md` for detailed file structure with line counts
 

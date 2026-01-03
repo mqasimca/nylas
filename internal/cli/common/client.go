@@ -3,12 +3,19 @@ package common
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
+)
+
+var (
+	cachedClient ports.NylasClient
+	clientOnce   sync.Once
+	clientErr    error
 )
 
 // GetNylasClient creates a Nylas API client with credentials from environment variables or keyring.
@@ -60,6 +67,27 @@ func GetNylasClient() (ports.NylasClient, error) {
 	c.SetCredentials(clientID, clientSecret, apiKey)
 
 	return c, nil
+}
+
+// GetCachedNylasClient returns a singleton Nylas client.
+// This is useful for CLI commands that need to make multiple API calls
+// in a single command invocation, avoiding the overhead of creating
+// a new client each time.
+//
+// Note: The client is cached for the lifetime of the process.
+// For long-running processes or tests, use GetNylasClient() instead.
+func GetCachedNylasClient() (ports.NylasClient, error) {
+	clientOnce.Do(func() {
+		cachedClient, clientErr = GetNylasClient()
+	})
+	return cachedClient, clientErr
+}
+
+// ResetCachedClient clears the cached client (useful for testing).
+func ResetCachedClient() {
+	cachedClient = nil
+	clientErr = nil
+	clientOnce = sync.Once{}
 }
 
 // GetAPIKey returns the API key from environment variable or keyring.

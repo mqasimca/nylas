@@ -168,16 +168,8 @@ func (c *HTTPClient) DeleteThread(ctx context.Context, grantID, threadID string)
 	if err := validateRequired("thread ID", threadID); err != nil {
 		return err
 	}
-
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/threads/%s", c.baseURL, grantID, threadID)
-
-	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // convertThreads converts API thread responses to domain models.

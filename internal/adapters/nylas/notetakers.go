@@ -99,29 +99,10 @@ func (c *HTTPClient) ListNotetakers(ctx context.Context, grantID string, params 
 func (c *HTTPClient) GetNotetaker(ctx context.Context, grantID, notetakerID string) (*domain.Notetaker, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/notetakers/%s", c.baseURL, grantID, notetakerID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: notetaker not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data notetakerResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: notetaker not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 
@@ -172,48 +153,12 @@ func (c *HTTPClient) CreateNotetaker(ctx context.Context, grantID string, req *d
 // DeleteNotetaker deletes/cancels a notetaker.
 func (c *HTTPClient) DeleteNotetaker(ctx context.Context, grantID, notetakerID string) error {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/notetakers/%s", c.baseURL, grantID, notetakerID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
-	if err != nil {
-		return err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
-
-	return nil
+	return c.doDelete(ctx, queryURL)
 }
 
 // GetNotetakerMedia retrieves the media (recording/transcript) for a notetaker.
 func (c *HTTPClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID string) (*domain.MediaData, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/notetakers/%s/media", c.baseURL, grantID, notetakerID)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: notetaker media not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
 
 	var result struct {
 		Data struct {
@@ -231,7 +176,7 @@ func (c *HTTPClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID
 			} `json:"transcript"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: notetaker media not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 
