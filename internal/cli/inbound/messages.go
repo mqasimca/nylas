@@ -93,7 +93,7 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 			fmt.Println("No messages found in this inbox.")
 		}
 		fmt.Println()
-		_, _ = dim.Println("Send an email to the inbox address to receive messages here.")
+		_, _ = common.Dim.Println("Send an email to the inbox address to receive messages here.")
 		return nil
 	}
 
@@ -106,9 +106,9 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 	}
 
 	if unread {
-		_, _ = boldWhite.Printf("Unread Messages (%d)\n\n", len(messages))
+		_, _ = common.BoldWhite.Printf("Unread Messages (%d)\n\n", len(messages))
 	} else {
-		_, _ = boldWhite.Printf("Messages (%d total, %d unread)\n\n", len(messages), unreadCount)
+		_, _ = common.BoldWhite.Printf("Messages (%d total, %d unread)\n\n", len(messages), unreadCount)
 	}
 
 	for i, msg := range messages {
@@ -116,7 +116,7 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 	}
 
 	fmt.Println()
-	_, _ = dim.Println("Use 'nylas email read <message-id> [inbox-id]' to view full message")
+	_, _ = common.Dim.Println("Use 'nylas email read <message-id> [inbox-id]' to view full message")
 
 	return nil
 }

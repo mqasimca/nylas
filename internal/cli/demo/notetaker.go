@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -52,8 +53,8 @@ func newDemoNotetakerListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Sample AI Notetakers"))
-			fmt.Println(dim.Sprint("These are sample notetaker sessions for demonstration purposes."))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Sample AI Notetakers"))
+			fmt.Println(common.Dim.Sprint("These are sample notetaker sessions for demonstration purposes."))
 			fmt.Println()
 			fmt.Printf("Found %d notetakers:\n\n", len(notetakers))
 
@@ -62,7 +63,7 @@ func newDemoNotetakerListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To use AI notetakers on your meetings: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To use AI notetakers on your meetings: nylas auth login"))
 
 			return nil
 		},
@@ -105,11 +106,11 @@ func newDemoNotetakerShowCmd() *cobra.Command {
 			media, _ := client.GetNotetakerMedia(ctx, "demo-grant", notetakerID)
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Sample Notetaker Session"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Sample Notetaker Session"))
 			fmt.Println()
 			printDemoNotetakerFull(*nt, media)
 
-			fmt.Println(dim.Sprint("To use AI notetakers on your meetings: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To use AI notetakers on your meetings: nylas auth login"))
 
 			return nil
 		},
@@ -163,29 +164,29 @@ No actual notetaker is created - this is just a demonstration of the command flo
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Simulated Notetaker Creation"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Simulated Notetaker Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("Name:         %s\n", name)
+			_, _ = common.BoldWhite.Printf("Name:         %s\n", name)
 			fmt.Printf("Meeting Link: %s\n", meetingLink)
 			fmt.Printf("Provider:     %s\n", provider)
 			if joinAt != "" {
 				fmt.Printf("Join At:      %s\n", joinAt)
 			} else {
-				fmt.Printf("Join At:      %s\n", green.Sprint("Immediately"))
+				fmt.Printf("Join At:      %s\n", common.Green.Sprint("Immediately"))
 			}
 			fmt.Println()
 			fmt.Println("Settings:")
-			fmt.Printf("  Recording:     %s\n", green.Sprint("Enabled"))
-			fmt.Printf("  Transcription: %s\n", green.Sprint("Enabled"))
-			fmt.Printf("  Summary:       %s\n", green.Sprint("Enabled"))
-			fmt.Printf("  Action Items:  %s\n", green.Sprint("Enabled"))
+			fmt.Printf("  Recording:     %s\n", common.Green.Sprint("Enabled"))
+			fmt.Printf("  Transcription: %s\n", common.Green.Sprint("Enabled"))
+			fmt.Printf("  Summary:       %s\n", common.Green.Sprint("Enabled"))
+			fmt.Printf("  Action Items:  %s\n", common.Green.Sprint("Enabled"))
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Notetaker would be created (demo mode - no actual notetaker created)")
-			_, _ = dim.Printf("  Notetaker ID: notetaker-demo-%d\n", time.Now().Unix())
+			_, _ = common.Green.Println("✓ Notetaker would be created (demo mode - no actual notetaker created)")
+			_, _ = common.Dim.Printf("  Notetaker ID: notetaker-demo-%d\n", time.Now().Unix())
 			fmt.Println()
-			fmt.Println(dim.Sprint("To create real notetakers, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To create real notetakers, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -222,19 +223,19 @@ func newDemoNotetakerDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Simulated Notetaker Deletion"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Simulated Notetaker Deletion"))
 			fmt.Println()
 
 			if !force {
-				_, _ = yellow.Println("⚠ Would prompt for confirmation in real mode")
+				_, _ = common.Yellow.Println("⚠ Would prompt for confirmation in real mode")
 			}
 
 			fmt.Printf("Notetaker ID: %s\n", notetakerID)
 			fmt.Println()
-			_, _ = green.Println("✓ Notetaker would be cancelled/deleted (demo mode - no actual deletion)")
+			_, _ = common.Green.Println("✓ Notetaker would be cancelled/deleted (demo mode - no actual deletion)")
 			fmt.Println("  If the notetaker was in a meeting, it would leave immediately")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage real notetakers, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage real notetakers, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -277,33 +278,33 @@ func newDemoMediaShowCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Notetaker Media"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Notetaker Media"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("Notetaker: %s\n", notetakerID)
+			_, _ = common.BoldWhite.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Println()
 
 			fmt.Println("📁 Available Media:")
 			fmt.Println()
-			fmt.Printf("  %s Recording\n", green.Sprint("●"))
+			fmt.Printf("  %s Recording\n", common.Green.Sprint("●"))
 			fmt.Printf("    Format:   MP4\n")
 			fmt.Printf("    Size:     245.6 MB\n")
 			fmt.Printf("    Duration: 45:32\n")
-			_, _ = dim.Printf("    URL:      https://media.example.com/recordings/%s.mp4\n", notetakerID)
+			_, _ = common.Dim.Printf("    URL:      https://media.example.com/recordings/%s.mp4\n", notetakerID)
 			fmt.Println()
 
-			fmt.Printf("  %s Transcript\n", green.Sprint("●"))
+			fmt.Printf("  %s Transcript\n", common.Green.Sprint("●"))
 			fmt.Printf("    Format:   VTT\n")
 			fmt.Printf("    Size:     128.4 KB\n")
-			_, _ = dim.Printf("    URL:      https://media.example.com/transcripts/%s.vtt\n", notetakerID)
+			_, _ = common.Dim.Printf("    URL:      https://media.example.com/transcripts/%s.vtt\n", notetakerID)
 			fmt.Println()
 
-			fmt.Printf("  %s Summary\n", green.Sprint("●"))
+			fmt.Printf("  %s Summary\n", common.Green.Sprint("●"))
 			fmt.Printf("    Format:   JSON\n")
 			fmt.Printf("    Size:     4.2 KB\n")
 			fmt.Println()
 
-			fmt.Printf("  %s Action Items\n", green.Sprint("●"))
+			fmt.Printf("  %s Action Items\n", common.Green.Sprint("●"))
 			fmt.Printf("    Count:    5 items\n")
 
 			fmt.Println(strings.Repeat("─", 50))
@@ -330,12 +331,12 @@ func newDemoMediaDownloadCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Download Recording"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Download Recording"))
 			fmt.Println()
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Printf("Output:    %s\n", output)
 			fmt.Println()
-			_, _ = green.Println("✓ Recording would be downloaded (demo mode)")
+			_, _ = common.Green.Println("✓ Recording would be downloaded (demo mode)")
 			fmt.Printf("  Size: 245.6 MB\n")
 			fmt.Printf("  Duration: 45:32\n")
 
@@ -365,7 +366,7 @@ func newDemoMediaTranscriptCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - Meeting Transcript"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - Meeting Transcript"))
 			fmt.Println()
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Printf("Format:    %s\n", format)
@@ -384,7 +385,7 @@ func newDemoMediaTranscriptCmd() *cobra.Command {
 			fmt.Println()
 			fmt.Println("[00:00:45] John: Great progress team! Any blockers?")
 			fmt.Println()
-			_, _ = dim.Println("... (transcript continues)")
+			_, _ = common.Dim.Println("... (transcript continues)")
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 
@@ -408,12 +409,12 @@ func newDemoMediaSummaryCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Meeting Summary"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Meeting Summary"))
 			fmt.Println()
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Meeting Summary")
+			_, _ = common.BoldWhite.Println("Meeting Summary")
 			fmt.Println()
 
 			fmt.Println("📋 Overview:")
@@ -455,12 +456,12 @@ func newDemoMediaActionItemsCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Action Items"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Action Items"))
 			fmt.Println()
 			fmt.Printf("Notetaker: %s\n", notetakerID)
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("Action Items")
+			_, _ = common.BoldWhite.Println("Action Items")
 			fmt.Println()
 
 			items := []struct {
@@ -476,7 +477,7 @@ func newDemoMediaActionItemsCmd() *cobra.Command {
 			}
 
 			for i, item := range items {
-				fmt.Printf("  %s %s\n", cyan.Sprintf("%d.", i+1), boldWhite.Sprint(item.task))
+				fmt.Printf("  %s %s\n", common.Cyan.Sprintf("%d.", i+1), common.BoldWhite.Sprint(item.task))
 				fmt.Printf("     Assignee: %s\n", item.assignee)
 				fmt.Printf("     Due:      %s\n", item.due)
 				fmt.Println()
@@ -502,16 +503,16 @@ func printDemoNotetaker(nt domain.Notetaker) {
 	switch nt.State {
 	case domain.NotetakerStateComplete:
 		stateIcon = "✓"
-		stateColor = green
+		stateColor = common.Green
 	case domain.NotetakerStateAttending:
 		stateIcon = "●"
-		stateColor = cyan
+		stateColor = common.Cyan
 	case domain.NotetakerStateScheduled:
 		stateIcon = "○"
-		stateColor = yellow
+		stateColor = common.Yellow
 	default:
 		stateIcon = "?"
-		stateColor = dim
+		stateColor = common.Dim
 	}
 
 	title := nt.MeetingTitle
@@ -519,15 +520,15 @@ func printDemoNotetaker(nt domain.Notetaker) {
 		title = "Untitled Meeting"
 	}
 
-	fmt.Printf("  %s %s\n", stateColor.Sprint(stateIcon), boldWhite.Sprint(title))
+	fmt.Printf("  %s %s\n", stateColor.Sprint(stateIcon), common.BoldWhite.Sprint(title))
 	fmt.Printf("    State: %s\n", stateColor.Sprint(string(nt.State)))
-	fmt.Printf("    Link:  %s\n", dim.Sprint(nt.MeetingLink))
+	fmt.Printf("    Link:  %s\n", common.Dim.Sprint(nt.MeetingLink))
 
 	if !nt.JoinTime.IsZero() {
 		fmt.Printf("    Join:  %s\n", nt.JoinTime.Format("Jan 2, 2006 3:04 PM"))
 	}
 
-	_, _ = dim.Printf("    ID:    %s\n", nt.ID)
+	_, _ = common.Dim.Printf("    ID:    %s\n", nt.ID)
 	fmt.Println()
 }
 
@@ -542,17 +543,17 @@ func printDemoNotetakerFull(nt domain.Notetaker, media *domain.MediaData) {
 	var stateColor *color.Color
 	switch nt.State {
 	case domain.NotetakerStateComplete:
-		stateColor = green
+		stateColor = common.Green
 	case domain.NotetakerStateAttending:
-		stateColor = cyan
+		stateColor = common.Cyan
 	case domain.NotetakerStateScheduled:
-		stateColor = yellow
+		stateColor = common.Yellow
 	default:
-		stateColor = dim
+		stateColor = common.Dim
 	}
 
 	fmt.Println("────────────────────────────────────────────────────")
-	_, _ = boldWhite.Printf("Meeting: %s\n", title)
+	_, _ = common.BoldWhite.Printf("Meeting: %s\n", title)
 	fmt.Printf("State:   %s\n", stateColor.Sprint(string(nt.State)))
 	fmt.Printf("Link:    %s\n", nt.MeetingLink)
 	fmt.Printf("ID:      %s\n", nt.ID)
@@ -570,13 +571,13 @@ func printDemoNotetakerFull(nt domain.Notetaker, media *domain.MediaData) {
 		if media.Recording != nil {
 			fmt.Printf("  Recording:  %s\n", media.Recording.ContentType)
 			fmt.Printf("              Size: %s\n", formatDemoSize(media.Recording.Size))
-			_, _ = dim.Printf("              URL: %s\n", media.Recording.URL)
+			_, _ = common.Dim.Printf("              URL: %s\n", media.Recording.URL)
 		}
 
 		if media.Transcript != nil {
 			fmt.Printf("  Transcript: %s\n", media.Transcript.ContentType)
 			fmt.Printf("              Size: %s\n", formatDemoSize(media.Transcript.Size))
-			_, _ = dim.Printf("              URL: %s\n", media.Transcript.URL)
+			_, _ = common.Dim.Printf("              URL: %s\n", media.Transcript.URL)
 		}
 	}
 

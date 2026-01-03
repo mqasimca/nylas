@@ -93,7 +93,7 @@ You can update the URL, triggers, description, notification emails, or status.`,
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Only set fields that were explicitly provided to avoid clearing existing values

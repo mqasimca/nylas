@@ -90,7 +90,7 @@ func newDraftsListCmd() *cobra.Command {
 
 				dateStr := common.FormatTimeAgo(d.UpdatedAt)
 
-				fmt.Printf("%-15s %-25s %-35s %s\n", idShort, toStr, subj, dim.Sprint(dateStr))
+				fmt.Printf("%-15s %-25s %-35s %s\n", idShort, toStr, subj, common.Dim.Sprint(dateStr))
 			}
 
 			return nil
@@ -324,7 +324,7 @@ func newDraftsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = boldWhite.Printf("Draft: %s\n", draft.Subject)
+			_, _ = common.BoldWhite.Printf("Draft: %s\n", draft.Subject)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("ID:      %s\n", draft.ID)

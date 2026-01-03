@@ -87,7 +87,7 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.CreateWebhookRequest{

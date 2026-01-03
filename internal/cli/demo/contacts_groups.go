@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +32,7 @@ func newDemoGroupsListCmd() *cobra.Command {
 		Short: "List contact groups",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("👥 Demo Mode - Contact Groups"))
+			fmt.Println(common.Dim.Sprint("👥 Demo Mode - Contact Groups"))
 			fmt.Println()
 
 			groups := []struct {
@@ -46,11 +47,11 @@ func newDemoGroupsListCmd() *cobra.Command {
 			}
 
 			for _, g := range groups {
-				fmt.Printf("  %s %s %s\n", cyan.Sprint("●"), boldWhite.Sprint(g.name), dim.Sprintf("(%d)", g.count))
+				fmt.Printf("  %s %s %s\n", common.Cyan.Sprint("●"), common.BoldWhite.Sprint(g.name), common.Dim.Sprintf("(%d)", g.count))
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage your real contact groups: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage your real contact groups: nylas auth login"))
 
 			return nil
 		},
@@ -68,10 +69,10 @@ func newDemoGroupsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👥 Demo Mode - Contact Group Details"))
+			fmt.Println(common.Dim.Sprint("👥 Demo Mode - Contact Group Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("Group: %s\n", groupName)
+			_, _ = common.BoldWhite.Printf("Group: %s\n", groupName)
 			fmt.Printf("  Members:     25\n")
 			fmt.Printf("  Created:     Jan 15, 2024\n")
 			fmt.Printf("  Description: Team members and work contacts\n")
@@ -80,7 +81,7 @@ func newDemoGroupsShowCmd() *cobra.Command {
 			fmt.Printf("  • John Smith (john@example.com)\n")
 			fmt.Printf("  • Jane Doe (jane@example.com)\n")
 			fmt.Printf("  • Bob Wilson (bob@example.com)\n")
-			_, _ = dim.Printf("  ... and 22 more\n")
+			_, _ = common.Dim.Printf("  ... and 22 more\n")
 			fmt.Println(strings.Repeat("─", 50))
 
 			return nil
@@ -99,8 +100,8 @@ func newDemoGroupsCreateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			_, _ = green.Printf("✓ Group '%s' would be created (demo mode)\n", groupName)
-			_, _ = dim.Printf("  Group ID: group-demo-%d\n", time.Now().Unix())
+			_, _ = common.Green.Printf("✓ Group '%s' would be created (demo mode)\n", groupName)
+			_, _ = common.Dim.Printf("  Group ID: group-demo-%d\n", time.Now().Unix())
 
 			return nil
 		},
@@ -118,7 +119,7 @@ func newDemoGroupsDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			_, _ = green.Printf("✓ Group %s would be deleted (demo mode)\n", groupID)
+			_, _ = common.Green.Printf("✓ Group %s would be deleted (demo mode)\n", groupID)
 
 			return nil
 		},
@@ -140,7 +141,7 @@ func newDemoGroupsAddMemberCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			_, _ = green.Printf("✓ Contact %s would be added to group %s (demo mode)\n", contactID, groupID)
+			_, _ = common.Green.Printf("✓ Contact %s would be added to group %s (demo mode)\n", contactID, groupID)
 
 			return nil
 		},
@@ -162,7 +163,7 @@ func newDemoGroupsRemoveMemberCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			_, _ = green.Printf("✓ Contact %s would be removed from group %s (demo mode)\n", contactID, groupID)
+			_, _ = common.Green.Printf("✓ Contact %s would be removed from group %s (demo mode)\n", contactID, groupID)
 
 			return nil
 		},

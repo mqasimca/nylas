@@ -108,7 +108,7 @@ func TestCLI_AI_BreakTimeAwareness(t *testing.T) {
 	// Create fake home directory structure
 	fakeHome := t.TempDir()
 	fakeConfigDir := filepath.Join(fakeHome, ".config", "nylas")
-	if err := os.MkdirAll(fakeConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(fakeConfigDir, 0750); err != nil {
 		t.Fatalf("Failed to create config directory: %v", err)
 	}
 

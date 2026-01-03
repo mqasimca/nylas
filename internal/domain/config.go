@@ -1,5 +1,37 @@
 package domain
 
+import (
+	"strings"
+	"time"
+)
+
+// Timeout constants for consistent behavior across the application.
+// Use these instead of hardcoding timeout values.
+const (
+	// TimeoutAPI is the default timeout for Nylas API calls (30s).
+	TimeoutAPI = 30 * time.Second
+
+	// TimeoutAI is the timeout for AI/LLM operations (120s).
+	// AI providers may take longer due to model inference time.
+	TimeoutAI = 120 * time.Second
+
+	// TimeoutMCP is the timeout for MCP proxy operations (90s).
+	// Allows time for tool execution and response processing.
+	TimeoutMCP = 90 * time.Second
+
+	// TimeoutHealthCheck is the timeout for health/connectivity checks (10s).
+	TimeoutHealthCheck = 10 * time.Second
+
+	// TimeoutSync is the timeout for sync operations (60s).
+	TimeoutSync = 60 * time.Second
+
+	// HTTP Server timeouts
+	HTTPReadHeaderTimeout = 10 * time.Second  // Time to read request headers
+	HTTPReadTimeout       = 30 * time.Second  // Time to read entire request
+	HTTPWriteTimeout      = 30 * time.Second  // Time to write response
+	HTTPIdleTimeout       = 120 * time.Second // Keep-alive connection idle timeout
+)
+
 // Config represents the application configuration.
 // Note: client_id is stored in keystore, not config file.
 type Config struct {
@@ -76,10 +108,14 @@ type BreakBlock struct {
 
 // GetScheduleForDay returns the schedule for a given weekday.
 // Checks day-specific, weekend, then default in order of precedence.
+// Weekday is case-insensitive (e.g., "Monday", "monday", "MONDAY" all work).
 func (w *WorkingHoursConfig) GetScheduleForDay(weekday string) *DaySchedule {
 	if w == nil {
 		return DefaultWorkingHours()
 	}
+
+	// Normalize weekday to lowercase for case-insensitive matching
+	weekday = strings.ToLower(weekday)
 
 	// Check day-specific schedule first
 	var daySchedule *DaySchedule

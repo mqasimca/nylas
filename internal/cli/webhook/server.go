@@ -9,23 +9,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/tunnel"
 	"github.com/mqasimca/nylas/internal/adapters/webhookserver"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
-)
-
-// Color helpers
-var (
-	cyan   = color.New(color.FgCyan)
-	green  = color.New(color.FgGreen)
-	yellow = color.New(color.FgYellow)
-	red    = color.New(color.FgRed)
-	blue   = color.New(color.FgBlue)
-	bold   = color.New(color.Bold)
-	dim    = color.New(color.Faint)
 )
 
 func newServerCmd() *cobra.Command {
@@ -179,43 +167,43 @@ func runServer(port int, path, tunnelType, webhookSecret string, jsonOutput, qui
 
 func printStartupBanner() {
 	fmt.Println()
-	_, _ = cyan.Println("╔══════════════════════════════════════════════════════════════╗")
-	_, _ = cyan.Print("║")
+	_, _ = common.Cyan.Println("╔══════════════════════════════════════════════════════════════╗")
+	_, _ = common.Cyan.Print("║")
 	fmt.Print("              ")
-	_, _ = bold.Print("Nylas Webhook Server")
+	_, _ = common.Bold.Print("Nylas Webhook Server")
 	fmt.Print("                         ")
-	_, _ = cyan.Println("║")
-	_, _ = cyan.Println("╚══════════════════════════════════════════════════════════════╝")
+	_, _ = common.Cyan.Println("║")
+	_, _ = common.Cyan.Println("╚══════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 }
 
 func printServerInfo(stats ports.WebhookServerStats, tunnelType string) {
-	_, _ = green.Println("✓ Server started successfully")
+	_, _ = common.Green.Println("✓ Server started successfully")
 	fmt.Println()
 
-	_, _ = bold.Print("  Local URL:    ")
+	_, _ = common.Bold.Print("  Local URL:    ")
 	fmt.Println(stats.LocalURL)
 
 	if stats.PublicURL != "" {
-		_, _ = bold.Print("  Public URL:   ")
-		_, _ = green.Println(stats.PublicURL)
+		_, _ = common.Bold.Print("  Public URL:   ")
+		_, _ = common.Green.Println(stats.PublicURL)
 		fmt.Println()
-		_, _ = bold.Print("  Tunnel:       ")
+		_, _ = common.Bold.Print("  Tunnel:       ")
 		fmt.Printf("%s (%s)\n", tunnelType, stats.TunnelStatus)
 	}
 
 	fmt.Println()
-	_, _ = yellow.Println("Register this URL with Nylas:")
+	_, _ = common.Yellow.Println("Register this URL with Nylas:")
 	webhookURL := stats.LocalURL
 	if stats.PublicURL != "" {
 		webhookURL = stats.PublicURL
 	}
 	fmt.Printf("  nylas webhooks create --url %s --triggers message.created\n", webhookURL)
 	fmt.Println()
-	_, _ = dim.Println("Press Ctrl+C to stop")
+	_, _ = common.Dim.Println("Press Ctrl+C to stop")
 	fmt.Println()
-	_, _ = cyan.Println("─────────────────────────────────────────────────────────────────")
-	_, _ = bold.Println("Incoming Webhooks:")
+	_, _ = common.Cyan.Println("─────────────────────────────────────────────────────────────────")
+	_, _ = common.Bold.Println("Incoming Webhooks:")
 	fmt.Println()
 }
 
@@ -231,9 +219,9 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 	verifyIcon := ""
 	if event.Signature != "" {
 		if event.Verified {
-			verifyIcon = green.Sprint(" ✓")
+			verifyIcon = common.Green.Sprint(" ✓")
 		} else {
-			verifyIcon = red.Sprint(" ✗")
+			verifyIcon = common.Red.Sprint(" ✗")
 		}
 	}
 
@@ -241,17 +229,17 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 	var typeColorFn func(a ...any) string
 	switch {
 	case strings.Contains(event.Type, "created"):
-		typeColorFn = green.Sprint
+		typeColorFn = common.Green.Sprint
 	case strings.Contains(event.Type, "deleted"):
-		typeColorFn = red.Sprint
+		typeColorFn = common.Red.Sprint
 	case strings.Contains(event.Type, "updated"):
-		typeColorFn = blue.Sprint
+		typeColorFn = common.Blue.Sprint
 	default:
-		typeColorFn = yellow.Sprint
+		typeColorFn = common.Yellow.Sprint
 	}
 
 	fmt.Printf("%s %s%s\n",
-		dim.Sprintf("[%s]", timestamp),
+		common.Dim.Sprintf("[%s]", timestamp),
 		typeColorFn(event.Type),
 		verifyIcon,
 	)
@@ -259,10 +247,10 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 	if !quiet {
 		// Print additional details
 		if event.ID != "" {
-			fmt.Printf("  %s %s\n", dim.Sprint("ID:"), event.ID)
+			fmt.Printf("  %s %s\n", common.Dim.Sprint("ID:"), event.ID)
 		}
 		if event.GrantID != "" {
-			fmt.Printf("  %s %s\n", dim.Sprint("Grant:"), event.GrantID)
+			fmt.Printf("  %s %s\n", common.Dim.Sprint("Grant:"), event.GrantID)
 		}
 
 		// Print a summary of the payload
@@ -271,13 +259,13 @@ func printEventFormatted(event *ports.WebhookEvent, quiet bool) {
 				if obj, ok := data["object"].(map[string]any); ok {
 					// Print key fields based on event type
 					if subject, ok := obj["subject"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Subject:"), common.Truncate(subject, 60))
+						fmt.Printf("  %s %s\n", common.Dim.Sprint("Subject:"), common.Truncate(subject, 60))
 					}
 					if title, ok := obj["title"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Title:"), common.Truncate(title, 60))
+						fmt.Printf("  %s %s\n", common.Dim.Sprint("Title:"), common.Truncate(title, 60))
 					}
 					if email, ok := obj["email"].(string); ok {
-						fmt.Printf("  %s %s\n", dim.Sprint("Email:"), email)
+						fmt.Printf("  %s %s\n", common.Dim.Sprint("Email:"), email)
 					}
 				}
 			}

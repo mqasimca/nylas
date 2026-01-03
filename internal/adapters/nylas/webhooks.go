@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,26 +28,15 @@ type webhookResponse struct {
 func (c *HTTPClient) ListWebhooks(ctx context.Context) ([]domain.Webhook, error) {
 	queryURL := fmt.Sprintf("%s/v3/webhooks", c.baseURL)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
 		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data []webhookResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -62,6 +50,10 @@ func (c *HTTPClient) ListWebhooks(ctx context.Context) ([]domain.Webhook, error)
 
 // GetWebhook retrieves a single webhook by ID.
 func (c *HTTPClient) GetWebhook(ctx context.Context, webhookID string) (*domain.Webhook, error) {
+	if err := validateRequired("webhook ID", webhookID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/webhooks/%s", c.baseURL, webhookID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
@@ -72,7 +64,7 @@ func (c *HTTPClient) GetWebhook(ctx context.Context, webhookID string) (*domain.
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -98,28 +90,15 @@ func (c *HTTPClient) GetWebhook(ctx context.Context, webhookID string) (*domain.
 func (c *HTTPClient) CreateWebhook(ctx context.Context, req *domain.CreateWebhookRequest) (*domain.Webhook, error) {
 	queryURL := fmt.Sprintf("%s/v3/webhooks", c.baseURL)
 
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, req)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data webhookResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -129,30 +108,21 @@ func (c *HTTPClient) CreateWebhook(ctx context.Context, req *domain.CreateWebhoo
 
 // UpdateWebhook updates an existing webhook.
 func (c *HTTPClient) UpdateWebhook(ctx context.Context, webhookID string, req *domain.UpdateWebhookRequest) (*domain.Webhook, error) {
-	queryURL := fmt.Sprintf("%s/v3/webhooks/%s", c.baseURL, webhookID)
-
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
-	if err != nil {
+	if err := validateRequired("webhook ID", webhookID); err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
 
-	resp, err := c.doRequest(ctx, httpReq)
+	queryURL := fmt.Sprintf("%s/v3/webhooks/%s", c.baseURL, webhookID)
+
+	resp, err := c.doJSONRequest(ctx, "PUT", queryURL, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data webhookResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -162,80 +132,57 @@ func (c *HTTPClient) UpdateWebhook(ctx context.Context, webhookID string, req *d
 
 // DeleteWebhook deletes a webhook.
 func (c *HTTPClient) DeleteWebhook(ctx context.Context, webhookID string) error {
+	if err := validateRequired("webhook ID", webhookID); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/webhooks/%s", c.baseURL, webhookID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 
 	return nil
 }
 
 // SendWebhookTestEvent sends a test event to a webhook URL.
 func (c *HTTPClient) SendWebhookTestEvent(ctx context.Context, webhookURL string) error {
+	if err := validateRequired("webhook URL", webhookURL); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/webhooks/send-test-event", c.baseURL)
 
 	payload := map[string]string{"webhook_url": webhookURL}
-	body, _ := json.Marshal(payload)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 
 	return nil
 }
 
 // GetWebhookMockPayload gets a mock payload for a trigger type.
 func (c *HTTPClient) GetWebhookMockPayload(ctx context.Context, triggerType string) (map[string]any, error) {
+	if err := validateRequired("trigger type", triggerType); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/webhooks/mock-payload", c.baseURL)
 
 	payload := map[string]string{"trigger_type": triggerType}
-	body, _ := json.Marshal(payload)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
 
 	var result map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 

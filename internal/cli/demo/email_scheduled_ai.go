@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -35,19 +36,19 @@ func newDemoEmailScheduledListCmd() *cobra.Command {
 			scheduled, _ := client.ListScheduledMessages(ctx, "demo-grant")
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("⏰ Demo Mode - Scheduled Messages"))
+			fmt.Println(common.Dim.Sprint("⏰ Demo Mode - Scheduled Messages"))
 			fmt.Println()
 			fmt.Printf("Found %d scheduled messages:\n\n", len(scheduled))
 
 			for _, s := range scheduled {
 				sendTime := time.Unix(s.CloseTime, 0)
-				fmt.Printf("  ⏰ %s\n", boldWhite.Sprint(s.ScheduleID))
+				fmt.Printf("  ⏰ %s\n", common.BoldWhite.Sprint(s.ScheduleID))
 				fmt.Printf("     Status: %s\n", s.Status)
 				fmt.Printf("     Sends at: %s\n", sendTime.Format("Jan 2, 2006 3:04 PM"))
 				fmt.Println()
 			}
 
-			fmt.Println(dim.Sprint("To manage scheduled messages: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage scheduled messages: nylas auth login"))
 
 			return nil
 		},
@@ -65,11 +66,11 @@ func newDemoEmailScheduledCancelCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("⏰ Demo Mode - Cancel Scheduled Message (Simulated)"))
+			fmt.Println(common.Dim.Sprint("⏰ Demo Mode - Cancel Scheduled Message (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Scheduled message '%s' would be cancelled\n", scheduleID)
+			_, _ = common.Green.Printf("✓ Scheduled message '%s' would be cancelled\n", scheduleID)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage scheduled messages: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage scheduled messages: nylas auth login"))
 
 			return nil
 		},
@@ -97,13 +98,13 @@ func newDemoEmailSmartComposeCmd() *cobra.Command {
 			suggestion, _ := client.SmartCompose(ctx, "demo-grant", &domain.SmartComposeRequest{Prompt: prompt})
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Smart Compose"))
-			fmt.Printf("Prompt: %s\n\n", boldWhite.Sprint(prompt))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Smart Compose"))
+			fmt.Printf("Prompt: %s\n\n", common.BoldWhite.Sprint(prompt))
 			fmt.Println(strings.Repeat("─", 60))
 			fmt.Println(suggestion.Suggestion)
 			fmt.Println(strings.Repeat("─", 60))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To use AI compose with your emails: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To use AI compose with your emails: nylas auth login"))
 
 			return nil
 		},
@@ -134,10 +135,10 @@ func newDemoEmailAISummarizeCmd() *cobra.Command {
 		Short: "Summarize an email with AI (demo)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Email Summary"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Email Summary"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 60))
-			_, _ = boldWhite.Println("Summary:")
+			_, _ = common.BoldWhite.Println("Summary:")
 			fmt.Println("This email discusses the Q4 planning meeting action items.")
 			fmt.Println("Key points:")
 			fmt.Println("  • Review Q4 roadmap by Friday")
@@ -145,7 +146,7 @@ func newDemoEmailAISummarizeCmd() *cobra.Command {
 			fmt.Println("  • Schedule 1:1s with new team members")
 			fmt.Println(strings.Repeat("─", 60))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To use AI features with your emails: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To use AI features with your emails: nylas auth login"))
 
 			return nil
 		},
@@ -158,17 +159,17 @@ func newDemoEmailAIExtractCmd() *cobra.Command {
 		Short: "Extract key info from email with AI (demo)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🤖 Demo Mode - AI Extract Key Info"))
+			fmt.Println(common.Dim.Sprint("🤖 Demo Mode - AI Extract Key Info"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 60))
-			_, _ = boldWhite.Println("Extracted Information:")
+			_, _ = common.BoldWhite.Println("Extracted Information:")
 			fmt.Println("  Action Items: 3")
 			fmt.Println("  Deadlines: Friday (Q4 roadmap review)")
 			fmt.Println("  People Mentioned: Sarah Chen, team members")
 			fmt.Println("  Sentiment: Professional, positive")
 			fmt.Println(strings.Repeat("─", 60))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To use AI features with your emails: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To use AI features with your emails: nylas auth login"))
 
 			return nil
 		},

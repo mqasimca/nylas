@@ -6,19 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-)
-
-var (
-	boldWhite = color.New(color.FgWhite, color.Bold)
-	cyan      = color.New(color.FgCyan)
-	yellow    = color.New(color.FgYellow)
-	green     = color.New(color.FgGreen)
-	dim       = color.New(color.Faint)
 )
 
 // newDemoEmailCmd creates the demo email command with subcommands.
@@ -81,8 +73,8 @@ func newDemoEmailListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Sample Emails"))
-			fmt.Println(dim.Sprint("These are sample emails for demonstration purposes."))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Sample Emails"))
+			fmt.Println(common.Dim.Sprint("These are sample emails for demonstration purposes."))
 			fmt.Println()
 			fmt.Printf("Found %d messages:\n\n", len(messages))
 
@@ -91,7 +83,7 @@ func newDemoEmailListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To connect your real email: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To connect your real email: nylas auth login"))
 
 			return nil
 		},
@@ -129,11 +121,11 @@ func newDemoEmailReadCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Sample Email"))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Sample Email"))
 			fmt.Println()
 			printDemoMessage(*msg)
 
-			fmt.Println(dim.Sprint("To connect your real email: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To connect your real email: nylas auth login"))
 
 			return nil
 		},
@@ -168,18 +160,18 @@ No actual email is sent - this is just a demonstration of the command flow.`,
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Simulated Send"))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Simulated Send"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("To:      %s\n", to)
-			_, _ = boldWhite.Printf("Subject: %s\n", subject)
+			_, _ = common.BoldWhite.Printf("To:      %s\n", to)
+			_, _ = common.BoldWhite.Printf("Subject: %s\n", subject)
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println(body)
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Email would be sent (demo mode - no actual email sent)")
+			_, _ = common.Green.Println("✓ Email would be sent (demo mode - no actual email sent)")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To send real emails, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To send real emails, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -196,12 +188,12 @@ No actual email is sent - this is just a demonstration of the command flow.`,
 func printDemoMessageSummary(msg domain.Message, index int, showID bool) {
 	status := " "
 	if msg.Unread {
-		status = cyan.Sprint("●")
+		status = common.Cyan.Sprint("●")
 	}
 
 	star := " "
 	if msg.Starred {
-		star = yellow.Sprint("★")
+		star = common.Yellow.Sprint("★")
 	}
 
 	from := formatDemoContacts(msg.From)
@@ -220,10 +212,10 @@ func printDemoMessageSummary(msg domain.Message, index int, showID bool) {
 	}
 
 	if showID {
-		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
-		_, _ = dim.Printf("      ID: %s\n", msg.ID)
+		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, common.Dim.Sprint(dateStr))
+		_, _ = common.Dim.Printf("      ID: %s\n", msg.ID)
 	} else {
-		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
+		fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, common.Dim.Sprint(dateStr))
 	}
 }
 
@@ -231,14 +223,14 @@ func printDemoMessageSummary(msg domain.Message, index int, showID bool) {
 func printDemoMessage(msg domain.Message) {
 	status := ""
 	if msg.Unread {
-		status += cyan.Sprint("●") + " "
+		status += common.Cyan.Sprint("●") + " "
 	}
 	if msg.Starred {
-		status += yellow.Sprint("★") + " "
+		status += common.Yellow.Sprint("★") + " "
 	}
 
 	fmt.Println(strings.Repeat("─", 60))
-	_, _ = boldWhite.Printf("Subject: %s\n", msg.Subject)
+	_, _ = common.BoldWhite.Printf("Subject: %s\n", msg.Subject)
 	fmt.Printf("From:    %s\n", formatDemoContacts(msg.From))
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", formatDemoContacts(msg.To))

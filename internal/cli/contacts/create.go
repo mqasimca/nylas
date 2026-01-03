@@ -52,7 +52,7 @@ Examples:
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.CreateContactRequest{

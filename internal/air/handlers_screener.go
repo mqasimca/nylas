@@ -59,7 +59,7 @@ func (s *Server) handleScreenerAllow(w http.ResponseWriter, r *http.Request) {
 		Destination string `json:"destination"` // inbox, feed, paper_trail
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -96,7 +96,7 @@ func (s *Server) handleScreenerBlock(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -129,7 +129,7 @@ func (s *Server) handleAddToScreener(w http.ResponseWriter, r *http.Request) {
 		Subject string `json:"subject,omitempty"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

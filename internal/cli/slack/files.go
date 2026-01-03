@@ -86,7 +86,7 @@ Examples:
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Resolve channel name to ID if provided
@@ -198,7 +198,7 @@ func newFilesShowCmd() *cobra.Command {
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			file, err := client.GetFileInfo(ctx, fileID)
@@ -279,7 +279,7 @@ Examples:
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get file metadata first to get filename and download URL

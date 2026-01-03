@@ -1,7 +1,8 @@
 package tui
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"strings"
 )
 
@@ -127,8 +128,8 @@ func (r *CommandRegistry) GetAll() []Command {
 			result = append(result, cmd)
 		}
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Name < result[j].Name
+	slices.SortFunc(result, func(a, b Command) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 	return result
 }
@@ -231,11 +232,11 @@ func (r *CommandRegistry) Search(query string) []Command {
 	}
 
 	// Sort by score (lower is better), then alphabetically
-	sort.Slice(results, func(i, j int) bool {
-		if results[i].score != results[j].score {
-			return results[i].score < results[j].score
+	slices.SortFunc(results, func(a, b scored) int {
+		if a.score != b.score {
+			return cmp.Compare(a.score, b.score)
 		}
-		return results[i].cmd.Name < results[j].cmd.Name
+		return cmp.Compare(a.cmd.Name, b.cmd.Name)
 	})
 
 	// Extract commands

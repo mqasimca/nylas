@@ -3,10 +3,15 @@ package mcp
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
+
+// fallbackErrorResponse is a pre-built error response for when JSON marshaling fails.
+// This should never happen with well-formed maps, but provides a safety net.
+var fallbackErrorResponse = []byte(`{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"internal marshaling error"}}`)
 
 // handleLocalToolCall checks if a tool call can be handled locally.
 // Returns the response and true if handled locally, nil and false otherwise.
@@ -64,9 +69,14 @@ func (p *Proxy) handleLocalToolCall(req *rpcRequest) ([]byte, bool) {
 }
 
 // createToolSuccessResponse creates a successful MCP tool call response.
+// Returns an MCP-formatted JSON-RPC response with the result embedded as text content.
 func (p *Proxy) createToolSuccessResponse(id any, result map[string]any) []byte {
-	// Format result as text content (MCP tool response format)
-	resultJSON, _ := json.Marshal(result)
+	// Format result as text content (MCP tool response format).
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		log.Printf("mcp: failed to marshal tool result: %v", err)
+		return fallbackErrorResponse
+	}
 
 	response := map[string]any{
 		"jsonrpc": "2.0",
@@ -81,7 +91,11 @@ func (p *Proxy) createToolSuccessResponse(id any, result map[string]any) []byte 
 		},
 	}
 
-	resp, _ := json.Marshal(response)
+	resp, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("mcp: failed to marshal success response: %v", err)
+		return fallbackErrorResponse
+	}
 	return resp
 }
 
@@ -101,13 +115,17 @@ func (p *Proxy) createToolErrorResponse(id any, message string) []byte {
 		},
 	}
 
-	resp, _ := json.Marshal(response)
+	resp, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("mcp: failed to marshal error response: %v", err)
+		return fallbackErrorResponse
+	}
 	return resp
 }
 
 // createErrorResponse creates a JSON-RPC error response.
 // Uses the pre-parsed request if available to get the ID.
-func (p *Proxy) createErrorResponse(req *rpcRequest, err error) []byte {
+func (p *Proxy) createErrorResponse(req *rpcRequest, originalErr error) []byte {
 	var id any
 	if req != nil {
 		id = req.ID
@@ -118,12 +136,16 @@ func (p *Proxy) createErrorResponse(req *rpcRequest, err error) []byte {
 		"id":      id,
 		"error": map[string]any{
 			"code":    -32603,
-			"message": err.Error(),
+			"message": originalErr.Error(),
 		},
 	}
 
-	result, _ := json.Marshal(errorResp)
-	return result
+	respBytes, err := json.Marshal(errorResp)
+	if err != nil {
+		log.Printf("mcp: failed to marshal JSON-RPC error response: %v", err)
+		return fallbackErrorResponse
+	}
+	return respBytes
 }
 
 // modifyToolsListResponse modifies the tools/list response to make get_grant email optional.

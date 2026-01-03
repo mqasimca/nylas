@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // newDemoSchedulerCmd creates the demo scheduler command with subcommands.
@@ -65,20 +66,20 @@ func newDemoConfigListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📆 Demo Mode - Scheduler Configurations"))
-			fmt.Println(dim.Sprint("These are sample scheduling pages for demonstration purposes."))
+			fmt.Println(common.Dim.Sprint("📆 Demo Mode - Scheduler Configurations"))
+			fmt.Println(common.Dim.Sprint("These are sample scheduling pages for demonstration purposes."))
 			fmt.Println()
 			fmt.Printf("Found %d configurations:\n\n", len(configs))
 
 			for _, config := range configs {
-				fmt.Printf("  %s %s\n", "📅", boldWhite.Sprint(config.Name))
+				fmt.Printf("  %s %s\n", "📅", common.BoldWhite.Sprint(config.Name))
 				fmt.Printf("    Slug: %s\n", config.Slug)
 				fmt.Printf("    URL:  https://schedule.nylas.com/%s\n", config.Slug)
-				_, _ = dim.Printf("    ID:   %s\n", config.ID)
+				_, _ = common.Dim.Printf("    ID:   %s\n", config.ID)
 				fmt.Println()
 			}
 
-			fmt.Println(dim.Sprint("To set up your own scheduler: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To set up your own scheduler: nylas auth login"))
 
 			return nil
 		},
@@ -96,10 +97,10 @@ func newDemoConfigShowCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📆 Demo Mode - Configuration Details"))
+			fmt.Println(common.Dim.Sprint("📆 Demo Mode - Configuration Details"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Println("30-Minute Meeting")
+			_, _ = common.BoldWhite.Println("30-Minute Meeting")
 			fmt.Printf("  ID:              %s\n", configID)
 			fmt.Printf("  Slug:            30-min-meeting\n")
 			fmt.Printf("  Duration:        30 minutes\n")
@@ -143,19 +144,19 @@ func newDemoConfigCreateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📆 Demo Mode - Create Configuration"))
+			fmt.Println(common.Dim.Sprint("📆 Demo Mode - Create Configuration"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("Name:     %s\n", name)
+			_, _ = common.BoldWhite.Printf("Name:     %s\n", name)
 			fmt.Printf("Duration: %d minutes\n", duration)
 			fmt.Printf("Slug:     %s\n", slug)
 			fmt.Printf("URL:      https://schedule.nylas.com/%s\n", slug)
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Configuration would be created (demo mode)")
-			_, _ = dim.Printf("  Config ID: config-demo-%d\n", time.Now().Unix())
+			_, _ = common.Green.Println("✓ Configuration would be created (demo mode)")
+			_, _ = common.Dim.Printf("  Config ID: config-demo-%d\n", time.Now().Unix())
 			fmt.Println()
-			fmt.Println(dim.Sprint("To create real configurations: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To create real configurations: nylas auth login"))
 
 			return nil
 		},

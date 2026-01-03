@@ -1,6 +1,11 @@
 package tui
 
-import "github.com/gdamore/tcell/v2"
+import (
+	"fmt"
+	"sync"
+
+	"github.com/gdamore/tcell/v2"
+)
 
 // ThemeName represents available themes.
 type ThemeName string
@@ -87,6 +92,41 @@ type Styles struct {
 	TitleHighlight tcell.Color
 	CounterColor   tcell.Color
 	FilterColor    tcell.Color
+
+	// Hex color cache - lazily populated, thread-safe
+	hexCache map[tcell.Color]string
+	hexMu    sync.RWMutex
+}
+
+// Hex returns the cached hex string for a color.
+// This avoids repeated fmt.Sprintf calls during rendering.
+func (s *Styles) Hex(c tcell.Color) string {
+	// Fast path: check cache with read lock
+	s.hexMu.RLock()
+	if hex, ok := s.hexCache[c]; ok {
+		s.hexMu.RUnlock()
+		return hex
+	}
+	s.hexMu.RUnlock()
+
+	// Slow path: compute and cache with write lock
+	s.hexMu.Lock()
+	defer s.hexMu.Unlock()
+
+	// Double-check after acquiring write lock
+	if hex, ok := s.hexCache[c]; ok {
+		return hex
+	}
+
+	// Initialize cache if needed
+	if s.hexCache == nil {
+		s.hexCache = make(map[tcell.Color]string, 32)
+	}
+
+	r, g, b := c.RGB()
+	hex := fmt.Sprintf("#%02x%02x%02x", r, g, b)
+	s.hexCache[c] = hex
+	return hex
 }
 
 // DefaultStyles returns the default k9s-like color scheme.

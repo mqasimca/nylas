@@ -82,10 +82,10 @@ func runCreate(emailPrefix string, jsonOutput bool) error {
 	printInboxDetails(*inbox)
 
 	fmt.Println()
-	_, _ = dim.Println("Next steps:")
-	_, _ = dim.Printf("  1. Set up a webhook: nylas webhooks create --url <your-url> --triggers message.created\n")
-	_, _ = dim.Printf("  2. View messages: nylas inbound messages %s\n", inbox.ID)
-	_, _ = dim.Printf("  3. Monitor in real-time: nylas inbound monitor %s\n", inbox.ID)
+	_, _ = common.Dim.Println("Next steps:")
+	_, _ = common.Dim.Printf("  1. Set up a webhook: nylas webhooks create --url <your-url> --triggers message.created\n")
+	_, _ = common.Dim.Printf("  2. View messages: nylas inbound messages %s\n", inbox.ID)
+	_, _ = common.Dim.Printf("  3. Monitor in real-time: nylas inbound monitor %s\n", inbox.ID)
 
 	return nil
 }

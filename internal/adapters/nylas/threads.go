@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -137,7 +136,7 @@ func (c *HTTPClient) GetThread(ctx context.Context, grantID, threadID string) (*
 func (c *HTTPClient) UpdateThread(ctx context.Context, grantID, threadID string, req *domain.UpdateMessageRequest) (*domain.Thread, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/threads/%s", c.baseURL, grantID, threadID)
 
-	payload := make(map[string]interface{})
+	payload := make(map[string]any)
 	if req.Unread != nil {
 		payload["unread"] = *req.Unread
 	}
@@ -148,28 +147,15 @@ func (c *HTTPClient) UpdateThread(ctx context.Context, grantID, threadID string,
 		payload["folders"] = req.Folders
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "PUT", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data threadResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -179,23 +165,17 @@ func (c *HTTPClient) UpdateThread(ctx context.Context, grantID, threadID string,
 
 // DeleteThread deletes a thread.
 func (c *HTTPClient) DeleteThread(ctx context.Context, grantID, threadID string) error {
+	if err := validateRequired("thread ID", threadID); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/threads/%s", c.baseURL, grantID, threadID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 
 	return nil
 }

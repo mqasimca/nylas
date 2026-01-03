@@ -1,9 +1,10 @@
 package air
 
 import (
+	"cmp"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 	"time"
 )
 
@@ -38,8 +39,8 @@ func (s *Server) listSnoozedEmails(w http.ResponseWriter, _ *http.Request) {
 	s.snoozeMu.RUnlock()
 
 	// Sort by snooze time (soonest first)
-	sort.Slice(snoozed, func(i, j int) bool {
-		return snoozed[i].SnoozeUntil < snoozed[j].SnoozeUntil
+	slices.SortFunc(snoozed, func(a, b SnoozedEmail) int {
+		return cmp.Compare(a.SnoozeUntil, b.SnoozeUntil)
 	})
 
 	writeJSON(w, http.StatusOK, map[string]any{

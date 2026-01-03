@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -34,7 +35,7 @@ func newDemoPhotoGetCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📷 Demo Mode - Contact Photo"))
+			fmt.Println(common.Dim.Sprint("📷 Demo Mode - Contact Photo"))
 			fmt.Println()
 			fmt.Printf("Contact ID: %s\n", contactID)
 			fmt.Printf("Photo URL:  https://example.com/photos/%s.jpg\n", contactID)
@@ -61,7 +62,7 @@ func newDemoPhotoSetCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			_, _ = green.Printf("✓ Photo '%s' would be set for contact %s (demo mode)\n", photoPath, contactID)
+			_, _ = common.Green.Printf("✓ Photo '%s' would be set for contact %s (demo mode)\n", photoPath, contactID)
 
 			return nil
 		},
@@ -79,7 +80,7 @@ func newDemoPhotoRemoveCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			_, _ = green.Printf("✓ Photo would be removed from contact %s (demo mode)\n", contactID)
+			_, _ = common.Green.Printf("✓ Photo would be removed from contact %s (demo mode)\n", contactID)
 
 			return nil
 		},
@@ -103,15 +104,15 @@ func newDemoContactsSyncCmd() *cobra.Command {
 		Short: "Show sync status",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🔄 Demo Mode - Contact Sync Status"))
+			fmt.Println(common.Dim.Sprint("🔄 Demo Mode - Contact Sync Status"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			fmt.Printf("  Last sync:     %s\n", green.Sprint("2 minutes ago"))
+			fmt.Printf("  Last sync:     %s\n", common.Green.Sprint("2 minutes ago"))
 			fmt.Printf("  Total contacts: 247\n")
 			fmt.Printf("  Added:         5\n")
 			fmt.Printf("  Updated:       12\n")
 			fmt.Printf("  Deleted:       2\n")
-			fmt.Printf("  Sync status:   %s\n", green.Sprint("Up to date"))
+			fmt.Printf("  Sync status:   %s\n", common.Green.Sprint("Up to date"))
 			fmt.Println(strings.Repeat("─", 50))
 
 			return nil
@@ -123,11 +124,11 @@ func newDemoContactsSyncCmd() *cobra.Command {
 		Short: "Trigger sync now",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("🔄 Demo Mode - Contact Sync"))
+			fmt.Println(common.Dim.Sprint("🔄 Demo Mode - Contact Sync"))
 			fmt.Println()
 			fmt.Println("Syncing contacts...")
 			fmt.Println()
-			_, _ = green.Println("✓ Sync would be triggered (demo mode)")
+			_, _ = common.Green.Println("✓ Sync would be triggered (demo mode)")
 			fmt.Printf("  Estimated time: 30 seconds\n")
 
 			return nil
@@ -139,14 +140,14 @@ func newDemoContactsSyncCmd() *cobra.Command {
 		Short: "Export contacts",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📤 Demo Mode - Export Contacts"))
+			fmt.Println(common.Dim.Sprint("📤 Demo Mode - Export Contacts"))
 			fmt.Println()
 			fmt.Println("Available export formats:")
 			fmt.Printf("  • CSV  - Comma-separated values\n")
 			fmt.Printf("  • VCF  - vCard format\n")
 			fmt.Printf("  • JSON - JSON format\n")
 			fmt.Println()
-			_, _ = green.Println("✓ Export would be generated (demo mode)")
+			_, _ = common.Green.Println("✓ Export would be generated (demo mode)")
 
 			return nil
 		},
@@ -157,14 +158,14 @@ func newDemoContactsSyncCmd() *cobra.Command {
 		Short: "Import contacts",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📥 Demo Mode - Import Contacts"))
+			fmt.Println(common.Dim.Sprint("📥 Demo Mode - Import Contacts"))
 			fmt.Println()
 			fmt.Println("Supported import formats:")
 			fmt.Printf("  • CSV  - Comma-separated values\n")
 			fmt.Printf("  • VCF  - vCard format\n")
 			fmt.Printf("  • JSON - JSON format\n")
 			fmt.Println()
-			_, _ = green.Println("✓ Import would be processed (demo mode)")
+			_, _ = common.Green.Println("✓ Import would be processed (demo mode)")
 
 			return nil
 		},
@@ -182,7 +183,7 @@ func printDemoContact(contact domain.Contact, showID bool) {
 	name := fmt.Sprintf("%s %s", contact.GivenName, contact.Surname)
 	name = strings.TrimSpace(name)
 
-	fmt.Printf("  %s %s\n", "👤", boldWhite.Sprint(name))
+	fmt.Printf("  %s %s\n", "👤", common.BoldWhite.Sprint(name))
 
 	if len(contact.Emails) > 0 {
 		fmt.Printf("    📧 %s\n", contact.Emails[0].Email)
@@ -197,7 +198,7 @@ func printDemoContact(contact domain.Contact, showID bool) {
 				company = contact.JobTitle
 			}
 		}
-		fmt.Printf("    💼 %s\n", dim.Sprint(company))
+		fmt.Printf("    💼 %s\n", common.Dim.Sprint(company))
 	}
 
 	if len(contact.PhoneNumbers) > 0 {
@@ -205,7 +206,7 @@ func printDemoContact(contact domain.Contact, showID bool) {
 	}
 
 	if showID {
-		_, _ = dim.Printf("    ID: %s\n", contact.ID)
+		_, _ = common.Dim.Printf("    ID: %s\n", contact.ID)
 	}
 
 	fmt.Println()
@@ -217,7 +218,7 @@ func printDemoContactFull(contact domain.Contact) {
 	name = strings.TrimSpace(name)
 
 	fmt.Println(strings.Repeat("─", 50))
-	_, _ = boldWhite.Printf("Name: %s\n", name)
+	_, _ = common.BoldWhite.Printf("Name: %s\n", name)
 
 	if contact.CompanyName != "" {
 		fmt.Printf("Company: %s\n", contact.CompanyName)

@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,28 +10,21 @@ import (
 )
 
 func (c *HTTPClient) GetCalendars(ctx context.Context, grantID string) ([]domain.Calendar, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars", c.baseURL, grantID)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
+	if err := validateGrantID(grantID); err != nil {
 		return nil, err
 	}
-	c.setAuthHeader(req)
 
-	resp, err := c.doRequest(ctx, req)
+	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars", c.baseURL, grantID)
+
+	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
+		return nil, err
 	}
 
 	var result struct {
 		Data []calendarResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -41,6 +33,13 @@ func (c *HTTPClient) GetCalendars(ctx context.Context, grantID string) ([]domain
 
 // GetCalendar retrieves a single calendar by ID.
 func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string) (*domain.Calendar, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
+	if err := validateCalendarID(calendarID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars/%s", c.baseURL, grantID, calendarID)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
@@ -51,7 +50,7 @@ func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -75,9 +74,13 @@ func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string
 
 // CreateCalendar creates a new calendar.
 func (c *HTTPClient) CreateCalendar(ctx context.Context, grantID string, req *domain.CreateCalendarRequest) (*domain.Calendar, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars", c.baseURL, grantID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name": req.Name,
 	}
 	if req.Description != "" {
@@ -90,28 +93,15 @@ func (c *HTTPClient) CreateCalendar(ctx context.Context, grantID string, req *do
 		payload["timezone"] = req.Timezone
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data calendarResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -121,9 +111,16 @@ func (c *HTTPClient) CreateCalendar(ctx context.Context, grantID string, req *do
 
 // UpdateCalendar updates an existing calendar.
 func (c *HTTPClient) UpdateCalendar(ctx context.Context, grantID, calendarID string, req *domain.UpdateCalendarRequest) (*domain.Calendar, error) {
+	if err := validateGrantID(grantID); err != nil {
+		return nil, err
+	}
+	if err := validateCalendarID(calendarID); err != nil {
+		return nil, err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars/%s", c.baseURL, grantID, calendarID)
 
-	payload := make(map[string]interface{})
+	payload := make(map[string]any)
 	if req.Name != nil {
 		payload["name"] = *req.Name
 	}
@@ -140,28 +137,15 @@ func (c *HTTPClient) UpdateCalendar(ctx context.Context, grantID, calendarID str
 		payload["hex_color"] = *req.HexColor
 	}
 
-	body, _ := json.Marshal(payload)
-	httpReq, err := http.NewRequestWithContext(ctx, "PUT", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "PUT", queryURL, payload)
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data calendarResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -171,23 +155,20 @@ func (c *HTTPClient) UpdateCalendar(ctx context.Context, grantID, calendarID str
 
 // DeleteCalendar deletes a calendar.
 func (c *HTTPClient) DeleteCalendar(ctx context.Context, grantID, calendarID string) error {
+	if err := validateGrantID(grantID); err != nil {
+		return err
+	}
+	if err := validateCalendarID(calendarID); err != nil {
+		return err
+	}
+
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars/%s", c.baseURL, grantID, calendarID)
 
-	req, err := http.NewRequestWithContext(ctx, "DELETE", queryURL, nil)
+	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {
 		return err
 	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return c.parseError(resp)
-	}
 
 	return nil
 }

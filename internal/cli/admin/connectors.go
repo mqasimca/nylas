@@ -41,7 +41,7 @@ func newConnectorListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			connectors, err := client.ListConnectors(ctx)
@@ -93,7 +93,7 @@ func newConnectorShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			connector, err := client.GetConnector(ctx, args[0])
@@ -188,7 +188,7 @@ func newConnectorCreateCmd() *cobra.Command {
 				req.Scopes = scopes
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			connector, err := client.CreateConnector(ctx, req)
@@ -251,7 +251,7 @@ func newConnectorUpdateCmd() *cobra.Command {
 				req.Scopes = scopes
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			connector, err := client.UpdateConnector(ctx, args[0], req)
@@ -296,7 +296,7 @@ func newConnectorDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteConnector(ctx, args[0]); err != nil {

@@ -252,18 +252,14 @@ func (v *EventsView) showCalendarList() {
 		return
 	}
 
-	// Create a list view for calendar selection
-	list := tview.NewList()
-	list.SetBackgroundColor(v.app.styles.BgColor)
-	list.SetBorder(true)
-	list.SetBorderColor(v.app.styles.FocusColor)
-	list.SetTitle(" Select Calendar ")
-	list.SetTitleColor(v.app.styles.TitleFg)
-	list.ShowSecondaryText(true)
-	list.SetHighlightFullLine(true)
-	list.SetSelectedBackgroundColor(v.app.styles.TableSelectBg)
-	list.SetSelectedTextColor(v.app.styles.TableSelectFg)
-	list.SetMainTextColor(v.app.styles.FgColor)
+	// Create a list view for calendar selection - uses helper
+	list := NewStyledList(v.app.styles, ListViewConfig{
+		Title:             "Select Calendar",
+		ShowSecondaryText: true,
+		HighlightFullLine: true,
+		UseTableSelectBg:  true,
+	})
+	list.SetBorderColor(v.app.styles.FocusColor) // Override for focus styling
 	list.SetSecondaryTextColor(v.app.styles.BorderColor)
 
 	currentCal := v.calendar.GetCurrentCalendar()

@@ -1,7 +1,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,35 +14,22 @@ import (
 func (c *HTTPClient) CreateVirtualCalendarGrant(ctx context.Context, email string) (*domain.VirtualCalendarGrant, error) {
 	queryURL := fmt.Sprintf("%s/v3/connect/custom", c.baseURL)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"provider": "virtual-calendar",
-		"settings": map[string]interface{}{
+		"settings": map[string]any{
 			"email": email,
 		},
 		"scope": []string{"calendar"},
 	}
 
-	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, payload)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
-	}
 
 	var result domain.VirtualCalendarGrant
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
+		return nil, err
 	}
 
 	return &result, nil

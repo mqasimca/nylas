@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -35,19 +36,19 @@ func newDemoEmailFoldersListCmd() *cobra.Command {
 			folders, _ := client.GetFolders(ctx, "demo-grant")
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📁 Demo Mode - Sample Folders"))
+			fmt.Println(common.Dim.Sprint("📁 Demo Mode - Sample Folders"))
 			fmt.Println()
 
 			for _, f := range folders {
 				system := ""
 				if f.SystemFolder != "" {
-					system = dim.Sprintf(" (%s)", f.SystemFolder)
+					system = common.Dim.Sprintf(" (%s)", f.SystemFolder)
 				}
-				fmt.Printf("  📁 %-15s %s%s\n", f.Name, dim.Sprintf("%d items", f.TotalCount), system)
+				fmt.Printf("  📁 %-15s %s%s\n", f.Name, common.Dim.Sprintf("%d items", f.TotalCount), system)
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage your real folders: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage your real folders: nylas auth login"))
 
 			return nil
 		},
@@ -66,11 +67,11 @@ func newDemoEmailFoldersCreateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📁 Demo Mode - Create Folder (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📁 Demo Mode - Create Folder (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Folder '%s' would be created\n", name)
+			_, _ = common.Green.Printf("✓ Folder '%s' would be created\n", name)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To create real folders: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To create real folders: nylas auth login"))
 
 			return nil
 		},
@@ -92,11 +93,11 @@ func newDemoEmailFoldersDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📁 Demo Mode - Delete Folder (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📁 Demo Mode - Delete Folder (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Folder '%s' would be deleted\n", folderID)
+			_, _ = common.Green.Printf("✓ Folder '%s' would be deleted\n", folderID)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage real folders: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage real folders: nylas auth login"))
 
 			return nil
 		},
@@ -134,18 +135,18 @@ func newDemoEmailThreadsListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Sample Threads"))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Sample Threads"))
 			fmt.Println()
 			fmt.Printf("Found %d threads:\n\n", len(threads))
 
 			for _, t := range threads {
 				status := " "
 				if t.Unread {
-					status = cyan.Sprint("●")
+					status = common.Cyan.Sprint("●")
 				}
 				star := " "
 				if t.Starred {
-					star = yellow.Sprint("★")
+					star = common.Yellow.Sprint("★")
 				}
 
 				subject := t.Subject
@@ -153,11 +154,11 @@ func newDemoEmailThreadsListCmd() *cobra.Command {
 					subject = subject[:37] + "..."
 				}
 
-				fmt.Printf("%s %s %-40s %s\n", status, star, subject, dim.Sprintf("%d messages", len(t.MessageIDs)))
+				fmt.Printf("%s %s %-40s %s\n", status, star, subject, common.Dim.Sprintf("%d messages", len(t.MessageIDs)))
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To view your real threads: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To view your real threads: nylas auth login"))
 
 			return nil
 		},
@@ -184,15 +185,15 @@ func newDemoEmailThreadsReadCmd() *cobra.Command {
 			thread, _ := client.GetThread(ctx, "demo-grant", threadID)
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📧 Demo Mode - Sample Thread"))
+			fmt.Println(common.Dim.Sprint("📧 Demo Mode - Sample Thread"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 60))
-			_, _ = boldWhite.Printf("Subject: %s\n", thread.Subject)
+			_, _ = common.BoldWhite.Printf("Subject: %s\n", thread.Subject)
 			fmt.Printf("Messages: %d\n", len(thread.MessageIDs))
 			fmt.Printf("Participants: %s\n", formatDemoParticipants(thread.Participants))
 			fmt.Println(strings.Repeat("─", 60))
 			fmt.Println()
-			fmt.Println(dim.Sprint("To view your real threads: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To view your real threads: nylas auth login"))
 
 			return nil
 		},

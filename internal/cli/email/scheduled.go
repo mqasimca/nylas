@@ -117,7 +117,7 @@ func newScheduledShowCmd() *cobra.Command {
 			timeUntil := time.Until(closeTime)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = boldWhite.Printf("Scheduled Message: %s\n", scheduled.ScheduleID)
+			_, _ = common.BoldWhite.Printf("Scheduled Message: %s\n", scheduled.ScheduleID)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("Status:      %s\n", scheduled.Status)

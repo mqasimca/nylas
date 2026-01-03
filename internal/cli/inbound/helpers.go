@@ -5,22 +5,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-)
-
-var (
-	boldWhite = color.New(color.FgWhite, color.Bold)
-	cyan      = color.New(color.FgCyan)
-	green     = color.New(color.FgGreen)
-	yellow    = color.New(color.FgYellow)
-	red       = color.New(color.FgRed)
-	dim       = color.New(color.Faint)
 )
 
 // getClient creates and configures a Nylas client.
@@ -74,12 +64,12 @@ func getInboxID(args []string) (string, error) {
 
 // printError prints an error message in red.
 func printError(format string, args ...any) {
-	_, _ = red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	_, _ = common.Red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
 }
 
 // printSuccess prints a success message in green.
 func printSuccess(format string, args ...any) {
-	_, _ = green.Printf(format+"\n", args...)
+	_, _ = common.Green.Printf(format+"\n", args...)
 }
 
 // formatContact formats a contact for display.
@@ -101,26 +91,26 @@ func formatContacts(contacts []domain.EmailParticipant) string {
 
 // printInboxSummary prints a single-line inbox summary.
 func printInboxSummary(inbox domain.InboundInbox, index int) {
-	status := green.Sprint("active")
+	status := common.Green.Sprint("active")
 	if inbox.GrantStatus != "valid" {
-		status = yellow.Sprint(inbox.GrantStatus)
+		status = common.Yellow.Sprint(inbox.GrantStatus)
 	}
 
 	createdStr := common.FormatTimeAgo(inbox.CreatedAt.Time)
 
 	fmt.Printf("%d. %-40s %s  %s\n",
 		index+1,
-		cyan.Sprint(inbox.Email),
-		dim.Sprint(createdStr),
+		common.Cyan.Sprint(inbox.Email),
+		common.Dim.Sprint(createdStr),
 		status,
 	)
-	_, _ = dim.Printf("   ID: %s\n", inbox.ID)
+	_, _ = common.Dim.Printf("   ID: %s\n", inbox.ID)
 }
 
 // printInboxDetails prints detailed inbox information.
 func printInboxDetails(inbox domain.InboundInbox) {
 	fmt.Println(strings.Repeat("─", 60))
-	_, _ = boldWhite.Printf("Inbox: %s\n", inbox.Email)
+	_, _ = common.BoldWhite.Printf("Inbox: %s\n", inbox.Email)
 	fmt.Println(strings.Repeat("─", 60))
 	fmt.Printf("ID:          %s\n", inbox.ID)
 	fmt.Printf("Email:       %s\n", inbox.Email)
@@ -136,11 +126,11 @@ func printInboxDetails(inbox domain.InboundInbox) {
 func formatStatus(status string) string {
 	switch status {
 	case "valid":
-		return green.Sprint("active")
+		return common.Green.Sprint("active")
 	case "invalid":
-		return red.Sprint("invalid")
+		return common.Red.Sprint("invalid")
 	default:
-		return yellow.Sprint(status)
+		return common.Yellow.Sprint(status)
 	}
 }
 
@@ -148,12 +138,12 @@ func formatStatus(status string) string {
 func printInboundMessageSummary(msg domain.InboundMessage, _ int) {
 	status := " "
 	if msg.Unread {
-		status = cyan.Sprint("●")
+		status = common.Cyan.Sprint("●")
 	}
 
 	star := " "
 	if msg.Starred {
-		star = yellow.Sprint("★")
+		star = common.Yellow.Sprint("★")
 	}
 
 	from := formatContacts(msg.From)
@@ -171,6 +161,6 @@ func printInboundMessageSummary(msg domain.InboundMessage, _ int) {
 		dateStr = msg.Date.Format("Jan 2")
 	}
 
-	fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, dim.Sprint(dateStr))
-	_, _ = dim.Printf("      ID: %s\n", msg.ID)
+	fmt.Printf("%s %s %-20s %-40s %s\n", status, star, from, subject, common.Dim.Sprint(dateStr))
+	_, _ = common.Dim.Printf("      ID: %s\n", msg.ID)
 }

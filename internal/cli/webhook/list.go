@@ -41,7 +41,7 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Fetching webhooks...")

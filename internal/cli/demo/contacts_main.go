@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newDemoContactsCmd() *cobra.Command {
@@ -72,8 +73,8 @@ func newDemoContactsListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👤 Demo Mode - Sample Contacts"))
-			fmt.Println(dim.Sprint("These are sample contacts for demonstration purposes."))
+			fmt.Println(common.Dim.Sprint("👤 Demo Mode - Sample Contacts"))
+			fmt.Println(common.Dim.Sprint("These are sample contacts for demonstration purposes."))
 			fmt.Println()
 			fmt.Printf("Found %d contacts:\n\n", len(contacts))
 
@@ -82,7 +83,7 @@ func newDemoContactsListCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("To connect your real contacts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To connect your real contacts: nylas auth login"))
 
 			return nil
 		},
@@ -121,11 +122,11 @@ func newDemoContactsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👤 Demo Mode - Sample Contact"))
+			fmt.Println(common.Dim.Sprint("👤 Demo Mode - Sample Contact"))
 			fmt.Println()
 			printDemoContactFull(*contact)
 
-			fmt.Println(dim.Sprint("To connect your real contacts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To connect your real contacts: nylas auth login"))
 
 			return nil
 		},
@@ -164,10 +165,10 @@ func newDemoContactsCreateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👤 Demo Mode - Simulated Contact Creation"))
+			fmt.Println(common.Dim.Sprint("👤 Demo Mode - Simulated Contact Creation"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = boldWhite.Printf("Name:     %s %s\n", firstName, lastName)
+			_, _ = common.BoldWhite.Printf("Name:     %s %s\n", firstName, lastName)
 			fmt.Printf("Email:    %s\n", email)
 			if phone != "" {
 				fmt.Printf("Phone:    %s\n", phone)
@@ -180,10 +181,10 @@ func newDemoContactsCreateCmd() *cobra.Command {
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Contact would be created (demo mode - no actual contact created)")
-			_, _ = dim.Printf("  Contact ID: contact-demo-%d\n", time.Now().Unix())
+			_, _ = common.Green.Println("✓ Contact would be created (demo mode - no actual contact created)")
+			_, _ = common.Dim.Printf("  Contact ID: contact-demo-%d\n", time.Now().Unix())
 			fmt.Println()
-			fmt.Println(dim.Sprint("To create real contacts, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To create real contacts, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -222,12 +223,12 @@ func newDemoContactsUpdateCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👤 Demo Mode - Simulated Contact Update"))
+			fmt.Println(common.Dim.Sprint("👤 Demo Mode - Simulated Contact Update"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
-			_, _ = dim.Printf("Contact ID: %s\n", contactID)
+			_, _ = common.Dim.Printf("Contact ID: %s\n", contactID)
 			fmt.Println()
-			_, _ = boldWhite.Println("Changes:")
+			_, _ = common.BoldWhite.Println("Changes:")
 			if email != "" {
 				fmt.Printf("  Email:   %s\n", email)
 			}
@@ -242,9 +243,9 @@ func newDemoContactsUpdateCmd() *cobra.Command {
 			}
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Println()
-			_, _ = green.Println("✓ Contact would be updated (demo mode - no actual changes made)")
+			_, _ = common.Green.Println("✓ Contact would be updated (demo mode - no actual changes made)")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To update real contacts, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To update real contacts, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -278,18 +279,18 @@ func newDemoContactsDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👤 Demo Mode - Simulated Contact Deletion"))
+			fmt.Println(common.Dim.Sprint("👤 Demo Mode - Simulated Contact Deletion"))
 			fmt.Println()
 
 			if !force {
-				_, _ = yellow.Println("⚠ Would prompt for confirmation in real mode")
+				_, _ = common.Yellow.Println("⚠ Would prompt for confirmation in real mode")
 			}
 
 			fmt.Printf("Contact ID: %s\n", contactID)
 			fmt.Println()
-			_, _ = green.Println("✓ Contact would be deleted (demo mode - no actual deletion)")
+			_, _ = common.Green.Println("✓ Contact would be deleted (demo mode - no actual deletion)")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To delete real contacts, connect your account: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To delete real contacts, connect your account: nylas auth login"))
 
 			return nil
 		},
@@ -325,9 +326,9 @@ func newDemoContactsSearchCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("👤 Demo Mode - Contact Search"))
+			fmt.Println(common.Dim.Sprint("👤 Demo Mode - Contact Search"))
 			fmt.Println()
-			fmt.Printf("Search query: %s\n\n", cyan.Sprint(query))
+			fmt.Printf("Search query: %s\n\n", common.Cyan.Sprint(query))
 
 			// Sample search results
 			results := []struct {
@@ -343,13 +344,13 @@ func newDemoContactsSearchCmd() *cobra.Command {
 			fmt.Printf("Found %d contacts:\n\n", len(results))
 
 			for _, r := range results {
-				fmt.Printf("  %s %s\n", "👤", boldWhite.Sprint(r.name))
+				fmt.Printf("  %s %s\n", "👤", common.BoldWhite.Sprint(r.name))
 				fmt.Printf("    📧 %s\n", r.email)
-				fmt.Printf("    💼 %s\n", dim.Sprint(r.company))
+				fmt.Printf("    💼 %s\n", common.Dim.Sprint(r.company))
 				fmt.Println()
 			}
 
-			fmt.Println(dim.Sprint("To search your real contacts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To search your real contacts: nylas auth login"))
 
 			return nil
 		},

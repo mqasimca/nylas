@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mqasimca/nylas/internal/adapters/config"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -68,7 +67,7 @@ Examples:
 			key := args[0]
 			value := args[1]
 
-			store := getConfigStore(cmd)
+			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
@@ -419,21 +418,4 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 	}
 
 	return nil
-}
-
-// getConfigStore returns the appropriate config store based on the --config flag
-func getConfigStore(cmd *cobra.Command) ports.ConfigStore {
-	// Try to get custom config path from flag
-	configPath, _ := cmd.Flags().GetString("config")
-	if configPath == "" {
-		// Try to get from parent (persistent flag)
-		if cmd.Parent() != nil {
-			configPath, _ = cmd.Parent().Flags().GetString("config")
-		}
-	}
-
-	if configPath != "" {
-		return config.NewFileStore(configPath)
-	}
-	return config.NewDefaultFileStore()
 }

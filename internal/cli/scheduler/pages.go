@@ -41,7 +41,7 @@ func newPageListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			pages, err := client.ListSchedulerPages(ctx)
@@ -92,7 +92,7 @@ func newPageShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			page, err := client.GetSchedulerPage(ctx, args[0])
@@ -148,7 +148,7 @@ func newPageCreateCmd() *cobra.Command {
 				Slug:            slug,
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			page, err := client.CreateSchedulerPage(ctx, req)
@@ -206,7 +206,7 @@ func newPageUpdateCmd() *cobra.Command {
 				req.Slug = &slug
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			page, err := client.UpdateSchedulerPage(ctx, args[0], req)
@@ -251,7 +251,7 @@ func newPageDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteSchedulerPage(ctx, args[0]); err != nil {

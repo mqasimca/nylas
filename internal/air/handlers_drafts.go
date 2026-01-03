@@ -40,12 +40,8 @@ func (s *Server) handleListDrafts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -92,12 +88,8 @@ func (s *Server) handleCreateDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -186,12 +178,8 @@ func (s *Server) handleGetDraft(w http.ResponseWriter, r *http.Request, draftID 
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 
@@ -230,12 +218,8 @@ func (s *Server) handleUpdateDraft(w http.ResponseWriter, r *http.Request, draft
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 

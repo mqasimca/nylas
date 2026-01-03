@@ -71,6 +71,23 @@ plan.md
 AI_plan.md
 *.plan.md
 
+# Detailed test patterns (load on-demand when writing tests)
+.claude/shared/patterns/
+
+# Large agent files (loaded automatically by Task tool when spawning agents)
+# These don't need to be in main context - agents get their own prompts
+.claude/agents/documentation-writer.md
+.claude/agents/code-writer.md
+.claude/agents/security-auditor.md
+.claude/agents/frontend-agent.md
+
+# Command reference files (loaded on-demand by skills)
+.claude/commands/add-command/references/
+.claude/commands/generate-crud-command/templates/
+
+# Hook configuration (rarely needed, load when debugging hooks)
+.claude/HOOKS-CONFIG.md
+
 # Git-related files not needed for coding
 .github/workflows/
 .github/ISSUE_TEMPLATE/
@@ -112,3 +129,7 @@ tests/fixtures/large-*.json
 REFACTORING_PROGRESS.md
 ENGINEERING_IMPROVEMENTS_SUMMARY.md
 COVERAGE_REPORT.md
+
+# Session and planning files (transient, load on-demand)
+agent_plan.md
+claude-progress.txt

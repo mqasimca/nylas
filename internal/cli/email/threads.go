@@ -78,12 +78,12 @@ func newThreadsListCmd() *cobra.Command {
 			for _, t := range threads {
 				status := " "
 				if t.Unread {
-					status = cyan.Sprint("●")
+					status = common.Cyan.Sprint("●")
 				}
 
 				star := " "
 				if t.Starred {
-					star = yellow.Sprint("★")
+					star = common.Yellow.Sprint("★")
 				}
 
 				attach := " "
@@ -106,10 +106,10 @@ func newThreadsListCmd() *cobra.Command {
 				dateStr := common.FormatTimeAgo(t.LatestMessageRecvDate)
 
 				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
-					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
+					status, star, attach, participants, subj, msgCount, common.Dim.Sprint(dateStr))
 
 				if showID {
-					_, _ = dim.Printf("      ID: %s\n", t.ID)
+					_, _ = common.Dim.Printf("      ID: %s\n", t.ID)
 				}
 			}
 
@@ -159,7 +159,7 @@ func newThreadsShowCmd() *cobra.Command {
 
 			// Print thread details
 			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = boldWhite.Printf("Thread: %s\n", thread.Subject)
+			_, _ = common.BoldWhite.Printf("Thread: %s\n", thread.Subject)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("Participants: %s\n", formatContacts(thread.Participants))
@@ -170,10 +170,10 @@ func newThreadsShowCmd() *cobra.Command {
 
 			status := []string{}
 			if thread.Unread {
-				status = append(status, cyan.Sprint("unread"))
+				status = append(status, common.Cyan.Sprint("unread"))
 			}
 			if thread.Starred {
-				status = append(status, yellow.Sprint("starred"))
+				status = append(status, common.Yellow.Sprint("starred"))
 			}
 			if thread.HasAttachments {
 				status = append(status, "has attachments")
@@ -204,7 +204,7 @@ func newThreadsMarkCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mark <thread-id> [grant-id]",
 		Short: "Mark thread as read/unread or starred/unstarred",
-		Long:  "Update thread status: mark as read, unread, starred, or unstarred.",
+		Long:  "Update thread status: mark as read, unread, starred, or unstarcommon.Red.",
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threadID := args[0]
@@ -475,12 +475,12 @@ Examples:
 			for _, t := range threads {
 				status := " "
 				if t.Unread {
-					status = cyan.Sprint("●")
+					status = common.Cyan.Sprint("●")
 				}
 
 				star := " "
 				if t.Starred {
-					star = yellow.Sprint("★")
+					star = common.Yellow.Sprint("★")
 				}
 
 				attach := " "
@@ -503,10 +503,10 @@ Examples:
 				dateStr := common.FormatTimeAgo(t.LatestMessageRecvDate)
 
 				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
-					status, star, attach, participants, subj, msgCount, dim.Sprint(dateStr))
+					status, star, attach, participants, subj, msgCount, common.Dim.Sprint(dateStr))
 
 				if showID {
-					_, _ = dim.Printf("      ID: %s\n", t.ID)
+					_, _ = common.Dim.Printf("      ID: %s\n", t.ID)
 				}
 			}
 

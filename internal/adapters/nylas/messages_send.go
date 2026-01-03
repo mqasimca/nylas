@@ -14,7 +14,7 @@ import (
 func (c *HTTPClient) SendMessage(ctx context.Context, grantID string, req *domain.SendMessageRequest) (*domain.Message, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/send", c.baseURL, grantID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 		"to":      convertContactsToAPI(req.To),
@@ -195,7 +195,7 @@ func (c *HTTPClient) CancelScheduledMessage(ctx context.Context, grantID, schedu
 func (c *HTTPClient) SmartCompose(ctx context.Context, grantID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/smart-compose", c.baseURL, grantID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"prompt": req.Prompt,
 	}
 
@@ -204,7 +204,7 @@ func (c *HTTPClient) SmartCompose(ctx context.Context, grantID string, req *doma
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (c *HTTPClient) SmartCompose(ctx context.Context, grantID string, req *doma
 func (c *HTTPClient) SmartComposeReply(ctx context.Context, grantID, messageID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s/smart-compose", c.baseURL, grantID, messageID)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"prompt": req.Prompt,
 	}
 
@@ -246,7 +246,7 @@ func (c *HTTPClient) SmartComposeReply(ctx context.Context, grantID, messageID s
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}

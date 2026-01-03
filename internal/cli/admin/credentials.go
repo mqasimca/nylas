@@ -42,7 +42,7 @@ func newCredentialListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			credentials, err := client.ListCredentials(ctx, args[0])
@@ -93,7 +93,7 @@ func newCredentialShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			credential, err := client.GetCredential(ctx, args[0])
@@ -157,7 +157,7 @@ func newCredentialCreateCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			credential, err := client.CreateCredential(ctx, connectorID, req)
@@ -209,7 +209,7 @@ func newCredentialUpdateCmd() *cobra.Command {
 				req.Name = &name
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			credential, err := client.UpdateCredential(ctx, args[0], req)
@@ -253,7 +253,7 @@ func newCredentialDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteCredential(ctx, args[0]); err != nil {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +42,7 @@ Note: Media URLs have an expiration time. Download them promptly.`,
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			media, err := client.GetNotetakerMedia(ctx, grantID, notetakerID)

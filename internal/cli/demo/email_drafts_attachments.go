@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +36,7 @@ func newDemoEmailDraftsListCmd() *cobra.Command {
 			drafts, _ := client.GetDrafts(ctx, "demo-grant", 10)
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📝 Demo Mode - Sample Drafts"))
+			fmt.Println(common.Dim.Sprint("📝 Demo Mode - Sample Drafts"))
 			fmt.Println()
 			fmt.Printf("Found %d drafts:\n\n", len(drafts))
 
@@ -44,13 +45,13 @@ func newDemoEmailDraftsListCmd() *cobra.Command {
 				if len(d.To) > 0 {
 					to = d.To[0].Email
 				}
-				fmt.Printf("  📝 %s\n", boldWhite.Sprint(d.Subject))
+				fmt.Printf("  📝 %s\n", common.BoldWhite.Sprint(d.Subject))
 				fmt.Printf("     To: %s\n", to)
-				_, _ = dim.Printf("     ID: %s\n", d.ID)
+				_, _ = common.Dim.Printf("     ID: %s\n", d.ID)
 				fmt.Println()
 			}
 
-			fmt.Println(dim.Sprint("To manage your real drafts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage your real drafts: nylas auth login"))
 
 			return nil
 		},
@@ -65,7 +66,7 @@ func newDemoEmailDraftsCreateCmd() *cobra.Command {
 		Short: "Create a draft (simulated)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println()
-			fmt.Println(dim.Sprint("📝 Demo Mode - Create Draft (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📝 Demo Mode - Create Draft (Simulated)"))
 			fmt.Println()
 			fmt.Println(strings.Repeat("─", 50))
 			fmt.Printf("To:      %s\n", to)
@@ -76,9 +77,9 @@ func newDemoEmailDraftsCreateCmd() *cobra.Command {
 				fmt.Println(strings.Repeat("─", 50))
 			}
 			fmt.Println()
-			_, _ = green.Println("✓ Draft would be created with ID: draft-demo-new")
+			_, _ = common.Green.Println("✓ Draft would be created with ID: draft-demo-new")
 			fmt.Println()
-			fmt.Println(dim.Sprint("To create real drafts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To create real drafts: nylas auth login"))
 
 			return nil
 		},
@@ -102,11 +103,11 @@ func newDemoEmailDraftsDeleteCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📝 Demo Mode - Delete Draft (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📝 Demo Mode - Delete Draft (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Draft '%s' would be deleted\n", draftID)
+			_, _ = common.Green.Printf("✓ Draft '%s' would be deleted\n", draftID)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To manage real drafts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To manage real drafts: nylas auth login"))
 
 			return nil
 		},
@@ -124,11 +125,11 @@ func newDemoEmailDraftsSendCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📝 Demo Mode - Send Draft (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📝 Demo Mode - Send Draft (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Draft '%s' would be sent\n", draftID)
+			_, _ = common.Green.Printf("✓ Draft '%s' would be sent\n", draftID)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To send real drafts: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To send real drafts: nylas auth login"))
 
 			return nil
 		},
@@ -165,18 +166,18 @@ func newDemoEmailAttachmentsListCmd() *cobra.Command {
 			attachments, _ := client.ListAttachments(ctx, "demo-grant", messageID)
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📎 Demo Mode - Sample Attachments"))
+			fmt.Println(common.Dim.Sprint("📎 Demo Mode - Sample Attachments"))
 			fmt.Printf("Message: %s\n\n", messageID)
 
 			for _, a := range attachments {
-				fmt.Printf("  📎 %s\n", boldWhite.Sprint(a.Filename))
+				fmt.Printf("  📎 %s\n", common.BoldWhite.Sprint(a.Filename))
 				fmt.Printf("     Type: %s\n", a.ContentType)
 				fmt.Printf("     Size: %s\n", formatDemoBytes(a.Size))
-				_, _ = dim.Printf("     ID: %s\n", a.ID)
+				_, _ = common.Dim.Printf("     ID: %s\n", a.ID)
 				fmt.Println()
 			}
 
-			fmt.Println(dim.Sprint("To view real attachments: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To view real attachments: nylas auth login"))
 
 			return nil
 		},
@@ -194,11 +195,11 @@ func newDemoEmailAttachmentsDownloadCmd() *cobra.Command {
 			}
 
 			fmt.Println()
-			fmt.Println(dim.Sprint("📎 Demo Mode - Download Attachment (Simulated)"))
+			fmt.Println(common.Dim.Sprint("📎 Demo Mode - Download Attachment (Simulated)"))
 			fmt.Println()
-			_, _ = green.Printf("✓ Attachment '%s' would be downloaded to current directory\n", attachmentID)
+			_, _ = common.Green.Printf("✓ Attachment '%s' would be downloaded to current directory\n", attachmentID)
 			fmt.Println()
-			fmt.Println(dim.Sprint("To download real attachments: nylas auth login"))
+			fmt.Println(common.Dim.Sprint("To download real attachments: nylas auth login"))
 
 			return nil
 		},

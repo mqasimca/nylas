@@ -15,7 +15,7 @@ func (s *Server) handleAISmartReplies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req SmartReplyRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, SmartReplyResponse{
 			Success: false,
 			Error:   "Invalid request body",
@@ -112,7 +112,7 @@ func (s *Server) handleAIAutoLabel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req AutoLabelRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, AutoLabelResponse{
 			Success: false,
 			Error:   "Invalid request body",

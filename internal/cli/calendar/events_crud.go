@@ -68,7 +68,7 @@ Examples:
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get calendar ID if not specified
@@ -272,7 +272,7 @@ func newEventsDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get calendar ID if not specified
@@ -365,7 +365,7 @@ Examples:
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get calendar ID if not specified

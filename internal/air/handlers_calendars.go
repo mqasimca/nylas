@@ -31,12 +31,8 @@ func (s *Server) handleListCalendars(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get default grant
-	grantID, err := s.grantStore.GetDefaultGrant()
-	if err != nil || grantID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{
-			"error": "No default account. Please select an account first.",
-		})
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
 		return
 	}
 

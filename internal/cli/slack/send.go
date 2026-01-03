@@ -47,7 +47,7 @@ Examples:
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			resolvedChannelID := channelID
@@ -137,7 +137,7 @@ Examples:
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			resolvedChannelID := channelID

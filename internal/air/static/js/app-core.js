@@ -18,7 +18,11 @@
 
             const messageDiv = document.createElement('div');
             messageDiv.className = 'toast-message';
-            messageDiv.innerHTML = `<strong>${title}</strong> — ${message}`;
+            // Use textContent for XSS prevention - user data may be in title/message
+            const strong = document.createElement('strong');
+            strong.textContent = title;
+            messageDiv.appendChild(strong);
+            messageDiv.appendChild(document.createTextNode(' — ' + message));
 
             toast.appendChild(iconSpan);
             toast.appendChild(messageDiv);

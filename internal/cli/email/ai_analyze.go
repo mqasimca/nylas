@@ -7,10 +7,8 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
-	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -62,14 +60,14 @@ This command fetches your recent emails and uses AI to provide:
 			defer cancel()
 
 			// Load config for AI settings
-			configStore := getEmailConfigStore(cmd)
+			configStore := common.GetConfigStore(cmd)
 			cfg, err := configStore.Load()
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)
 			}
 
 			if cfg.AI == nil || !cfg.AI.IsConfigured() {
-				return fmt.Errorf("AI is not configured. Run 'nylas config ai setup' to configure AI providers")
+				return fmt.Errorf("AI is not configucommon.Red. Run 'nylas config ai setup' to configure AI providers")
 			}
 
 			// Fetch emails
@@ -192,31 +190,4 @@ func displayInboxAnalysis(result *ai.InboxSummaryResponse, emailCount int) {
 		fmt.Printf(" | Tokens: %d", result.TokensUsed)
 	}
 	fmt.Println()
-}
-
-// getEmailConfigStore returns the appropriate config store based on the --config flag.
-func getEmailConfigStore(cmd *cobra.Command) ports.ConfigStore {
-	// Try to get custom config path from flag
-	configPath, _ := cmd.Flags().GetString("config")
-	if configPath == "" {
-		// Try to get from parent (persistent flag)
-		if cmd.Parent() != nil {
-			configPath, _ = cmd.Parent().Flags().GetString("config")
-		}
-	}
-
-	// Walk up parent chain to find config flag
-	if configPath == "" {
-		for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
-			if p, _ := parent.Flags().GetString("config"); p != "" {
-				configPath = p
-				break
-			}
-		}
-	}
-
-	if configPath != "" {
-		return config.NewFileStore(configPath)
-	}
-	return config.NewDefaultFileStore()
 }

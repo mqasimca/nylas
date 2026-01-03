@@ -45,7 +45,7 @@ func newGroupsListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			groups, err := client.GetContactGroups(ctx, grantID)
@@ -101,7 +101,7 @@ func newGroupsShowCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			group, err := client.GetContactGroup(ctx, grantID, groupID)
@@ -155,7 +155,7 @@ Examples:
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.CreateContactGroupRequest{
@@ -204,7 +204,7 @@ Examples:
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.UpdateContactGroupRequest{}
@@ -256,7 +256,7 @@ func newGroupsDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if !force {

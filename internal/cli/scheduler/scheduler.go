@@ -2,15 +2,7 @@
 package scheduler
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/mqasimca/nylas/internal/adapters/config"
-	"github.com/mqasimca/nylas/internal/adapters/keyring"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
-	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
@@ -37,47 +29,17 @@ manage availability, and handle scheduling sessions.`,
 	return cmd
 }
 
+// getClient creates and configures a Nylas client with caching.
+// Delegates to common.GetNylasClient() for consistent credential handling.
 func getClient() (ports.NylasClient, error) {
 	if client != nil {
 		return client, nil
 	}
 
-	configStore := config.NewDefaultFileStore()
-	cfg, err := configStore.Load()
+	c, err := common.GetNylasClient()
 	if err != nil {
-		cfg = &domain.Config{Region: "us"}
+		return nil, err
 	}
-
-	// Check environment variables first (highest priority)
-	apiKey := os.Getenv("NYLAS_API_KEY")
-	clientID := os.Getenv("NYLAS_CLIENT_ID")
-	clientSecret := os.Getenv("NYLAS_CLIENT_SECRET")
-
-	// If API key not in env, try keyring/file store
-	if apiKey == "" {
-		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-		if err == nil {
-			apiKey, _ = secretStore.Get(ports.KeyAPIKey)
-			if clientID == "" {
-				clientID, _ = secretStore.Get(ports.KeyClientID)
-			}
-			if clientSecret == "" {
-				clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
-			}
-		}
-	}
-
-	if apiKey == "" {
-		return nil, fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
-	}
-
-	c := nylas.NewHTTPClient()
-	c.SetRegion(cfg.Region)
-	c.SetCredentials(clientID, clientSecret, apiKey)
-
-	return c, nil
-}
-
-func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 30*time.Second)
+	client = c
+	return client, nil
 }

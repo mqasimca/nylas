@@ -52,7 +52,7 @@ Examples:
 				)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			messages, err := client.SearchMessages(ctx, query, limit)

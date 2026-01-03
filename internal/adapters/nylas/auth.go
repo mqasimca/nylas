@@ -2,7 +2,6 @@
 package nylas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -41,21 +40,9 @@ func (c *HTTPClient) ExchangeCode(ctx context.Context, code, redirectURI string)
 		"code_verifier": "nylas",
 	}
 
-	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/v3/connect/token", bytes.NewReader(body))
+	resp, err := c.doJSONRequestNoAuth(ctx, "POST", c.baseURL+"/v3/connect/token", payload)
 	if err != nil {
 		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
@@ -65,7 +52,7 @@ func (c *HTTPClient) ExchangeCode(ctx context.Context, code, redirectURI string)
 		Email        string `json:"email"`
 		Provider     string `json:"provider"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 

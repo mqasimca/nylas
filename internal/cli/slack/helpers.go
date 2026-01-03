@@ -7,7 +7,6 @@ import (
 	"context"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
@@ -16,10 +15,7 @@ import (
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
-const (
-	slackTokenKey  = "slack_user_token"
-	defaultTimeout = 30 * time.Second
-)
+const slackTokenKey = "slack_user_token"
 
 // storeSlackToken stores the Slack token in the keyring.
 func storeSlackToken(token string) error {
@@ -76,9 +72,7 @@ func getSlackClient(token string) (ports.SlackClient, error) {
 }
 
 // createContext creates a context with default timeout.
-func createContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), defaultTimeout)
-}
+// Uses common.CreateContext for consistency across CLI packages.
 
 // resolveChannelName resolves a channel name to its ID.
 // If name already looks like a channel ID (starts with C, G, or D), returns it directly.

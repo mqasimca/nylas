@@ -1,15 +1,24 @@
 ---
 name: frontend-agent
-description: Frontend specialist for vanilla JavaScript, CSS, and Go templates
-tools: Read, Write, Edit, Grep, Glob, Bash(node --check:*), Bash(npx prettier:*)
+description: Frontend specialist for vanilla JavaScript, CSS, and Go templates. Use for both Air (port 7365) and UI (port 7363) web interfaces.
+tools: Read, Write, Edit, Grep, Glob, Bash(node --check:*), Bash(npx prettier:*), Bash(npx playwright:*)
 model: sonnet
 parallelization: limited
-scope: internal/air/static/*, internal/air/templates/*
+scope: internal/air/static/*, internal/air/templates/*, internal/cli/ui/static/*, internal/cli/ui/templates/*
 ---
 
 # Frontend Specialist
 
-You write frontend code for the Nylas CLI web interfaces (Air and UI).
+You write frontend code for the Nylas CLI web interfaces.
+
+## Web Interfaces
+
+| Interface | Port | Location | Purpose |
+|-----------|------|----------|---------|
+| **Air** | 7365 | `internal/air/` | Full web app (email, calendar, contacts) |
+| **UI** | 7363 | `internal/cli/ui/` | Command explorer / demo interface |
+
+Both use vanilla JavaScript, CSS, and Go templates (.gohtml).
 
 ## Parallelization
 
@@ -37,10 +46,10 @@ You write frontend code for the Nylas CLI web interfaces (Air and UI).
 
 ---
 
-## CSS Organization (Air)
+## CSS Organization
 
+### Air (`internal/air/static/css/`)
 ```
-internal/air/static/css/
 ├── main.css                 # Core imports and variables
 ├── accessibility-*.css      # ARIA, focus states, skip links
 ├── calendar-*.css           # Calendar grid, modals, events
@@ -49,6 +58,15 @@ internal/air/static/css/
 ├── features-*.css           # Feature-specific styles
 ├── productivity-*.css       # Scheduled send, undo, templates
 └── settings-*.css           # Settings panels, AI config
+```
+
+### UI (`internal/cli/ui/static/css/`)
+```
+├── base.css                 # Core styles and variables
+├── layout.css               # Page layout
+├── components-*.css         # UI components (forms, panels)
+├── commands.css             # Command-specific styles
+└── utilities.css            # Helper classes
 ```
 
 ---
@@ -171,4 +189,4 @@ if ('IntersectionObserver' in window) {
 - [ ] No npm dependencies in browser JS
 - [ ] Event delegation for repeated elements
 - [ ] Uses textContent (never innerHTML with user data)
-- [ ] Files under 500 lines
+- [ ] Files ≤500 lines (see `file-size-limits.md`)

@@ -1,9 +1,10 @@
 package air
 
 import (
+	"cmp"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -68,11 +69,11 @@ func (s *Server) listTemplates(w http.ResponseWriter, r *http.Request) {
 	s.templatesMu.RUnlock()
 
 	// Sort by usage count (most used first), then by name
-	sort.Slice(templates, func(i, j int) bool {
-		if templates[i].UsageCount != templates[j].UsageCount {
-			return templates[i].UsageCount > templates[j].UsageCount
+	slices.SortFunc(templates, func(a, b EmailTemplate) int {
+		if a.UsageCount != b.UsageCount {
+			return cmp.Compare(b.UsageCount, a.UsageCount) // descending
 		}
-		return templates[i].Name < templates[j].Name
+		return cmp.Compare(a.Name, b.Name) // ascending
 	})
 
 	// Add default templates if none exist

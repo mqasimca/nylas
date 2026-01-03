@@ -100,7 +100,7 @@ func (s *Server) handleGetFocusModeState(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Calculate remaining time
-	response := map[string]interface{}{
+	response := map[string]any{
 		"state": state,
 	}
 
@@ -125,7 +125,7 @@ func (s *Server) handleStartFocusMode(w http.ResponseWriter, r *http.Request) {
 		PomodoroMode bool `json:"pomodoroMode"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -172,7 +172,7 @@ func (s *Server) handleStopFocusMode(w http.ResponseWriter, r *http.Request) {
 	fmStore.state.InBreak = false
 
 	w.Header().Set("Content-Type", "application/json")
-	resp := map[string]interface{}{
+	resp := map[string]any{
 		"status":       "stopped",
 		"sessionCount": fmStore.state.SessionCount,
 	}
@@ -223,7 +223,7 @@ func (s *Server) handleGetFocusModeSettings(w http.ResponseWriter, r *http.Reque
 // handleUpdateFocusModeSettings updates focus mode settings
 func (s *Server) handleUpdateFocusModeSettings(w http.ResponseWriter, r *http.Request) {
 	var settings FocusModeSettings
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

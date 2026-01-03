@@ -42,7 +42,7 @@ func newConfigListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			configs, err := client.ListSchedulerConfigurations(ctx)
@@ -94,7 +94,7 @@ func newConfigShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			config, err := client.GetSchedulerConfiguration(ctx, args[0])
@@ -198,7 +198,7 @@ func newConfigCreateCmd() *cobra.Command {
 				},
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			config, err := client.CreateSchedulerConfiguration(ctx, req)
@@ -274,7 +274,7 @@ func newConfigUpdateCmd() *cobra.Command {
 				req.EventBooking = eventBooking
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			config, err := client.UpdateSchedulerConfiguration(ctx, args[0], req)
@@ -321,7 +321,7 @@ func newConfigDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteSchedulerConfiguration(ctx, args[0]); err != nil {

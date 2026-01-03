@@ -63,7 +63,7 @@ func newAttachmentsListCmd() *cobra.Command {
 			fmt.Println(strings.Repeat("─", 70))
 
 			for i, a := range attachments {
-				fmt.Printf("%d. %s\n", i+1, boldWhite.Sprint(a.Filename))
+				fmt.Printf("%d. %s\n", i+1, common.BoldWhite.Sprint(a.Filename))
 				fmt.Printf("   ID:   %s\n", a.ID)
 				fmt.Printf("   Type: %s\n", a.ContentType)
 				fmt.Printf("   Size: %s\n", formatSize(a.Size))
@@ -115,7 +115,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 			}
 
 			fmt.Println(strings.Repeat("─", 60))
-			_, _ = boldWhite.Printf("Filename:     %s\n", attachment.Filename)
+			_, _ = common.BoldWhite.Printf("Filename:     %s\n", attachment.Filename)
 			fmt.Printf("ID:           %s\n", attachment.ID)
 			fmt.Printf("Content Type: %s\n", attachment.ContentType)
 			fmt.Printf("Size:         %s (%d bytes)\n", formatSize(attachment.Size), attachment.Size)

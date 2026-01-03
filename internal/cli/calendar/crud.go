@@ -3,15 +3,9 @@ package calendar
 import (
 	"fmt"
 
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
-)
-
-var (
-	boldWhite = color.New(color.Bold, color.FgWhite)
-	cyan      = color.New(color.FgCyan)
-	dim       = color.New(color.Faint)
 )
 
 func newShowCmd() *cobra.Command {
@@ -37,7 +31,7 @@ func newShowCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			cal, err := client.GetCalendar(ctx, grantID, calendarID)
@@ -46,7 +40,7 @@ func newShowCmd() *cobra.Command {
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = boldWhite.Printf("Calendar: %s\n", cal.Name)
+			_, _ = common.BoldWhite.Printf("Calendar: %s\n", cal.Name)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
 			fmt.Printf("ID:          %s\n", cal.ID)
@@ -63,10 +57,10 @@ func newShowCmd() *cobra.Command {
 			}
 
 			if cal.IsPrimary {
-				_, _ = cyan.Printf("Primary:     Yes\n")
+				_, _ = common.Cyan.Printf("Primary:     Yes\n")
 			}
 			if cal.ReadOnly {
-				_, _ = dim.Printf("Read-only:   Yes\n")
+				_, _ = common.Dim.Printf("Read-only:   Yes\n")
 			}
 			if cal.IsOwner {
 				fmt.Printf("Owner:       Yes\n")
@@ -105,7 +99,7 @@ func newCreateCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.CreateCalendarRequest{
@@ -120,8 +114,7 @@ func newCreateCmd() *cobra.Command {
 				return fmt.Errorf("failed to create calendar: %w", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
+			_, _ = common.Green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
 			return nil
 		},
 	}
@@ -158,7 +151,7 @@ func newUpdateCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.UpdateCalendarRequest{}
@@ -184,8 +177,7 @@ func newUpdateCmd() *cobra.Command {
 				return fmt.Errorf("failed to update calendar: %w", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Updated calendar '%s'\n", cal.Name)
+			_, _ = common.Green.Printf("✓ Updated calendar '%s'\n", cal.Name)
 			return nil
 		},
 	}
@@ -224,7 +216,7 @@ func newDeleteCmd() *cobra.Command {
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if !force {
@@ -237,7 +229,7 @@ func newDeleteCmd() *cobra.Command {
 				fmt.Printf("  Name: %s\n", cal.Name)
 				fmt.Printf("  ID:   %s\n", cal.ID)
 				if cal.IsPrimary {
-					_, _ = color.New(color.FgYellow).Printf("  Warning: This is a PRIMARY calendar!\n")
+					_, _ = common.Yellow.Printf("  Warning: This is a PRIMARY calendar!\n")
 				}
 				fmt.Print("\n[y/N]: ")
 
@@ -254,8 +246,7 @@ func newDeleteCmd() *cobra.Command {
 				return fmt.Errorf("failed to delete calendar: %w", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Calendar deleted\n")
+			_, _ = common.Green.Printf("✓ Calendar deleted\n")
 			return nil
 		},
 	}

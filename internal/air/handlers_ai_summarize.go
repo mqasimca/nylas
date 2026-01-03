@@ -15,7 +15,7 @@ func (s *Server) handleAISummarize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req AIRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, AIResponse{
 			Success: false,
 			Error:   "Invalid request body",
@@ -55,7 +55,7 @@ func (s *Server) handleAIEnhancedSummary(w http.ResponseWriter, r *http.Request)
 	}
 
 	var req EnhancedSummaryRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, EnhancedSummaryResponse{
 			Success: false,
 			Error:   "Invalid request body",

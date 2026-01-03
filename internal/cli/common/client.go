@@ -88,30 +88,57 @@ func GetAPIKey() (string, error) {
 
 // GetGrantID returns the grant ID from arguments, environment variable, or keyring.
 // It checks in this order:
-// 1. Command line argument (if provided)
-// 2. Environment variable (NYLAS_GRANT_ID) - highest priority after arg
+// 1. Command line argument (if provided) - supports email lookup if arg contains "@"
+// 2. Environment variable (NYLAS_GRANT_ID)
 // 3. Stored default grant (from keyring/file)
 func GetGrantID(args []string) (string, error) {
-	// If provided as argument, use it
-	if len(args) > 0 && args[0] != "" {
-		return args[0], nil
-	}
-
-	// Check environment variable first (highest priority after arg)
-	grantID := os.Getenv("NYLAS_GRANT_ID")
-
-	// If not in env, try keyring/file store
-	if grantID == "" {
-		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-		if err == nil {
-			grantStore := keyring.NewGrantStore(secretStore)
-			grantID, _ = grantStore.GetDefaultGrant()
+	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+	if err != nil {
+		// Fall back to env var only if keyring unavailable
+		if grantID := os.Getenv("NYLAS_GRANT_ID"); grantID != "" {
+			return grantID, nil
 		}
+		return "", fmt.Errorf("couldn't access secret store and NYLAS_GRANT_ID not set: %w", err)
+	}
+	grantStore := keyring.NewGrantStore(secretStore)
+
+	// If provided as argument
+	if len(args) > 0 && args[0] != "" {
+		identifier := args[0]
+
+		// If it looks like an email, try to find by email
+		if containsAt(identifier) {
+			grant, err := grantStore.GetGrantByEmail(identifier)
+			if err != nil {
+				return "", fmt.Errorf("no grant found for email: %s", identifier)
+			}
+			return grant.ID, nil
+		}
+
+		// Otherwise treat as grant ID
+		return identifier, nil
 	}
 
-	if grantID == "" {
-		return "", fmt.Errorf("no grant ID provided. Specify grant ID as argument or set NYLAS_GRANT_ID environment variable")
+	// Check environment variable
+	if grantID := os.Getenv("NYLAS_GRANT_ID"); grantID != "" {
+		return grantID, nil
+	}
+
+	// Try to get default grant
+	grantID, err := grantStore.GetDefaultGrant()
+	if err != nil {
+		return "", fmt.Errorf("no grant ID provided. Specify grant ID as argument, set NYLAS_GRANT_ID, or use 'nylas auth list' to see available grants")
 	}
 
 	return grantID, nil
+}
+
+// containsAt checks if a string contains "@" (for email detection).
+func containsAt(s string) bool {
+	for _, c := range s {
+		if c == '@' {
+			return true
+		}
+	}
+	return false
 }

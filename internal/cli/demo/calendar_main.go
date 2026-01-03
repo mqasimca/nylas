@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -68,20 +68,20 @@ func printDemoEvent(event domain.Event, showID bool) {
 	}
 
 	// Status indicator
-	statusColor := green
+	statusColor := common.Green
 	if event.Status == "cancelled" {
-		statusColor = color.New(color.FgRed)
+		statusColor = common.Red
 	}
 
-	fmt.Printf("  %s %s\n", statusColor.Sprint("●"), boldWhite.Sprint(event.Title))
-	fmt.Printf("    %s\n", dim.Sprint(timeStr))
+	fmt.Printf("  %s %s\n", statusColor.Sprint("●"), common.BoldWhite.Sprint(event.Title))
+	fmt.Printf("    %s\n", common.Dim.Sprint(timeStr))
 
 	if event.Location != "" {
 		fmt.Printf("    📍 %s\n", event.Location)
 	}
 
 	if event.Conferencing != nil && event.Conferencing.Details != nil && event.Conferencing.Details.URL != "" {
-		fmt.Printf("    🔗 %s\n", dim.Sprint(event.Conferencing.Details.URL))
+		fmt.Printf("    🔗 %s\n", common.Dim.Sprint(event.Conferencing.Details.URL))
 	}
 
 	if len(event.Participants) > 0 {
@@ -99,7 +99,7 @@ func printDemoEvent(event domain.Event, showID bool) {
 	}
 
 	if showID {
-		_, _ = dim.Printf("    ID: %s\n", event.ID)
+		_, _ = common.Dim.Printf("    ID: %s\n", event.ID)
 	}
 
 	fmt.Println()

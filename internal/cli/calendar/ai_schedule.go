@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newAIScheduleCmd() *cobra.Command {
@@ -43,7 +44,7 @@ Examples:
 			query := strings.Join(args, " ")
 
 			// Load config to get AI settings - respect --config flag
-			configStore := getConfigStore(cmd)
+			configStore := common.GetConfigStore(cmd)
 			cfg, err := configStore.Load()
 			if err != nil {
 				return fmt.Errorf("failed to load config: %w", err)

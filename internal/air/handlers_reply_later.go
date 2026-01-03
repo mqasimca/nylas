@@ -47,7 +47,7 @@ func (s *Server) handleGetReplyLaterItems(w http.ResponseWriter, r *http.Request
 	rlStore.mu.RLock()
 	defer rlStore.mu.RUnlock()
 
-	showCompleted := r.URL.Query().Get("completed") == "true"
+	showCompleted := ParseBool(r.URL.Query(), "completed")
 
 	items := make([]*ReplyLaterItem, 0)
 	for _, item := range rlStore.items {
@@ -73,7 +73,7 @@ func (s *Server) handleAddToReplyLater(w http.ResponseWriter, r *http.Request) {
 		Notes    string `json:"notes,omitempty"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -133,7 +133,7 @@ func (s *Server) handleUpdateReplyLater(w http.ResponseWriter, r *http.Request) 
 		IsCompleted bool   `json:"isCompleted"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

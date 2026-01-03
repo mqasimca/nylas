@@ -99,7 +99,7 @@ Shows busy time slots within the specified time range.`,
 				endTime = startTime.Add(24 * time.Hour)
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// If no emails specified, get the grant's email
@@ -224,7 +224,7 @@ This searches for time slots when all participants are free.`,
 				}
 			}
 
-			ctx, cancel := createContext()
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			spinner := common.NewSpinner("Finding available times...")
