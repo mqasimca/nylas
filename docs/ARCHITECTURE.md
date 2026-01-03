@@ -11,10 +11,10 @@ Hexagonal (ports and adapters) architecture for clean separation of concerns.
 ```
 cmd/nylas/                    # Entry point (main.go)
 internal/
-  domain/                     # Business entities (21 files)
+  domain/                     # Business entities (28 files)
   ports/                      # Interface contracts (7 files)
   adapters/                   # Implementations
-    nylas/                    # Nylas API client (85 files)
+    nylas/                    # Nylas API client (94 files)
     ai/                       # AI providers (Claude, OpenAI, Groq, Ollama)
     analytics/                # Focus optimizer, meeting scorer
     keyring/                  # Secret storage
@@ -108,7 +108,7 @@ docs/                         # Documentation
 
 **Three layers:**
 
-1. **Domain** (`internal/domain/`) - 21 files
+1. **Domain** (`internal/domain/`) - 28 files
    - Pure business logic, no external dependencies
    - Core types: Message, Email, Calendar, Event, Contact, Grant, Webhook
    - Feature types: AI, Analytics, Admin, Scheduler, Notetaker, Slack, Inbound
@@ -127,12 +127,12 @@ docs/                         # Documentation
 
    | Adapter | Files | Purpose |
    |---------|-------|---------|
-   | `nylas/` | 85 | Nylas API client (messages, calendars, contacts, events) |
-   | `ai/` | 18 | AI clients (Claude, OpenAI, Groq, Ollama), email analyzer |
+   | `nylas/` | 94 | Nylas API client (messages, calendars, contacts, events) |
+   | `ai/` | 24 | AI clients (Claude, OpenAI, Groq, Ollama), email analyzer |
    | `analytics/` | 14 | Focus optimizer, conflict resolver, meeting scorer |
    | `keyring/` | 6 | Credential storage (system keyring, file-based) |
-   | `mcp/` | 7 | MCP proxy server for AI assistants |
-   | `slack/` | 9 | Slack API client (channels, messages, users) |
+   | `mcp/` | 8 | MCP proxy server for AI assistants |
+   | `slack/` | 21 | Slack API client (channels, messages, users) |
    | `config/` | 5 | Configuration validation |
    | `oauth/` | 3 | OAuth callback server |
    | `utilities/` | 12 | Services (contacts, email, scheduling, timezone, webhook) |
