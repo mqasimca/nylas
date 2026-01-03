@@ -27,11 +27,16 @@ getProviderName(provider) {
 },
 
 /**
- * Strip embedded styles from HTML to allow our CSS to take control
+ * Strip embedded styles and scripts from HTML for safe rendering
  */
 stripEmbeddedStyles(html) {
+    // Remove <script> tags and their content (XSS prevention)
+    let cleaned = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove event handlers (onclick, onerror, etc.)
+    cleaned = cleaned.replace(/\s+on\w+="[^"]*"/gi, '');
+    cleaned = cleaned.replace(/\s+on\w+='[^']*'/gi, '');
     // Remove <style> tags and their content
-    let cleaned = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
     // Remove inline style attributes
     cleaned = cleaned.replace(/\s+style="[^"]*"/gi, '');
     // Remove <html>, <head>, <body> tags but keep their content
@@ -266,10 +271,15 @@ showSummaryModal(nt) {
 },
 
 /**
- * Clean email HTML - keep structure but remove inline styles
+ * Clean email HTML - keep structure but remove scripts and styles for safe rendering
  */
 stripEmailCruft(html) {
     let cleaned = html;
+    // Remove script tags (XSS prevention)
+    cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove event handlers (onclick, onerror, etc.)
+    cleaned = cleaned.replace(/\s+on\w+="[^"]*"/gi, '');
+    cleaned = cleaned.replace(/\s+on\w+='[^']*'/gi, '');
     // Remove style tags
     cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
     // Remove inline styles

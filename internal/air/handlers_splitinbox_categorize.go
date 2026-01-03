@@ -1,10 +1,11 @@
 package air
 
 import (
+	"cmp"
 	"encoding/json"
 	"net/http"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 )
@@ -54,11 +55,11 @@ func (s *Server) categorizeEmail(from, subject string, headers map[string]string
 		}
 	}
 
-	// Check custom rules (sorted by priority)
+	// Check custom rules (sorted by priority descending)
 	rules := make([]CategoryRule, len(config.Rules))
 	copy(rules, config.Rules)
-	sort.Slice(rules, func(i, j int) bool {
-		return rules[i].Priority > rules[j].Priority
+	slices.SortFunc(rules, func(a, b CategoryRule) int {
+		return cmp.Compare(b.Priority, a.Priority) // descending
 	})
 
 	for _, rule := range rules {

@@ -1,9 +1,10 @@
 package air
 
 import (
+	"cmp"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 	"time"
 )
 
@@ -43,8 +44,8 @@ func (s *Server) handlePendingSends(w http.ResponseWriter, r *http.Request) {
 	s.pendingSendMu.RUnlock()
 
 	// Sort by send time (soonest first)
-	sort.Slice(pending, func(i, j int) bool {
-		return pending[i].SendAt < pending[j].SendAt
+	slices.SortFunc(pending, func(a, b PendingSend) int {
+		return cmp.Compare(a.SendAt, b.SendAt)
 	})
 
 	writeJSON(w, http.StatusOK, map[string]any{
