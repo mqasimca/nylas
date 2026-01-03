@@ -117,9 +117,23 @@ internal/cli/<feature>/
 
 ---
 
-## Air (Web UI)
+## User Interfaces
 
-**Air** is the web-based UI for Nylas CLI, providing a browser interface for email, calendar, and productivity features.
+The CLI provides three different interfaces:
+
+| Interface | Command | Port | Purpose | Location |
+|-----------|---------|------|---------|----------|
+| **TUI** | `nylas tui` | N/A | Terminal-based email/calendar client | `internal/tui/` |
+| **UI** | `nylas ui` | 7363 | Web-based CLI configuration tool | `internal/cli/ui/` |
+| **Air** | `nylas air` | 7365 | Full web-based email/calendar client | `internal/air/` |
+
+> **Which to use?** TUI for terminal lovers, Air for browser-based email client, UI for API credential setup.
+
+---
+
+## Air (Web Email Client)
+
+**Air** is a full-featured web-based email client for Nylas CLI, providing browser interface for email, calendar, and productivity features.
 
 ### Architecture
 

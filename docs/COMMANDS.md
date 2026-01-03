@@ -278,12 +278,12 @@ nylas tui                        # Launch interactive UI
 
 ---
 
-## Web UI
+## Web UI (`nylas ui`)
 
-Launch a local web interface for managing Nylas CLI:
+Launch a lightweight web interface for CLI configuration and command execution:
 
 ```bash
-nylas ui                         # Start on default port (3000)
+nylas ui                         # Start on default port (7363)
 nylas ui --port 8080             # Custom port
 nylas ui --no-browser            # Don't auto-open browser
 ```
@@ -300,13 +300,17 @@ nylas ui --no-browser            # Don't auto-open browser
 - Command whitelist prevents arbitrary execution
 - Shell injection protection
 
-**URL:** `http://localhost:3000` (default)
+**URL:** `http://localhost:7363` (default)
+
+> **Note:** For a full email client experience, use `nylas air` instead (see below).
 
 ---
 
-## Air (Modern Email Client)
+## Air (`nylas air`) - Modern Email Client
 
-Launch **Nylas Air** - a modern, keyboard-driven email client that runs in your browser:
+Launch **Nylas Air** - a full-featured, keyboard-driven email client in your browser:
+
+> **vs `nylas ui`:** Air is a complete email/calendar client. UI is for CLI configuration only.
 
 ```bash
 nylas air                        # Start on default port (7365)
