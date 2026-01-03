@@ -1,6 +1,6 @@
 ---
 name: mistake-learner
-description: Analyzes mistakes and updates CLAUDE.md with abstracted learnings
+description: Analyzes mistakes and updates CLAUDE.md with abstracted learnings. MUST BE USED when errors are caught or mistakes identified.
 tools: Read, Edit, Grep, Glob, Bash(git diff:CLAUDE.md), Bash(git status:*)
 model: sonnet
 parallelization: serial_only
@@ -30,6 +30,24 @@ When a mistake is identified, you:
 1. Understand what went wrong
 2. Abstract the pattern (not just the specific instance)
 3. Add a learning entry to CLAUDE.md
+
+## Auto-Invocation Triggers
+
+This agent should be invoked automatically when:
+- Build fails due to code error
+- Test fails unexpectedly
+- Linting catches an issue
+- User says "that was wrong" or "mistake"
+- Code reviewer finds critical issue
+- Hook blocks an action
+
+**Trigger phrases in main conversation:**
+- "That's not right"
+- "This is wrong"
+- "Bug found"
+- "Error in..."
+- "Mistake:"
+- "/correct"
 
 ## Process
 

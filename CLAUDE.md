@@ -77,131 +77,41 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 **Standard pattern for all features:**
 
-| Layer | Location | Example |
-|-------|----------|---------|
-| CLI | `internal/cli/<feature>/` | `internal/cli/email/` |
-| Adapter | `internal/adapters/nylas/<feature>.go` | `internal/adapters/nylas/messages.go` |
-| Domain | `internal/domain/<feature>.go` | `internal/domain/message.go` |
-| Tests | `internal/cli/integration/<feature>_test.go` | `internal/cli/integration/email_test.go` |
+| Layer | Location |
+|-------|----------|
+| CLI | `internal/cli/<feature>/` |
+| Adapter | `internal/adapters/nylas/<feature>.go` |
+| Domain | `internal/domain/<feature>.go` |
+| Tests | `internal/cli/integration/<feature>_test.go` |
 
 **Core files:**
-- `cmd/nylas/main.go` - Entry point, register commands
+- `cmd/nylas/main.go` - Entry point
 - `internal/ports/nylas.go` - Interface contract
 - `internal/adapters/nylas/client.go` - HTTP client
-- `internal/domain/config.go` - Configuration (working hours, breaks)
-
-**MCP files:**
-- `internal/cli/mcp/` - CLI commands (install, serve, status, uninstall)
-- `internal/adapters/mcp/proxy.go` - MCP proxy server
-- `internal/adapters/mcp/proxy_response.go` - Response handling helpers
-
-**Air files (Web UI):**
-- `internal/air/` - HTTP server, handlers, templates (all files ≤500 lines)
-- `internal/air/query_helpers.go` - Query parameter parsing utilities
-
-**Air CSS (refactored for maintainability):**
-```
-internal/air/static/css/
-  ├── main.css                 # Core styles and imports
-  ├── accessibility-*.css      # Accessibility (core, aria)
-  ├── calendar-*.css           # Calendar (grid, modal)
-  ├── components-*.css         # UI components (account, skeleton, ui)
-  ├── contacts-*.css           # Contacts (list, modal)
-  ├── features-*.css           # Features (ui, widgets)
-  ├── productivity-*.css       # Productivity (send, ui)
-  └── settings-*.css           # Settings (ai, modal, notetaker)
-```
-
-**Server Core:** `server*.go` - Split by responsibility (lifecycle, stores, sync, offline, converters, templates)
-
-**Handler Groups:** All handlers follow `handlers_<feature>*.go` pattern (61 files), split by responsibility:
-  - `handlers_email*.go`, `handlers_drafts.go` - Email operations
-  - `handlers_calendar*.go`, `handlers_events.go` - Calendar/events
-  - `handlers_contacts*.go` (4 files) - Contact CRUD, search, helpers
-  - `handlers_ai_*.go` (6 files) - AI features (complete, config, smart, summarize, thread, types)
-  - `handlers_scheduled_send.go`, `handlers_undo_send.go` - Send scheduling
-  - `handlers_templates*.go` (2 files) - Email templates
-  - `handlers_snooze_*.go` (3 files) - Snooze (handlers, parser, types)
-  - `handlers_splitinbox_*.go` (3 files) - Split inbox (categorize, config, types)
-  - `handlers_reply_later.go` - Reply later feature
-  - `handlers_analytics.go` - Analytics tracking
-  - `handlers_focus_mode.go` - Focus mode
-  - `handlers_read_receipts.go` - Read receipts
-  - `handlers_screener.go` - Email screener
-  - `handlers_notetaker.go` - Notetaker feature
-  - `handlers_availability.go`, `handlers_bundles.go`, `handlers_cache.go`, `handlers_config.go` - Other features
-
-**Integration Tests:** `integration_*_test.go` - Split by feature (core, email, calendar, contacts, cache, ai, middleware, productivity, bundles)
-
-**CLI Commands (19 directories in internal/cli/):**
-| Directory | Files | Purpose |
-|-----------|-------|---------|
-| `admin/` | 6 | Applications, connectors, credentials, grants |
-| `ai/` | 6 | Budget, usage, config, clear_data |
-| `auth/` | 22 | Login, logout, add, remove, status, switch, whoami |
-| `calendar/` | 35 | Events, availability, conflicts, focus time, AI scheduling |
-| `common/` | 16 | Client, errors, format, logger, pagination, progress |
-| `contacts/` | 13 | CRUD, groups, photos, sync |
-| `demo/` | 19 | Interactive demos for all features |
-| `email/` | 20 | CRUD, AI, drafts, attachments, threads |
-| `inbound/` | 9 | Inbound email handling |
-| `integration/` | 49 | Integration tests split by feature |
-| `mcp/` | 7 | Install, serve, status, uninstall, assistants |
-| `notetaker/` | 8 | CRUD, media management |
-| `otp/` | 7 | OTP/SMS operations |
-| `scheduler/` | 6 | Bookings, configurations, pages |
-| `slack/` | 9 | Channels, messages, users, send, reply, search |
-| `timezone/` | 10 | Convert, DST, find, info |
-| `ui/` | 15 | UI server commands |
-| `update/` | 5 | CLI update commands |
-| `webhook/` | 11 | Webhook commands |
 
 **CLI pattern:**
 ```
 internal/cli/<feature>/
   ├── <feature>.go    # Main command
-  ├── list.go         # List subcommand
-  ├── create.go       # Create subcommand
-  ├── update.go       # Update subcommand
-  ├── delete.go       # Delete subcommand
-  └── helpers.go      # Shared helpers
+  ├── list.go         # Subcommands
+  └── helpers.go      # Shared utilities
 ```
 
-**Adapter Directories (12 in internal/adapters/):**
-| Adapter | Files | Purpose |
-|---------|-------|---------|
-| `ai/` | 18 | AI clients (Claude, OpenAI, Groq, Ollama), email analyzer, pattern learner |
-| `analytics/` | 14 | Focus optimizer, conflict resolver, meeting scorer |
-| `browser/` | 2 | Browser automation |
-| `config/` | 5 | Configuration validation |
-| `keyring/` | 6 | Credential storage (file, grants) |
-| `mcp/` | 7 | MCP proxy server |
-| `nylas/` | 85 | Nylas API client (main adapter) |
-| `oauth/` | 3 | OAuth server |
-| `slack/` | 9 | Slack API client (channels, messages, users, search) |
-| `tunnel/` | 2 | Cloudflare tunnel |
-| `utilities/` | 12 | Services (contacts, email, scheduling, timezone, webhook) |
-| `webhookserver/` | 2 | Webhook server |
+**Quick lookup:**
+| Looking for | Location |
+|-------------|----------|
+| CLI helpers (context, config, colors) | `internal/cli/common/` |
+| HTTP client | `internal/adapters/nylas/client.go` |
+| AI clients (Claude, OpenAI, Groq) | `internal/adapters/ai/` |
+| MCP server | `internal/adapters/mcp/` |
+| Slack adapter | `internal/adapters/slack/` |
+| Air web UI (port 7365) | `internal/air/` |
+| UI web interface (port 7363) | `internal/cli/ui/` |
+| TUI terminal interface | `internal/tui/` |
+| Integration test helpers | `internal/cli/integration/helpers_test.go` |
+| Air integration tests | `internal/air/integration_*_test.go` |
 
-**Nylas Adapter (heavily refactored):**
-- `messages.go`, `messages_send.go` - Message operations
-- `calendars_*.go` (5 files) - Calendar operations (calendars, converters, events, types, virtual)
-- `demo/` subdir (16 files) - Demo client for screenshots
-- `mock_*.go` (16 files) - Split mock implementations
-
-**AI Adapter (refactored):**
-- `*_client.go` - AI clients (base, claude, openai, groq, ollama)
-- `email_analyzer_core.go`, `email_analyzer_prompts.go` - Email analyzer
-- `pattern_learner.go`, `pattern_learner_analysis.go` - Pattern learning
-
-**Analytics Adapter (new):**
-- `focus_optimizer_*.go` (3 files) - Focus time optimization
-- `pattern_learner_*.go` (2 files) - Meeting pattern learning
-- `conflict_resolver.go`, `meeting_scorer.go` - Conflict detection
-
-**TUI (Terminal UI):**
-- `internal/tui/` - tview-based TUI (77 files: commands, compose, views)
-- **Themes:** k9s, amber, green, apple2, vintage, ibm, futuristic, matrix, norton
+**Full inventory:** `docs/ARCHITECTURE.md`
 
 ---
 
@@ -229,46 +139,11 @@ internal/cli/<feature>/
 
 ## Testing
 
-### 🚀 Primary Command (Recommended)
-```bash
-make ci-full   # Complete CI pipeline:
-               # • All code quality checks (fmt, vet, lint, vuln, security)
-               # • All unit tests (test-unit, test-race)
-               # • All integration tests (CLI + Air)
-               # • Automatic cleanup of test resources
-               # • Output saved to ci-full.txt
-```
+**Command:** `make ci-full` (complete CI: quality + tests + cleanup)
 
-### Granular Testing (When Needed)
-
-**Unit Tests:**
-```bash
-make test-unit                   # Run unit tests (-short)
-make test-race                   # Run with race detector
-make test-coverage               # Generate coverage report
-go test ./internal/cli/email/... # Test specific package
-```
-
-**Integration Tests:**
-```bash
-make test-integration            # CLI integration tests
-make test-integration-fast       # Fast tests (skip LLM)
-make test-air-integration        # Air web UI integration tests
-```
-
-**Cleanup:**
-```bash
-make test-cleanup                # Clean up test resources
-                                 # (emails, events, grants)
-```
-
-**Location:**
-- CLI integration tests: `internal/cli/integration/`
-- Air integration tests: `internal/air/integration_*.go`
+**Quick checks:** `make ci` (no integration tests)
 
 **Details:** `.claude/rules/testing.md`
-
-**Shared test patterns:** `.claude/shared/patterns/`
 
 ---
 
@@ -291,78 +166,22 @@ Hooks run automatically to enforce quality:
 
 ## Useful Commands
 
-| Command | What It Does |
-|---------|--------------|
-| `/session-start` | Load context from previous sessions |
-| `/add-command` | Add new CLI command |
-| `/generate-tests` | Generate tests for code |
-| `/fix-build` | Fix build errors |
-| `/run-tests` | Run unit/integration tests |
-| `/security-scan` | Security audit |
-| `/correct "desc"` | Capture mistake for learning |
-| `/diary` | Save session learnings |
+**Essential:** `/session-start`, `/run-tests`, `/correct "desc"`, `/diary`
 
-**Full command list:** See `CLAUDE-QUICKSTART.md`
+**Development:** `/add-command`, `/generate-tests`, `/fix-build`, `/security-scan`
+
+**Full list:** `CLAUDE-QUICKSTART.md`
 
 ---
 
 ## Subagent Parallelization
 
-Use parallel agents to explore or review the 745-file codebase without exhausting context.
+**Guide:** `.claude/agents/README.md`
 
-### When to Use Parallel Agents
-
-| Task | Agents | Why |
-|------|--------|-----|
-| Full codebase exploration | 5 | One per major directory |
-| Feature search | 4 | Search cli, adapters, air, tui simultaneously |
-| Multi-file PR review | 4 | Review different files in parallel |
-| Test coverage analysis | 4 | Analyze different packages |
-
-### Invocation Patterns
-
-```
-# Full exploration (4 agents)
-"Explore using 4 parallel agents:
- - Agent 1: internal/cli/
- - Agent 2: internal/adapters/
- - Agent 3: internal/air/
- - Agent 4: internal/domain/ + ports/ + tui/"
-
-# Feature search (4 agents)
-"Find all email-related code using 4 agents across cli, adapters, air, tui"
-
-# PR review (4 agents)
-"Review these 8 files using 4 parallel code-reviewer agents"
-```
-
-### Directory Parallelization Value
-
-| Directory | Files | Parallel Value |
-|-----------|-------|----------------|
-| `internal/cli/` | 268 | HIGH |
-| `internal/adapters/` | 158 | HIGH |
-| `internal/air/` | 117 | HIGH |
-| `internal/tui/` | 77 | MEDIUM |
-| `internal/domain/` | 21 | LOW (shared) |
-
-### Safe vs Unsafe
-
-**✅ SAFE:** Explore, review, search across different directories
-**❌ AVOID:** Write to same file, modify domain/ or ports/nylas.go, parallel integration tests
-
-### Existing Agents for Parallel Use
-
-| Agent | Parallel Use |
-|-------|--------------|
-| `codebase-explorer` | ✅ Spawn 4-5 for large searches |
-| `code-reviewer` | ✅ Review different files |
-| `test-writer` | ⚠️ Different packages only |
-| `code-writer` | ⚠️ Disjoint files only |
-
-### Key Benefit
-
-Parallel agents have **isolated context windows** - prevents "dumb Claude mid-session" when exploring large codebases.
+**Quick reference:**
+- Safe: `codebase-explorer`, `code-reviewer` (spawn 4-5 for large tasks)
+- Limited: `code-writer`, `test-writer` (disjoint files only)
+- Serial: `mistake-learner` (runs alone)
 
 ---
 

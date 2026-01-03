@@ -115,6 +115,22 @@ Your AI-powered development assistant with self-learning capabilities.
 | `/parallel-explore` | Explore codebase with 4-5 parallel agents | Large codebase search, cross-layer feature discovery |
 | `/parallel-review` | Review code with parallel reviewer agents | Large PRs, multi-file reviews |
 
+**Parallel Explore Details:**
+
+```bash
+# Basic usage - searches all layers
+/parallel-explore "email sending functionality"
+
+# Spawns 4-5 codebase-explorer agents across:
+# - internal/cli/      (commands, flags)
+# - internal/adapters/ (API integrations)
+# - internal/air/      (web UI handlers)
+# - internal/tui/      (terminal UI)
+# - internal/domain/   (core types)
+```
+
+Each agent uses thoroughness levels (quick/medium/thorough) and consolidates results by layer.
+
 ---
 
 ## Specialized Agents
@@ -132,15 +148,19 @@ Expertise:
 - Go Templates: .gohtml partials, semantic HTML
 ```
 
-### codebase-explorer (Sonnet)
+### codebase-explorer (Haiku)
 **Best for:** Fast codebase exploration without coding
 
 ```
+Thoroughness Levels:
+- quick:    1-2 searches, 1-2 files, 50 words  (targeted lookups)
+- medium:   3-5 searches, 3-5 files, 150 words (default)
+- thorough: Exhaustive, 10+ files, 300 words   (deep dives)
+
 Use for:
 - Finding where functionality is implemented
 - Understanding code patterns
 - Answering "where is X?" questions
-- Returns concise summaries (<200 words)
 ```
 
 ### test-writer (Opus)

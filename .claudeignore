@@ -71,6 +71,9 @@ plan.md
 AI_plan.md
 *.plan.md
 
+# Detailed test patterns (load on-demand when writing tests)
+.claude/shared/patterns/
+
 # Git-related files not needed for coding
 .github/workflows/
 .github/ISSUE_TEMPLATE/

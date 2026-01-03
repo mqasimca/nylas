@@ -1,9 +1,10 @@
 ---
 name: code-writer
-description: Expert polyglot code writer for Go, JavaScript, and CSS. Writes production-ready code following project patterns.
+description: Expert polyglot code writer for Go, JavaScript, and CSS. Writes production-ready code following project patterns. Use PROACTIVELY for implementation tasks.
 tools: Read, Write, Edit, Grep, Glob, Bash(go build:*), Bash(go fmt:*), Bash(go vet:*), Bash(golangci-lint:*), Bash(wc -l:*)
-model: opus
+model: sonnet
 parallelization: limited
+scope: internal/cli/*, internal/adapters/*, internal/domain/*, internal/ports/*
 ---
 
 # Code Writer Agent
@@ -85,14 +86,48 @@ internal/cli/{feature}/
 
 ---
 
+## Pre-Flight Check (BEFORE Writing)
+
+Before creating ANY new function, search for existing implementations:
+
+```bash
+# Search for similar function names
+Grep: "func.*<YourFunctionName>"
+
+# Search for similar patterns
+Grep: "<key operation you need>"
+
+# Check common helpers (MUST READ)
+Read: internal/cli/common/
+Read: internal/adapters/nylas/client.go  # HTTP helpers: doJSONRequest, decodeJSONResponse
+```
+
+**If similar code exists:** Reuse or extend it. Do NOT create duplicate.
+
+---
+
 ## Workflow
 
-1. **Understand the request** - What exactly needs to be built?
-2. **Find similar code** - Use Grep/Glob to find existing patterns
-3. **Read the patterns** - Understand how existing code works
-4. **Plan the structure** - Which files need creation/modification?
-5. **Write incrementally** - One logical unit at a time
-6. **Verify with tools** - Run go build, go vet, go fmt
+1. **Pre-flight check** - Search for existing similar code (see above)
+2. **Understand the request** - What exactly needs to be built?
+3. **Find patterns** - Use Grep/Glob to find existing patterns to match
+4. **Read the patterns** - Understand how existing code works
+5. **Plan the structure** - Which files need creation/modification?
+6. **Write incrementally** - One logical unit at a time
+7. **Verify with tools** - Run go build, go vet, go fmt
+
+### Pipeline Position
+
+This agent is the **implementer** in the development pipeline:
+
+```
+[codebase-explorer] → [code-writer] → [test-writer] → [code-reviewer]
+     research          implement         test            review
+```
+
+**Handoff signals:**
+- Receive: Research complete from exploration
+- Emit: Implementation complete, ready for tests
 
 ---
 
@@ -117,6 +152,28 @@ golangci-lint run       # Should be clean
 
 ---
 
+## Common Duplicates to Avoid
+
+These patterns have been duplicated before - ALWAYS check first:
+
+| Pattern | Already Exists In |
+|---------|-------------------|
+| Context creation for CLI | `common.CreateContext()` |
+| Config store retrieval | `common.GetConfigStore(cmd)` |
+| Color formatting | `common.Bold`, `common.Cyan`, `common.Green`, etc. |
+| JSON API requests (POST/PUT/PATCH) | `c.doJSONRequest(ctx, method, url, body)` |
+| Response decoding | `c.decodeJSONResponse(resp, &result)` |
+| Field validation | `validateRequired("fieldName", value)` |
+| Grant validation in Air | `s.requireDefaultGrant(w)` |
+| Pagination handling | `common.FetchAllPages[T]()` |
+| Error formatting for CLI | `common.WrapError(err)` or wrap with `fmt.Errorf` |
+| Retry with backoff | `common.WithRetry(ctx, config, fn)` |
+| Progress indicators | `common.NewSpinner()`, `NewProgressBar()` |
+
+**Rule:** If you're about to write something from this table, STOP and use the existing helper.
+
+---
+
 ## Output Format
 
 After writing code, report:
@@ -137,17 +194,91 @@ After writing code, report:
 
 ---
 
-## Project-Specific Helpers (USE THESE)
+## Helper Function Philosophy
 
-Before writing code, check if these helpers exist:
+**ALWAYS create helper functions when:**
+- Pattern repeats 2+ times across files
+- Operation is complex (>5 lines) and reusable
+- Similar logic exists but with slight variations (parameterize it)
 
-| Pattern | Use This Helper | Location |
-|---------|-----------------|----------|
-| `context.WithTimeout(context.Background(), 30*time.Second)` | `common.CreateContext()` | `internal/cli/common/context.go` |
-| `cmd.Flags().GetString("config")` + parent walk | `common.GetConfigStore(cmd)` | `internal/cli/common/config.go` |
-| `grantStore.GetDefaultGrant()` + error check | `s.requireDefaultGrant(w)` | `internal/air/server_stores.go` |
-| `map[string]interface{}` | `map[string]any` | Go 1.18+ built-in |
-| `os.MkdirAll(path, 0755)` | `os.MkdirAll(path, 0750)` | G301 security rule |
+**Before writing a helper:**
+1. Search `internal/cli/common/` - likely already exists
+2. Search `internal/adapters/nylas/client.go` - HTTP helpers exist
+3. Search the specific feature directory - local helpers may exist
+
+**After creating a helper:**
+1. Place in appropriate location (see table below)
+2. Add unit test
+3. Update this document if broadly useful
+
+| Helper Type | Location |
+|-------------|----------|
+| CLI-wide utilities | `internal/cli/common/` |
+| HTTP/API helpers | `internal/adapters/nylas/client.go` |
+| Feature-specific | `internal/cli/{feature}/helpers.go` |
+| Air web UI | `internal/air/server_helpers.go` |
+
+---
+
+## Complete Helper Reference (USE THESE)
+
+### CLI Common Helpers (`internal/cli/common/`)
+
+| Category | Helper | Purpose |
+|----------|--------|---------|
+| **Context** | `CreateContext()` | Standard API timeout context |
+| **Context** | `CreateContextWithTimeout(d)` | Custom timeout context |
+| **Config** | `GetConfigStore(cmd)` | Get config store from command |
+| **Config** | `GetConfigPath(cmd)` | Get config file path |
+| **Client** | `GetNylasClient()` | Get configured API client |
+| **Client** | `GetAPIKey()` | Get API key from env/config |
+| **Client** | `GetGrantID(args)` | Get grant ID from args/env |
+| **Colors** | `Bold`, `Dim`, `Cyan`, `Green`, `Yellow`, `Red`, `Blue`, `BoldWhite` | Terminal colors |
+| **Errors** | `WrapError(err)` | Wrap error with CLI context |
+| **Errors** | `FormatError(err)` | Format error for display |
+| **Errors** | `NewUserError(msg, suggestion)` | Create user-facing error |
+| **Errors** | `NewInputError(msg)` | Create input validation error |
+| **Format** | `NewFormatter(format)` | JSON/YAML/CSV output |
+| **Format** | `NewTable(headers...)` | Create display table |
+| **Format** | `PrintSuccess/Error/Warning/Info` | Colored output |
+| **Format** | `Confirm(prompt, default)` | Y/N confirmation |
+| **Pagination** | `FetchAllPages[T](ctx, config, fetcher)` | Paginated API calls |
+| **Pagination** | `FetchAllWithProgress[T](...)` | With progress indicator |
+| **Progress** | `NewSpinner(msg)` | Loading spinner |
+| **Progress** | `NewProgressBar(total, msg)` | Progress bar |
+| **Progress** | `NewCounter(msg)` | Item counter |
+| **Retry** | `WithRetry(ctx, config, fn)` | Retry with backoff |
+| **Retry** | `IsRetryable(err)` | Check if error is retryable |
+| **Retry** | `IsRetryableStatusCode(code)` | Check HTTP status |
+| **Time** | `FormatTimeAgo(t)` | "2 hours ago" format |
+| **Time** | `ParseTimeOfDay(s)` | Parse "3:30 PM" |
+| **Time** | `ParseDuration(s)` | Parse "2h30m" |
+| **String** | `Truncate(s, maxLen)` | Truncate with ellipsis |
+| **Path** | `ValidateExecutablePath(path)` | Validate executable |
+| **Path** | `FindExecutableInPath(name)` | Find in PATH |
+| **Path** | `SafeCommand(name, args...)` | Create safe exec.Cmd |
+| **Logger** | `Debug/Info/Warn/Error(msg, args...)` | Structured logging |
+| **Logger** | `DebugHTTP(method, url, status, dur)` | HTTP request logging |
+
+### HTTP Client Helpers (`internal/adapters/nylas/client.go`)
+
+| Helper | Purpose |
+|--------|---------|
+| `c.doJSONRequest(ctx, method, url, body, statuses...)` | JSON API request with error handling |
+| `c.doJSONRequestNoAuth(ctx, method, url, body, statuses...)` | JSON request without auth (token exchange) |
+| `c.decodeJSONResponse(resp, v)` | Decode response body to struct |
+| `validateRequired(fieldName, value)` | Validate required string field |
+| `validateGrantID(grantID)` | Validate grant ID not empty |
+| `validateCalendarID(calendarID)` | Validate calendar ID not empty |
+| `validateMessageID(messageID)` | Validate message ID not empty |
+| `validateEventID(eventID)` | Validate event ID not empty |
+
+### Air Web Helpers (`internal/air/`)
+
+| Helper | Purpose | Location |
+|--------|---------|----------|
+| `s.requireDefaultGrant(w)` | Validate grant exists | `server_stores.go` |
+| `ParseBool(r, param)` | Parse bool query param | `query_helpers.go` |
 
 ---
 
@@ -183,4 +314,6 @@ Before writing code, check if these helpers exist:
 5. **Never skip error handling** - Every error must be handled
 6. **Never use interface{}** - Use `any` instead (Go 1.18+)
 7. **Never use 0755 for directories** - Use `0750` (G301 security)
-8. **Never duplicate helpers** - Check `internal/cli/common/` first
+8. **Never duplicate helpers** - Check `internal/cli/common/` and `client.go` first
+9. **Always create helpers** - If pattern repeats 2+ times, extract to helper function
+10. **Always add tests for helpers** - New helpers require unit tests
