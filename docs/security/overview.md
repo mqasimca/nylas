@@ -2,7 +2,7 @@
 
 Secure credential storage and best practices for the Nylas CLI.
 
-> **Quick Links:** [README](../README.md) | [Commands](COMMANDS.md) | [Development](DEVELOPMENT.md)
+> **Quick Links:** [README](../../README.md) | [Commands](../COMMANDS.md) | [Development](../DEVELOPMENT.md)
 
 ---
 

@@ -2,7 +2,7 @@
 
 Comprehensive guide to data privacy and security when using AI features in the Nylas CLI.
 
-> **Quick Links:** [AI Overview](../AI.md) | [Configuration](configuration.md) | [Providers](providers.md)
+> **Quick Links:** [AI Overview](../commands/ai.md) | [Configuration](configuration.md) | [Providers](providers.md)
 
 ---
 
@@ -304,7 +304,7 @@ Contact the provider about their data deletion policies. Consider rotating any e
 ---
 
 **See also:**
-- [AI Overview](../AI.md)
+- [AI Overview](../commands/ai.md)
 - [AI Configuration](configuration.md)
 - [AI Providers](providers.md)
 - [Security Practices](../security/practices.md)

@@ -82,6 +82,10 @@ Quick navigation guide to find the right documentation for your needs.
 - **AI providers** → [ai/providers.md](ai/providers.md)
 - **AI privacy** → [ai/privacy-security.md](ai/privacy-security.md)
 - **AI best practices** → [ai/best-practices.md](ai/best-practices.md)
+- **AI architecture** → [ai/architecture.md](ai/architecture.md)
+- **AI features list** → [ai/features.md](ai/features.md)
+- **AI FAQ** → [ai/faq.md](ai/faq.md)
+- **AI troubleshooting** → [ai/troubleshooting.md](ai/troubleshooting.md)
 
 ### Development Guides
 

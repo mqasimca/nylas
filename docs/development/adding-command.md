@@ -612,7 +612,7 @@ See `internal/cli/email/` for a complete, production-ready example of CRUD opera
 
 ## More Resources
 
-- **Architecture:** [ARCHITECTURE.md](../../ARCHITECTURE.md)
+- **Architecture:** [ARCHITECTURE.md](../ARCHITECTURE.md)
 - **Testing Guide:** [testing-guide.md](testing-guide.md)
-- **Code Style:** [../CONTRIBUTING.md](../../CONTRIBUTING.md)
+- **Code Style:** [CONTRIBUTING.md](../../CONTRIBUTING.md)
 - **Cobra Docs:** https://github.com/spf13/cobra

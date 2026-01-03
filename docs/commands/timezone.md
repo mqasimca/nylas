@@ -435,10 +435,10 @@ Parser supports: `"in 2 hours"`, `"tomorrow at 3pm"`, `"next Tuesday 2pm"`, `"De
 
 ## Related Documentation
 
-- **[Command Reference](COMMANDS.md)** - Quick command reference with examples
-- **[AI Features](AI.md)** - AI-powered scheduling and timezone-aware features
+- **[Command Reference](../COMMANDS.md)** - Quick command reference with examples
+- **[AI Features](ai.md)** - AI-powered scheduling and timezone-aware features
+- **[Calendar Guide](calendar.md)** - Calendar events with timezone support
 - **[TUI Guide](tui.md)** - Interactive terminal interface
-- **[Webhooks Guide](commands/webhooks.md)** - Webhook testing and development
 
 ---
 
