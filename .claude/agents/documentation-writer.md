@@ -107,276 +107,31 @@ You maintain documentation for a public Go CLI repository. Good docs are critica
 
 ## Documentation Standards
 
-### Writing Style
+**Full standards:** See `references/doc-standards.md` for writing style, formatting, and patterns.
 
-| Principle | Example |
-|-----------|---------|
-| **Active voice** | "Run `nylas email list`" not "The command can be run" |
-| **Imperative mood** | "Configure the API key" not "You should configure" |
-| **Concise** | Remove filler words (just, simply, basically) |
-| **Scannable** | Use tables, bullets, code blocks |
-| **Example-driven** | Show don't tell - include runnable examples |
+**Key principles:**
+- Active voice, imperative mood, concise
+- Tables, bullets, code blocks for scannability
+- Example-driven - show don't tell
 
-### Formatting Rules
+**Quality checklist:**
+- [ ] Accurate - matches code behavior
+- [ ] Examples tested and working
+- [ ] Links valid
+- [ ] Consistent style
 
-```markdown
-# H1 - Document title only (one per file)
-## H2 - Major sections
-### H3 - Subsections
-#### H4 - Rarely needed
-
-**Bold** for emphasis, UI elements, important terms
-`code` for commands, flags, file paths, code references
-> Blockquotes for notes, warnings, tips
-
-| Tables | For | Structured | Data |
-|--------|-----|------------|------|
-```
-
-### Code Block Standards
-
-```bash
-# Always include language identifier
-nylas email list --limit 10
-
-# Show expected output when helpful
-# Output:
-# ID                    Subject                  From
-# abc123               Meeting Tomorrow          alice@example.com
-```
-
-### Command Documentation Pattern
-
-```markdown
-## Command Name
-
-Brief description of what it does.
-
-### Usage
-
-\`\`\`bash
-nylas <resource> <action> [flags]
-\`\`\`
-
-### Flags
-
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--format` | `-f` | Output format (json, table, csv) | table |
-| `--limit` | `-l` | Maximum results | 50 |
-
-### Examples
-
-\`\`\`bash
-# Basic usage
-nylas email list
-
-# With filters
-nylas email list --from "alice@example.com" --limit 10
-
-# JSON output for scripting
-nylas email list --format json | jq '.[] | .subject'
-\`\`\`
-
-### Related Commands
-
-- `nylas email show` - View single email
-- `nylas email send` - Send new email
-```
-
----
-
-## Quality Checklist
-
-### Before Submitting Doc Changes
-
-- [ ] **Accurate** - Matches current code behavior
-- [ ] **Complete** - All flags, options, behaviors documented
-- [ ] **Examples work** - Tested the code examples
-- [ ] **Links valid** - No broken internal/external links
-- [ ] **Consistent** - Follows existing style and patterns
-- [ ] **Spell-checked** - No typos
-- [ ] **TOC updated** - If document has table of contents
-
-### Public Repo Standards
-
-- [ ] **No internal references** - No internal URLs, team names, or private info
-- [ ] **No TODO placeholders** - Complete or remove
-- [ ] **No WIP sections** - Either complete or remove
-- [ ] **Inclusive language** - No exclusionary terms
-- [ ] **Accessible** - Alt text for images, semantic headers
-
----
-
-## Common Patterns
-
-### Adding a New Command (Two-Level)
-
-**Step 1: Quick Reference** (`docs/COMMANDS.md`)
-```markdown
-## Feature Name
-
-\`\`\`bash
-nylas feature action --key-flag VALUE    # Brief description
-nylas feature other --flag VALUE         # Another action
-\`\`\`
-
-**Details:** \`docs/commands/feature.md\`
-```
-
-**Step 2: Detailed Docs** (`docs/commands/feature.md`)
-```markdown
-## Feature Operations
-
-Full description of the feature and its capabilities.
-
-### Action Name
-
-\`\`\`bash
-nylas feature action [grant-id]           # Basic usage
-nylas feature action --flag1 VALUE        # With option
-nylas feature action --flag2 --flag3      # Multiple flags
-\`\`\`
-
-**Example output:**
-\`\`\`bash
-$ nylas feature action --flag1 "test"
-
-Feature Results
-─────────────────────────────────────────────────────
-  Name: Example Item
-  ID: item_abc123
-  Status: active
-
-Found 1 item
-\`\`\`
-
-### Another Action
-
-[Continue pattern for each subcommand...]
-```
-
-### Adding to Existing Command
-
-1. **COMMANDS.md** - Add brief mention under existing section:
-   ```markdown
-   ### nylas <resource> <action>
-
-   Description.
-
-   | Flag | Description |
-   |------|-------------|
-   | ... | ... |
-
-   **Example:**
-   \`\`\`bash
-   nylas <resource> <action> --flag value
-   \`\`\`
-   ```
-
-2. **README.md** - Add to features list if major feature
-
-3. **EXAMPLES.md** - Add workflow example if complex
-
-### Documenting Breaking Changes
-
-```markdown
-## Breaking Changes in vX.Y.Z
-
-### `nylas command` flag renamed
-
-**Before:**
-\`\`\`bash
-nylas command --old-flag value
-\`\`\`
-
-**After:**
-\`\`\`bash
-nylas command --new-flag value
-\`\`\`
-
-**Migration:** Update scripts to use `--new-flag`.
-```
-
-### Adding Troubleshooting Entry
-
-```markdown
-### Error: "specific error message"
-
-**Cause:** Explanation of why this happens.
-
-**Solution:**
-1. Step one
-2. Step two
-
-\`\`\`bash
-# Fix command
-nylas auth login
-\`\`\`
-```
+**Patterns:** See `references/doc-standards.md` for command patterns, breaking changes, troubleshooting entries.
 
 ---
 
 ## Workflow
 
-### After Code Changes
-
 1. **Identify affected docs** - Use Update Matrix above
 2. **Read current state** - Understand existing documentation
-3. **Make updates** - Follow standards and patterns
+3. **Make updates** - Follow standards in `references/doc-standards.md`
 4. **Verify examples** - Test any code examples
 5. **Check links** - Ensure no broken references
 6. **Update CHANGELOG** - If user-facing change
-
-### Pre-Release Documentation
-
-1. Review all changed files since last release
-2. Ensure CHANGELOG is complete
-3. Update version numbers in docs
-4. Verify installation instructions
-5. Test quickstart guide
-
----
-
-## Output Format
-
-After documentation updates, report:
-
-```markdown
-## Documentation Updates
-
-### Files Modified
-- `docs/COMMANDS.md` - Added `nylas foo bar` command
-- `README.md` - Updated features list
-
-### Changes Summary
-- New command documented with examples
-- Fixed broken link in ARCHITECTURE.md
-- Updated installation instructions
-
-### Verification
-- [x] Examples tested and working
-- [x] Links verified
-- [x] Spell-checked
-- [x] Consistent with style guide
-
-### Notes
-- [Any special considerations or follow-ups needed]
-```
-
----
-
-## Anti-Patterns
-
-| Don't | Do Instead |
-|-------|------------|
-| Document implementation details | Document behavior and usage |
-| Use internal jargon | Use user-facing terminology |
-| Write walls of text | Use bullets, tables, examples |
-| Leave TODO comments | Complete or remove |
-| Copy code comments as docs | Write user-focused explanation |
-| Document obvious things | Focus on non-obvious behavior |
-| Use passive voice | Use active, imperative voice |
 
 ---
 

@@ -189,4 +189,4 @@ if ('IntersectionObserver' in window) {
 - [ ] No npm dependencies in browser JS
 - [ ] Event delegation for repeated elements
 - [ ] Uses textContent (never innerHTML with user data)
-- [ ] Files under 500 lines
+- [ ] Files ≤500 lines (see `file-size-limits.md`)

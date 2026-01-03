@@ -166,45 +166,9 @@ go test ./... -shuffle=on
 go test ./path/to/package -run TestName -count=10
 ```
 
-## Common Test Patterns in This Codebase
+## Common Test Patterns
 
-### Table-Driven Tests
-```go
-tests := []struct {
-    name    string
-    input   InputType
-    want    OutputType
-    wantErr bool
-}{
-    {"case1", input1, want1, false},
-    {"error case", badInput, nil, true},
-}
-
-for _, tt := range tests {
-    t.Run(tt.name, func(t *testing.T) {
-        got, err := Function(tt.input)
-        if (err != nil) != tt.wantErr {
-            t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-            return
-        }
-        if got != tt.want {
-            t.Errorf("got %v, want %v", got, tt.want)
-        }
-    })
-}
-```
-
-### Mock Setup
-```go
-func TestWithMock(t *testing.T) {
-    mock := &nylas.MockClient{
-        // Configure mock behavior
-    }
-
-    // Use mock in test
-    result, err := FunctionUnderTest(mock, args)
-}
-```
+**See:** `.claude/shared/patterns/go-test-patterns.md` for table-driven tests, mocks, and assertions.
 
 ## Checklist
 

@@ -137,7 +137,7 @@ Each agent uses thoroughness levels (quick/medium/thorough) and consolidates res
 
 Claude has specialized agents for different tasks:
 
-### code-writer (Opus)
+### code-writer (Sonnet)
 **Best for:** Production-ready code in Go, JavaScript, CSS
 
 ```
@@ -145,7 +145,8 @@ Expertise:
 - Go: Hexagonal architecture, error wrapping, table-driven tests
 - JavaScript: Vanilla JS, progressive enhancement, event delegation
 - CSS: BEM naming, CSS custom properties, mobile-first
-- Go Templates: .gohtml partials, semantic HTML
+
+Reference: .claude/agents/references/helper-reference.md
 ```
 
 ### codebase-explorer (Haiku)
@@ -163,20 +164,15 @@ Use for:
 - Answering "where is X?" questions
 ```
 
-### test-writer (Opus)
+### test-writer (Sonnet)
 **Best for:** All test generation (Go + Playwright)
 
 ```
-Go Tests:
-- Table-driven tests with t.Run()
-- Testify assertions (require, assert)
-- Mock structs with function fields
-- Integration tests (rate-limited, parallel)
+Go Tests: Table-driven with t.Run(), testify assertions, rate-limited
+Playwright: Semantic selectors only (getByRole > getByText > getByTestId)
 
-Playwright E2E:
-- Selector priority: getByRole > getByText > getByLabel > getByTestId
-- Air (port 7365) + UI (port 7363) projects
-- NEVER use CSS selectors or XPath
+Patterns: .claude/shared/patterns/go-test-patterns.md
+          .claude/shared/patterns/playwright-patterns.md
 ```
 
 ### frontend-agent (Sonnet)
@@ -199,18 +195,21 @@ Process:
 3. Add to CLAUDE.md LEARNINGS section
 ```
 
-### code-reviewer (Opus)
+### code-reviewer (Sonnet)
 **Best for:** Independent code review for quality
 
 ```
-Checks:
-- Code quality and best practices
-- Potential bugs and edge cases
-- Security issues
-- Performance concerns
+Checks: Quality, bugs, security, performance
+Can run in parallel with other reviewers
 ```
 
-**For deep security analysis:** Use `/security-scan` command
+### security-auditor (Opus)
+**Best for:** Deep security vulnerability analysis
+
+```
+Audits: Secrets, command injection, path traversal, dependencies
+Checklist: .claude/agents/references/security-checklist.md
+```
 
 ---
 
@@ -265,22 +264,19 @@ Triggers:
 
 ---
 
-## Memory System
+## Memory & Context
 
-Claude remembers across sessions:
-
+### Session Continuity
 ```
-~/.claude/memory/
-├── diary/                    # Session learnings
-│   ├── 2025-12-30-session-1.md
-│   └── 2025-12-30-session-2.md
-└── nylas-cli/                # Project-specific memory
+claude-progress.txt           # What's done, in progress, next up (auto-updated)
+~/.claude/memory/diary/       # Session learnings from /diary
 ```
 
-**Project tracking:**
-```
-claude-progress.txt           # What's done, in progress, next up
-```
+### Context Management Tips
+- Use `/mcp` to disable unused MCP servers
+- For large tasks: dump plan to .md, `/clear`, resume
+- Press `#` to quickly update CLAUDE.md during sessions
+- Agents load reference files on-demand (not auto-loaded)
 
 ---
 
@@ -368,11 +364,15 @@ Hard-won knowledge:
 
 | Topic | Authoritative Source |
 |-------|---------------------|
+| Architecture | `docs/ARCHITECTURE.md` |
 | Make targets | `docs/DEVELOPMENT.md` |
-| Test commands | `.claude/commands/run-tests.md` |
-| Coverage goals | `.claude/rules/testing.md` |
-| Rate limiting | `.claude/shared/patterns/integration-test-patterns.md` |
-| Go quality | `.claude/rules/go-quality.md` |
+| Test coverage | `.claude/rules/testing.md` |
+| File size limits | `.claude/rules/file-size-limits.md` |
+| Go test patterns | `.claude/shared/patterns/go-test-patterns.md` |
+| Integration tests | `.claude/shared/patterns/integration-test-patterns.md` |
+| CLI helpers | `.claude/agents/references/helper-reference.md` |
+| Security checklist | `.claude/agents/references/security-checklist.md` |
+| Doc standards | `.claude/agents/references/doc-standards.md` |
 
 ---
 

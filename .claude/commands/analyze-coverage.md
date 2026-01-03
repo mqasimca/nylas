@@ -92,7 +92,9 @@ Focus area: $ARGUMENTS
 
 ## Test Gap Analysis Template
 
-For each uncovered function:
+**Test patterns:** See `.claude/shared/patterns/go-test-patterns.md` for table-driven test templates.
+
+For each uncovered function, document:
 
 ```markdown
 ### Function: `{PackageName}.{FunctionName}`
@@ -104,42 +106,6 @@ For each uncovered function:
 1. Happy path - {description}
 2. Error case - {description}
 3. Edge case - {description}
-
-**Suggested Test:**
-```go
-func Test{FunctionName}(t *testing.T) {
-    tests := []struct {
-        name    string
-        input   {InputType}
-        want    {OutputType}
-        wantErr bool
-    }{
-        {
-            name:  "happy path",
-            input: {validInput},
-            want:  {expectedOutput},
-        },
-        {
-            name:    "error case",
-            input:   {invalidInput},
-            wantErr: true,
-        },
-    }
-
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            got, err := {FunctionName}(tt.input)
-            if (err != nil) != tt.wantErr {
-                t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-                return
-            }
-            if !reflect.DeepEqual(got, tt.want) {
-                t.Errorf("got %v, want %v", got, tt.want)
-            }
-        })
-    }
-}
-```
 ```
 
 ## Common Coverage Issues

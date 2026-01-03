@@ -4,15 +4,15 @@ Quick reference for AI assistants working on this codebase.
 
 ---
 
-## ⛔ CRITICAL RULES - MUST FOLLOW
+## ⛔ CRITICAL RULES - YOU MUST FOLLOW THESE
 
-### NEVER DO:
-- **NEVER run `git commit`** - User will commit changes manually
-- **NEVER run `git push`** - User will push changes manually
+### NEVER DO (IMPORTANT - violations will break the workflow):
+- **NEVER run `git commit`** - User commits manually
+- **NEVER run `git push`** - User pushes manually
 - **NEVER commit secrets** - No API keys, tokens, passwords, .env files
 - **NEVER skip tests** - All changes require passing tests
 - **NEVER skip security scans** - Run `make security` before commits
-- **NEVER create files >600 lines** - Split logically by responsibility (types, helpers, handlers)
+- **NEVER create files >600 lines** - Split by responsibility (see `.claude/rules/file-size-limits.md`)
 
 ### ALWAYS DO (every code change):
 
@@ -75,41 +75,11 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 ## File Structure
 
-**Standard pattern for all features:**
+**Hexagonal layers:** CLI (`internal/cli/`) → Port (`internal/ports/`) → Adapter (`internal/adapters/`)
 
-| Layer | Location |
-|-------|----------|
-| CLI | `internal/cli/<feature>/` |
-| Adapter | `internal/adapters/nylas/<feature>.go` |
-| Domain | `internal/domain/<feature>.go` |
-| Tests | `internal/cli/integration/<feature>_test.go` |
+**Core files:** `cmd/nylas/main.go`, `internal/ports/nylas.go`, `internal/adapters/nylas/client.go`
 
-**Core files:**
-- `cmd/nylas/main.go` - Entry point
-- `internal/ports/nylas.go` - Interface contract
-- `internal/adapters/nylas/client.go` - HTTP client
-
-**CLI pattern:**
-```
-internal/cli/<feature>/
-  ├── <feature>.go    # Main command
-  ├── list.go         # Subcommands
-  └── helpers.go      # Shared utilities
-```
-
-**Quick lookup:**
-| Looking for | Location |
-|-------------|----------|
-| CLI helpers (context, config, colors) | `internal/cli/common/` |
-| HTTP client | `internal/adapters/nylas/client.go` |
-| AI clients (Claude, OpenAI, Groq) | `internal/adapters/ai/` |
-| MCP server | `internal/adapters/mcp/` |
-| Slack adapter | `internal/adapters/slack/` |
-| Air web UI (port 7365) | `internal/air/` |
-| UI web interface (port 7363) | `internal/cli/ui/` |
-| TUI terminal interface | `internal/tui/` |
-| Integration test helpers | `internal/cli/integration/helpers_test.go` |
-| Air integration tests | `internal/air/integration_*_test.go` |
+**Quick lookup:** CLI helpers in `internal/cli/common/`, HTTP in `client.go`, Air at `internal/air/`
 
 **Full inventory:** `docs/ARCHITECTURE.md`
 
@@ -147,154 +117,37 @@ internal/cli/<feature>/
 
 ---
 
-## Quality Hooks
+## Hooks & Commands
 
-Hooks run automatically to enforce quality:
+**Hooks:** Auto-enforce quality (blocks bad code, auto-formats). See `.claude/HOOKS-CONFIG.md`
 
-| Hook | Trigger | Purpose |
-|------|---------|---------|
-| `quality-gate.sh` | Stop | Blocks if Go code fails fmt/vet/lint/tests |
-| `subagent-review.sh` | SubagentStop | Blocks if subagent finds critical issues |
-| `pre-compact.sh` | PreCompact | Warns before context compaction |
-| `context-injector.sh` | UserPromptSubmit | Injects context reminders |
-| `file-size-check.sh` | PreToolUse (Write) | Blocks Go files >600 lines, warns >500 |
-| `auto-format.sh` | PostToolUse (Edit) | Auto-runs gofmt on edited Go files |
+**Skills:** `/session-start`, `/run-tests`, `/add-command`, `/generate-tests`, `/security-scan`
 
-**Full hook docs:** `.claude/HOOKS-CONFIG.md`
+**Agents:** See `.claude/agents/README.md` for parallelization guide
 
 ---
 
-## Useful Commands
+## Context & Session
 
-**Essential:** `/session-start`, `/run-tests`, `/correct "desc"`, `/diary`
+**Token tips:** Use `/compact` mid-session, `/clear` for new tasks, `/mcp` to disable unused servers
 
-**Development:** `/add-command`, `/generate-tests`, `/fix-build`, `/security-scan`
+**On-demand docs:** `docs/COMMANDS.md`, `docs/ARCHITECTURE.md`, `.claude/shared/patterns/*.md`
 
-**Full list:** `CLAUDE-QUICKSTART.md`
-
----
-
-## Subagent Parallelization
-
-**Guide:** `.claude/agents/README.md`
-
-**Quick reference:**
-- Safe: `codebase-explorer`, `code-reviewer` (spawn 4-5 for large tasks)
-- Limited: `code-writer`, `test-writer` (disjoint files only)
-- Serial: `mistake-learner` (runs alone)
-
----
-
-## Context Loading Strategy
-
-**Auto-loaded:**
-- `CLAUDE.md` - This guide
-- `.claude/rules/*.md` - Development rules
-- Select docs (DEVELOPMENT, SECURITY, TIMEZONE, TUI, WEBHOOKS)
-
-**On-demand (use Read tool when needed):**
-| Doc | When to Load |
-|-----|--------------|
-| `docs/COMMANDS.md` | Adding/modifying CLI commands |
-| `docs/ARCHITECTURE.md` | Understanding project structure |
-| `docs/MCP.md` | Working on MCP server |
-| `docs/AI.md` | Working on AI features |
-| `docs/commands/*.md` | Detailed command guides |
-| `docs/ai/*.md` | AI provider setup |
-
-**Never loaded (excluded via .claudeignore):**
-- Build artifacts, coverage reports, IDE files
-
-**Dynamic local rules (check before operations):**
-
-Before performing these operations, check if a matching `.local.md` rule exists and read it:
-
-| Operation | Check for file |
-|-----------|----------------|
-| Git commits | `.claude/rules/git-commits.local.md` |
-| Go cache cleanup | `.claude/rules/go-cache-cleanup.local.md` |
-| Any operation | `.claude/rules/<operation>.local.md` |
-
-```bash
-# Pattern: Check if local rule exists before operation
-ls .claude/rules/<operation>.local.md 2>/dev/null && Read it
-```
-
----
-
-## Session Continuity (Auto-Update)
-
-**CRITICAL:** Automatically maintain `claude-progress.txt` for session continuity.
-
-### When to Update `claude-progress.txt`:
-
-| Trigger | Action |
-|---------|--------|
-| After completing a major task | Update with what was done |
-| After making significant progress | Update current state |
-| Before context feels full | Save everything important |
-| When switching focus areas | Document where you left off |
-
-### Update Format:
-
-```markdown
-# Claude Progress - [DATE]
-
-## Current Branch
-[branch name]
-
-## Last Session Summary
-[1-3 sentences of what was accomplished]
-
-## In Progress
-- [Current task being worked on]
-
-## Next Steps
-1. [Immediate next action]
-2. [Following action]
-
-## Key Decisions Made
-- [Important choices and rationale]
-
-## Blockers/Notes
-- [Any issues or things to remember]
-```
-
-### Auto-Update Rule:
-
-**After completing any task or making significant progress, proactively update `claude-progress.txt` without being asked.** This ensures session continuity when a new conversation starts.
-
-Quick update command pattern:
-```
-Write current progress to claude-progress.txt
-```
+**Session handoff:** Update `claude-progress.txt` after major tasks (Branch → Summary → Next Steps)
 
 ---
 
 ## Quick Reference
 
-### Essential Make Targets
-
-**See:** `docs/DEVELOPMENT.md` for complete make target list.
-
-| Target | Description |
-|--------|-------------|
-| `make ci-full` | **Complete CI pipeline** (quality + tests + cleanup) |
-| `make ci` | Quality checks only (no integration) |
+| Command | Purpose |
+|---------|---------|
+| `make ci-full` | Complete CI (quality + tests) - **run before commits** |
+| `make ci` | Quick quality checks (no integration) |
 | `make build` | Build binary |
-| `make test-unit` | Unit tests only |
 
-```bash
-# Before committing code
-make ci-full
-```
+**Debugging:** Check `ports/nylas.go` → `adapters/nylas/client.go` → `cli/<feature>/helpers.go`
 
-**Debugging:**
-1. Check `internal/ports/nylas.go` - Interface contract
-2. Check `internal/adapters/nylas/client.go` - HTTP client
-3. Check `internal/cli/<feature>/helpers.go` - CLI helpers
-
-**API:** https://developer.nylas.com/docs/api/v3/
+**API docs:** https://developer.nylas.com/docs/api/v3/
 
 ---
 
@@ -330,37 +183,8 @@ This section captures lessons learned from mistakes. Claude updates this section
 
 ---
 
-## META - MAINTAINING THIS DOCUMENT
+## META
 
-> This section governs how Claude updates CLAUDE.md itself.
+**Quick update:** Press `#` key to add instructions during sessions
 
-### When to Update CLAUDE.md
-
-| Trigger | Action |
-|---------|--------|
-| Mistake caught by user | Add to LEARNINGS with abstracted pattern |
-| New workflow discovered | Add to Quick Reference if reusable |
-| Rule violation | Strengthen rule with concrete example |
-| Obsolete workaround | Remove from LEARNINGS |
-
-### Writing Principles
-
-**Core (Always Apply):**
-- Use absolute directives ("ALWAYS"/"NEVER") for critical rules
-- Lead with rationale before solution (1-3 bullets max)
-- Be concrete with actual commands/code examples
-- One clear point per bullet
-- Use bullets over paragraphs
-
-**Anti-Bloat Rules:**
-- Don't add "Warning Signs" to obvious rules
-- Don't show bad examples for trivial mistakes
-- Don't create decision trees for binary choices
-- Remove entries that haven't been relevant in 30 days
-
-### Process for Adding Rules
-
-1. Add new rule to appropriate section
-2. Verify rule doesn't duplicate existing guidance
-3. Test that rule is actionable (not vague)
-4. Keep entry under 2 lines
+**Maintain:** ALWAYS/NEVER for critical rules, max 30 LEARNINGS items, prune monthly

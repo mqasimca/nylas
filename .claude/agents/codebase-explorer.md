@@ -162,19 +162,20 @@ Email handlers are in `internal/cli/email/` with separate files for each operati
 - All use `getClient()` and `createContext()` from helpers.go
 ```
 
-### Example 2: "How does rate limiting work in tests?"
+### Example 2: "Where is the API client?"
 
 ```markdown
 ## Summary
-Rate limiting uses `acquireRateLimit(t)` before API calls. It's configured via environment variables and uses a token bucket algorithm.
+The Nylas API client is in `internal/adapters/nylas/client.go` with resource-specific methods in separate files.
 
 ## Key Files
-- `internal/cli/integration/helpers_test.go` - Rate limit implementation
-- `internal/cli/integration/base_test.go` - Test setup
+- `internal/adapters/nylas/client.go` - HTTP client, auth, request helpers
+- `internal/adapters/nylas/email.go` - Email operations
+- `internal/ports/nylas.go` - Interface contract
 
 ## Patterns Found
-- Call `acquireRateLimit(t)` before every API operation
-- Configure with NYLAS_TEST_RATE_LIMIT_RPS and NYLAS_TEST_RATE_LIMIT_BURST
+- All methods use `doJSONRequest()` for API calls
+- Error handling wraps with context: `fmt.Errorf("operation: %w", err)`
 ```
 
 ---

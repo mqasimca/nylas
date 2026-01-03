@@ -22,6 +22,21 @@ internal/
   air/               # Web UI server
 ```
 
+### Quick Lookup
+
+| Looking for | Location |
+|-------------|----------|
+| CLI helpers (context, config, colors) | `internal/cli/common/` |
+| HTTP client | `internal/adapters/nylas/client.go` |
+| AI clients (Claude, OpenAI, Groq) | `internal/adapters/ai/` |
+| MCP server | `internal/adapters/mcp/` |
+| Slack adapter | `internal/adapters/slack/` |
+| Air web UI (port 7365) | `internal/air/` |
+| UI web interface (port 7363) | `internal/cli/ui/` |
+| TUI terminal interface | `internal/tui/` |
+| Integration test helpers | `internal/cli/integration/helpers_test.go` |
+| Air integration tests | `internal/air/integration_*_test.go` |
+
 ---
 
 ## Design Principles

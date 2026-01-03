@@ -135,9 +135,9 @@ After writing tests, report:
 
 ## Rules
 
-1. **Table-driven tests** for Go - Always
-2. **Semantic selectors** for Playwright - No CSS/XPath
-3. **Rate limiting** for integration tests - Always use `acquireRateLimit()`
-4. **Independent tests** - No shared state between tests
-5. **Descriptive names** - Test name describes the scenario
+1. **Table-driven tests** for Go (see `go-test-patterns.md`)
+2. **Semantic selectors** for Playwright (see `playwright-patterns.md`)
+3. **Rate limiting** for integration (see `integration-test-patterns.md`)
+4. **Independent tests** - No shared state
+5. **Descriptive names** - Test name describes scenario
 6. **Test behavior** - Not implementation details

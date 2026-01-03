@@ -30,11 +30,7 @@ Consolidated testing rules for the Nylas CLI project.
 
 ## Rate Limiting (CRITICAL)
 
-**See:** `.claude/shared/patterns/integration-test-patterns.md` for full details.
-
-```go
-acquireRateLimit(t)  // Call before each API operation
-```
+**See:** `.claude/shared/patterns/integration-test-patterns.md` for patterns and config.
 
 ---
 
@@ -71,8 +67,8 @@ make test-cleanup                # Clean up test resources
 ## Key Principles
 
 1. Test behavior, not implementation
-2. Use table-driven tests for multiple scenarios
+2. Table-driven tests with `t.Run()` (see `go-test-patterns.md`)
 3. Mock external dependencies
-4. Clean up resources in `t.Cleanup()`
-5. Enable `t.Parallel()` for independent tests
-6. Rate limit API calls in parallel tests
+4. Clean up with `t.Cleanup()`
+5. Use `t.Parallel()` for independent tests
+6. Use `acquireRateLimit(t)` for API calls (see `integration-test-patterns.md`)
