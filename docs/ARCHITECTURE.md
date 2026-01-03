@@ -9,33 +9,96 @@ Hexagonal (ports and adapters) architecture for clean separation of concerns.
 ## Project Structure
 
 ```
-cmd/nylas/           # Entry point
+cmd/nylas/                    # Entry point (main.go)
 internal/
-  domain/            # Business entities (Message, Calendar, Contact, etc.)
-  ports/             # Interface contracts (NylasClient, SecretStore)
-  adapters/          # Implementations (HTTP client, keyring, OAuth)
-    nylas/           # Nylas API client
-    keyring/         # Secret storage
-    config/          # Configuration
-  cli/<feature>/     # CLI commands by feature
-  tui/               # Terminal UI
-  air/               # Web UI server
+  domain/                     # Business entities (21 files)
+  ports/                      # Interface contracts (7 files)
+  adapters/                   # Implementations
+    nylas/                    # Nylas API client (85 files)
+    ai/                       # AI providers (Claude, OpenAI, Groq, Ollama)
+    analytics/                # Focus optimizer, meeting scorer
+    keyring/                  # Secret storage
+    config/                   # Configuration validation
+    mcp/                      # MCP proxy server
+    slack/                    # Slack API client
+    utilities/                # Timezone, scheduling, contacts services
+    oauth/                    # OAuth callback server
+    browser/                  # Browser automation
+    tunnel/                   # Cloudflare tunnel
+    webhookserver/            # Webhook server
+  cli/                        # CLI commands
+    common/                   # Shared helpers (context, config, colors)
+    admin/                    # API key management
+    ai/                       # AI commands
+    auth/                     # Authentication
+    calendar/                 # Calendar & events
+    contacts/                 # Contact management
+    email/                    # Email operations
+    inbound/                  # Inbound email rules
+    integration/              # CLI integration tests
+    mcp/                      # MCP server command
+    notetaker/                # Meeting notetaker
+    otp/                      # OTP extraction
+    scheduler/                # Booking pages
+    slack/                    # Slack integration
+    timezone/                 # Timezone utilities
+    ui/                       # Web UI (port 7363)
+    update/                   # Self-update
+    webhook/                  # Webhook management
+  air/                        # Web email client (port 7365)
+  tui/                        # Terminal UI
+  app/                        # Shared app logic (auth, otp)
+  testutil/                   # Test utilities
+  util/                       # General utilities
+docs/                         # Documentation
+  commands/                   # Command guides (12 files)
+  ai/                         # AI docs (8 files)
+  security/                   # Security docs (2 files)
+  troubleshooting/            # Troubleshooting (5 files)
+  development/                # Dev guides (4 files)
+.claude/                      # Claude configuration
+  commands/                   # Skills/commands
+  agents/                     # Agent definitions
+  rules/                      # Project rules
+  shared/patterns/            # Code patterns
 ```
 
 ### Quick Lookup
 
 | Looking for | Location |
 |-------------|----------|
-| CLI helpers (context, config, colors) | `internal/cli/common/` |
-| HTTP client | `internal/adapters/nylas/client.go` |
-| AI clients (Claude, OpenAI, Groq) | `internal/adapters/ai/` |
+| **CLI** | |
+| CLI entry & registration | `cmd/nylas/main.go` |
+| CLI helpers (context, config) | `internal/cli/common/` |
+| CLI integration tests | `internal/cli/integration/` |
+| **Adapters** | |
+| Nylas HTTP client | `internal/adapters/nylas/client.go` |
+| AI providers | `internal/adapters/ai/` |
 | MCP server | `internal/adapters/mcp/` |
 | Slack adapter | `internal/adapters/slack/` |
-| Air web UI (port 7365) | `internal/air/` |
-| UI web interface (port 7363) | `internal/cli/ui/` |
-| TUI terminal interface | `internal/tui/` |
-| Integration test helpers | `internal/cli/integration/helpers_test.go` |
+| Timezone service | `internal/adapters/utilities/timezone/` |
+| **User Interfaces** | |
+| Air web client (port 7365) | `internal/air/` |
+| UI config tool (port 7363) | `internal/cli/ui/` |
+| TUI terminal client | `internal/tui/` |
+| **Tests** | |
+| CLI integration tests | `internal/cli/integration/*_test.go` |
 | Air integration tests | `internal/air/integration_*_test.go` |
+| Test utilities | `internal/testutil/` |
+| **Docs** | |
+| Documentation index | `docs/INDEX.md` |
+| Command reference | `docs/COMMANDS.md` |
+| Claude rules | `.claude/rules/` |
+
+### Helper Layers (Avoid Duplicates)
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| **App Services** | `internal/app/` | Orchestrates adapters for workflows (auth login, OTP extraction) |
+| **CLI Helpers** | `internal/cli/common/` | Reusable utilities (context, format, colors, pagination) |
+| **Adapter Helpers** | `internal/adapters/nylas/` | HTTP helpers, request building, response handling |
+
+> **Key difference:** App services coordinate multiple adapters. CLI helpers are stateless utilities. Adapter helpers handle API specifics.
 
 ---
 
