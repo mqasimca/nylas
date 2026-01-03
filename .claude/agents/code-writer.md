@@ -48,16 +48,22 @@ You are an expert code writer for the Nylas CLI polyglot codebase. You write pro
 ```go
 // ALWAYS use modern Go (1.24+)
 // Use: slices, maps, clear(), min(), max(), any
-// Avoid: io/ioutil, interface{}, manual slice ops
+// NEVER use: io/ioutil, interface{} (use "any"), manual slice ops
+
+// ALWAYS use "any" instead of "interface{}"
+var data map[string]any  // NOT map[string]interface{}
 
 // ALWAYS wrap errors with context
 if err != nil {
     return fmt.Errorf("operation X failed: %w", err)
 }
 
-// ALWAYS use context for cancellation
-ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+// ALWAYS use common.CreateContext() for CLI commands
+ctx, cancel := common.CreateContext()  // NOT context.WithTimeout(...)
 defer cancel()
+
+// ALWAYS use 0750 for directories (security - G301)
+os.MkdirAll(path, 0750)  // NOT 0755
 
 // ALWAYS handle errors explicitly
 result, err := doSomething()
@@ -101,6 +107,14 @@ go fmt ./...            # Must be formatted
 golangci-lint run       # Should be clean
 ```
 
+**Also check for these common mistakes:**
+- [ ] No `interface{}` (use `any`)
+- [ ] No `context.WithTimeout(context.Background()...)` in CLI (use `common.CreateContext()`)
+- [ ] No `0755` directory permissions (use `0750`)
+- [ ] No duplicate `createContext()` functions
+- [ ] No duplicate `getConfigStore()` functions
+- [ ] Used existing helpers from `internal/cli/common/`
+
 ---
 
 ## Output Format
@@ -120,6 +134,20 @@ After writing code, report:
 ## Next Steps
 - [Any follow-up actions needed]
 ```
+
+---
+
+## Project-Specific Helpers (USE THESE)
+
+Before writing code, check if these helpers exist:
+
+| Pattern | Use This Helper | Location |
+|---------|-----------------|----------|
+| `context.WithTimeout(context.Background(), 30*time.Second)` | `common.CreateContext()` | `internal/cli/common/context.go` |
+| `cmd.Flags().GetString("config")` + parent walk | `common.GetConfigStore(cmd)` | `internal/cli/common/config.go` |
+| `grantStore.GetDefaultGrant()` + error check | `s.requireDefaultGrant(w)` | `internal/air/server_stores.go` |
+| `map[string]interface{}` | `map[string]any` | Go 1.18+ built-in |
+| `os.MkdirAll(path, 0755)` | `os.MkdirAll(path, 0750)` | G301 security rule |
 
 ---
 
@@ -153,3 +181,6 @@ After writing code, report:
 3. **Never use deprecated APIs** - Modern Go only
 4. **Never hardcode values** - Use constants/config
 5. **Never skip error handling** - Every error must be handled
+6. **Never use interface{}** - Use `any` instead (Go 1.18+)
+7. **Never use 0755 for directories** - Use `0750` (G301 security)
+8. **Never duplicate helpers** - Check `internal/cli/common/` first
