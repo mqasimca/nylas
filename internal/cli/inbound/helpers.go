@@ -5,9 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mqasimca/nylas/internal/adapters/config"
-	"github.com/mqasimca/nylas/internal/adapters/keyring"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
@@ -15,37 +12,7 @@ import (
 
 // getClient creates and configures a Nylas client.
 func getClient() (ports.NylasClient, error) {
-	configStore := config.NewDefaultFileStore()
-	cfg, _ := configStore.Load()
-
-	// Check environment variables first (highest priority)
-	apiKey := os.Getenv("NYLAS_API_KEY")
-	clientID := os.Getenv("NYLAS_CLIENT_ID")
-	clientSecret := os.Getenv("NYLAS_CLIENT_SECRET")
-
-	// If API key not in env, try keyring/file store
-	if apiKey == "" {
-		secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-		if err == nil {
-			apiKey, _ = secretStore.Get(ports.KeyAPIKey)
-			if clientID == "" {
-				clientID, _ = secretStore.Get(ports.KeyClientID)
-			}
-			if clientSecret == "" {
-				clientSecret, _ = secretStore.Get(ports.KeyClientSecret)
-			}
-		}
-	}
-
-	if apiKey == "" {
-		return nil, fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
-	}
-
-	client := nylas.NewHTTPClient()
-	client.SetRegion(cfg.Region)
-	client.SetCredentials(clientID, clientSecret, apiKey)
-
-	return client, nil
+	return common.GetNylasClient()
 }
 
 // getInboxID gets the inbox ID from args or environment variable.
@@ -70,23 +37,6 @@ func printError(format string, args ...any) {
 // printSuccess prints a success message in green.
 func printSuccess(format string, args ...any) {
 	_, _ = common.Green.Printf(format+"\n", args...)
-}
-
-// formatContact formats a contact for display.
-func formatContact(c domain.EmailParticipant) string {
-	if c.Name != "" {
-		return c.Name
-	}
-	return c.Email
-}
-
-// formatContacts formats multiple contacts for display.
-func formatContacts(contacts []domain.EmailParticipant) string {
-	names := make([]string, len(contacts))
-	for i, c := range contacts {
-		names[i] = formatContact(c)
-	}
-	return strings.Join(names, ", ")
 }
 
 // printInboxSummary prints a single-line inbox summary.
@@ -146,7 +96,7 @@ func printInboundMessageSummary(msg domain.InboundMessage, _ int) {
 		star = common.Yellow.Sprint("★")
 	}
 
-	from := formatContacts(msg.From)
+	from := common.FormatParticipants(msg.From)
 	if len(from) > 20 {
 		from = from[:17] + "..."
 	}

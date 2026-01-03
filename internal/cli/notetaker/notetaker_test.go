@@ -243,13 +243,13 @@ func TestFormatTimeAgo(t *testing.T) {
 		{now.Add(-5 * time.Minute), "5 minutes ago"},
 		{now.Add(-1 * time.Hour), "1 hour ago"},
 		{now.Add(-3 * time.Hour), "3 hours ago"},
-		{now.Add(-24 * time.Hour), "yesterday"},
+		{now.Add(-24 * time.Hour), "1 day ago"},
 		{now.Add(-72 * time.Hour), "3 days ago"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
-			result := formatTimeAgo(tt.time)
+			result := common.FormatTimeAgo(tt.time)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

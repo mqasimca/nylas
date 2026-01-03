@@ -5,8 +5,6 @@ import (
 	"html"
 	"strings"
 
-	"github.com/mqasimca/nylas/internal/adapters/config"
-	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
@@ -16,57 +14,6 @@ import (
 // Supports credentials from keyring/file store or environment variables.
 func getClient() (ports.NylasClient, error) {
 	return common.GetNylasClient()
-}
-
-// getGrantID gets the grant ID from args or default.
-// If the argument contains '@', it's treated as an email and looked up.
-func getGrantID(args []string) (string, error) {
-	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
-	if err != nil {
-		return "", fmt.Errorf("couldn't access secret store: %w", err)
-	}
-	grantStore := keyring.NewGrantStore(secretStore)
-
-	if len(args) > 0 {
-		identifier := args[0]
-
-		// If it looks like an email, try to find by email
-		if strings.Contains(identifier, "@") {
-			grant, err := grantStore.GetGrantByEmail(identifier)
-			if err != nil {
-				return "", fmt.Errorf("no grant found for email: %s", identifier)
-			}
-			return grant.ID, nil
-		}
-
-		// Otherwise treat as grant ID
-		return identifier, nil
-	}
-
-	// Try to get default grant
-	defaultGrant, err := grantStore.GetDefaultGrant()
-	if err != nil {
-		return "", fmt.Errorf("no grant ID provided and no default grant set. Use 'nylas auth list' to see available grants")
-	}
-
-	return defaultGrant, nil
-}
-
-// formatContact formats a contact for display.
-func formatContact(c domain.EmailParticipant) string {
-	if c.Name != "" {
-		return c.Name
-	}
-	return c.Email
-}
-
-// formatContacts formats multiple contacts for display.
-func formatContacts(contacts []domain.EmailParticipant) string {
-	names := make([]string, len(contacts))
-	for i, c := range contacts {
-		names[i] = formatContact(c)
-	}
-	return strings.Join(names, ", ")
 }
 
 // printMessage prints a message in a formatted way.
@@ -83,9 +30,9 @@ func printMessage(msg domain.Message, showBody bool) {
 	// Print header
 	fmt.Println(strings.Repeat("─", 60))
 	_, _ = common.BoldWhite.Printf("Subject: %s\n", msg.Subject)
-	fmt.Printf("From:    %s\n", formatContacts(msg.From))
+	fmt.Printf("From:    %s\n", common.FormatParticipants(msg.From))
 	if len(msg.To) > 0 {
-		fmt.Printf("To:      %s\n", formatContacts(msg.To))
+		fmt.Printf("To:      %s\n", common.FormatParticipants(msg.To))
 	}
 	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(msg.Date))
 	if status != "" {
@@ -116,9 +63,9 @@ func printMessageRaw(msg domain.Message) {
 	// Print header
 	fmt.Println(strings.Repeat("─", 60))
 	_, _ = common.BoldWhite.Printf("Subject: %s\n", msg.Subject)
-	fmt.Printf("From:    %s\n", formatContacts(msg.From))
+	fmt.Printf("From:    %s\n", common.FormatParticipants(msg.From))
 	if len(msg.To) > 0 {
-		fmt.Printf("To:      %s\n", formatContacts(msg.To))
+		fmt.Printf("To:      %s\n", common.FormatParticipants(msg.To))
 	}
 	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(msg.Date))
 	fmt.Printf("ID:      %s\n", msg.ID)
@@ -150,7 +97,7 @@ func printMessageSummaryWithID(msg domain.Message, index int, showID bool) {
 		star = common.Yellow.Sprint("★")
 	}
 
-	from := formatContacts(msg.From)
+	from := common.FormatParticipants(msg.From)
 	if len(from) > 20 {
 		from = from[:17] + "..."
 	}

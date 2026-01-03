@@ -50,7 +50,7 @@ This command fetches your recent emails and uses AI to provide:
 				return fmt.Errorf("failed to get client: %w", err)
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return fmt.Errorf("failed to get grant ID: %w", err)
 			}

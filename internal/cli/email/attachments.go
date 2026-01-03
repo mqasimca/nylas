@@ -41,7 +41,7 @@ func newAttachmentsListCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args[1:])
+			grantID, err := common.GetGrantID(args[1:])
 			if err != nil {
 				return err
 			}
@@ -101,7 +101,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args[2:])
+			grantID, err := common.GetGrantID(args[2:])
 			if err != nil {
 				return err
 			}
@@ -150,7 +150,7 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args[2:])
+			grantID, err := common.GetGrantID(args[2:])
 			if err != nil {
 				return err
 			}

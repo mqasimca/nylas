@@ -34,7 +34,7 @@ func newScheduledListCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -99,7 +99,7 @@ func newScheduledShowCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -154,7 +154,7 @@ func newScheduledCancelCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}

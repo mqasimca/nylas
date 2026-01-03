@@ -113,7 +113,7 @@ func TestHelperFunctions(t *testing.T) {
 		}
 	})
 
-	t.Run("formatContact", func(t *testing.T) {
+	t.Run("formatParticipant", func(t *testing.T) {
 		tests := []struct {
 			contact  domain.EmailParticipant
 			expected string
@@ -123,17 +123,17 @@ func TestHelperFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			got := formatContact(tt.contact)
+			got := common.FormatParticipant(tt.contact)
 			assert.Equal(t, tt.expected, got)
 		}
 	})
 
-	t.Run("formatContacts", func(t *testing.T) {
+	t.Run("formatParticipants", func(t *testing.T) {
 		contacts := []domain.EmailParticipant{
 			{Name: "John", Email: "john@example.com"},
 			{Name: "", Email: "jane@example.com"},
 		}
-		got := formatContacts(contacts)
+		got := common.FormatParticipants(contacts)
 		assert.Equal(t, "John, jane@example.com", got)
 	})
 

@@ -41,7 +41,7 @@ func newThreadsListCmd() *cobra.Command {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -92,7 +92,7 @@ func newThreadsListCmd() *cobra.Command {
 				}
 
 				// Format participants
-				participants := formatContacts(t.Participants)
+				participants := common.FormatParticipants(t.Participants)
 				if len(participants) > 25 {
 					participants = participants[:22] + "..."
 				}
@@ -143,7 +143,7 @@ func newThreadsShowCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -162,7 +162,7 @@ func newThreadsShowCmd() *cobra.Command {
 			_, _ = common.BoldWhite.Printf("Thread: %s\n", thread.Subject)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
-			fmt.Printf("Participants: %s\n", formatContacts(thread.Participants))
+			fmt.Printf("Participants: %s\n", common.FormatParticipants(thread.Participants))
 			fmt.Printf("Messages:     %d\n", len(thread.MessageIDs))
 			if len(thread.DraftIDs) > 0 {
 				fmt.Printf("Drafts:       %d\n", len(thread.DraftIDs))
@@ -179,7 +179,7 @@ func newThreadsShowCmd() *cobra.Command {
 				status = append(status, "has attachments")
 			}
 			if len(status) > 0 {
-				fmt.Printf("Status:       %s\n", formatContacts(nil))
+				fmt.Printf("Status:       %s\n", common.FormatParticipants(nil))
 			}
 
 			fmt.Printf("\nFirst message: %s\n", thread.EarliestMessageDate.Format("Jan 2, 2006 3:04 PM"))
@@ -244,7 +244,7 @@ func newThreadsMarkCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -323,7 +323,7 @@ func newThreadsDeleteCmd() *cobra.Command {
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -342,7 +342,7 @@ func newThreadsDeleteCmd() *cobra.Command {
 				fmt.Println("Delete this thread?")
 				fmt.Printf("  Subject:      %s\n", thread.Subject)
 				fmt.Printf("  Messages:     %d\n", len(thread.MessageIDs))
-				fmt.Printf("  Participants: %s\n", formatContacts(thread.Participants))
+				fmt.Printf("  Participants: %s\n", common.FormatParticipants(thread.Participants))
 				fmt.Print("\n[y/N]: ")
 
 				var confirm string
@@ -410,7 +410,7 @@ Examples:
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -489,7 +489,7 @@ Examples:
 				}
 
 				// Format participants
-				participants := formatContacts(t.Participants)
+				participants := common.FormatParticipants(t.Participants)
 				if len(participants) > 25 {
 					participants = participants[:22] + "..."
 				}

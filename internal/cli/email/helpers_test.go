@@ -5,12 +5,13 @@ package email
 import (
 	"testing"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestFormatContact(t *testing.T) {
+func TestFormatParticipant(t *testing.T) {
 	tests := []struct {
 		name     string
 		contact  domain.EmailParticipant
@@ -45,13 +46,13 @@ func TestFormatContact(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatContact(tt.contact)
+			result := common.FormatParticipant(tt.contact)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestFormatContacts(t *testing.T) {
+func TestFormatParticipants(t *testing.T) {
 	tests := []struct {
 		name     string
 		contacts []domain.EmailParticipant
@@ -94,7 +95,7 @@ func TestFormatContacts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatContacts(tt.contacts)
+			result := common.FormatParticipants(tt.contacts)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

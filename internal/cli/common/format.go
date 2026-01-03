@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/domain"
 	"gopkg.in/yaml.v3"
 )
 
@@ -396,4 +397,21 @@ func Confirm(prompt string, defaultYes bool) bool {
 	}
 
 	return response == "y" || response == "yes"
+}
+
+// FormatParticipant formats an email participant for display.
+func FormatParticipant(p domain.EmailParticipant) string {
+	if p.Name != "" {
+		return p.Name
+	}
+	return p.Email
+}
+
+// FormatParticipants formats a slice of email participants.
+func FormatParticipants(participants []domain.EmailParticipant) string {
+	names := make([]string, len(participants))
+	for i, p := range participants {
+		names[i] = FormatParticipant(p)
+	}
+	return strings.Join(names, ", ")
 }

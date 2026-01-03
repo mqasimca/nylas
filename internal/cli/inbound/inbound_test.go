@@ -406,7 +406,7 @@ func TestTruncate(t *testing.T) {
 	}
 }
 
-func TestFormatContact(t *testing.T) {
+func TestFormatParticipant(t *testing.T) {
 	tests := []struct {
 		contact  domain.EmailParticipant
 		expected string
@@ -417,17 +417,17 @@ func TestFormatContact(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := formatContact(tt.contact)
+		got := common.FormatParticipant(tt.contact)
 		assert.Equal(t, tt.expected, got)
 	}
 }
 
-func TestFormatContacts(t *testing.T) {
+func TestFormatParticipants(t *testing.T) {
 	contacts := []domain.EmailParticipant{
 		{Name: "John", Email: "john@example.com"},
 		{Name: "", Email: "jane@example.com"},
 	}
-	got := formatContacts(contacts)
+	got := common.FormatParticipants(contacts)
 	assert.Equal(t, "John, jane@example.com", got)
 }
 
