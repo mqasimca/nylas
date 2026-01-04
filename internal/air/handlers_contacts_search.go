@@ -9,16 +9,10 @@ import (
 
 // handleContactGroups returns contact groups.
 func (s *Server) handleContactGroups(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode: return mock groups
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, ContactGroupsResponse{
-			Groups: demoContactGroups(),
-		})
+	if s.handleDemoMode(w, ContactGroupsResponse{Groups: demoContactGroups()}) {
 		return
 	}
 
@@ -61,8 +55,7 @@ func (s *Server) handleContactGroups(w http.ResponseWriter, r *http.Request) {
 
 // handleContactSearch searches contacts with text query.
 func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
@@ -73,14 +66,14 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 	if s.demoMode {
 		contacts := demoContacts()
 		if q != "" {
-			q = strings.ToLower(q)
+			qLower := strings.ToLower(q)
 			filtered := make([]ContactResponse, 0)
 			for _, c := range contacts {
-				if strings.Contains(strings.ToLower(c.DisplayName), q) ||
-					strings.Contains(strings.ToLower(c.GivenName), q) ||
-					strings.Contains(strings.ToLower(c.Surname), q) ||
-					strings.Contains(strings.ToLower(c.CompanyName), q) ||
-					containsEmail(c.Emails, q) {
+				if strings.Contains(strings.ToLower(c.DisplayName), qLower) ||
+					strings.Contains(strings.ToLower(c.GivenName), qLower) ||
+					strings.Contains(strings.ToLower(c.Surname), qLower) ||
+					strings.Contains(strings.ToLower(c.CompanyName), qLower) ||
+					containsEmail(c.Emails, qLower) {
 					filtered = append(filtered, c)
 				}
 			}

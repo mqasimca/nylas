@@ -1,7 +1,6 @@
 package air
 
 import (
-	"encoding/json"
 	"net/http"
 	"slices"
 
@@ -10,21 +9,17 @@ import (
 
 // handleConfigStatus returns the current configuration status.
 func (s *Server) handleConfigStatus(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode: return sample configured status
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, ConfigStatusResponse{
-			Configured:   true,
-			Region:       "us",
-			ClientID:     "demo-client-id",
-			HasAPIKey:    true,
-			GrantCount:   3,
-			DefaultGrant: demoDefaultGrant(),
-		})
+	if s.handleDemoMode(w, ConfigStatusResponse{
+		Configured:   true,
+		Region:       "us",
+		ClientID:     "demo-client-id",
+		HasAPIKey:    true,
+		GrantCount:   3,
+		DefaultGrant: demoDefaultGrant(),
+	}) {
 		return
 	}
 
@@ -48,17 +43,13 @@ func (s *Server) handleConfigStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleListGrants returns all authenticated accounts.
 func (s *Server) handleListGrants(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode: return sample grants
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, GrantsResponse{
-			Grants:       demoGrants(),
-			DefaultGrant: demoDefaultGrant(),
-		})
+	if s.handleDemoMode(w, GrantsResponse{
+		Grants:       demoGrants(),
+		DefaultGrant: demoDefaultGrant(),
+	}) {
 		return
 	}
 
@@ -98,26 +89,18 @@ func (s *Server) handleListGrants(w http.ResponseWriter, r *http.Request) {
 
 // handleSetDefaultGrant sets the default account.
 func (s *Server) handleSetDefaultGrant(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
-
-	// Demo mode: simulate success
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, SetDefaultGrantResponse{
-			Success: true,
-			Message: "Default account updated (demo mode)",
-		})
+	if s.handleDemoMode(w, SetDefaultGrantResponse{
+		Success: true,
+		Message: "Default account updated (demo mode)",
+	}) {
 		return
 	}
 
 	var req SetDefaultGrantRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, SetDefaultGrantResponse{
-			Success: false,
-			Error:   "Invalid request body",
-		})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 
@@ -180,16 +163,10 @@ func demoDefaultGrant() string {
 
 // handleListFolders returns all folders for the current account.
 func (s *Server) handleListFolders(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode: return mock folders
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, FoldersResponse{
-			Folders: demoFolders(),
-		})
+	if s.handleDemoMode(w, FoldersResponse{Folders: demoFolders()}) {
 		return
 	}
 
