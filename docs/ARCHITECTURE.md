@@ -105,13 +105,22 @@ docs/                         # Documentation
 
 | File | Helpers | Purpose |
 |------|---------|---------|
-| `client.go` | `GetCachedNylasClient()` | Thread-safe cached Nylas client |
-| `errors.go` | `WrapGetError()`, `WrapFetchError()`, `WrapCreateError()`, `WrapUpdateError()`, `WrapDeleteError()` | Consistent error wrapping |
-| `flags.go` | `AddLimitFlag()`, `AddFormatFlag()`, `AddIDFlag()`, `AddPageTokenFlag()` | Common CLI flag definitions |
-| `format.go` | `FormatParticipant()`, `FormatParticipants()`, `FormatSize()`, `PrintEmptyState()`, `PrintListHeader()` | Display formatting and output helpers |
-| `html.go` | `StripHTML()`, `StripHTMLPreserveLinks()` | HTML-to-text conversion |
-| `context.go` | `CreateContext()` | Standard context creation with timeout |
-| `timeutil.go` | `ParseDate()`, `FormatDate()`, `FormatDisplayDate()` + constants | Time parsing, formatting, and standard timeouts |
+| `client.go` | `GetNylasClient()`, `GetCachedNylasClient()`, `ResetCachedClient()`, `GetAPIKey()`, `GetGrantID()` | Nylas client creation and credential access |
+| `colors.go` | `Bold`, `BoldWhite`, `Dim`, `Cyan`, `Green`, `Yellow`, `Red`, `Blue` | Shared color definitions |
+| `config.go` | `GetConfigStore()`, `GetConfigPath()` | Config store access from commands |
+| `context.go` | `CreateContext()`, `CreateContextWithTimeout()` | Context creation with timeouts |
+| `errors.go` | `WrapError()`, `FormatError()`, `PrintFormattedError()`, `NewUserError()`, `NewInputError()`, `WrapGetError()`, `WrapFetchError()`, `WrapCreateError()`, `WrapUpdateError()`, `WrapDeleteError()`, `WrapSendError()` | Error wrapping and formatting |
+| `flags.go` | `AddLimitFlag()`, `AddFormatFlag()`, `AddIDFlag()`, `AddPageTokenFlag()`, `AddForceFlag()`, `AddYesFlag()`, `AddVerboseFlag()` | Common CLI flag definitions |
+| `format.go` | `ParseFormat()`, `NewFormatter()`, `NewTable()`, `FormatParticipant()`, `FormatParticipants()`, `FormatSize()`, `PrintEmptyState()`, `PrintEmptyStateWithHint()`, `PrintListHeader()`, `PrintSuccess()`, `PrintError()`, `PrintWarning()`, `PrintInfo()`, `Confirm()` | Display formatting and output helpers |
+| `html.go` | `StripHTML()`, `RemoveTagWithContent()` | HTML-to-text conversion |
+| `logger.go` | `InitLogger()`, `GetLogger()`, `IsDebug()`, `IsQuiet()`, `Debug()`, `Info()`, `Warn()`, `Error()`, `DebugHTTP()`, `DebugAPI()` | Logging utilities |
+| `pagination.go` | `FetchAllPages()`, `FetchAllWithProgress()`, `NewPaginatedDisplay()`, `PageResult[T]` | Pagination helpers |
+| `path.go` | `ValidateExecutablePath()`, `FindExecutableInPath()`, `SafeCommand()` | Safe executable path handling |
+| `progress.go` | `NewSpinner()`, `NewProgressBar()`, `NewCounter()` | Progress indicators |
+| `retry.go` | `WithRetry()`, `DefaultRetryConfig()`, `NoRetryConfig()`, `IsRetryable()`, `IsRetryableStatusCode()` | Retry logic with backoff |
+| `string.go` | `Truncate()` | String utilities |
+| `time.go` | `FormatTimeAgo()`, `ParseTimeOfDay()`, `ParseTimeOfDayInLocation()`, `ParseDuration()` | Time formatting and parsing |
+| `timeutil.go` | `ParseDate()`, `ParseTime()`, `FormatDate()`, `FormatDisplayDate()` + constants | Date parsing and formatting |
 
 #### Adapter Helpers (`internal/adapters/nylas/client_helpers.go`)
 
@@ -120,7 +129,20 @@ docs/                         # Documentation
 | `doGet(ctx, url, &result)` | GET request with JSON decoding |
 | `doGetWithNotFound(ctx, url, &result, notFoundErr)` | GET with 404 handling |
 | `doDelete(ctx, url)` | DELETE request (accepts 200/204) |
+| `ListResponse[T]` | Generic paginated response type |
 | `QueryBuilder` | Fluent URL query parameter builder |
+
+**QueryBuilder methods:**
+- `NewQueryBuilder()` - Create new builder
+- `Add(key, value)` - Add string value (if non-empty)
+- `AddInt(key, value)` - Add int value (if > 0)
+- `AddInt64(key, value)` - Add int64 value (if > 0)
+- `AddBool(key, value)` - Add bool value (if true)
+- `AddBoolPtr(key, value)` - Add bool pointer (if non-nil)
+- `AddSlice(key, values)` - Add multiple values with same key
+- `Encode()` - Get encoded query string
+- `Values()` - Get underlying url.Values
+- `BuildURL(baseURL)` - Append query to URL
 
 **QueryBuilder usage:**
 ```go
@@ -319,6 +341,11 @@ All HTTP handlers use common helpers for consistency and reduced boilerplate:
 | `requireMethod(w, r, method)` | `handlers_helpers.go` | Validates HTTP method |
 | `writeError(w, status, msg)` | `handlers_helpers.go` | Writes JSON error response |
 | `requireDefaultGrant(w)` | `server_stores.go` | Gets default grant ID, writes error if not set |
+| `getEmailStore(email)` | `server_stores.go` | Gets email cache store for account |
+| `getEventStore(email)` | `server_stores.go` | Gets event cache store for account |
+| `getContactStore(email)` | `server_stores.go` | Gets contact cache store for account |
+| `getFolderStore(email)` | `server_stores.go` | Gets folder cache store for account |
+| `getSyncStore(email)` | `server_stores.go` | Gets sync cache store for account |
 
 **Standard handler pattern:**
 ```go
