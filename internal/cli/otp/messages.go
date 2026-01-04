@@ -41,7 +41,7 @@ If no email is specified, uses the default account.`,
 			}
 
 			if len(messages) == 0 {
-				fmt.Println("No messages found")
+				common.PrintEmptyState("messages")
 				return nil
 			}
 

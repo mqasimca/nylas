@@ -34,7 +34,7 @@ func newListCmd() *cobra.Command {
 			}
 
 			if len(calendars) == 0 {
-				fmt.Println("No calendars found.")
+				common.PrintEmptyState("calendars")
 				return nil
 			}
 

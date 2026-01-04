@@ -110,7 +110,7 @@ Examples:
 			}
 
 			if len(events) == 0 {
-				fmt.Println("No events found.")
+				common.PrintEmptyState("events")
 				return nil
 			}
 

@@ -67,19 +67,19 @@ This command uses AI to:
 			// Get Nylas client
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("create client: %w", err)
+				return common.WrapCreateError("client", err)
 			}
 
 			// Get grant ID
 			grantID, err := getGrantID(args)
 			if err != nil {
-				return fmt.Errorf("get grant ID: %w", err)
+				return common.WrapGetError("grant ID", err)
 			}
 
 			// Get LLM router
 			llmRouter, err := getLLMRouter()
 			if err != nil {
-				return fmt.Errorf("create LLM router: %w", err)
+				return common.WrapCreateError("LLM router", err)
 			}
 
 			// Create email analyzer

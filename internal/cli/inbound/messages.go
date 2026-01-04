@@ -88,12 +88,10 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 
 	if len(messages) == 0 {
 		if unread {
-			fmt.Println("No unread messages.")
+			common.PrintEmptyState("unread messages")
 		} else {
-			fmt.Println("No messages found in this inbox.")
+			common.PrintEmptyStateWithHint("messages", "Send an email to the inbox address to receive messages here")
 		}
-		fmt.Println()
-		_, _ = common.Dim.Println("Send an email to the inbox address to receive messages here.")
 		return nil
 	}
 

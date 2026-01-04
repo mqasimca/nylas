@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -91,59 +89,25 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 		params.Limit = 10
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages", c.baseURL, grantID)
-	q := url.Values{}
-	q.Set("limit", strconv.Itoa(params.Limit))
-
-	if params.PageToken != "" {
-		q.Set("page_token", params.PageToken)
-	}
-	if params.Offset > 0 {
-		q.Set("offset", strconv.Itoa(params.Offset))
-	}
-	if params.Subject != "" {
-		q.Set("subject", params.Subject)
-	}
-	if params.From != "" {
-		q.Set("from", params.From)
-	}
-	if params.To != "" {
-		q.Set("to", params.To)
-	}
-	if params.ThreadID != "" {
-		q.Set("thread_id", params.ThreadID)
-	}
-	if params.Unread != nil {
-		q.Set("unread", strconv.FormatBool(*params.Unread))
-	}
-	if params.Starred != nil {
-		q.Set("starred", strconv.FormatBool(*params.Starred))
-	}
-	if params.HasAttachment != nil {
-		q.Set("has_attachment", strconv.FormatBool(*params.HasAttachment))
-	}
-	if params.ReceivedBefore > 0 {
-		q.Set("received_before", strconv.FormatInt(params.ReceivedBefore, 10))
-	}
-	if params.ReceivedAfter > 0 {
-		q.Set("received_after", strconv.FormatInt(params.ReceivedAfter, 10))
-	}
-	if params.SearchQuery != "" {
-		q.Set("q", params.SearchQuery)
-	}
-	if len(params.In) > 0 {
-		for _, folder := range params.In {
-			q.Add("in", folder)
-		}
-	}
-	if params.Fields != "" {
-		q.Set("fields", params.Fields)
-	}
-	if params.MetadataPair != "" {
-		q.Set("metadata_pair", params.MetadataPair)
-	}
-
-	queryURL += "?" + q.Encode()
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/messages", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().
+		AddInt("limit", params.Limit).
+		Add("page_token", params.PageToken).
+		AddInt("offset", params.Offset).
+		Add("subject", params.Subject).
+		Add("from", params.From).
+		Add("to", params.To).
+		Add("thread_id", params.ThreadID).
+		AddBoolPtr("unread", params.Unread).
+		AddBoolPtr("starred", params.Starred).
+		AddBoolPtr("has_attachment", params.HasAttachment).
+		AddInt64("received_before", params.ReceivedBefore).
+		AddInt64("received_after", params.ReceivedAfter).
+		Add("q", params.SearchQuery).
+		AddSlice("in", params.In).
+		Add("fields", params.Fields).
+		Add("metadata_pair", params.MetadataPair).
+		BuildURL(baseURL)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
 	if err != nil {

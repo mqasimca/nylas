@@ -92,7 +92,7 @@ This command fetches your recent emails and uses AI to provide:
 			}
 
 			if len(messages) == 0 {
-				fmt.Println("No emails found to analyze.")
+				common.PrintEmptyState("emails")
 				return nil
 			}
 

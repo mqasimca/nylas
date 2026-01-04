@@ -53,7 +53,7 @@ func newGroupsListCmd() *cobra.Command {
 			}
 
 			if len(groups) == 0 {
-				fmt.Println("No contact groups found.")
+				common.PrintEmptyState("contact groups")
 				return nil
 			}
 

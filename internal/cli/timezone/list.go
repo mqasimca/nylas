@@ -53,7 +53,7 @@ func runList(filter string, jsonOut bool) error {
 
 	zones, err := svc.ListTimeZones(ctx)
 	if err != nil {
-		return fmt.Errorf("list time zones: %w", err)
+		return common.WrapListError("time zones", err)
 	}
 
 	// Filter if requested
@@ -86,7 +86,7 @@ func runList(filter string, jsonOut bool) error {
 	fmt.Printf("\n\n")
 
 	if len(zones) == 0 {
-		fmt.Println("No time zones found matching the filter.")
+		common.PrintEmptyStateWithHint("zones", "try adjusting the filter")
 		return nil
 	}
 

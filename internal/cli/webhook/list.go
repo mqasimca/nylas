@@ -56,8 +56,7 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 			}
 
 			if len(webhooks) == 0 {
-				fmt.Println("No webhooks configured.")
-				fmt.Println("\nCreate a webhook with: nylas webhook create --url <URL> --triggers <triggers>")
+				common.PrintEmptyStateWithHint("webhooks", "Create one with: nylas webhook create --url <URL> --triggers <triggers>")
 				return nil
 			}
 

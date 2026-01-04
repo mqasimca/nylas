@@ -8,16 +8,10 @@ import (
 
 // handleListCalendars returns all calendars for the current account.
 func (s *Server) handleListCalendars(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode: return mock calendars
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, CalendarsResponse{
-			Calendars: demoCalendars(),
-		})
+	if s.handleDemoMode(w, CalendarsResponse{Calendars: demoCalendars()}) {
 		return
 	}
 

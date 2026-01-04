@@ -83,7 +83,7 @@ func runInfo(zone, timeStr string, jsonOut bool) error {
 
 	info, err := svc.GetTimeZoneInfo(ctx, zone, checkTime)
 	if err != nil {
-		return fmt.Errorf("get time zone info: %w", err)
+		return common.WrapGetError("time zone info", err)
 	}
 
 	// Get current time in the zone

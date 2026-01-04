@@ -323,8 +323,7 @@ func (s *Server) handleFreeBusy(w http.ResponseWriter, r *http.Request) {
 
 // handleConflicts detects scheduling conflicts in events.
 func (s *Server) handleConflicts(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 

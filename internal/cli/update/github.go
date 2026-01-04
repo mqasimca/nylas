@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 const (
@@ -45,7 +47,7 @@ func getLatestRelease(ctx context.Context) (*Release, error) {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, common.WrapCreateError("request", err)
 	}
 
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -54,7 +56,7 @@ func getLatestRelease(ctx context.Context) (*Release, error) {
 	client := &http.Client{Timeout: httpTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetch release: %w", err)
+		return nil, common.WrapFetchError("release", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 

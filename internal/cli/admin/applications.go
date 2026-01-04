@@ -53,7 +53,7 @@ func newAppListCmd() *cobra.Command {
 			}
 
 			if len(apps) == 0 {
-				fmt.Println("No applications found.")
+				common.PrintEmptyState("applications")
 				return nil
 			}
 

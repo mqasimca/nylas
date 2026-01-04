@@ -63,7 +63,7 @@ func newGrantListCmd() *cobra.Command {
 			}
 
 			if len(grants) == 0 {
-				fmt.Println("No grants found.")
+				common.PrintEmptyState("grants")
 				return nil
 			}
 

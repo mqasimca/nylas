@@ -1,7 +1,6 @@
 package air
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -69,30 +68,26 @@ type CacheSettingsResponse struct {
 
 // handleCacheStatus returns the current cache status.
 func (s *Server) handleCacheStatus(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-
-	// Demo mode returns mock status
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, CacheStatusResponse{
-			Enabled: true,
-			Online:  true,
-			Accounts: []CacheAccountInfo{
-				{
-					Email:        "demo@example.com",
-					SizeBytes:    10 * 1024 * 1024, // 10MB
-					EmailCount:   150,
-					EventCount:   25,
-					ContactCount: 50,
-				},
+	if s.handleDemoMode(w, CacheStatusResponse{
+		Enabled: true,
+		Online:  true,
+		Accounts: []CacheAccountInfo{
+			{
+				Email:        "demo@example.com",
+				SizeBytes:    10 * 1024 * 1024, // 10MB
+				EmailCount:   150,
+				EventCount:   25,
+				ContactCount: 50,
 			},
-			TotalSizeBytes:    10 * 1024 * 1024,
-			PendingActions:    0,
-			SyncInterval:      5,
-			EncryptionEnabled: false,
-		})
+		},
+		TotalSizeBytes:    10 * 1024 * 1024,
+		PendingActions:    0,
+		SyncInterval:      5,
+		EncryptionEnabled: false,
+	}) {
 		return
 	}
 
@@ -148,16 +143,10 @@ func (s *Server) handleCacheStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleCacheSync triggers a manual sync.
 func (s *Server) handleCacheSync(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
-
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, CacheSyncResponse{
-			Success: true,
-			Message: "Demo mode: sync simulated",
-		})
+	if s.handleDemoMode(w, CacheSyncResponse{Success: true, Message: "Demo mode: sync simulated"}) {
 		return
 	}
 
@@ -212,16 +201,10 @@ func (s *Server) handleCacheSync(w http.ResponseWriter, r *http.Request) {
 
 // handleCacheClear clears the cache.
 func (s *Server) handleCacheClear(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
-
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, CacheSyncResponse{
-			Success: true,
-			Message: "Demo mode: cache clear simulated",
-		})
+	if s.handleDemoMode(w, CacheSyncResponse{Success: true, Message: "Demo mode: cache clear simulated"}) {
 		return
 	}
 
@@ -266,8 +249,7 @@ func (s *Server) handleCacheClear(w http.ResponseWriter, r *http.Request) {
 
 // handleCacheSearch performs a unified search across cached data.
 func (s *Server) handleCacheSearch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
 
@@ -281,17 +263,15 @@ func (s *Server) handleCacheSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if s.demoMode {
-		// Return mock search results
-		writeJSON(w, http.StatusOK, CacheSearchResponse{
-			Results: []CacheSearchResult{
-				{Type: "email", ID: "demo-1", Title: "Meeting Notes", Subtitle: "From: alice@example.com", Date: time.Now().Unix()},
-				{Type: "event", ID: "demo-2", Title: "Team Standup", Subtitle: "Tomorrow 10:00 AM", Date: time.Now().Add(24 * time.Hour).Unix()},
-				{Type: "contact", ID: "demo-3", Title: "Bob Smith", Subtitle: "bob@example.com", Date: time.Now().Unix()},
-			},
-			Query: query,
-			Total: 3,
-		})
+	if s.handleDemoMode(w, CacheSearchResponse{
+		Results: []CacheSearchResult{
+			{Type: "email", ID: "demo-1", Title: "Meeting Notes", Subtitle: "From: alice@example.com", Date: time.Now().Unix()},
+			{Type: "event", ID: "demo-2", Title: "Team Standup", Subtitle: "Tomorrow 10:00 AM", Date: time.Now().Add(24 * time.Hour).Unix()},
+			{Type: "contact", ID: "demo-3", Title: "Bob Smith", Subtitle: "bob@example.com", Date: time.Now().Unix()},
+		},
+		Query: query,
+		Total: 3,
+	}) {
 		return
 	}
 
@@ -403,11 +383,7 @@ func (s *Server) getCacheSettings(w http.ResponseWriter, _ *http.Request) {
 
 // updateCacheSettings updates cache settings.
 func (s *Server) updateCacheSettings(w http.ResponseWriter, r *http.Request) {
-	if s.demoMode {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"success": true,
-			"message": "Demo mode: settings update simulated",
-		})
+	if s.handleDemoMode(w, map[string]any{"success": true, "message": "Demo mode: settings update simulated"}) {
 		return
 	}
 
@@ -420,8 +396,7 @@ func (s *Server) updateCacheSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CacheSettingsResponse
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 

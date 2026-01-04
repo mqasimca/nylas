@@ -51,7 +51,7 @@ func newFoldersListCmd() *cobra.Command {
 			}
 
 			if len(folders) == 0 {
-				fmt.Println("No folders found.")
+				common.PrintEmptyState("folders")
 				return nil
 			}
 

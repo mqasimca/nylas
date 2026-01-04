@@ -121,7 +121,7 @@ Examples:
 			}
 
 			if len(messages) == 0 {
-				fmt.Println("No messages found matching your search.")
+				common.PrintEmptyStateWithHint("messages", "try different search terms")
 				return nil
 			}
 

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -34,40 +32,20 @@ func (c *HTTPClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 		params.Limit = 10
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events", c.baseURL, grantID)
-	q := url.Values{}
-	q.Set("calendar_id", calendarID)
-	q.Set("limit", strconv.Itoa(params.Limit))
-
-	if params.PageToken != "" {
-		q.Set("page_token", params.PageToken)
-	}
-	if params.Start > 0 {
-		q.Set("start", strconv.FormatInt(params.Start, 10))
-	}
-	if params.End > 0 {
-		q.Set("end", strconv.FormatInt(params.End, 10))
-	}
-	if params.Title != "" {
-		q.Set("title", params.Title)
-	}
-	if params.Location != "" {
-		q.Set("location", params.Location)
-	}
-	if params.ShowCancelled {
-		q.Set("show_cancelled", "true")
-	}
-	if params.ExpandRecurring {
-		q.Set("expand_recurring", "true")
-	}
-	if params.Busy != nil {
-		q.Set("busy", strconv.FormatBool(*params.Busy))
-	}
-	if params.OrderBy != "" {
-		q.Set("order_by", params.OrderBy)
-	}
-
-	queryURL += "?" + q.Encode()
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().
+		Add("calendar_id", calendarID).
+		AddInt("limit", params.Limit).
+		Add("page_token", params.PageToken).
+		AddInt64("start", params.Start).
+		AddInt64("end", params.End).
+		Add("title", params.Title).
+		Add("location", params.Location).
+		AddBool("show_cancelled", params.ShowCancelled).
+		AddBool("expand_recurring", params.ExpandRecurring).
+		AddBoolPtr("busy", params.Busy).
+		Add("order_by", params.OrderBy).
+		BuildURL(baseURL)
 
 	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {

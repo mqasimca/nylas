@@ -39,12 +39,12 @@ automatically blocks focus time to protect deep work sessions.`,
 
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("get client: %w", err)
+				return common.WrapGetError("client", err)
 			}
 
 			grantID, err := getGrantID(args)
 			if err != nil {
-				return fmt.Errorf("get grant ID: %w", err)
+				return common.WrapGetError("grant ID", err)
 			}
 
 			ctx, cancel := common.CreateContext()
@@ -244,7 +244,7 @@ func runCreateFocusBlocks(ctx context.Context, optimizer *analytics.FocusOptimiz
 	// Create the blocks
 	protectedBlocks, err := optimizer.CreateProtectedBlocks(ctx, grantID, analysis.RecommendedBlocks, settings)
 	if err != nil {
-		return fmt.Errorf("create protected blocks: %w", err)
+		return common.WrapCreateError("protected blocks", err)
 	}
 
 	fmt.Printf("✅ Created %d focus time blocks:\n\n", len(protectedBlocks))
@@ -293,12 +293,12 @@ suggests optimizations to protect focus time and reduce meeting overload.`,
 
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("get client: %w", err)
+				return common.WrapGetError("client", err)
 			}
 
 			grantID, err := getGrantID(args)
 			if err != nil {
-				return fmt.Errorf("get grant ID: %w", err)
+				return common.WrapGetError("grant ID", err)
 			}
 
 			ctx, cancel := common.CreateContext()

@@ -57,7 +57,7 @@ func newDraftsListCmd() *cobra.Command {
 			}
 
 			if len(drafts) == 0 {
-				fmt.Println("No drafts found.")
+				common.PrintEmptyState("drafts")
 				return nil
 			}
 

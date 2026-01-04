@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 const binaryName = "nylas"
@@ -40,7 +42,7 @@ func getAssetName(version string) string {
 func downloadFile(ctx context.Context, url string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return "", fmt.Errorf("create request: %w", err)
+		return "", common.WrapCreateError("request", err)
 	}
 
 	req.Header.Set("User-Agent", "nylas-cli")
@@ -58,7 +60,7 @@ func downloadFile(ctx context.Context, url string) (string, error) {
 
 	tmpFile, err := os.CreateTemp("", "nylas-update-*")
 	if err != nil {
-		return "", fmt.Errorf("create temp file: %w", err)
+		return "", common.WrapCreateError("temp file", err)
 	}
 
 	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
@@ -79,7 +81,7 @@ func downloadFile(ctx context.Context, url string) (string, error) {
 func downloadChecksums(ctx context.Context, url string) (map[string]string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, common.WrapCreateError("request", err)
 	}
 
 	req.Header.Set("User-Agent", "nylas-cli")
@@ -153,7 +155,7 @@ func extractFromTarGz(archivePath string) (string, error) {
 
 	gzr, err := gzip.NewReader(f)
 	if err != nil {
-		return "", fmt.Errorf("create gzip reader: %w", err)
+		return "", common.WrapCreateError("gzip reader", err)
 	}
 	defer func() { _ = gzr.Close() }()
 
@@ -173,7 +175,7 @@ func extractFromTarGz(archivePath string) (string, error) {
 		if baseName == binaryName || baseName == binaryName+".exe" {
 			tmpFile, err := os.CreateTemp("", "nylas-binary-*")
 			if err != nil {
-				return "", fmt.Errorf("create temp file: %w", err)
+				return "", common.WrapCreateError("temp file", err)
 			}
 
 			// Use LimitReader to prevent decompression bombs (G110)
@@ -221,7 +223,7 @@ func extractFromZip(archivePath string) (string, error) {
 			tmpFile, err := os.CreateTemp("", "nylas-binary-*")
 			if err != nil {
 				_ = rc.Close()
-				return "", fmt.Errorf("create temp file: %w", err)
+				return "", common.WrapCreateError("temp file", err)
 			}
 
 			// Use LimitReader to prevent decompression bombs (G110)
@@ -258,7 +260,7 @@ func extractFromZip(archivePath string) (string, error) {
 func getCurrentBinaryPath() (string, error) {
 	exePath, err := os.Executable()
 	if err != nil {
-		return "", fmt.Errorf("get executable path: %w", err)
+		return "", common.WrapGetError("executable path", err)
 	}
 
 	// Resolve symlinks to get the real path
@@ -293,7 +295,7 @@ func installBinary(newBinaryPath, targetPath string) error {
 	// Create backup
 	backupPath := targetPath + ".bak"
 	if err := os.Rename(targetPath, backupPath); err != nil {
-		return fmt.Errorf("create backup: %w", err)
+		return common.WrapCreateError("backup", err)
 	}
 
 	// Copy new binary to target (can't rename across filesystems)

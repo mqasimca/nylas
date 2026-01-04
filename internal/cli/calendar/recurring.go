@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -97,17 +96,16 @@ The master event ID is the ID of the parent recurring event.`,
 			}
 
 			if len(instances) == 0 {
-				fmt.Println("No recurring event instances found")
+				common.PrintEmptyState("recurring event instances")
 				return nil
 			}
 
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			_, _ = fmt.Fprintln(w, "INSTANCE ID\tTITLE\tSTART TIME\tSTATUS")
+			table := common.NewTable("INSTANCE ID", "TITLE", "START TIME", "STATUS")
 			for _, event := range instances {
 				startTime := time.Unix(event.When.StartTime, 0).Format("2006-01-02 15:04")
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", event.ID, event.Title, startTime, event.Status)
+				table.AddRow(event.ID, event.Title, startTime, event.Status)
 			}
-			_ = w.Flush()
+			table.Render()
 
 			fmt.Printf("\nTotal instances: %d\n", len(instances))
 			if len(instances) > 0 && instances[0].MasterEventID != "" {

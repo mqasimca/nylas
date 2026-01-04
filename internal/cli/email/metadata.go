@@ -77,7 +77,7 @@ This shows all metadata stored on the message, including both indexed
 			}
 
 			if len(message.Metadata) == 0 {
-				fmt.Println("No metadata found for this message.")
+				common.PrintEmptyState("metadata")
 				return nil
 			}
 

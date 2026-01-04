@@ -139,7 +139,7 @@ Examples:
 			}
 
 			if len(allMessages) == 0 {
-				fmt.Println("No messages found")
+				common.PrintEmptyState("messages")
 				return nil
 			}
 
