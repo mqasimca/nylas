@@ -5,12 +5,15 @@ package integration
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // =============================================================================
@@ -403,27 +406,37 @@ func TestCLI_WebhookLifecycle(t *testing.T) {
 	// Create webhook with retry (cloudflare tunnels may need time to become reachable)
 	t.Run("create", func(t *testing.T) {
 		var stdout, stderr string
-		var err error
 
-		// Retry up to 3 times with increasing delays
-		for attempt := 1; attempt <= 3; attempt++ {
-			stdout, stderr, err = runCLI("webhook", "create",
+		// Retry config: 5s base delay, 2x multiplier = 5s, 10s delays (matches original)
+		retryConfig := common.RetryConfig{
+			MaxRetries:  2, // 3 total attempts
+			BaseDelay:   5 * time.Second,
+			MaxDelay:    30 * time.Second,
+			Multiplier:  2.0,
+			JitterRatio: 0,
+		}
+
+		ctx := context.Background()
+		err := common.WithRetry(ctx, retryConfig, func() error {
+			var cmdErr error
+			stdout, stderr, cmdErr = runCLI("webhook", "create",
 				"--url", webhookURL,
 				"--triggers", "message.created",
 				"--description", webhookDesc)
 
-			if err == nil && strings.Contains(stdout, "created") {
-				break
+			if cmdErr != nil {
+				t.Logf("Attempt failed: %v, retrying...", cmdErr)
+				return cmdErr
 			}
-
-			if attempt < 3 {
-				t.Logf("Attempt %d failed, retrying in %d seconds...", attempt, attempt*5)
-				time.Sleep(time.Duration(attempt*5) * time.Second)
+			if !strings.Contains(stdout, "created") {
+				t.Logf("Output missing 'created', retrying...")
+				return errors.New("webhook not yet created")
 			}
-		}
+			return nil
+		})
 
 		if err != nil {
-			t.Fatalf("webhook create failed after 3 attempts: %v\nstderr: %s", err, stderr)
+			t.Fatalf("webhook create failed after retries: %v\nstderr: %s", err, stderr)
 		}
 
 		if !strings.Contains(stdout, "created") {

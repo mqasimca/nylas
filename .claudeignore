@@ -3,6 +3,7 @@
 
 # Local files (not auto-loaded)
 *.local.md
+local/
 
 # Go dependency files (auto-generated, large, not needed in context)
 go.sum
@@ -95,6 +96,7 @@ Brewfile
 # Test fixtures and mock data (load when needed)
 **/testdata/**
 **/fixtures/**
+tests/PLAYWRIGHT_STATUS.md
 
 # License and legal files (rarely changed)
 LICENSE
