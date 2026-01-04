@@ -65,69 +65,57 @@ Examples:
 }
 
 func runDoctor(verbose bool) error {
-	green := common.Green
-	yellow := common.Yellow
-	red := common.Red
-	cyan := common.Cyan
-	dim := common.Dim
-	bold := common.Bold
-
-	_, _ = bold.Println("Nylas CLI Health Check")
+	_, _ = common.Bold.Println("Nylas CLI Health Check")
 	fmt.Println()
 
 	results := []CheckResult{}
 
 	// Show environment info
 	if verbose {
-		_, _ = dim.Printf("  Platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		_, _ = dim.Printf("  Go Version: %s\n", runtime.Version())
-		_, _ = dim.Printf("  Config Dir: %s\n", config.DefaultConfigDir())
+		_, _ = common.Dim.Printf("  Platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		_, _ = common.Dim.Printf("  Go Version: %s\n", runtime.Version())
+		_, _ = common.Dim.Printf("  Config Dir: %s\n", config.DefaultConfigDir())
 		fmt.Println()
 	}
 
 	// 1. Check configuration file
-	spinner := common.NewSpinner("Checking configuration...")
-	spinner.Start()
-	configResult := checkConfig()
-	spinner.Stop()
+	configResult, _ := common.RunWithSpinnerResult("Checking configuration...", func() (CheckResult, error) {
+		return checkConfig(), nil
+	})
 	results = append(results, configResult)
 	printCheckResult(configResult, verbose)
 
 	// 2. Check secret store
-	spinner = common.NewSpinner("Checking secret store...")
-	spinner.Start()
-	secretResult := checkSecretStore()
-	spinner.Stop()
+	secretResult, _ := common.RunWithSpinnerResult("Checking secret store...", func() (CheckResult, error) {
+		return checkSecretStore(), nil
+	})
 	results = append(results, secretResult)
 	printCheckResult(secretResult, verbose)
 
 	// 3. Check API credentials
-	spinner = common.NewSpinner("Checking API credentials...")
-	spinner.Start()
-	apiKeyResult := checkAPICredentials()
-	spinner.Stop()
+	apiKeyResult, _ := common.RunWithSpinnerResult("Checking API credentials...", func() (CheckResult, error) {
+		return checkAPICredentials(), nil
+	})
 	results = append(results, apiKeyResult)
 	printCheckResult(apiKeyResult, verbose)
 
 	// 4. Check network connectivity
-	spinner = common.NewSpinner("Checking network connectivity...")
-	spinner.Start()
-	networkResult := checkNetworkConnectivity()
-	spinner.Stop()
+	networkResult, _ := common.RunWithSpinnerResult("Checking network connectivity...", func() (CheckResult, error) {
+		return checkNetworkConnectivity(), nil
+	})
 	results = append(results, networkResult)
 	printCheckResult(networkResult, verbose)
 
 	// 5. Check grants
-	spinner = common.NewSpinner("Checking grants...")
-	spinner.Start()
-	grantsResult := checkGrants()
-	spinner.Stop()
+	grantsResult, _ := common.RunWithSpinnerResult("Checking grants...", func() (CheckResult, error) {
+		return checkGrants(), nil
+	})
 	results = append(results, grantsResult)
 	printCheckResult(grantsResult, verbose)
 
 	// Summary
 	fmt.Println()
-	_, _ = bold.Println("Summary")
+	_, _ = common.Bold.Println("Summary")
 	fmt.Println()
 
 	okCount := 0
@@ -146,25 +134,25 @@ func runDoctor(verbose bool) error {
 	}
 
 	if errCount > 0 {
-		_, _ = red.Printf("  %d error(s), %d warning(s), %d passed\n", errCount, warnCount, okCount)
+		_, _ = common.Red.Printf("  %d error(s), %d warning(s), %d passed\n", errCount, warnCount, okCount)
 		fmt.Println()
-		_, _ = cyan.Println("  Recommendations:")
+		_, _ = common.Cyan.Println("  Recommendations:")
 		for _, r := range results {
 			if r.Status == CheckStatusError && r.Detail != "" {
 				fmt.Printf("    - %s\n", r.Detail)
 			}
 		}
 	} else if warnCount > 0 {
-		_, _ = yellow.Printf("  %d warning(s), %d passed\n", warnCount, okCount)
+		_, _ = common.Yellow.Printf("  %d warning(s), %d passed\n", warnCount, okCount)
 		fmt.Println()
-		_, _ = cyan.Println("  Recommendations:")
+		_, _ = common.Cyan.Println("  Recommendations:")
 		for _, r := range results {
 			if r.Status == CheckStatusWarning && r.Detail != "" {
 				fmt.Printf("    - %s\n", r.Detail)
 			}
 		}
 	} else {
-		_, _ = green.Printf("  All %d checks passed!\n", okCount)
+		_, _ = common.Green.Printf("  All %d checks passed!\n", okCount)
 	}
 
 	fmt.Println()
@@ -177,37 +165,32 @@ func runDoctor(verbose bool) error {
 }
 
 func printCheckResult(r CheckResult, verbose bool) {
-	green := common.Green
-	yellow := common.Yellow
-	red := common.Red
-	dim := common.Dim
-
 	var icon string
 	var colorFn *color.Color
 
 	switch r.Status {
 	case CheckStatusOK:
 		icon = "✓"
-		colorFn = green
+		colorFn = common.Green
 	case CheckStatusWarning:
 		icon = "⚠"
-		colorFn = yellow
+		colorFn = common.Yellow
 	case CheckStatusError:
 		icon = "✗"
-		colorFn = red
+		colorFn = common.Red
 	case CheckStatusSkipped:
 		icon = "○"
-		colorFn = dim
+		colorFn = common.Dim
 	}
 
 	_, _ = colorFn.Printf("  %s %s", icon, r.Name)
 	if r.Message != "" {
-		_, _ = dim.Printf(" - %s", r.Message)
+		_, _ = common.Dim.Printf(" - %s", r.Message)
 	}
 	fmt.Println()
 
 	if verbose && r.Detail != "" {
-		_, _ = dim.Printf("    %s\n", r.Detail)
+		_, _ = common.Dim.Printf("    %s\n", r.Detail)
 	}
 }
 

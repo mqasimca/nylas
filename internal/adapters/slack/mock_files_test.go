@@ -120,7 +120,7 @@ func TestMockClient_DownloadFile(t *testing.T) {
 		mock := NewMockClient()
 		reader, err := mock.DownloadFile(context.Background(), "https://files.slack.com/test.png")
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		content, err := io.ReadAll(reader)
 		require.NoError(t, err)
@@ -138,7 +138,7 @@ func TestMockClient_DownloadFile(t *testing.T) {
 
 		reader, err := mock.DownloadFile(context.Background(), "https://files.slack.com/public.pdf")
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		content, err := io.ReadAll(reader)
 		require.NoError(t, err)
@@ -156,7 +156,7 @@ func TestMockClient_DownloadFile(t *testing.T) {
 
 		reader, err := mock.DownloadFile(context.Background(), "https://files.slack.com/empty.txt")
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		content, err := io.ReadAll(reader)
 		require.NoError(t, err)
@@ -231,5 +231,5 @@ func TestMockClient_FileOperationsCompleteInterface(t *testing.T) {
 	reader, err := mock.DownloadFile(ctx, "https://example.com/file.pdf")
 	require.NoError(t, err)
 	assert.NotNil(t, reader)
-	reader.Close()
+	_ = reader.Close()
 }

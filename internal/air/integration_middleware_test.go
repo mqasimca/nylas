@@ -30,7 +30,7 @@ func TestIntegration_Middleware_Compression(t *testing.T) {
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.Header.Get("Content-Encoding") != "gzip" {
 		t.Error("expected Content-Encoding: gzip")
