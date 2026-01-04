@@ -1,11 +1,9 @@
 package auth
 
 import (
-	"context"
-	"time"
-
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newRevokeCmd() *cobra.Command {
@@ -21,15 +19,14 @@ func newRevokeCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := authSvc.LogoutGrant(ctx, grantID); err != nil {
 				return err
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Grant %s revoked\n", grantID)
+			_, _ = common.Green.Printf("✓ Grant %s revoked\n", grantID)
 
 			return nil
 		},

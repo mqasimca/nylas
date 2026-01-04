@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -151,7 +152,7 @@ func (v *EventsView) updateEventsList(date time.Time) {
 	success := colorToHex(v.app.styles.SuccessColor)
 
 	// Header with date
-	dateStr := date.Format("Monday, January 2, 2006")
+	dateStr := date.Format(common.DisplayDateLong)
 	_, _ = fmt.Fprintf(v.eventsList, "[%s::b]%s[-::-]\n\n", title, dateStr)
 
 	if len(events) == 0 {

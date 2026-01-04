@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
@@ -65,12 +65,12 @@ Examples:
 }
 
 func runDoctor(verbose bool) error {
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	red := color.New(color.FgRed)
-	cyan := color.New(color.FgCyan)
-	dim := color.New(color.Faint)
-	bold := color.New(color.Bold)
+	green := common.Green
+	yellow := common.Yellow
+	red := common.Red
+	cyan := common.Cyan
+	dim := common.Dim
+	bold := common.Bold
 
 	_, _ = bold.Println("Nylas CLI Health Check")
 	fmt.Println()
@@ -177,10 +177,10 @@ func runDoctor(verbose bool) error {
 }
 
 func printCheckResult(r CheckResult, verbose bool) {
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	red := color.New(color.FgRed)
-	dim := color.New(color.Faint)
+	green := common.Green
+	yellow := common.Yellow
+	red := common.Red
+	dim := common.Dim
 
 	var icon string
 	var colorFn *color.Color
@@ -350,7 +350,7 @@ func checkAPICredentials() CheckResult {
 }
 
 func checkNetworkConnectivity() CheckResult {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutHealthCheck)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.us.nylas.com/v3/", nil)
@@ -363,7 +363,7 @@ func checkNetworkConnectivity() CheckResult {
 		}
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: domain.TimeoutHealthCheck}
 	start := time.Now()
 	resp, err := client.Do(req)
 	latency := time.Since(start)
@@ -456,7 +456,7 @@ func checkGrants() CheckResult {
 	client.SetRegion(cfg.Region)
 	client.SetCredentials(clientID, clientSecret, apiKey)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutHealthCheck)
 	defer cancel()
 
 	grant, err := client.GetGrant(ctx, defaultGrant)

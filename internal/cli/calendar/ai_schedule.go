@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 func newAIScheduleCmd() *cobra.Command {
@@ -47,7 +47,7 @@ Examples:
 			configStore := common.GetConfigStore(cmd)
 			cfg, err := configStore.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			// Check if AI is configured
@@ -89,13 +89,13 @@ Examples:
 			// Get Nylas client
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("failed to get client: %w", err)
+				return common.WrapGetError("client", err)
 			}
 
 			// Get grant ID
 			grantID, err := getGrantID(args)
 			if err != nil {
-				return fmt.Errorf("failed to get grant ID: %w", err)
+				return common.WrapGetError("grant ID", err)
 			}
 
 			// Create AI scheduler
@@ -113,11 +113,11 @@ Examples:
 			fmt.Printf("Processing your request: \"%s\"\n\n", query)
 
 			// Call AI scheduler - use longer timeout for AI operations
-			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
 			defer cancel()
 			response, err := scheduler.Schedule(ctx, scheduleReq)
 			if err != nil {
-				return fmt.Errorf("AI scheduling failed: %w", err)
+				return common.WrapError(err)
 			}
 
 			// Display results

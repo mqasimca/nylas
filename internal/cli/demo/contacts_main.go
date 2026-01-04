@@ -65,7 +65,7 @@ func newDemoContactsListCmd() *cobra.Command {
 
 			contacts, err := client.GetContacts(ctx, "demo-grant", nil)
 			if err != nil {
-				return fmt.Errorf("failed to get demo contacts: %w", err)
+				return common.WrapListError("contacts", err)
 			}
 
 			if limit > 0 && limit < len(contacts) {
@@ -118,7 +118,7 @@ func newDemoContactsShowCmd() *cobra.Command {
 
 			contact, err := client.GetContact(ctx, "demo-grant", contactID)
 			if err != nil {
-				return fmt.Errorf("failed to get demo contact: %w", err)
+				return common.WrapGetError("contact", err)
 			}
 
 			fmt.Println()

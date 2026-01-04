@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -90,7 +89,7 @@ record the meeting, and generate a transcript when complete.`,
 
 			notetaker, err := client.CreateNotetaker(ctx, grantID, req)
 			if err != nil {
-				return fmt.Errorf("failed to create notetaker: %w", err)
+				return common.WrapCreateError("notetaker", err)
 			}
 
 			if outputJSON {
@@ -99,16 +98,13 @@ record the meeting, and generate a transcript when complete.`,
 				return enc.Encode(notetaker)
 			}
 
-			green := color.New(color.FgGreen, color.Bold)
-			cyan := color.New(color.FgCyan)
-
-			_, _ = green.Println("✓ Notetaker created successfully!")
+			_, _ = common.BoldGreen.Println("✓ Notetaker created successfully!")
 			fmt.Println()
-			_, _ = cyan.Printf("ID:    %s\n", notetaker.ID)
+			_, _ = common.Cyan.Printf("ID:    %s\n", notetaker.ID)
 			fmt.Printf("State: %s\n", formatState(notetaker.State))
 			fmt.Printf("Link:  %s\n", notetaker.MeetingLink)
 			if !notetaker.JoinTime.IsZero() {
-				fmt.Printf("Join:  %s\n", notetaker.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+				fmt.Printf("Join:  %s\n", notetaker.JoinTime.Local().Format(common.DisplayWeekdayFullWithTZ))
 			}
 
 			return nil

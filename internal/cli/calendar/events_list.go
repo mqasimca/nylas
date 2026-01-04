@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -70,7 +69,7 @@ Examples:
 			if calendarID == "" {
 				calendars, err := client.GetCalendars(ctx, grantID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendars: %w", err)
+					return common.WrapListError("calendars", err)
 				}
 				for _, cal := range calendars {
 					if cal.IsPrimary {
@@ -107,7 +106,7 @@ Examples:
 
 			events, err := client.GetEvents(ctx, grantID, calendarID, params)
 			if err != nil {
-				return fmt.Errorf("failed to get events: %w", err)
+				return common.WrapListError("events", err)
 			}
 
 			if len(events) == 0 {
@@ -115,16 +114,11 @@ Examples:
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-			dim := color.New(color.Faint)
-
 			fmt.Printf("Found %d event(s):\n\n", len(events))
 
 			for _, event := range events {
 				// Title with timezone badge (if showing timezone info)
-				fmt.Printf("%s", cyan.Sprint(event.Title))
+				fmt.Printf("%s", common.Cyan.Sprint(event.Title))
 				if showTZ && !event.When.IsAllDay() {
 					// Get event's original timezone
 					start := event.When.StartDateTime()
@@ -134,9 +128,8 @@ Examples:
 					}
 
 					// Add colored timezone badge
-					tzColor := getTimezoneColor(originalTZ)
 					badge := formatTimezoneBadge(originalTZ, true) // Use abbreviation
-					fmt.Printf(" %s", color.New(color.Attribute(tzColor)).Sprint(badge))
+					fmt.Printf(" %s", common.Blue.Sprint(badge))
 				}
 				fmt.Println()
 
@@ -144,30 +137,30 @@ Examples:
 				timeDisplay, err := formatEventTimeWithTZ(&event, targetTZ)
 				if err != nil {
 					fmt.Printf("  %s %s (timezone conversion error: %v)\n",
-						dim.Sprint("When:"),
+						common.Dim.Sprint("When:"),
 						formatEventTime(event.When),
 						err)
 				} else {
 					if timeDisplay.ShowConversion {
 						// Show converted time prominently
-						fmt.Printf("  %s %s", dim.Sprint("When:"), timeDisplay.ConvertedTime)
+						fmt.Printf("  %s %s", common.Dim.Sprint("When:"), timeDisplay.ConvertedTime)
 						if showTZ {
-							fmt.Printf(" %s", color.New(color.FgBlue, color.Bold).Sprint(timeDisplay.ConvertedTimezone))
+							fmt.Printf(" %s", common.BoldBlue.Sprint(timeDisplay.ConvertedTimezone))
 						}
 						fmt.Println()
 						// Show original time as reference
 						fmt.Printf("       %s %s",
-							dim.Sprint("(Original:"),
-							dim.Sprint(timeDisplay.OriginalTime))
+							common.Dim.Sprint("(Original:"),
+							common.Dim.Sprint(timeDisplay.OriginalTime))
 						if showTZ {
-							fmt.Printf(" %s", dim.Sprint(timeDisplay.OriginalTimezone))
+							fmt.Printf(" %s", common.Dim.Sprint(timeDisplay.OriginalTimezone))
 						}
-						fmt.Printf("%s\n", dim.Sprint(")"))
+						fmt.Printf("%s\n", common.Dim.Sprint(")"))
 					} else {
 						// No conversion - show original time
-						fmt.Printf("  %s %s", dim.Sprint("When:"), timeDisplay.OriginalTime)
+						fmt.Printf("  %s %s", common.Dim.Sprint("When:"), timeDisplay.OriginalTime)
 						if showTZ && timeDisplay.OriginalTimezone != "" {
-							fmt.Printf(" %s", color.New(color.FgBlue, color.Bold).Sprint(timeDisplay.OriginalTimezone))
+							fmt.Printf(" %s", common.BoldBlue.Sprint(timeDisplay.OriginalTimezone))
 						}
 						fmt.Println()
 					}
@@ -175,28 +168,28 @@ Examples:
 
 				// Location
 				if event.Location != "" {
-					fmt.Printf("  %s %s\n", dim.Sprint("Location:"), event.Location)
+					fmt.Printf("  %s %s\n", common.Dim.Sprint("Location:"), event.Location)
 				}
 
 				// Status
-				statusColor := green
+				statusColor := common.Green
 				switch event.Status {
 				case "cancelled":
-					statusColor = color.New(color.FgRed)
+					statusColor = common.Red
 				case "tentative":
-					statusColor = yellow
+					statusColor = common.Yellow
 				}
 				if event.Status != "" {
-					fmt.Printf("  %s %s\n", dim.Sprint("Status:"), statusColor.Sprint(event.Status))
+					fmt.Printf("  %s %s\n", common.Dim.Sprint("Status:"), statusColor.Sprint(event.Status))
 				}
 
 				// Participants count
 				if len(event.Participants) > 0 {
-					fmt.Printf("  %s %d participant(s)\n", dim.Sprint("Guests:"), len(event.Participants))
+					fmt.Printf("  %s %d participant(s)\n", common.Dim.Sprint("Guests:"), len(event.Participants))
 				}
 
 				// ID
-				fmt.Printf("  %s %s\n", dim.Sprint("ID:"), dim.Sprint(event.ID))
+				fmt.Printf("  %s %s\n", common.Dim.Sprint("ID:"), common.Dim.Sprint(event.ID))
 				fmt.Println()
 			}
 

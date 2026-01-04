@@ -11,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/mqasimca/nylas/internal/tui"
@@ -139,7 +140,7 @@ After creating, use: nylas tui --theme <name>`,
 			// Get themes directory
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
-				return fmt.Errorf("failed to get home directory: %w", err)
+				return common.WrapGetError("home directory", err)
 			}
 
 			themesDir := filepath.Join(homeDir, ".config", "nylas", "themes")
@@ -152,7 +153,7 @@ After creating, use: nylas tui --theme <name>`,
 
 			// Create the theme file
 			if err := tui.CreateDefaultThemeFile(themePath); err != nil {
-				return fmt.Errorf("failed to create theme file: %w", err)
+				return common.WrapCreateError("theme file", err)
 			}
 
 			fmt.Printf("Created theme file: %s\n\n", themePath)
@@ -225,7 +226,7 @@ This command checks:
 			// Validate the custom theme
 			result, err := tui.ValidateTheme(themeName)
 			if err != nil {
-				return fmt.Errorf("validation failed: %w", err)
+				return common.WrapError(err)
 			}
 
 			// Display results
@@ -304,7 +305,7 @@ You can still override it with --theme flag when launching.`,
 				// Check if it's a valid custom theme
 				_, err := tui.ValidateTheme(themeName)
 				if err != nil {
-					return fmt.Errorf("failed to validate theme: %w", err)
+					return common.WrapError(err)
 				}
 				result, _ := tui.ValidateTheme(themeName)
 				if !result.Valid {
@@ -316,7 +317,7 @@ You can still override it with --theme flag when launching.`,
 			configStore := config.NewDefaultFileStore()
 			cfg, err := configStore.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			// Update theme
@@ -324,7 +325,7 @@ You can still override it with --theme flag when launching.`,
 
 			// Save config
 			if err := configStore.Save(cfg); err != nil {
-				return fmt.Errorf("failed to save config: %w", err)
+				return common.WrapSaveError("config", err)
 			}
 
 			fmt.Printf("Default theme set to: %s\n", themeName)
@@ -367,7 +368,7 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 	configStore := config.NewDefaultFileStore()
 	cfg, err := configStore.Load()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return common.WrapLoadError("config", err)
 	}
 	if cfg == nil {
 		cfg = &domain.Config{}
@@ -376,7 +377,7 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 	// Initialize credentials and client
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
 	if err != nil {
-		return fmt.Errorf("failed to initialize secret store: %w", err)
+		return common.WrapError(err)
 	}
 
 	// Get API key
@@ -404,7 +405,7 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 	// Get grant email for display
 	grantInfo, err := grantStore.GetGrant(grantID)
 	if err != nil {
-		return fmt.Errorf("failed to get grant info: %w", err)
+		return common.WrapGetError("grant info", err)
 	}
 
 	return runTViewTUI(client, grantStore, grantID, grantInfo, cfg, theme, themeExplicitlySet, refreshInterval, initialView)

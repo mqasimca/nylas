@@ -1,12 +1,11 @@
 package ui
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	nylasadapter "github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -141,7 +140,7 @@ func (s *Server) handleConfigSetup(w http.ResponseWriter, r *http.Request) {
 	client.SetRegion(req.Region)
 	client.SetCredentials("", "", req.APIKey)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	// List applications to get Client ID

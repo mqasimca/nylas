@@ -64,13 +64,13 @@ This shows all metadata stored on the message, including both indexed
 
 			message, err := client.GetMessage(ctx, grantID, messageID)
 			if err != nil {
-				return fmt.Errorf("failed to get message: %w", err)
+				return common.WrapGetError("message", err)
 			}
 
 			if asJSON {
 				data, err := json.MarshalIndent(message.Metadata, "", "  ")
 				if err != nil {
-					return fmt.Errorf("failed to marshal metadata: %w", err)
+					return common.WrapMarshalError("metadata", err)
 				}
 				fmt.Println(string(data))
 				return nil

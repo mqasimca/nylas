@@ -1,11 +1,9 @@
 package auth
 
 import (
-	"context"
-	"time"
-
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newLogoutCmd() *cobra.Command {
@@ -18,15 +16,14 @@ func newLogoutCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := authSvc.Logout(ctx); err != nil {
 				return err
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Println("✓ Successfully logged out")
+			_, _ = common.Green.Println("✓ Successfully logged out")
 
 			return nil
 		},

@@ -38,7 +38,7 @@ func newDemoEventsListCmd() *cobra.Command {
 
 			events, err := client.GetEvents(ctx, "demo-grant", "primary", nil)
 			if err != nil {
-				return fmt.Errorf("failed to get demo events: %w", err)
+				return common.WrapListError("events", err)
 			}
 
 			fmt.Println()

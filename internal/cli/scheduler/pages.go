@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -46,7 +45,7 @@ func newPageListCmd() *cobra.Command {
 
 			pages, err := client.ListSchedulerPages(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to list pages: %w", err)
+				return common.WrapListError("pages", err)
 			}
 
 			if jsonOutput {
@@ -58,14 +57,11 @@ func newPageListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-
 			fmt.Printf("Found %d page(s):\n\n", len(pages))
 
 			table := common.NewTable("NAME", "ID", "SLUG", "CONFIG ID")
 			for _, page := range pages {
-				table.AddRow(cyan.Sprint(page.Name), page.ID, green.Sprint(page.Slug), page.ConfigurationID)
+				table.AddRow(common.Cyan.Sprint(page.Name), page.ID, common.Green.Sprint(page.Slug), page.ConfigurationID)
 			}
 			table.Render()
 
@@ -97,23 +93,19 @@ func newPageShowCmd() *cobra.Command {
 
 			page, err := client.GetSchedulerPage(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get page: %w", err)
+				return common.WrapGetError("page", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(page)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			bold := color.New(color.Bold)
-
-			_, _ = bold.Printf("Scheduler Page: %s\n", page.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(page.ID))
-			fmt.Printf("  Slug: %s\n", green.Sprint(page.Slug))
+			_, _ = common.Bold.Printf("Scheduler Page: %s\n", page.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(page.ID))
+			fmt.Printf("  Slug: %s\n", common.Green.Sprint(page.Slug))
 			fmt.Printf("  Configuration ID: %s\n", page.ConfigurationID)
 			if page.URL != "" {
-				fmt.Printf("  URL: %s\n", cyan.Sprint(page.URL))
+				fmt.Printf("  URL: %s\n", common.Cyan.Sprint(page.URL))
 			}
 
 			return nil
@@ -153,16 +145,13 @@ func newPageCreateCmd() *cobra.Command {
 
 			page, err := client.CreateSchedulerPage(ctx, req)
 			if err != nil {
-				return fmt.Errorf("failed to create page: %w", err)
+				return common.WrapCreateError("page", err)
 			}
 
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
-
-			_, _ = green.Printf("✓ Created scheduler page: %s\n", page.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(page.ID))
+			_, _ = common.Green.Printf("✓ Created scheduler page: %s\n", page.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(page.ID))
 			if page.Slug != "" {
-				fmt.Printf("  Slug: %s\n", green.Sprint(page.Slug))
+				fmt.Printf("  Slug: %s\n", common.Green.Sprint(page.Slug))
 			}
 
 			return nil
@@ -211,11 +200,10 @@ func newPageUpdateCmd() *cobra.Command {
 
 			page, err := client.UpdateSchedulerPage(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to update page: %w", err)
+				return common.WrapUpdateError("page", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Updated scheduler page: %s\n", page.Name)
+			_, _ = common.Green.Printf("✓ Updated scheduler page: %s\n", page.Name)
 
 			return nil
 		},
@@ -255,11 +243,10 @@ func newPageDeleteCmd() *cobra.Command {
 			defer cancel()
 
 			if err := client.DeleteSchedulerPage(ctx, args[0]); err != nil {
-				return fmt.Errorf("failed to delete page: %w", err)
+				return common.WrapDeleteError("page", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Deleted scheduler page: %s\n", args[0])
+			_, _ = common.Green.Printf("✓ Deleted scheduler page: %s\n", args[0])
 
 			return nil
 		},

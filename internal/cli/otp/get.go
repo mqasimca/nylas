@@ -1,7 +1,6 @@
 package otp
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,9 +8,9 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -33,7 +32,7 @@ If no email is specified, uses the default account.`,
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			var result *domain.OTPResult
@@ -81,9 +80,9 @@ If no email is specified, uses the default account.`,
 }
 
 func displayOTP(result *domain.OTPResult, copied bool) {
-	cyan := color.New(color.FgCyan, color.Bold)
-	green := color.New(color.FgGreen)
-	dim := color.New(color.Faint)
+	cyan := common.BoldCyan
+	green := common.Green
+	dim := common.Dim
 
 	// Format code with spaces between digits
 	spaced := strings.Join(strings.Split(result.Code, ""), "  ")

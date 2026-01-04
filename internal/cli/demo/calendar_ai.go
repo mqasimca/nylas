@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -72,7 +71,7 @@ func newDemoAIConflictsCmd() *cobra.Command {
 
 			fmt.Println("⚠️  Conflicts Found:")
 			fmt.Println()
-			fmt.Printf("  %s %s\n", color.New(color.FgRed).Sprint("●"), common.BoldWhite.Sprint("Double-booked: Project Review + Client Call"))
+			fmt.Printf("  %s %s\n", common.Red.Sprint("●"), common.BoldWhite.Sprint("Double-booked: Project Review + Client Call"))
 			_, _ = common.Dim.Printf("    %s at 2:00 PM - 3:00 PM\n", now.AddDate(0, 0, 2).Format("Mon, Jan 2"))
 			fmt.Printf("    Suggestion: Move Project Review to 3:30 PM\n")
 			fmt.Println()

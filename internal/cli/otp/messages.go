@@ -1,16 +1,14 @@
 package otp
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -29,7 +27,7 @@ If no email is specified, uses the default account.`,
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			var messages []domain.Message
@@ -54,9 +52,9 @@ If no email is specified, uses the default account.`,
 				return enc.Encode(messages)
 			}
 
-			cyan := color.New(color.FgCyan, color.Bold)
-			bold := color.New(color.Bold)
-			green := color.New(color.FgGreen)
+			cyan := common.BoldCyan
+			bold := common.Bold
+			green := common.Green
 
 			_, _ = cyan.Printf("Recent Messages (%d)\n", len(messages))
 			fmt.Println()

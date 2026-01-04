@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -67,8 +66,7 @@ Examples:
 			}
 
 			if !noConfirm {
-				cyan := color.New(color.FgCyan)
-				fmt.Printf("Channel: %s\n", cyan.Sprint(channelName))
+				fmt.Printf("Channel: %s\n", common.Cyan.Sprint(channelName))
 				fmt.Printf("Message: %s\n\n", text)
 				fmt.Print("Send this message? [y/N]: ")
 
@@ -87,11 +85,10 @@ Examples:
 				Text:      text,
 			})
 			if err != nil {
-				return fmt.Errorf("failed to send message: %w", err)
+				return common.WrapSendError("message", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Message sent! ID: %s\n", msg.ID)
+			_, _ = common.Green.Printf("✓ Message sent! ID: %s\n", msg.ID)
 			return nil
 		},
 	}
@@ -162,8 +159,7 @@ Examples:
 			}
 
 			if !noConfirm {
-				cyan := color.New(color.FgCyan)
-				fmt.Printf("Channel: %s\n", cyan.Sprint(channelName))
+				fmt.Printf("Channel: %s\n", common.Cyan.Sprint(channelName))
 				fmt.Printf("Thread:  %s\n", threadTS)
 				fmt.Printf("Reply:   %s\n", text)
 				if broadcast {
@@ -188,11 +184,10 @@ Examples:
 				Broadcast: broadcast,
 			})
 			if err != nil {
-				return fmt.Errorf("failed to send reply: %w", err)
+				return common.WrapSendError("reply", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Reply sent! ID: %s\n", msg.ID)
+			_, _ = common.Green.Printf("✓ Reply sent! ID: %s\n", msg.ID)
 			return nil
 		},
 	}

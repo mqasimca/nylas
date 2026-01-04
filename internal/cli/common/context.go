@@ -17,3 +17,9 @@ func CreateContext() (context.Context, context.CancelFunc) {
 func CreateContextWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
 }
+
+// CreateLongContext creates a context with the OAuth timeout (5 minutes).
+// Use for operations requiring user interaction (OAuth flows, browser auth).
+func CreateLongContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), domain.TimeoutOAuth)
+}

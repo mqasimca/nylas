@@ -44,7 +44,7 @@ func newScheduledListCmd() *cobra.Command {
 
 			scheduled, err := client.ListScheduledMessages(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to list scheduled messages: %w", err)
+				return common.WrapListError("scheduled messages", err)
 			}
 
 			if len(scheduled) == 0 {
@@ -68,7 +68,7 @@ func newScheduledListCmd() *cobra.Command {
 
 				fmt.Printf("%s  Schedule ID: %s\n", statusIcon, s.ScheduleID)
 				fmt.Printf("   Status:      %s\n", s.Status)
-				fmt.Printf("   Send at:     %s\n", closeTime.Format("Jan 2, 2006 3:04 PM"))
+				fmt.Printf("   Send at:     %s\n", closeTime.Format(common.DisplayDateTime))
 
 				if timeUntil > 0 {
 					fmt.Printf("   Time until:  %s\n", formatDuration(timeUntil))
@@ -110,7 +110,7 @@ func newScheduledShowCmd() *cobra.Command {
 
 			scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
 			if err != nil {
-				return fmt.Errorf("failed to get scheduled message: %w", err)
+				return common.WrapGetError("scheduled message", err)
 			}
 
 			closeTime := time.Unix(scheduled.CloseTime, 0)
@@ -167,7 +167,7 @@ func newScheduledCancelCmd() *cobra.Command {
 			if !force {
 				scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
 				if err != nil {
-					return fmt.Errorf("failed to get scheduled message: %w", err)
+					return common.WrapGetError("scheduled message", err)
 				}
 
 				closeTime := time.Unix(scheduled.CloseTime, 0)
@@ -175,7 +175,7 @@ func newScheduledCancelCmd() *cobra.Command {
 				fmt.Println("Cancel this scheduled message?")
 				fmt.Printf("  Schedule ID: %s\n", scheduled.ScheduleID)
 				fmt.Printf("  Status:      %s\n", scheduled.Status)
-				fmt.Printf("  Send at:     %s\n", closeTime.Format("Jan 2, 2006 3:04 PM"))
+				fmt.Printf("  Send at:     %s\n", closeTime.Format(common.DisplayDateTime))
 				fmt.Print("\n[y/N]: ")
 
 				var confirm string
@@ -188,7 +188,7 @@ func newScheduledCancelCmd() *cobra.Command {
 
 			err = client.CancelScheduledMessage(ctx, grantID, scheduleID)
 			if err != nil {
-				return fmt.Errorf("failed to cancel scheduled message: %w", err)
+				return common.WrapCancelError("scheduled message", err)
 			}
 
 			printSuccess("Scheduled message %s cancelled", scheduleID)

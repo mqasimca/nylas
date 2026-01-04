@@ -7,10 +7,12 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli"
-	"github.com/spf13/cobra"
+	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 // NewUpdateCmd creates the update command.
@@ -69,7 +71,7 @@ func runUpdate(ctx context.Context, checkOnly, force, yes bool) error {
 
 	release, err := getLatestRelease(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to check for updates: %w", err)
+		return common.WrapGetError("updates", err)
 	}
 
 	latestVersion := parseVersion(release.TagName)
@@ -129,7 +131,7 @@ func runUpdate(ctx context.Context, checkOnly, force, yes bool) error {
 		fmt.Println("Verifying checksum...")
 		checksums, err := downloadChecksums(ctx, checksumAsset.BrowserDownloadURL)
 		if err != nil {
-			return fmt.Errorf("failed to download checksums: %w", err)
+			return common.WrapDownloadError("checksums", err)
 		}
 
 		expectedChecksum, ok := checksums[assetName]
@@ -158,7 +160,7 @@ func runUpdate(ctx context.Context, checkOnly, force, yes bool) error {
 	// Get current binary path
 	currentBinaryPath, err := getCurrentBinaryPath()
 	if err != nil {
-		return fmt.Errorf("failed to locate current binary: %w", err)
+		return common.WrapGetError("current binary", err)
 	}
 
 	// Install new binary
@@ -177,7 +179,7 @@ func runUpdate(ctx context.Context, checkOnly, force, yes bool) error {
 // This can be called during CLI startup for non-blocking update notifications.
 func CheckForUpdateAsync(currentVersion string) {
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutQuickCheck)
 		defer cancel()
 
 		release, err := getLatestRelease(ctx)

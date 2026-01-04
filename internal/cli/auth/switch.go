@@ -3,7 +3,7 @@ package auth
 import (
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -31,8 +31,7 @@ func newSwitchCmd() *cobra.Command {
 				}
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Switched to %s\n", identifier)
+			_, _ = common.Green.Printf("✓ Switched to %s\n", identifier)
 
 			return nil
 		},

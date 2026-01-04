@@ -5,7 +5,6 @@ package slack
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -65,8 +64,7 @@ Examples:
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			_, _ = cyan.Printf("Found %d messages:\n\n", len(messages))
+			_, _ = common.Cyan.Printf("Found %d messages:\n\n", len(messages))
 
 			for _, msg := range messages {
 				printMessage(msg, showID, false)

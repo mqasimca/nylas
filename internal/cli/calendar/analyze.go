@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-	"github.com/spf13/cobra"
 )
 
 func newAnalyzeCmd() *cobra.Command {
@@ -49,16 +50,16 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("failed to get client: %w", err)
+				return err
 			}
 
 			grantID, err := getGrantID(args)
 			if err != nil {
-				return fmt.Errorf("failed to get grant ID: %w", err)
+				return err
 			}
 
 			// AI analysis can take time - use longer timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
 			defer cancel()
 
 			// Load config to get working hours - respect --config flag
@@ -84,7 +85,7 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 
 			analysis, err := learner.AnalyzeHistory(ctx, grantID, days)
 			if err != nil {
-				return fmt.Errorf("failed to analyze history: %w", err)
+				return common.WrapGetError("meeting analysis", err)
 			}
 
 			// Display results
@@ -258,7 +259,7 @@ func scoreSpecificTime(ctx context.Context, learner *analytics.PatternLearner, c
 	fmt.Println("🔍 Analyzing historical patterns...")
 	analysis, err := learner.AnalyzeHistory(ctx, grantID, 90)
 	if err != nil {
-		return fmt.Errorf("failed to analyze history: %w", err)
+		return common.WrapGetError("meeting analysis", err)
 	}
 
 	if analysis.Patterns == nil {

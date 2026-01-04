@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/spf13/cobra"
 )
 
 // newAnalyzeThreadCmd creates the analyze-thread AI command.
@@ -100,12 +100,12 @@ This command uses AI to:
 			fmt.Printf("Analyzing email thread...\n")
 
 			// Analyze thread
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
 			defer cancel()
 
 			analysis, err := analyzer.AnalyzeThread(ctx, grantID, threadID, req)
 			if err != nil {
-				return fmt.Errorf("analyze thread: %w", err)
+				return common.WrapGetError("thread analysis", err)
 			}
 
 			// Output results

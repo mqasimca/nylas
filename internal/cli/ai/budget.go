@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // BudgetConfig represents AI budget configuration
@@ -112,7 +114,7 @@ func newShowBudgetCmd() *cobra.Command {
 			if jsonOutput {
 				data, err := json.MarshalIndent(budget, "", "  ")
 				if err != nil {
-					return fmt.Errorf("failed to format JSON: %w", err)
+					return common.WrapMarshalError("budget config", err)
 				}
 				fmt.Println(string(data))
 				return nil
@@ -137,23 +139,23 @@ func newShowBudgetCmd() *cobra.Command {
 func saveBudgetConfig(budget BudgetConfig) error {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return fmt.Errorf("failed to get config directory: %w", err)
+		return common.WrapGetError("config directory", err)
 	}
 
 	budgetDir := filepath.Join(configDir, "nylas", "ai-data")
 	if err := os.MkdirAll(budgetDir, 0750); err != nil {
-		return fmt.Errorf("failed to create budget directory: %w", err)
+		return common.WrapCreateError("budget directory", err)
 	}
 
 	budgetFile := filepath.Join(budgetDir, "budget.json")
 
 	data, err := json.MarshalIndent(budget, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to format budget config: %w", err)
+		return common.WrapMarshalError("budget config", err)
 	}
 
 	if err := os.WriteFile(budgetFile, data, 0600); err != nil {
-		return fmt.Errorf("failed to save budget config: %w", err)
+		return common.WrapSaveError("budget config", err)
 	}
 
 	return nil
@@ -163,7 +165,7 @@ func saveBudgetConfig(budget BudgetConfig) error {
 func loadBudgetConfig() (*BudgetConfig, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config directory: %w", err)
+		return nil, common.WrapGetError("config directory", err)
 	}
 
 	budgetFile := filepath.Join(configDir, "nylas", "ai-data", "budget.json")
@@ -176,7 +178,7 @@ func loadBudgetConfig() (*BudgetConfig, error) {
 
 	var budget BudgetConfig
 	if err := json.Unmarshal(data, &budget); err != nil {
-		return nil, fmt.Errorf("failed to parse budget config: %w", err)
+		return nil, common.WrapDecodeError("budget config", err)
 	}
 
 	return &budget, nil

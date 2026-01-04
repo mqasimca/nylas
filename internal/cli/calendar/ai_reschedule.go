@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-	"github.com/spf13/cobra"
 )
 
 func newRescheduleCmd() *cobra.Command {
@@ -61,28 +63,28 @@ func newAIRescheduleCmd() *cobra.Command {
 
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("failed to get client: %w", err)
+				return err
 			}
 
 			grantID, err := getGrantID([]string{})
 			if err != nil {
-				return fmt.Errorf("failed to get grant ID: %w", err)
+				return err
 			}
 
 			// AI rescheduling can take time - use longer timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
 			defer cancel()
 
 			// Fetch the event to reschedule
 			fmt.Printf("📅 Fetching event %s...\n", eventID)
 			event, err := fetchEventByID(ctx, client, grantID, eventID)
 			if err != nil {
-				return fmt.Errorf("failed to fetch event: %w", err)
+				return common.WrapFetchError("event", err)
 			}
 
 			fmt.Printf("✓ Found: %s\n", event.Title)
 			fmt.Printf("  Current time: %s\n",
-				time.Unix(event.When.StartTime, 0).Format("Mon, Jan 2, 2006 at 3:04 PM MST"))
+				time.Unix(event.When.StartTime, 0).Format(common.DisplayWeekdayDateTime))
 
 			// Analyze patterns
 			fmt.Println("\n🔍 Analyzing your calendar patterns...")
@@ -125,7 +127,7 @@ func newAIRescheduleCmd() *cobra.Command {
 			fmt.Println("\n⚙️  Finding optimal alternative times...")
 			suggestions, err := findRescheduleSuggestions(ctx, client, resolver, grantID, event, request, patterns)
 			if err != nil {
-				return fmt.Errorf("failed to find suggestions: %w", err)
+				return common.WrapGetError("reschedule suggestions", err)
 			}
 
 			// Display suggestions
@@ -137,7 +139,7 @@ func newAIRescheduleCmd() *cobra.Command {
 				best := suggestions[0]
 				result, err := applyReschedule(ctx, client, grantID, event, best, notify, reason)
 				if err != nil {
-					return fmt.Errorf("failed to apply reschedule: %w", err)
+					return common.WrapUpdateError("reschedule", err)
 				}
 
 				displayRescheduleResult(result)

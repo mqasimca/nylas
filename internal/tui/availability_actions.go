@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -123,7 +124,7 @@ func (v *AvailabilityView) renderSlots() {
 	// Group slots by day
 	slotsByDay := make(map[string][]domain.AvailableSlot)
 	for _, slot := range v.slots {
-		day := time.Unix(slot.StartTime, 0).Local().Format("Jan 2, 2006")
+		day := time.Unix(slot.StartTime, 0).Local().Format(common.DisplayDateFormat)
 		slotsByDay[day] = append(slotsByDay[day], slot)
 	}
 

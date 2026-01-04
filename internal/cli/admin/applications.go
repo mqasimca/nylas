@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -46,7 +45,7 @@ func newAppListCmd() *cobra.Command {
 
 			apps, err := client.ListApplications(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to list applications: %w", err)
+				return common.WrapListError("applications", err)
 			}
 
 			if jsonOutput {
@@ -57,9 +56,6 @@ func newAppListCmd() *cobra.Command {
 				fmt.Println("No applications found.")
 				return nil
 			}
-
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
 
 			fmt.Printf("Found %d application(s):\n\n", len(apps))
 
@@ -73,7 +69,7 @@ func newAppListCmd() *cobra.Command {
 				if env == "" {
 					env = "-"
 				}
-				table.AddRow(cyan.Sprint(app.ApplicationID), green.Sprint(region), env)
+				table.AddRow(common.Cyan.Sprint(app.ApplicationID), common.Green.Sprint(region), env)
 			}
 			table.Render()
 
@@ -105,22 +101,18 @@ func newAppShowCmd() *cobra.Command {
 
 			app, err := client.GetApplication(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get application: %w", err)
+				return common.WrapGetError("application", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(app)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			bold := color.New(color.Bold)
-
-			_, _ = bold.Println("Application Details")
-			fmt.Printf("  ID: %s\n", cyan.Sprint(app.ID))
+			_, _ = common.Bold.Println("Application Details")
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(app.ID))
 			fmt.Printf("  Application ID: %s\n", app.ApplicationID)
 			fmt.Printf("  Organization ID: %s\n", app.OrganizationID)
-			fmt.Printf("  Region: %s\n", green.Sprint(app.Region))
+			fmt.Printf("  Region: %s\n", common.Green.Sprint(app.Region))
 			fmt.Printf("  Environment: %s\n", app.Environment)
 
 			if app.BrandingSettings != nil {
@@ -129,7 +121,7 @@ func newAppShowCmd() *cobra.Command {
 					fmt.Printf("  Name: %s\n", app.BrandingSettings.Name)
 				}
 				if app.BrandingSettings.WebsiteURL != "" {
-					fmt.Printf("  Website: %s\n", cyan.Sprint(app.BrandingSettings.WebsiteURL))
+					fmt.Printf("  Website: %s\n", common.Cyan.Sprint(app.BrandingSettings.WebsiteURL))
 				}
 			}
 
@@ -189,15 +181,12 @@ func newAppCreateCmd() *cobra.Command {
 
 			app, err := client.CreateApplication(ctx, req)
 			if err != nil {
-				return fmt.Errorf("failed to create application: %w", err)
+				return common.WrapCreateError("application", err)
 			}
 
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
-
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = green.Printf("✓ Created application\n")
-			fmt.Printf("  ID: %s\n", cyan.Sprint(app.ID))
+			_, _ = common.Green.Printf("✓ Created application\n")
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(app.ID))
 			fmt.Printf("  Application ID: %s\n", app.ApplicationID)
 			fmt.Printf("  Region: %s\n", app.Region)
 
@@ -252,12 +241,11 @@ func newAppUpdateCmd() *cobra.Command {
 
 			app, err := client.UpdateApplication(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to update application: %w", err)
+				return common.WrapUpdateError("application", err)
 			}
 
-			green := color.New(color.FgGreen)
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = green.Printf("✓ Updated application: %s\n", app.ID)
+			_, _ = common.Green.Printf("✓ Updated application: %s\n", app.ID)
 
 			return nil
 		},
@@ -298,12 +286,11 @@ func newAppDeleteCmd() *cobra.Command {
 			defer cancel()
 
 			if err := client.DeleteApplication(ctx, args[0]); err != nil {
-				return fmt.Errorf("failed to delete application: %w", err)
+				return common.WrapDeleteError("application", err)
 			}
 
-			green := color.New(color.FgGreen)
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = green.Printf("✓ Deleted application: %s\n", args[0])
+			_, _ = common.Green.Printf("✓ Deleted application: %s\n", args[0])
 
 			return nil
 		},

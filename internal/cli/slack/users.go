@@ -5,7 +5,6 @@ package slack
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -61,7 +60,7 @@ Examples:
 
 			resp, err := client.ListUsers(ctx, limit, "")
 			if err != nil {
-				return fmt.Errorf("failed to list users: %w", err)
+				return common.WrapListError("users", err)
 			}
 
 			if len(resp.Users) == 0 {
@@ -69,39 +68,34 @@ Examples:
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
-			yellow := color.New(color.FgYellow)
-
 			for _, u := range resp.Users {
 				name := u.BestDisplayName()
-				fmt.Print(cyan.Sprint(name))
+				fmt.Print(common.Cyan.Sprint(name))
 
 				if u.Name != "" && u.Name != name {
-					_, _ = dim.Printf(" (@%s)", u.Name)
+					_, _ = common.Dim.Printf(" (@%s)", u.Name)
 				}
 
 				if showID {
-					_, _ = dim.Printf(" [%s]", u.ID)
+					_, _ = common.Dim.Printf(" [%s]", u.ID)
 				}
 
 				if u.IsBot {
-					_, _ = yellow.Print(" [bot]")
+					_, _ = common.Yellow.Print(" [bot]")
 				}
 				if u.IsAdmin {
-					_, _ = yellow.Print(" [admin]")
+					_, _ = common.Yellow.Print(" [admin]")
 				}
 
 				fmt.Println()
 
 				if u.Status != "" {
-					_, _ = dim.Printf("  %s\n", u.Status)
+					_, _ = common.Dim.Printf("  %s\n", u.Status)
 				}
 			}
 
 			if resp.NextCursor != "" {
-				dim := color.New(color.Faint)
-				_, _ = dim.Printf("\n(more users available)\n")
+				_, _ = common.Dim.Printf("\n(more users available)\n")
 			}
 
 			return nil

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -58,7 +57,7 @@ func newListCmd() *cobra.Command {
 
 			notetakers, err := client.ListNotetakers(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("failed to list notetakers: %w", err)
+				return common.WrapListError("notetakers", err)
 			}
 
 			if outputJSON {
@@ -72,15 +71,10 @@ func newListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-			dim := color.New(color.Faint)
-
 			fmt.Printf("Found %d notetaker(s):\n\n", len(notetakers))
 
 			for _, n := range notetakers {
-				_, _ = cyan.Printf("ID: %s\n", n.ID)
+				_, _ = common.Cyan.Printf("ID: %s\n", n.ID)
 				fmt.Printf("  State:   %s\n", formatState(n.State))
 				if n.MeetingTitle != "" {
 					fmt.Printf("  Title:   %s\n", n.MeetingTitle)
@@ -90,13 +84,13 @@ func newListCmd() *cobra.Command {
 				}
 				if n.MeetingInfo != nil && n.MeetingInfo.Provider != "" {
 					caser := cases.Title(language.English)
-					_, _ = green.Printf("  Provider: %s\n", caser.String(n.MeetingInfo.Provider))
+					_, _ = common.Green.Printf("  Provider: %s\n", caser.String(n.MeetingInfo.Provider))
 				}
 				if !n.JoinTime.IsZero() {
-					_, _ = yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM"))
+					_, _ = common.Yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format(common.DisplayWeekdayFull))
 				}
 				if !n.CreatedAt.IsZero() {
-					_, _ = dim.Printf("  Created: %s\n", common.FormatTimeAgo(n.CreatedAt))
+					_, _ = common.Dim.Printf("  Created: %s\n", common.FormatTimeAgo(n.CreatedAt))
 				}
 				fmt.Println()
 			}
@@ -115,21 +109,21 @@ func newListCmd() *cobra.Command {
 func formatState(state string) string {
 	switch state {
 	case domain.NotetakerStateScheduled:
-		return color.YellowString("scheduled")
+		return common.Yellow.Sprint("scheduled")
 	case domain.NotetakerStateConnecting:
-		return color.CyanString("connecting")
+		return common.Cyan.Sprint("connecting")
 	case domain.NotetakerStateWaitingForEntry:
-		return color.CyanString("waiting")
+		return common.Cyan.Sprint("waiting")
 	case domain.NotetakerStateAttending:
-		return color.GreenString("attending")
+		return common.Green.Sprint("attending")
 	case domain.NotetakerStateMediaProcessing:
-		return color.CyanString("processing")
+		return common.Cyan.Sprint("processing")
 	case domain.NotetakerStateComplete:
-		return color.GreenString("complete")
+		return common.Green.Sprint("complete")
 	case domain.NotetakerStateCancelled:
-		return color.New(color.Faint).Sprint("cancelled")
+		return common.Dim.Sprint("cancelled")
 	case domain.NotetakerStateFailed:
-		return color.RedString("failed")
+		return common.Red.Sprint("failed")
 	default:
 		return state
 	}

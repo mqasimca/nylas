@@ -121,7 +121,7 @@ func runServer(port int, path, tunnelType, webhookSecret string, jsonOutput, qui
 		if spinner != nil {
 			spinner.Stop()
 		}
-		return fmt.Errorf("failed to start server: %w", err)
+		return common.WrapError(err)
 	}
 
 	if spinner != nil {
@@ -154,7 +154,7 @@ func runServer(port int, path, tunnelType, webhookSecret string, jsonOutput, qui
 
 	// Stop the server
 	if err := server.Stop(); err != nil {
-		return fmt.Errorf("error during shutdown: %w", err)
+		return common.WrapError(err)
 	}
 
 	if !quiet {

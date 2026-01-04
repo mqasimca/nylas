@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +45,7 @@ that haven't been saved will be lost.`,
 
 			notetaker, err := client.GetNotetaker(ctx, grantID, notetakerID)
 			if err != nil {
-				return fmt.Errorf("failed to get notetaker: %w", err)
+				return common.WrapGetError("notetaker", err)
 			}
 
 			// Confirmation
@@ -72,11 +71,10 @@ that haven't been saved will be lost.`,
 			defer cancel2()
 
 			if err := client.DeleteNotetaker(ctx2, grantID, notetakerID); err != nil {
-				return fmt.Errorf("failed to delete notetaker: %w", err)
+				return common.WrapDeleteError("notetaker", err)
 			}
 
-			green := color.New(color.FgGreen, color.Bold)
-			_, _ = green.Printf("✓ Notetaker %s deleted successfully\n", notetakerID)
+			_, _ = common.BoldGreen.Printf("✓ Notetaker %s deleted successfully\n", notetakerID)
 
 			return nil
 		},

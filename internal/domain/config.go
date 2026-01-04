@@ -8,8 +8,8 @@ import (
 // Timeout constants for consistent behavior across the application.
 // Use these instead of hardcoding timeout values.
 const (
-	// TimeoutAPI is the default timeout for Nylas API calls (30s).
-	TimeoutAPI = 30 * time.Second
+	// TimeoutAPI is the default timeout for Nylas API calls (90s).
+	TimeoutAPI = 90 * time.Second
 
 	// TimeoutAI is the timeout for AI/LLM operations (120s).
 	// AI providers may take longer due to model inference time.
@@ -22,8 +22,16 @@ const (
 	// TimeoutHealthCheck is the timeout for health/connectivity checks (10s).
 	TimeoutHealthCheck = 10 * time.Second
 
-	// TimeoutSync is the timeout for sync operations (60s).
-	TimeoutSync = 60 * time.Second
+	// TimeoutOAuth is the timeout for OAuth authentication flows (5m).
+	// OAuth requires user interaction in browser, so needs longer timeout.
+	TimeoutOAuth = 5 * time.Minute
+
+	// TimeoutBulkOperation is the timeout for bulk operations like fetching
+	// all Slack messages or channels (10m).
+	TimeoutBulkOperation = 10 * time.Minute
+
+	// TimeoutQuickCheck is the timeout for quick checks like version checking (5s).
+	TimeoutQuickCheck = 5 * time.Second
 
 	// HTTP Server timeouts
 	HTTPReadHeaderTimeout = 10 * time.Second  // Time to read request headers

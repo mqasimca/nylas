@@ -5,7 +5,6 @@ package slack
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -57,7 +56,7 @@ Example:
 
 			client, err := getSlackClient(token)
 			if err != nil {
-				return fmt.Errorf("failed to create client: %w", err)
+				return common.WrapCreateError("client", err)
 			}
 
 			ctx, cancel := common.CreateContext()
@@ -69,11 +68,10 @@ Example:
 			}
 
 			if err := storeSlackToken(token); err != nil {
-				return fmt.Errorf("failed to store token: %w", err)
+				return common.WrapSaveError("token", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Authenticated as %s in workspace %s\n", auth.UserName, auth.TeamName)
+			_, _ = common.Green.Printf("✓ Authenticated as %s in workspace %s\n", auth.UserName, auth.TeamName)
 			return nil
 		},
 	}
@@ -92,8 +90,7 @@ func newAuthStatusCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getSlackClientFromKeyring()
 			if err != nil {
-				yellow := color.New(color.FgYellow)
-				_, _ = yellow.Println("Not authenticated with Slack")
+				_, _ = common.Yellow.Println("Not authenticated with Slack")
 				fmt.Println("\nTo authenticate, run:")
 				fmt.Println("  nylas slack auth set --token YOUR_TOKEN")
 				fmt.Println("\nGet your token from: https://api.slack.com/apps")
@@ -108,16 +105,12 @@ func newAuthStatusCmd() *cobra.Command {
 				return fmt.Errorf("authentication failed: %w", err)
 			}
 
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
-
-			_, _ = green.Println("✓ Authenticated with Slack")
+			_, _ = common.Green.Println("✓ Authenticated with Slack")
 			fmt.Println()
-			fmt.Printf("  User:      %s\n", cyan.Sprint(auth.UserName))
+			fmt.Printf("  User:      %s\n", common.Cyan.Sprint(auth.UserName))
 			fmt.Printf("  Workspace: %s\n", auth.TeamName)
-			_, _ = dim.Printf("  User ID:   %s\n", auth.UserID)
-			_, _ = dim.Printf("  Team ID:   %s\n", auth.TeamID)
+			_, _ = common.Dim.Printf("  User ID:   %s\n", auth.UserID)
+			_, _ = common.Dim.Printf("  Team ID:   %s\n", auth.TeamID)
 
 			return nil
 		},
@@ -143,11 +136,10 @@ func newAuthRemoveCmd() *cobra.Command {
 			}
 
 			if err := removeSlackToken(); err != nil {
-				return fmt.Errorf("failed to remove token: %w", err)
+				return common.WrapDeleteError("token", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Println("✓ Slack token removed")
+			_, _ = common.Green.Println("✓ Slack token removed")
 			return nil
 		},
 	}

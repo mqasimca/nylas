@@ -1,15 +1,15 @@
 package calendar
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"text/tabwriter"
 	"time"
 
-	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // newVirtualCmd creates the virtual calendar command.
@@ -48,12 +48,12 @@ func newVirtualListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grants, err := client.ListVirtualCalendarGrants(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to list virtual calendar grants: %w", err)
+				return common.WrapFetchError("virtual calendar grants", err)
 			}
 
 			if jsonOutput {
@@ -63,7 +63,7 @@ func newVirtualListCmd() *cobra.Command {
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			_, _ = fmt.Fprintln(w, "ID\tEMAIL\tSTATUS\tCREATED")
 			for _, grant := range grants {
-				created := time.Unix(grant.CreatedAt, 0).Format("2006-01-02 15:04")
+				created := time.Unix(grant.CreatedAt, 0).Format(common.DateTimeFormat)
 				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", grant.ID, grant.Email, grant.GrantStatus, created)
 			}
 			_ = w.Flush()
@@ -104,12 +104,12 @@ The email can be any identifier - it doesn't need to be a real email address.`,
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grant, err := client.CreateVirtualCalendarGrant(ctx, email)
 			if err != nil {
-				return fmt.Errorf("failed to create virtual calendar grant: %w", err)
+				return common.WrapCreateError("virtual calendar grant", err)
 			}
 
 			if jsonOutput {
@@ -156,12 +156,12 @@ func newVirtualShowCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grant, err := client.GetVirtualCalendarGrant(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to get virtual calendar grant: %w", err)
+				return common.WrapGetError("virtual calendar grant", err)
 			}
 
 			if jsonOutput {
@@ -173,8 +173,8 @@ func newVirtualShowCmd() *cobra.Command {
 			fmt.Printf("  Provider: %s\n", grant.Provider)
 			fmt.Printf("  Email:    %s\n", grant.Email)
 			fmt.Printf("  Status:   %s\n", grant.GrantStatus)
-			fmt.Printf("  Created:  %s\n", time.Unix(grant.CreatedAt, 0).Format("2006-01-02 15:04:05"))
-			fmt.Printf("  Updated:  %s\n", time.Unix(grant.UpdatedAt, 0).Format("2006-01-02 15:04:05"))
+			fmt.Printf("  Created:  %s\n", time.Unix(grant.CreatedAt, 0).Format(common.DisplayDateTime))
+			fmt.Printf("  Updated:  %s\n", time.Unix(grant.UpdatedAt, 0).Format(common.DisplayDateTime))
 
 			return nil
 		},
@@ -217,11 +217,11 @@ func newVirtualDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteVirtualCalendarGrant(ctx, grantID); err != nil {
-				return fmt.Errorf("failed to delete virtual calendar grant: %w", err)
+				return common.WrapDeleteError("virtual calendar grant", err)
 			}
 
 			fmt.Printf("✓ Deleted virtual calendar grant %s\n", grantID)

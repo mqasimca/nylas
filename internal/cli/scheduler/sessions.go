@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -50,14 +49,11 @@ func newSessionCreateCmd() *cobra.Command {
 
 			session, err := client.CreateSchedulerSession(ctx, req)
 			if err != nil {
-				return fmt.Errorf("failed to create session: %w", err)
+				return common.WrapCreateError("session", err)
 			}
 
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
-
-			_, _ = green.Println("✓ Created scheduler session")
-			fmt.Printf("  Session ID: %s\n", cyan.Sprint(session.SessionID))
+			_, _ = common.Green.Println("✓ Created scheduler session")
+			fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
 			fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
 
 			return nil
@@ -91,18 +87,15 @@ func newSessionShowCmd() *cobra.Command {
 
 			session, err := client.GetSchedulerSession(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get session: %w", err)
+				return common.WrapGetError("session", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(session)
 			}
 
-			cyan := color.New(color.FgCyan)
-			bold := color.New(color.Bold)
-
-			_, _ = bold.Println("Scheduler Session")
-			fmt.Printf("  Session ID: %s\n", cyan.Sprint(session.SessionID))
+			_, _ = common.Bold.Println("Scheduler Session")
+			fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
 			fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
 
 			return nil

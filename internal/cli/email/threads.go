@@ -65,7 +65,7 @@ func newThreadsListCmd() *cobra.Command {
 
 			threads, err := client.GetThreads(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("failed to get threads: %w", err)
+				return common.WrapGetError("threads", err)
 			}
 
 			if len(threads) == 0 {
@@ -154,7 +154,7 @@ func newThreadsShowCmd() *cobra.Command {
 
 			thread, err := client.GetThread(ctx, grantID, threadID)
 			if err != nil {
-				return fmt.Errorf("failed to get thread: %w", err)
+				return common.WrapGetError("thread", err)
 			}
 
 			// Print thread details
@@ -182,8 +182,8 @@ func newThreadsShowCmd() *cobra.Command {
 				fmt.Printf("Status:       %s\n", common.FormatParticipants(nil))
 			}
 
-			fmt.Printf("\nFirst message: %s\n", thread.EarliestMessageDate.Format("Jan 2, 2006 3:04 PM"))
-			fmt.Printf("Latest:        %s\n", thread.LatestMessageRecvDate.Format("Jan 2, 2006 3:04 PM"))
+			fmt.Printf("\nFirst message: %s\n", thread.EarliestMessageDate.Format(common.DisplayDateTime))
+			fmt.Printf("Latest:        %s\n", thread.LatestMessageRecvDate.Format(common.DisplayDateTime))
 
 			fmt.Println("\nSnippet:")
 			fmt.Println(thread.Snippet)
@@ -273,7 +273,7 @@ func newThreadsMarkCmd() *cobra.Command {
 
 			thread, err := client.UpdateThread(ctx, grantID, threadID, req)
 			if err != nil {
-				return fmt.Errorf("failed to update thread: %w", err)
+				return common.WrapUpdateError("thread", err)
 			}
 
 			status := []string{}
@@ -336,7 +336,7 @@ func newThreadsDeleteCmd() *cobra.Command {
 			if !force {
 				thread, err := client.GetThread(ctx, grantID, threadID)
 				if err != nil {
-					return fmt.Errorf("failed to get thread: %w", err)
+					return common.WrapGetError("thread", err)
 				}
 
 				fmt.Println("Delete this thread?")
@@ -355,7 +355,7 @@ func newThreadsDeleteCmd() *cobra.Command {
 
 			err = client.DeleteThread(ctx, grantID, threadID)
 			if err != nil {
-				return fmt.Errorf("failed to delete thread: %w", err)
+				return common.WrapDeleteError("thread", err)
 			}
 
 			printSuccess("Thread deleted")

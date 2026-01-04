@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // UsageStats represents AI usage statistics
@@ -59,7 +61,7 @@ Examples:
 			if jsonOutput {
 				data, err := json.MarshalIndent(stats, "", "  ")
 				if err != nil {
-					return fmt.Errorf("failed to format JSON: %w", err)
+					return common.WrapMarshalError("usage stats", err)
 				}
 				fmt.Println(string(data))
 				return nil
@@ -99,7 +101,7 @@ Examples:
 func loadUsageStats(month string) (*UsageStats, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config directory: %w", err)
+		return nil, common.WrapGetError("config directory", err)
 	}
 
 	statsFile := filepath.Join(configDir, "nylas", "ai-data", "usage", fmt.Sprintf("%s.json", month))
@@ -112,7 +114,7 @@ func loadUsageStats(month string) (*UsageStats, error) {
 
 	var stats UsageStats
 	if err := json.Unmarshal(data, &stats); err != nil {
-		return nil, fmt.Errorf("failed to parse usage stats: %w", err)
+		return nil, common.WrapDecodeError("usage stats", err)
 	}
 
 	return &stats, nil

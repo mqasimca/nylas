@@ -3,7 +3,6 @@ package calendar
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
@@ -68,7 +67,7 @@ Examples:
 			if calendarID == "" {
 				calendars, err := client.GetCalendars(ctx, grantID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendars: %w", err)
+					return common.WrapListError("calendars", err)
 				}
 				for _, cal := range calendars {
 					if cal.IsPrimary {
@@ -83,18 +82,14 @@ Examples:
 
 			event, err := client.GetEvent(ctx, grantID, calendarID, eventID)
 			if err != nil {
-				return fmt.Errorf("failed to get event: %w", err)
+				return common.WrapGetError("event", err)
 			}
 
-			cyan := color.New(color.FgCyan, color.Bold)
-			green := color.New(color.FgGreen)
-			dim := color.New(color.Faint)
-
 			// Title
-			fmt.Printf("%s\n\n", cyan.Sprint(event.Title))
+			fmt.Printf("%s\n\n", common.BoldCyan.Sprint(event.Title))
 
 			// Time (with timezone conversion if requested)
-			fmt.Printf("%s\n", green.Sprint("When"))
+			fmt.Printf("%s\n", common.Green.Sprint("When"))
 			timeDisplay, err := formatEventTimeWithTZ(event, targetTZ)
 			if err != nil {
 				fmt.Printf("  %s (timezone conversion error: %v)\n\n",
@@ -105,22 +100,22 @@ Examples:
 					// Show converted time prominently
 					fmt.Printf("  %s", timeDisplay.ConvertedTime)
 					if showTZ {
-						fmt.Printf(" %s", color.New(color.FgBlue).Sprint(timeDisplay.ConvertedTimezone))
+						fmt.Printf(" %s", common.Blue.Sprint(timeDisplay.ConvertedTimezone))
 					}
 					fmt.Println()
 					// Show original time as reference
 					fmt.Printf("  %s %s",
-						dim.Sprint("(Original:"),
-						dim.Sprint(timeDisplay.OriginalTime))
+						common.Dim.Sprint("(Original:"),
+						common.Dim.Sprint(timeDisplay.OriginalTime))
 					if showTZ {
-						fmt.Printf(" %s", dim.Sprint(timeDisplay.OriginalTimezone))
+						fmt.Printf(" %s", common.Dim.Sprint(timeDisplay.OriginalTimezone))
 					}
-					fmt.Printf("%s\n\n", dim.Sprint(")"))
+					fmt.Printf("%s\n\n", common.Dim.Sprint(")"))
 				} else {
 					// No conversion - show original time
 					fmt.Printf("  %s", timeDisplay.OriginalTime)
 					if showTZ && timeDisplay.OriginalTimezone != "" {
-						fmt.Printf(" %s", color.New(color.FgBlue).Sprint(timeDisplay.OriginalTimezone))
+						fmt.Printf(" %s", common.Blue.Sprint(timeDisplay.OriginalTimezone))
 					}
 					fmt.Printf("\n\n")
 				}
@@ -136,26 +131,25 @@ Examples:
 
 				dstWarning := checkDSTWarning(start, eventTZ)
 				if dstWarning != "" {
-					yellow := color.New(color.FgYellow)
-					fmt.Printf("  %s\n\n", yellow.Sprint(dstWarning))
+					fmt.Printf("  %s\n\n", common.Yellow.Sprint(dstWarning))
 				}
 			}
 
 			// Location
 			if event.Location != "" {
-				fmt.Printf("%s\n", green.Sprint("Location"))
+				fmt.Printf("%s\n", common.Green.Sprint("Location"))
 				fmt.Printf("  %s\n\n", event.Location)
 			}
 
 			// Description
 			if event.Description != "" {
-				fmt.Printf("%s\n", green.Sprint("Description"))
+				fmt.Printf("%s\n", common.Green.Sprint("Description"))
 				fmt.Printf("  %s\n\n", event.Description)
 			}
 
 			// Organizer
 			if event.Organizer != nil {
-				fmt.Printf("%s\n", green.Sprint("Organizer"))
+				fmt.Printf("%s\n", common.Green.Sprint("Organizer"))
 				if event.Organizer.Name != "" {
 					fmt.Printf("  %s <%s>\n\n", event.Organizer.Name, event.Organizer.Email)
 				} else {
@@ -165,7 +159,7 @@ Examples:
 
 			// Participants
 			if len(event.Participants) > 0 {
-				fmt.Printf("%s\n", green.Sprint("Participants"))
+				fmt.Printf("%s\n", common.Green.Sprint("Participants"))
 				for _, p := range event.Participants {
 					status := formatParticipantStatus(p.Status)
 					if p.Name != "" {
@@ -179,7 +173,7 @@ Examples:
 
 			// Conferencing
 			if event.Conferencing != nil && event.Conferencing.Details != nil {
-				fmt.Printf("%s\n", green.Sprint("Video Conference"))
+				fmt.Printf("%s\n", common.Green.Sprint("Video Conference"))
 				if event.Conferencing.Provider != "" {
 					fmt.Printf("  Provider: %s\n", event.Conferencing.Provider)
 				}
@@ -190,14 +184,14 @@ Examples:
 			}
 
 			// Metadata
-			fmt.Printf("%s\n", green.Sprint("Details"))
+			fmt.Printf("%s\n", common.Green.Sprint("Details"))
 			fmt.Printf("  Status: %s\n", event.Status)
 			fmt.Printf("  Busy: %v\n", event.Busy)
 			if event.Visibility != "" {
 				fmt.Printf("  Visibility: %s\n", event.Visibility)
 			}
-			fmt.Printf("  ID: %s\n", dim.Sprint(event.ID))
-			fmt.Printf("  Calendar: %s\n", dim.Sprint(event.CalendarID))
+			fmt.Printf("  ID: %s\n", common.Dim.Sprint(event.ID))
+			fmt.Printf("  Calendar: %s\n", common.Dim.Sprint(event.CalendarID))
 
 			return nil
 		},

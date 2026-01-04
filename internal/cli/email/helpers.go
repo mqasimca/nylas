@@ -33,7 +33,7 @@ func printMessage(msg domain.Message, showBody bool) {
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", common.FormatParticipants(msg.To))
 	}
-	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(msg.Date))
+	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format(common.DisplayDateTime), common.FormatTimeAgo(msg.Date))
 	if status != "" {
 		fmt.Printf("Status:  %s\n", status)
 	}
@@ -66,7 +66,7 @@ func printMessageRaw(msg domain.Message) {
 	if len(msg.To) > 0 {
 		fmt.Printf("To:      %s\n", common.FormatParticipants(msg.To))
 	}
-	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(msg.Date))
+	fmt.Printf("Date:    %s (%s)\n", msg.Date.Format(common.DisplayDateTime), common.FormatTimeAgo(msg.Date))
 	fmt.Printf("ID:      %s\n", msg.ID)
 	fmt.Println(strings.Repeat("─", 60))
 

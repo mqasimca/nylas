@@ -62,7 +62,7 @@ Examples:
 			}
 
 			if err != nil {
-				return fmt.Errorf("failed to generate email: %w", err)
+				return common.WrapGenerateError("email", err)
 			}
 
 			if jsonOutput {

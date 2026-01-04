@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newWhoamiCmd() *cobra.Command {
@@ -20,7 +20,7 @@ func newWhoamiCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grant, err := grantSvc.GetCurrentGrant(ctx)

@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mqasimca/nylas/internal/adapters/utilities/scheduling"
 	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/spf13/cobra"
 )
 
 func newFindTimeCmd() *cobra.Command {
@@ -79,7 +80,7 @@ Analyzes participant timezones and suggests meeting times with a 100-point scori
 				"Europe/London",       // Bob
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Find overlapping times

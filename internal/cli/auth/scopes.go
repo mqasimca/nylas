@@ -1,18 +1,18 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-	"github.com/spf13/cobra"
 )
 
 func newScopesCmd() *cobra.Command {
@@ -39,7 +39,7 @@ If no grant ID is provided, shows scopes for the currently active grant.`,
   nylas auth scopes --json`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			client, err := getScopesClient()
@@ -66,7 +66,7 @@ If no grant ID is provided, shows scopes for the currently active grant.`,
 			// Get grant details
 			grant, err := client.GetGrant(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to get grant scopes: %w", err)
+				return common.WrapGetError("grant scopes", err)
 			}
 
 			result := struct {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -56,7 +55,7 @@ func newGrantListCmd() *cobra.Command {
 
 			grants, err := client.ListAllGrants(ctx, params)
 			if err != nil {
-				return fmt.Errorf("failed to list grants: %w", err)
+				return common.WrapListError("grants", err)
 			}
 
 			if jsonOutput {
@@ -67,11 +66,6 @@ func newGrantListCmd() *cobra.Command {
 				fmt.Println("No grants found.")
 				return nil
 			}
-
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-			red := color.New(color.FgRed)
 
 			fmt.Printf("Found %d grant(s):\n\n", len(grants))
 
@@ -85,14 +79,14 @@ func newGrantListCmd() *cobra.Command {
 				status := grant.GrantStatus
 				switch grant.GrantStatus {
 				case "valid":
-					status = green.Sprint(status)
+					status = common.Green.Sprint(status)
 				case "invalid":
-					status = red.Sprint(status)
+					status = common.Red.Sprint(status)
 				default:
-					status = yellow.Sprint(status)
+					status = common.Yellow.Sprint(status)
 				}
 
-				table.AddRow(cyan.Sprint(email), grant.ID, string(grant.Provider), status)
+				table.AddRow(common.Cyan.Sprint(email), grant.ID, string(grant.Provider), status)
 			}
 			table.Render()
 
@@ -127,29 +121,23 @@ func newGrantStatsCmd() *cobra.Command {
 
 			stats, err := client.GetGrantStats(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to get grant stats: %w", err)
+				return common.WrapGetError("grant stats", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(stats)
 			}
 
-			green := color.New(color.FgGreen)
-			red := color.New(color.FgRed)
-			yellow := color.New(color.FgYellow)
-			bold := color.New(color.Bold)
-			cyan := color.New(color.FgCyan)
-
-			_, _ = bold.Println("Grant Statistics")
-			fmt.Printf("  Total Grants: %s\n", cyan.Sprintf("%d", stats.Total))
-			fmt.Printf("  Valid: %s\n", green.Sprintf("%d", stats.Valid))
-			fmt.Printf("  Invalid: %s\n", red.Sprintf("%d", stats.Invalid))
+			_, _ = common.Bold.Println("Grant Statistics")
+			fmt.Printf("  Total Grants: %s\n", common.Cyan.Sprintf("%d", stats.Total))
+			fmt.Printf("  Valid: %s\n", common.Green.Sprintf("%d", stats.Valid))
+			fmt.Printf("  Invalid: %s\n", common.Red.Sprintf("%d", stats.Invalid))
 
 			if len(stats.ByProvider) > 0 {
 				fmt.Printf("\nBy Provider:\n")
 				table := common.NewTable("PROVIDER", "COUNT")
 				for provider, count := range stats.ByProvider {
-					table.AddRow(green.Sprint(provider), fmt.Sprintf("%d", count))
+					table.AddRow(common.Green.Sprint(provider), fmt.Sprintf("%d", count))
 				}
 				table.Render()
 			}
@@ -158,12 +146,12 @@ func newGrantStatsCmd() *cobra.Command {
 				fmt.Printf("\nBy Status:\n")
 				table := common.NewTable("STATUS", "COUNT")
 				for status, count := range stats.ByStatus {
-					statusColor := yellow
+					statusColor := common.Yellow
 					switch status {
 					case "valid":
-						statusColor = green
+						statusColor = common.Green
 					case "invalid":
-						statusColor = red
+						statusColor = common.Red
 					}
 					table.AddRow(statusColor.Sprint(status), fmt.Sprintf("%d", count))
 				}

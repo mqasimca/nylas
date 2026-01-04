@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
@@ -56,11 +55,10 @@ func newDeleteCmd() *cobra.Command {
 			spinner.Stop()
 
 			if err != nil {
-				return fmt.Errorf("failed to delete contact: %w", err)
+				return common.WrapDeleteError("contact", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Contact deleted successfully.\n", green.Sprint("✓"))
+			fmt.Printf("%s Contact deleted successfully.\n", common.Green.Sprint("✓"))
 
 			return nil
 		},

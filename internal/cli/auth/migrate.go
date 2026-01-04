@@ -8,6 +8,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
@@ -52,7 +53,7 @@ func runMigrate(_ *cobra.Command, _ []string) error {
 	// Load credentials from encrypted file
 	fileStore, err := keyring.NewEncryptedFileStore(configDir)
 	if err != nil {
-		return fmt.Errorf("failed to access encrypted file store: %w", err)
+		return common.WrapGetError("encrypted file store", err)
 	}
 
 	// Get credentials from file store
@@ -63,7 +64,7 @@ func runMigrate(_ *cobra.Command, _ []string) error {
 
 	// Migrate API key
 	if err := kr.Set(ports.KeyAPIKey, apiKey); err != nil {
-		return fmt.Errorf("failed to store API key in keyring: %w", err)
+		return common.WrapSaveError("API key", err)
 	}
 	fmt.Println("✓ Migrated API key")
 

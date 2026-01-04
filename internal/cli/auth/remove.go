@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -36,11 +36,9 @@ on the Nylas server.`,
 				return err
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Grant %s removed from local config\n", grantID)
-			yellow := color.New(color.FgYellow)
-			_, _ = yellow.Println("  Note: Grant is still valid on Nylas server")
-			_, _ = yellow.Println("  Use 'nylas auth add' to re-add it, or 'nylas auth revoke' to permanently revoke")
+			_, _ = common.Green.Printf("✓ Grant %s removed from local config\n", grantID)
+			_, _ = common.Yellow.Println("  Note: Grant is still valid on Nylas server")
+			_, _ = common.Yellow.Println("  Use 'nylas auth add' to re-add it, or 'nylas auth revoke' to permanently revoke")
 
 			return nil
 		},

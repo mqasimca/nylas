@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Note: fatih/color import needed for *color.Color type in statusColor variables
+
 func newDemoConfigUpdateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update [config-id]",
@@ -219,7 +221,7 @@ func newDemoBookingsListCmd() *cobra.Command {
 
 			bookings, err := client.ListBookings(ctx, "config-demo-1")
 			if err != nil {
-				return fmt.Errorf("failed to get demo bookings: %w", err)
+				return common.WrapListError("bookings", err)
 			}
 
 			fmt.Println()
@@ -387,7 +389,7 @@ func newDemoPagesListCmd() *cobra.Command {
 
 			pages, err := client.ListSchedulerPages(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to get demo scheduler pages: %w", err)
+				return common.WrapListError("scheduler pages", err)
 			}
 
 			fmt.Println()

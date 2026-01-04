@@ -3,7 +3,6 @@ package contacts
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -45,16 +44,13 @@ func newListCmd() *cobra.Command {
 
 			contacts, err := client.GetContacts(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("failed to get contacts: %w", err)
+				return common.WrapListError("contacts", err)
 			}
 
 			if len(contacts) == 0 {
 				fmt.Println("No contacts found.")
 				return nil
 			}
-
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
 
 			fmt.Printf("Found %d contact(s):\n\n", len(contacts))
 
@@ -77,18 +73,18 @@ func newListCmd() *cobra.Command {
 
 				if showID {
 					table.AddRow(
-						dim.Sprint(contact.ID),
-						cyan.Sprint(name),
+						common.Dim.Sprint(contact.ID),
+						common.Cyan.Sprint(name),
 						email,
 						phone,
-						dim.Sprint(company),
+						common.Dim.Sprint(company),
 					)
 				} else {
 					table.AddRow(
-						cyan.Sprint(name),
+						common.Cyan.Sprint(name),
 						email,
 						phone,
-						dim.Sprint(company),
+						common.Dim.Sprint(company),
 					)
 				}
 			}

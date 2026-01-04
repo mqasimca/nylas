@@ -1,14 +1,15 @@
 package calendar
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/mqasimca/nylas/internal/adapters/analytics"
-	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/adapters/analytics"
+	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 func newConflictsCmd() *cobra.Command {
@@ -57,12 +58,12 @@ func newCheckConflictsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("failed to get client: %w", err)
+				return common.WrapGetError("client", err)
 			}
 
 			grantID, err := getGrantID(args)
 			if err != nil {
-				return fmt.Errorf("failed to get grant ID: %w", err)
+				return common.WrapGetError("grant ID", err)
 			}
 
 			// Parse start time
@@ -99,7 +100,7 @@ func newCheckConflictsCmd() *cobra.Command {
 			}
 
 			// Pattern analysis can take time - use longer timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
 			defer cancel()
 
 			// Analyze patterns first
@@ -122,7 +123,7 @@ func newCheckConflictsCmd() *cobra.Command {
 			fmt.Println("\n⚙️  Detecting conflicts...")
 			conflicts, err := resolver.DetectConflicts(ctx, grantID, proposedEvent, patterns)
 			if err != nil {
-				return fmt.Errorf("failed to detect conflicts: %w", err)
+				return common.WrapGetError("conflicts", err)
 			}
 
 			// Display results

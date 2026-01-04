@@ -1,14 +1,13 @@
 package otp
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"github.com/atotto/clipboard"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -35,9 +34,9 @@ Press Ctrl+C to stop watching.`,
 				email = args[0]
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			dim := color.New(color.Faint)
+			cyan := common.Cyan
+			green := common.Green
+			dim := common.Dim
 
 			fmt.Printf("Watching for OTP codes")
 			if email != "" {
@@ -53,7 +52,7 @@ Press Ctrl+C to stop watching.`,
 
 			// Check immediately
 			checkOTP := func() {
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				ctx, cancel := common.CreateContext()
 				defer cancel()
 
 				var result *domain.OTPResult

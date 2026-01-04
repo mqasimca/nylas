@@ -65,7 +65,7 @@ func newDemoEmailListCmd() *cobra.Command {
 
 			messages, err := client.GetMessages(ctx, "demo-grant", limit)
 			if err != nil {
-				return fmt.Errorf("failed to get demo messages: %w", err)
+				return common.WrapListError("messages", err)
 			}
 
 			if limit > 0 && limit < len(messages) {
@@ -117,7 +117,7 @@ func newDemoEmailReadCmd() *cobra.Command {
 
 			msg, err := client.GetMessage(ctx, "demo-grant", messageID)
 			if err != nil {
-				return fmt.Errorf("failed to get demo message: %w", err)
+				return common.WrapGetError("message", err)
 			}
 
 			fmt.Println()

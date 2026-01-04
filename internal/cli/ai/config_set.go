@@ -70,7 +70,7 @@ Examples:
 			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			// Initialize AI config if it doesn't exist
@@ -83,7 +83,7 @@ Examples:
 			}
 
 			if err := store.Save(cfg); err != nil {
-				return fmt.Errorf("failed to save config: %w", err)
+				return common.WrapSaveError("config", err)
 			}
 
 			fmt.Printf("✓ Set %s = %s\n", key, value)
