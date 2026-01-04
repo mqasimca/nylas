@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -47,7 +46,7 @@ func newCredentialListCmd() *cobra.Command {
 
 			credentials, err := client.ListCredentials(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to list credentials: %w", err)
+				return common.WrapListError("credentials", err)
 			}
 
 			if jsonOutput {
@@ -59,14 +58,11 @@ func newCredentialListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-
 			fmt.Printf("Found %d credential(s):\n\n", len(credentials))
 
 			table := common.NewTable("NAME", "ID", "TYPE", "CREATED AT")
 			for _, cred := range credentials {
-				table.AddRow(cyan.Sprint(cred.Name), cred.ID, green.Sprint(cred.CredentialType), formatUnixTime(cred.CreatedAt))
+				table.AddRow(common.Cyan.Sprint(cred.Name), cred.ID, common.Green.Sprint(cred.CredentialType), formatUnixTime(cred.CreatedAt))
 			}
 			table.Render()
 
@@ -98,21 +94,17 @@ func newCredentialShowCmd() *cobra.Command {
 
 			credential, err := client.GetCredential(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get credential: %w", err)
+				return common.WrapGetError("credential", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(credential)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			bold := color.New(color.Bold)
-
-			_, _ = bold.Printf("Credential: %s\n", credential.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(credential.ID))
+			_, _ = common.Bold.Printf("Credential: %s\n", credential.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(credential.ID))
 			fmt.Printf("  Connector ID: %s\n", credential.ConnectorID)
-			fmt.Printf("  Type: %s\n", green.Sprint(credential.CredentialType))
+			fmt.Printf("  Type: %s\n", common.Green.Sprint(credential.CredentialType))
 			fmt.Printf("  Created At: %s\n", formatUnixTime(credential.CreatedAt))
 			fmt.Printf("  Updated At: %s\n", formatUnixTime(credential.UpdatedAt))
 
@@ -162,14 +154,11 @@ func newCredentialCreateCmd() *cobra.Command {
 
 			credential, err := client.CreateCredential(ctx, connectorID, req)
 			if err != nil {
-				return fmt.Errorf("failed to create credential: %w", err)
+				return common.WrapCreateError("credential", err)
 			}
 
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
-
-			_, _ = green.Printf("Created credential: %s\n", credential.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(credential.ID))
+			_, _ = common.Green.Printf("Created credential: %s\n", credential.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(credential.ID))
 			fmt.Printf("  Type: %s\n", credential.CredentialType)
 
 			return nil
@@ -214,11 +203,10 @@ func newCredentialUpdateCmd() *cobra.Command {
 
 			credential, err := client.UpdateCredential(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to update credential: %w", err)
+				return common.WrapUpdateError("credential", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("Updated credential: %s\n", credential.Name)
+			_, _ = common.Green.Printf("Updated credential: %s\n", credential.Name)
 
 			return nil
 		},
@@ -257,11 +245,10 @@ func newCredentialDeleteCmd() *cobra.Command {
 			defer cancel()
 
 			if err := client.DeleteCredential(ctx, args[0]); err != nil {
-				return fmt.Errorf("failed to delete credential: %w", err)
+				return common.WrapDeleteError("credential", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("Deleted credential: %s\n", args[0])
+			_, _ = common.Green.Printf("Deleted credential: %s\n", args[0])
 
 			return nil
 		},
@@ -277,5 +264,5 @@ func formatUnixTime(t *domain.UnixTime) string {
 	if t == nil || t.IsZero() {
 		return "-"
 	}
-	return t.Format("Jan 2, 2006 3:04 PM")
+	return t.Format(common.DisplayDateTime)
 }

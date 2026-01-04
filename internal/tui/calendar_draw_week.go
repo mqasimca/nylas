@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -38,7 +39,7 @@ func (c *CalendarView) drawWeekView(screen tcell.Screen, x, y, width, height int
 	}
 
 	// Draw week range header
-	weekRange := fmt.Sprintf("%s - %s", weekStart.Format("Jan 2"), weekStart.AddDate(0, 0, 6).Format("Jan 2, 2006"))
+	weekRange := fmt.Sprintf("%s - %s", weekStart.Format(common.ShortDate), weekStart.AddDate(0, 0, 6).Format(common.DisplayDateFormat))
 	headerText := fmt.Sprintf("◀  %s  ▶", weekRange)
 	headerX := x + (width-len(headerText))/2
 	for i, ch := range headerText {

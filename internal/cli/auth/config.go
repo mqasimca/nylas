@@ -2,13 +2,10 @@ package auth
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
@@ -44,8 +41,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				if err := configSvc.ResetConfig(); err != nil {
 					return err
 				}
-				green := color.New(color.FgGreen)
-				_, _ = green.Println("✓ Configuration reset")
+				_, _ = common.Green.Println("✓ Configuration reset")
 				return nil
 			}
 
@@ -60,7 +56,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				fmt.Print("API Key (hidden): ")
 				apiKeyBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 				if err != nil {
-					return fmt.Errorf("failed to read API key: %w", err)
+					return common.WrapError(err)
 				}
 				fmt.Println()
 				apiKey = strings.TrimSpace(string(apiKeyBytes))
@@ -89,13 +85,12 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				client.SetRegion(region)
 				client.SetCredentials("", "", apiKey) // Only API key needed for ListApplications
 
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				ctx, cancel := common.CreateContext()
 				apps, err := client.ListApplications(ctx)
 				cancel()
 
 				if err != nil {
-					yellow := color.New(color.FgYellow)
-					_, _ = yellow.Printf("  Could not auto-detect Client ID: %v\n", err)
+					_, _ = common.Yellow.Printf("  Could not auto-detect Client ID: %v\n", err)
 					fmt.Println()
 					fmt.Print("Client ID (manual entry): ")
 					input, _ := reader.ReadString('\n')
@@ -106,8 +101,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					// Single app - auto-select
 					app := apps[0]
 					clientID = getAppClientID(app)
-					green := color.New(color.FgGreen)
-					_, _ = green.Printf("  ✓ Found application: %s\n", getAppDisplayName(app))
+					_, _ = common.Green.Printf("  ✓ Found application: %s\n", getAppDisplayName(app))
 				} else {
 					// Multiple apps - let user choose
 					fmt.Printf("  Found %d applications:\n\n", len(apps))
@@ -126,8 +120,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 
 					app := apps[selected-1]
 					clientID = getAppClientID(app)
-					green := color.New(color.FgGreen)
-					_, _ = green.Printf("  ✓ Selected: %s\n", getAppDisplayName(app))
+					_, _ = common.Green.Printf("  ✓ Selected: %s\n", getAppDisplayName(app))
 				}
 			}
 
@@ -139,8 +132,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				return err
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Println("✓ Configuration saved")
+			_, _ = common.Green.Println("✓ Configuration saved")
 
 			// Auto-detect existing grants from Nylas API
 			fmt.Println()
@@ -150,13 +142,12 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			client.SetRegion(region)
 			client.SetCredentials(clientID, "", apiKey)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grants, err := client.ListGrants(ctx)
 			if err != nil {
-				yellow := color.New(color.FgYellow)
-				_, _ = yellow.Printf("  Could not fetch grants: %v\n", err)
+				_, _ = common.Yellow.Printf("  Could not fetch grants: %v\n", err)
 				fmt.Println()
 				fmt.Println("Next steps:")
 				fmt.Println("  nylas auth login    Authenticate with your email provider")
@@ -174,8 +165,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			// Get grant store to save grants locally
 			grantStore, err := createGrantStore()
 			if err != nil {
-				yellow := color.New(color.FgYellow)
-				_, _ = yellow.Printf("  Could not save grants locally: %v\n", err)
+				_, _ = common.Yellow.Printf("  Could not save grants locally: %v\n", err)
 				return nil
 			}
 
@@ -203,9 +193,9 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 
 				addedCount++
 				if i == 0 {
-					_, _ = green.Printf("  ✓ Added %s (%s) [default]\n", grant.Email, grant.Provider.DisplayName())
+					_, _ = common.Green.Printf("  ✓ Added %s (%s) [default]\n", grant.Email, grant.Provider.DisplayName())
 				} else {
-					_, _ = green.Printf("  ✓ Added %s (%s)\n", grant.Email, grant.Provider.DisplayName())
+					_, _ = common.Green.Printf("  ✓ Added %s (%s)\n", grant.Email, grant.Provider.DisplayName())
 				}
 			}
 

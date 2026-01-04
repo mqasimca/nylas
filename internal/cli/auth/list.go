@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newListCmd() *cobra.Command {
@@ -21,7 +20,7 @@ func newListCmd() *cobra.Command {
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grants, err := grantSvc.ListGrants(ctx)
@@ -43,11 +42,11 @@ func newListCmd() *cobra.Command {
 
 			verbose, _ := cmd.Root().PersistentFlags().GetBool("verbose")
 
-			green := color.New(color.FgGreen)
-			red := color.New(color.FgRed)
-			yellow := color.New(color.FgYellow)
-			dim := color.New(color.Faint)
-			bold := color.New(color.Bold)
+			green := common.Green
+			red := common.Red
+			yellow := common.Yellow
+			dim := common.Dim
+			bold := common.Bold
 
 			// Print header
 			_, _ = bold.Printf("  %-38s  %-24s  %-12s  %-12s  %s\n", "GRANT ID", "EMAIL", "PROVIDER", "STATUS", "DEFAULT")

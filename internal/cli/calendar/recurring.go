@@ -1,16 +1,16 @@
 package calendar
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"text/tabwriter"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/spf13/cobra"
 )
 
 // newRecurringCmd creates the recurring events command.
@@ -77,7 +77,7 @@ The master event ID is the ID of the parent recurring event.`,
 				}
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			params := &domain.EventQueryParams{
@@ -89,7 +89,7 @@ The master event ID is the ID of the parent recurring event.`,
 
 			instances, err := client.GetRecurringEventInstances(ctx, grantID, calendarID, masterEventID, params)
 			if err != nil {
-				return fmt.Errorf("failed to list recurring event instances: %w", err)
+				return common.WrapFetchError("recurring event instances", err)
 			}
 
 			if jsonOutput {
@@ -178,7 +178,7 @@ This creates an exception for that particular instance.`,
 				}
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			req := &domain.UpdateEventRequest{}
@@ -214,7 +214,7 @@ This creates an exception for that particular instance.`,
 
 			event, err := client.UpdateRecurringEventInstance(ctx, grantID, calendarID, instanceID, req)
 			if err != nil {
-				return fmt.Errorf("failed to update recurring event instance: %w", err)
+				return common.WrapUpdateError("recurring event instance", err)
 			}
 
 			if jsonOutput {
@@ -225,10 +225,10 @@ This creates an exception for that particular instance.`,
 			fmt.Printf("  ID:    %s\n", event.ID)
 			fmt.Printf("  Title: %s\n", event.Title)
 			if event.When.StartTime > 0 {
-				fmt.Printf("  Start: %s\n", time.Unix(event.When.StartTime, 0).Format("2006-01-02 15:04"))
+				fmt.Printf("  Start: %s\n", time.Unix(event.When.StartTime, 0).Format(common.DateTimeFormat))
 			}
 			if event.When.EndTime > 0 {
-				fmt.Printf("  End:   %s\n", time.Unix(event.When.EndTime, 0).Format("2006-01-02 15:04"))
+				fmt.Printf("  End:   %s\n", time.Unix(event.When.EndTime, 0).Format(common.DateTimeFormat))
 			}
 
 			return nil
@@ -300,11 +300,11 @@ This adds an exception to the recurrence rule.`,
 				}
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			if err := client.DeleteRecurringEventInstance(ctx, grantID, calendarID, instanceID); err != nil {
-				return fmt.Errorf("failed to delete recurring event instance: %w", err)
+				return common.WrapDeleteError("recurring event instance", err)
 			}
 
 			fmt.Printf("✓ Deleted recurring event instance %s\n", instanceID)

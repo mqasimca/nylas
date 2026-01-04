@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -176,10 +177,10 @@ func (v *WebhooksView) showWebhookDetail(webhook *domain.Webhook) {
 
 	// Dates
 	if !webhook.CreatedAt.IsZero() {
-		_, _ = fmt.Fprintf(detail, "[%s]Created:[-] [%s]%s[-]\n", muted, value, webhook.CreatedAt.Format("Jan 2, 2006 3:04 PM"))
+		_, _ = fmt.Fprintf(detail, "[%s]Created:[-] [%s]%s[-]\n", muted, value, webhook.CreatedAt.Format(common.DisplayDateTime))
 	}
 	if !webhook.UpdatedAt.IsZero() {
-		_, _ = fmt.Fprintf(detail, "[%s]Updated:[-] [%s]%s[-]\n", muted, value, webhook.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
+		_, _ = fmt.Fprintf(detail, "[%s]Updated:[-] [%s]%s[-]\n", muted, value, webhook.UpdatedAt.Format(common.DisplayDateTime))
 	}
 
 	_, _ = fmt.Fprintf(detail, "\n\n[%s::d]Press Esc to go back, 'e' to edit, 'd' to delete[-::-]", muted)

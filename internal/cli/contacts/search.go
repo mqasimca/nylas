@@ -1,16 +1,16 @@
 package contacts
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
-	"time"
 
-	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 func newSearchCmd() *cobra.Command {
@@ -51,7 +51,7 @@ text searches, use the regular list command with additional filtering.`,
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			params := &domain.ContactQueryParams{
@@ -64,7 +64,7 @@ text searches, use the regular list command with additional filtering.`,
 
 			contacts, err := client.GetContacts(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("failed to search contacts: %w", err)
+				return common.WrapSearchError("contacts", err)
 			}
 
 			// Apply client-side filters

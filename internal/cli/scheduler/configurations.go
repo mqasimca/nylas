@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -47,7 +46,7 @@ func newConfigListCmd() *cobra.Command {
 
 			configs, err := client.ListSchedulerConfigurations(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to list configurations: %w", err)
+				return common.WrapListError("configurations", err)
 			}
 
 			if jsonOutput {
@@ -59,15 +58,12 @@ func newConfigListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-
 			fmt.Printf("Found %d configuration(s):\n\n", len(configs))
 
 			table := common.NewTable("NAME", "ID", "SLUG", "PARTICIPANTS")
 			for _, cfg := range configs {
 				participantCount := fmt.Sprintf("%d", len(cfg.Participants))
-				table.AddRow(cyan.Sprint(cfg.Name), cfg.ID, green.Sprint(cfg.Slug), participantCount)
+				table.AddRow(common.Cyan.Sprint(cfg.Name), cfg.ID, common.Green.Sprint(cfg.Slug), participantCount)
 			}
 			table.Render()
 
@@ -99,20 +95,16 @@ func newConfigShowCmd() *cobra.Command {
 
 			config, err := client.GetSchedulerConfiguration(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get configuration: %w", err)
+				return common.WrapGetError("configuration", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(config)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			bold := color.New(color.Bold)
-
-			_, _ = bold.Printf("Configuration: %s\n", config.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(config.ID))
-			fmt.Printf("  Slug: %s\n", green.Sprint(config.Slug))
+			_, _ = common.Bold.Printf("Configuration: %s\n", config.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(config.ID))
+			fmt.Printf("  Slug: %s\n", common.Green.Sprint(config.Slug))
 			fmt.Printf("  Duration: %d minutes\n", config.Availability.DurationMinutes)
 
 			if len(config.Participants) > 0 {
@@ -120,7 +112,7 @@ func newConfigShowCmd() *cobra.Command {
 				for i, p := range config.Participants {
 					fmt.Printf("  %d. %s <%s>", i+1, p.Name, p.Email)
 					if p.IsOrganizer {
-						fmt.Printf(" %s", green.Sprint("(Organizer)"))
+						fmt.Printf(" %s", common.Green.Sprint("(Organizer)"))
 					}
 					fmt.Println()
 				}
@@ -203,11 +195,10 @@ func newConfigCreateCmd() *cobra.Command {
 
 			config, err := client.CreateSchedulerConfiguration(ctx, req)
 			if err != nil {
-				return fmt.Errorf("failed to create configuration: %w", err)
+				return common.WrapCreateError("configuration", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Created configuration: %s\n", config.Name)
+			_, _ = common.Green.Printf("✓ Created configuration: %s\n", config.Name)
 			fmt.Printf("  ID: %s\n", config.ID)
 			if config.Slug != "" {
 				fmt.Printf("  Slug: %s\n", config.Slug)
@@ -279,11 +270,10 @@ func newConfigUpdateCmd() *cobra.Command {
 
 			config, err := client.UpdateSchedulerConfiguration(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to update configuration: %w", err)
+				return common.WrapUpdateError("configuration", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Updated configuration: %s\n", config.Name)
+			_, _ = common.Green.Printf("✓ Updated configuration: %s\n", config.Name)
 
 			return nil
 		},
@@ -325,11 +315,10 @@ func newConfigDeleteCmd() *cobra.Command {
 			defer cancel()
 
 			if err := client.DeleteSchedulerConfiguration(ctx, args[0]); err != nil {
-				return fmt.Errorf("failed to delete configuration: %w", err)
+				return common.WrapDeleteError("configuration", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Deleted configuration: %s\n", args[0])
+			_, _ = common.Green.Printf("✓ Deleted configuration: %s\n", args[0])
 
 			return nil
 		},

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -71,7 +70,7 @@ Examples:
 			if calendarID == "" {
 				calendars, err := client.GetCalendars(ctx, grantID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendars: %w", err)
+					return common.WrapListError("calendars", err)
 				}
 				for _, cal := range calendars {
 					if cal.IsPrimary {
@@ -96,16 +95,15 @@ Examples:
 			spinner.Stop()
 
 			if err != nil {
-				return fmt.Errorf("failed to send RSVP: %w", err)
+				return common.WrapSendError("RSVP", err)
 			}
 
-			green := color.New(color.FgGreen)
 			statusText := map[string]string{
 				"yes":   "accepted",
 				"no":    "declined",
 				"maybe": "tentatively accepted",
 			}
-			fmt.Printf("%s RSVP sent! You have %s the invitation.\n", green.Sprint("✓"), statusText[status])
+			fmt.Printf("%s RSVP sent! You have %s the invitation.\n", common.Green.Sprint("✓"), statusText[status])
 
 			return nil
 		},
@@ -150,13 +148,13 @@ func formatEventTime(when domain.EventWhen) string {
 func formatParticipantStatus(status string) string {
 	switch status {
 	case "yes":
-		return color.GreenString("✓ accepted")
+		return common.Green.Sprint("✓ accepted")
 	case "no":
-		return color.RedString("✗ declined")
+		return common.Red.Sprint("✗ declined")
 	case "maybe":
-		return color.YellowString("? tentative")
+		return common.Yellow.Sprint("? tentative")
 	case "noreply":
-		return color.New(color.Faint).Sprint("pending")
+		return common.Dim.Sprint("pending")
 	default:
 		return ""
 	}

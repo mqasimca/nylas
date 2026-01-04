@@ -1,13 +1,11 @@
 package auth
 
 import (
-	"context"
 	"fmt"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -48,7 +46,7 @@ Supported providers:
 			fmt.Println("Opening browser for authentication...")
 			fmt.Println("Complete the sign-in process in your browser.")
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			ctx, cancel := common.CreateLongContext()
 			defer cancel()
 
 			grant, err := authSvc.Login(ctx, p)
@@ -56,8 +54,7 @@ Supported providers:
 				return err
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("\n✓ Successfully authenticated!\n")
+			_, _ = common.Green.Printf("\n✓ Successfully authenticated!\n")
 			fmt.Printf("  Email:    %s\n", grant.Email)
 			fmt.Printf("  Provider: %s\n", grant.Provider.DisplayName())
 			fmt.Printf("  Grant ID: %s\n", grant.ID)

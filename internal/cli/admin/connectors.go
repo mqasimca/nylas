@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -46,7 +45,7 @@ func newConnectorListCmd() *cobra.Command {
 
 			connectors, err := client.ListConnectors(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to list connectors: %w", err)
+				return common.WrapListError("connectors", err)
 			}
 
 			if jsonOutput {
@@ -58,15 +57,12 @@ func newConnectorListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-
 			fmt.Printf("Found %d connector(s):\n\n", len(connectors))
 
 			table := common.NewTable("NAME", "ID", "PROVIDER", "SCOPES")
 			for _, conn := range connectors {
 				scopeCount := fmt.Sprintf("%d", len(conn.Scopes))
-				table.AddRow(cyan.Sprint(conn.Name), conn.ID, green.Sprint(conn.Provider), scopeCount)
+				table.AddRow(common.Cyan.Sprint(conn.Name), conn.ID, common.Green.Sprint(conn.Provider), scopeCount)
 			}
 			table.Render()
 
@@ -98,21 +94,17 @@ func newConnectorShowCmd() *cobra.Command {
 
 			connector, err := client.GetConnector(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get connector: %w", err)
+				return common.WrapGetError("connector", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(connector)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			bold := color.New(color.Bold)
-
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = bold.Printf("Connector: %s\n", connector.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(connector.ID))
-			fmt.Printf("  Provider: %s\n", green.Sprint(connector.Provider))
+			_, _ = common.Bold.Printf("Connector: %s\n", connector.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(connector.ID))
+			fmt.Printf("  Provider: %s\n", common.Green.Sprint(connector.Provider))
 
 			if len(connector.Scopes) > 0 {
 				fmt.Printf("\nScopes (%d):\n", len(connector.Scopes))
@@ -193,15 +185,12 @@ func newConnectorCreateCmd() *cobra.Command {
 
 			connector, err := client.CreateConnector(ctx, req)
 			if err != nil {
-				return fmt.Errorf("failed to create connector: %w", err)
+				return common.WrapCreateError("connector", err)
 			}
 
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
-
 			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = green.Printf("✓ Created connector: %s\n", connector.Name)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(connector.ID))
+			_, _ = common.Green.Printf("✓ Created connector: %s\n", connector.Name)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(connector.ID))
 			fmt.Printf("  Provider: %s\n", connector.Provider)
 
 			return nil
@@ -256,11 +245,10 @@ func newConnectorUpdateCmd() *cobra.Command {
 
 			connector, err := client.UpdateConnector(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to update connector: %w", err)
+				return common.WrapUpdateError("connector", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Updated connector: %s\n", connector.Name)
+			_, _ = common.Green.Printf("✓ Updated connector: %s\n", connector.Name)
 
 			return nil
 		},
@@ -300,11 +288,10 @@ func newConnectorDeleteCmd() *cobra.Command {
 			defer cancel()
 
 			if err := client.DeleteConnector(ctx, args[0]); err != nil {
-				return fmt.Errorf("failed to delete connector: %w", err)
+				return common.WrapDeleteError("connector", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Deleted connector: %s\n", args[0])
+			_, _ = common.Green.Printf("✓ Deleted connector: %s\n", args[0])
 
 			return nil
 		},

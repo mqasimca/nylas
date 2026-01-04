@@ -53,7 +53,7 @@ func newDeleteCmd() *cobra.Command {
 
 			err = client.DeleteMessage(ctx, grantID, messageID)
 			if err != nil {
-				return fmt.Errorf("failed to delete message: %w", err)
+				return common.WrapDeleteError("message", err)
 			}
 
 			printSuccess("Message deleted (moved to trash)")

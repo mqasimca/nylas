@@ -36,7 +36,7 @@ func newShowCmd() *cobra.Command {
 
 			cal, err := client.GetCalendar(ctx, grantID, calendarID)
 			if err != nil {
-				return fmt.Errorf("failed to get calendar: %w", err)
+				return common.WrapGetError("calendar", err)
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
@@ -111,7 +111,7 @@ func newCreateCmd() *cobra.Command {
 
 			cal, err := client.CreateCalendar(ctx, grantID, req)
 			if err != nil {
-				return fmt.Errorf("failed to create calendar: %w", err)
+				return common.WrapCreateError("calendar", err)
 			}
 
 			_, _ = common.Green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
@@ -174,7 +174,7 @@ func newUpdateCmd() *cobra.Command {
 
 			cal, err := client.UpdateCalendar(ctx, grantID, calendarID, req)
 			if err != nil {
-				return fmt.Errorf("failed to update calendar: %w", err)
+				return common.WrapUpdateError("calendar", err)
 			}
 
 			_, _ = common.Green.Printf("✓ Updated calendar '%s'\n", cal.Name)
@@ -222,7 +222,7 @@ func newDeleteCmd() *cobra.Command {
 			if !force {
 				cal, err := client.GetCalendar(ctx, grantID, calendarID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendar: %w", err)
+					return common.WrapGetError("calendar", err)
 				}
 
 				fmt.Println("Delete this calendar?")
@@ -243,7 +243,7 @@ func newDeleteCmd() *cobra.Command {
 
 			err = client.DeleteCalendar(ctx, grantID, calendarID)
 			if err != nil {
-				return fmt.Errorf("failed to delete calendar: %w", err)
+				return common.WrapDeleteError("calendar", err)
 			}
 
 			_, _ = common.Green.Printf("✓ Calendar deleted\n")

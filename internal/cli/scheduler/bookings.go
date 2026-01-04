@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Note: fatih/color import needed for getStatusColor return type (*color.Color)
+
 func newBookingsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "bookings",
@@ -50,7 +52,7 @@ func newBookingListCmd() *cobra.Command {
 
 			bookings, err := client.ListBookings(ctx, configID)
 			if err != nil {
-				return fmt.Errorf("failed to list bookings: %w", err)
+				return common.WrapListError("bookings", err)
 			}
 
 			if jsonOutput {
@@ -62,10 +64,6 @@ func newBookingListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-
 			fmt.Printf("Found %d booking(s):\n\n", len(bookings))
 
 			table := common.NewTable("TITLE", "ID", "START TIME", "STATUS")
@@ -73,15 +71,15 @@ func newBookingListCmd() *cobra.Command {
 				status := b.Status
 				switch b.Status {
 				case "confirmed":
-					status = green.Sprint(status)
+					status = common.Green.Sprint(status)
 				case "pending":
-					status = yellow.Sprint(status)
+					status = common.Yellow.Sprint(status)
 				case "cancelled":
-					status = color.New(color.Faint).Sprint(status)
+					status = common.Dim.Sprint(status)
 				}
 
 				startTime := b.StartTime.Format("2006-01-02 15:04")
-				table.AddRow(cyan.Sprint(b.Title), b.BookingID, startTime, status)
+				table.AddRow(common.Cyan.Sprint(b.Title), b.BookingID, startTime, status)
 			}
 			table.Render()
 
@@ -114,19 +112,15 @@ func newBookingShowCmd() *cobra.Command {
 
 			booking, err := client.GetBooking(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to get booking: %w", err)
+				return common.WrapGetError("booking", err)
 			}
 
 			if jsonOutput {
 				return json.NewEncoder(cmd.OutOrStdout()).Encode(booking)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			bold := color.New(color.Bold)
-
-			_, _ = bold.Printf("Booking: %s\n", booking.Title)
-			fmt.Printf("  ID: %s\n", cyan.Sprint(booking.BookingID))
+			_, _ = common.Bold.Printf("Booking: %s\n", booking.Title)
+			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(booking.BookingID))
 			fmt.Printf("  Status: %s\n", getStatusColor(booking.Status).Sprint(booking.Status))
 			fmt.Printf("  Start: %s\n", booking.StartTime.Format(time.RFC1123))
 			fmt.Printf("  End: %s\n", booking.EndTime.Format(time.RFC1123))
@@ -140,7 +134,7 @@ func newBookingShowCmd() *cobra.Command {
 				for i, p := range booking.Participants {
 					fmt.Printf("  %d. %s <%s>", i+1, p.Name, p.Email)
 					if p.Status == "yes" {
-						fmt.Printf(" %s", green.Sprint("✓"))
+						fmt.Printf(" %s", common.Green.Sprint("✓"))
 					}
 					fmt.Println()
 				}
@@ -148,7 +142,7 @@ func newBookingShowCmd() *cobra.Command {
 
 			if booking.Conferencing != nil && booking.Conferencing.URL != "" {
 				fmt.Printf("\nConferencing:\n")
-				fmt.Printf("  URL: %s\n", cyan.Sprint(booking.Conferencing.URL))
+				fmt.Printf("  URL: %s\n", common.Cyan.Sprint(booking.Conferencing.URL))
 				if booking.Conferencing.MeetingCode != "" {
 					fmt.Printf("  Meeting Code: %s\n", booking.Conferencing.MeetingCode)
 				}
@@ -187,11 +181,10 @@ func newBookingConfirmCmd() *cobra.Command {
 
 			booking, err := client.ConfirmBooking(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to confirm booking: %w", err)
+				return common.WrapUpdateError("booking", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
+			_, _ = common.Green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
 			fmt.Printf("  Status: %s\n", booking.Status)
 
 			return nil
@@ -249,11 +242,10 @@ You must provide the new start and end times as Unix timestamps.`,
 
 			booking, err := client.RescheduleBooking(ctx, args[0], req)
 			if err != nil {
-				return fmt.Errorf("failed to reschedule booking: %w", err)
+				return common.WrapUpdateError("booking", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
+			_, _ = common.Green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
 			fmt.Printf("  New start: %s\n", booking.StartTime.Format(time.RFC1123))
 			fmt.Printf("  New end: %s\n", booking.EndTime.Format(time.RFC1123))
 
@@ -300,11 +292,10 @@ func newBookingCancelCmd() *cobra.Command {
 			defer cancel()
 
 			if err := client.CancelBooking(ctx, args[0], reason); err != nil {
-				return fmt.Errorf("failed to cancel booking: %w", err)
+				return common.WrapCancelError("booking", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Cancelled booking: %s\n", args[0])
+			_, _ = common.Green.Printf("✓ Cancelled booking: %s\n", args[0])
 
 			return nil
 		},
@@ -319,12 +310,12 @@ func newBookingCancelCmd() *cobra.Command {
 func getStatusColor(status string) *color.Color {
 	switch status {
 	case "confirmed":
-		return color.New(color.FgGreen)
+		return common.Green
 	case "pending":
-		return color.New(color.FgYellow)
+		return common.Yellow
 	case "cancelled":
-		return color.New(color.Faint)
+		return common.Dim
 	default:
-		return color.New(color.Reset)
+		return common.Reset
 	}
 }

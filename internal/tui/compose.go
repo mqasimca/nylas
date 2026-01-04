@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -253,12 +254,12 @@ func (c *ComposeView) prefillForReply() {
 		from := msg.From[0]
 		if from.Name != "" {
 			body.WriteString(fmt.Sprintf("On %s %s <%s> wrote:\n",
-				msg.Date.Format("Mon, Jan 2, 2006 at 3:04 PM"),
+				msg.Date.Format(common.DisplayWeekdayCommaAt),
 				from.Name,
 				from.Email))
 		} else {
 			body.WriteString(fmt.Sprintf("On %s %s wrote:\n",
-				msg.Date.Format("Mon, Jan 2, 2006 at 3:04 PM"),
+				msg.Date.Format(common.DisplayWeekdayCommaAt),
 				from.Email))
 		}
 	}

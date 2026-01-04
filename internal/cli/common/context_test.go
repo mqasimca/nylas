@@ -20,11 +20,11 @@ func TestCreateContext(t *testing.T) {
 		t.Error("CreateContext() context has no deadline")
 	}
 
-	// Check that deadline is approximately 30 seconds from now
-	expectedDeadline := time.Now().Add(30 * time.Second)
+	// Check that deadline is approximately 90 seconds from now (TimeoutAPI)
+	expectedDeadline := time.Now().Add(90 * time.Second)
 	diff := expectedDeadline.Sub(deadline)
 	if diff < -1*time.Second || diff > 1*time.Second {
-		t.Errorf("CreateContext() deadline is %v, expected around 30s from now", deadline)
+		t.Errorf("CreateContext() deadline is %v, expected around 90s from now", deadline)
 	}
 }
 

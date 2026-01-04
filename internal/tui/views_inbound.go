@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -282,7 +283,7 @@ func (v *InboundView) showMessageDetail(msg *domain.InboundMessage) {
 	if len(to) > 0 {
 		_, _ = fmt.Fprintf(detail, "[%s]To:[-] [%s]%s[-]\n", key, value, strings.Join(to, ", "))
 	}
-	_, _ = fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+	_, _ = fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format(common.DisplayWeekdayComma))
 	_, _ = fmt.Fprintf(detail, "[%s]ID:[-] [%s]%s[-]\n", key, value, msg.ID)
 	_, _ = fmt.Fprintf(detail, "[%s]────────────────────────────────────────[-]\n\n", muted)
 

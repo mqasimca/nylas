@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/atotto/clipboard"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 )
 
@@ -39,10 +39,9 @@ func newTokenCmd() *cobra.Command {
 
 			if copyToClipboard {
 				if err := clipboard.WriteAll(apiKey); err != nil {
-					return fmt.Errorf("failed to copy to clipboard: %w", err)
+					return common.WrapWriteError("clipboard", err)
 				}
-				green := color.New(color.FgGreen)
-				_, _ = green.Println("✓ API key copied to clipboard")
+				_, _ = common.Green.Println("✓ API key copied to clipboard")
 			} else {
 				fmt.Println(apiKey)
 			}

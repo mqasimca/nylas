@@ -51,7 +51,7 @@ func newAttachmentsListCmd() *cobra.Command {
 
 			attachments, err := client.ListAttachments(ctx, grantID, messageID)
 			if err != nil {
-				return fmt.Errorf("failed to list attachments: %w", err)
+				return common.WrapListError("attachments", err)
 			}
 
 			if len(attachments) == 0 {
@@ -111,7 +111,7 @@ func newAttachmentsShowCmd() *cobra.Command {
 
 			attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
 			if err != nil {
-				return fmt.Errorf("failed to get attachment: %w", err)
+				return common.WrapGetError("attachment", err)
 			}
 
 			fmt.Println(strings.Repeat("─", 60))
@@ -161,7 +161,7 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 			// Get attachment metadata first to get filename
 			attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
 			if err != nil {
-				return fmt.Errorf("failed to get attachment metadata: %w", err)
+				return common.WrapGetError("attachment metadata", err)
 			}
 
 			// Sanitize filename to prevent path traversal attacks
@@ -192,21 +192,21 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 			// Download the attachment
 			reader, err := client.DownloadAttachment(ctx, grantID, messageID, attachmentID)
 			if err != nil {
-				return fmt.Errorf("failed to download attachment: %w", err)
+				return common.WrapDownloadError("attachment", err)
 			}
 			defer func() { _ = reader.Close() }()
 
 			// Create output file
 			file, err := os.Create(outputPath)
 			if err != nil {
-				return fmt.Errorf("failed to create output file: %w", err)
+				return common.WrapCreateError("output file", err)
 			}
 			defer func() { _ = file.Close() }()
 
 			// Copy content
 			written, err := io.Copy(file, reader)
 			if err != nil {
-				return fmt.Errorf("failed to write file: %w", err)
+				return common.WrapWriteError("file", err)
 			}
 
 			printSuccess("Downloaded %s (%s) to %s", attachment.Filename, common.FormatSize(written), outputPath)

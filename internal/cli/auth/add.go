@@ -1,13 +1,11 @@
 package auth
 
 import (
-	"context"
 	"fmt"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -42,13 +40,13 @@ Example:
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Fetch grant info from Nylas API
 			grant, err := grantSvc.FetchGrantFromNylas(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to fetch grant: %w", err)
+				return common.WrapFetchError("grant", err)
 			}
 			if !grant.IsValid() {
 				return fmt.Errorf("grant %s is not valid (status: %s)", grantID, grant.GrantStatus)
@@ -74,8 +72,7 @@ Example:
 				return err
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Added grant %s\n", grantID)
+			_, _ = common.Green.Printf("✓ Added grant %s\n", grantID)
 			fmt.Printf("  Email:    %s\n", grantEmail)
 			fmt.Printf("  Provider: %s\n", grantProvider.DisplayName())
 			if setDefault {

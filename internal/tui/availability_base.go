@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -171,8 +172,8 @@ func (v *AvailabilityView) Refresh() {
 func (v *AvailabilityView) updateInfoPanel() {
 	styles := v.app.styles
 	info := fmt.Sprintf("[%s]Duration:[-] %d min\n", colorToHex(styles.InfoColor), v.duration)
-	info += fmt.Sprintf("[%s]Start:[-] %s\n", colorToHex(styles.InfoColor), v.startDate.Format("Jan 2, 2006"))
-	info += fmt.Sprintf("[%s]End:[-] %s\n", colorToHex(styles.InfoColor), v.endDate.Format("Jan 2, 2006"))
+	info += fmt.Sprintf("[%s]Start:[-] %s\n", colorToHex(styles.InfoColor), v.startDate.Format(common.DisplayDateFormat))
+	info += fmt.Sprintf("[%s]End:[-] %s\n", colorToHex(styles.InfoColor), v.endDate.Format(common.DisplayDateFormat))
 	info += fmt.Sprintf("[%s]Participants:[-] %d", colorToHex(styles.InfoColor), len(v.participants))
 	v.infoPanel.SetText(info)
 }

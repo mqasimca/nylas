@@ -3,7 +3,6 @@ package contacts
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -116,11 +115,10 @@ Examples:
 
 			contact, err := client.UpdateContact(ctx, grantID, contactID, req)
 			if err != nil {
-				return fmt.Errorf("failed to update contact: %w", err)
+				return common.WrapUpdateError("contact", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Contact updated successfully!\n\n", green.Sprint("✓"))
+			fmt.Printf("%s Contact updated successfully!\n\n", common.Green.Sprint("✓"))
 			fmt.Printf("Name: %s\n", contact.DisplayName())
 			if len(contact.Emails) > 0 {
 				fmt.Printf("Email: %s\n", contact.Emails[0].Email)

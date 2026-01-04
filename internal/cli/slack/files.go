@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -116,7 +115,7 @@ Examples:
 
 			resp, err := client.ListFiles(ctx, params)
 			if err != nil {
-				return fmt.Errorf("failed to list files: %w", err)
+				return common.WrapListError("files", err)
 			}
 
 			if len(resp.Files) == 0 {
@@ -124,23 +123,19 @@ Examples:
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
-			bold := color.New(color.Bold)
-
 			fmt.Printf("Found %d file(s):\n\n", len(resp.Files))
 			fmt.Println(strings.Repeat("─", 70))
 
 			for i, f := range resp.Files {
 				// File name and type
-				_, _ = bold.Printf("%d. %s", i+1, f.Name)
+				_, _ = common.Bold.Printf("%d. %s", i+1, f.Name)
 				if f.Title != "" && f.Title != f.Name {
-					_, _ = dim.Printf(" (%s)", f.Title)
+					_, _ = common.Dim.Printf(" (%s)", f.Title)
 				}
 				fmt.Println()
 
 				// Details
-				fmt.Printf("   ID:   %s\n", cyan.Sprint(f.ID))
+				fmt.Printf("   ID:   %s\n", common.Cyan.Sprint(f.ID))
 				fmt.Printf("   Type: %s", f.MimeType)
 				if f.FileType != "" {
 					fmt.Printf(" (.%s)", f.FileType)
@@ -156,7 +151,7 @@ Examples:
 				// Created time
 				if f.Created > 0 {
 					created := time.Unix(f.Created, 0)
-					_, _ = dim.Printf("   Uploaded: %s\n", created.Format("Jan 2, 2006 3:04 PM"))
+					_, _ = common.Dim.Printf("   Uploaded: %s\n", created.Format(common.DisplayDateTime))
 				}
 
 				if i < len(resp.Files)-1 {
@@ -203,19 +198,15 @@ func newFilesShowCmd() *cobra.Command {
 
 			file, err := client.GetFileInfo(ctx, fileID)
 			if err != nil {
-				return fmt.Errorf("failed to get file info: %w", err)
+				return common.WrapGetError("file info", err)
 			}
 
-			bold := color.New(color.Bold)
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
-
 			fmt.Println(strings.Repeat("─", 60))
-			_, _ = bold.Printf("Name:      %s\n", file.Name)
+			_, _ = common.Bold.Printf("Name:      %s\n", file.Name)
 			if file.Title != "" && file.Title != file.Name {
 				fmt.Printf("Title:     %s\n", file.Title)
 			}
-			fmt.Printf("ID:        %s\n", cyan.Sprint(file.ID))
+			fmt.Printf("ID:        %s\n", common.Cyan.Sprint(file.ID))
 			fmt.Printf("Type:      %s", file.MimeType)
 			if file.FileType != "" {
 				fmt.Printf(" (.%s)", file.FileType)
@@ -229,15 +220,15 @@ func newFilesShowCmd() *cobra.Command {
 
 			if file.Created > 0 {
 				created := time.Unix(file.Created, 0)
-				fmt.Printf("Uploaded:  %s\n", created.Format("Jan 2, 2006 3:04 PM"))
+				fmt.Printf("Uploaded:  %s\n", created.Format(common.DisplayDateTime))
 			}
 
 			if file.UserID != "" {
-				_, _ = dim.Printf("Uploader:  %s\n", file.UserID)
+				_, _ = common.Dim.Printf("Uploader:  %s\n", file.UserID)
 			}
 
 			if file.Permalink != "" {
-				_, _ = dim.Printf("Link:      %s\n", file.Permalink)
+				_, _ = common.Dim.Printf("Link:      %s\n", file.Permalink)
 			}
 
 			fmt.Println(strings.Repeat("─", 60))
@@ -285,7 +276,7 @@ Examples:
 			// Get file metadata first to get filename and download URL
 			file, err := client.GetFileInfo(ctx, fileID)
 			if err != nil {
-				return fmt.Errorf("failed to get file info: %w", err)
+				return common.WrapGetError("file info", err)
 			}
 
 			if file.DownloadURL == "" {
@@ -321,11 +312,11 @@ Examples:
 			// Security: Ensure output path is within current directory or temp directory
 			absPath, err := filepath.Abs(outputPath)
 			if err != nil {
-				return fmt.Errorf("failed to resolve output path: %w", err)
+				return common.WrapGetError("output path", err)
 			}
 			cwd, err := os.Getwd()
 			if err != nil {
-				return fmt.Errorf("failed to get current directory: %w", err)
+				return common.WrapGetError("current directory", err)
 			}
 			tempDir := os.TempDir()
 			if !strings.HasPrefix(absPath, cwd) && !strings.HasPrefix(absPath, tempDir) {
@@ -340,25 +331,24 @@ Examples:
 			// Download the file
 			reader, err := client.DownloadFile(ctx, file.DownloadURL)
 			if err != nil {
-				return fmt.Errorf("failed to download file: %w", err)
+				return common.WrapDownloadError("file", err)
 			}
 			defer func() { _ = reader.Close() }()
 
 			// Create output file
 			outFile, err := os.Create(outputPath)
 			if err != nil {
-				return fmt.Errorf("failed to create output file: %w", err)
+				return common.WrapCreateError("output file", err)
 			}
 			defer func() { _ = outFile.Close() }()
 
 			// Copy content
 			written, err := io.Copy(outFile, reader)
 			if err != nil {
-				return fmt.Errorf("failed to write file: %w", err)
+				return common.WrapWriteError("file", err)
 			}
 
-			green := color.New(color.FgGreen)
-			_, _ = green.Printf("✓ Downloaded %s (%s) to %s\n", file.Name, formatFileSize(written), outputPath)
+			_, _ = common.Green.Printf("✓ Downloaded %s (%s) to %s\n", file.Name, formatFileSize(written), outputPath)
 
 			return nil
 		},

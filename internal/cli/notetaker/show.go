@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +39,7 @@ func newShowCmd() *cobra.Command {
 
 			notetaker, err := client.GetNotetaker(ctx, grantID, notetakerID)
 			if err != nil {
-				return fmt.Errorf("failed to get notetaker: %w", err)
+				return common.WrapGetError("notetaker", err)
 			}
 
 			if outputJSON {
@@ -49,12 +48,7 @@ func newShowCmd() *cobra.Command {
 				return enc.Encode(notetaker)
 			}
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-			dim := color.New(color.Faint)
-
-			_, _ = cyan.Printf("Notetaker: %s\n", notetaker.ID)
+			_, _ = common.Cyan.Printf("Notetaker: %s\n", notetaker.ID)
 			fmt.Printf("State:     %s\n", formatState(notetaker.State))
 
 			if notetaker.MeetingTitle != "" {
@@ -66,7 +60,7 @@ func newShowCmd() *cobra.Command {
 
 			if notetaker.MeetingInfo != nil {
 				if notetaker.MeetingInfo.Provider != "" {
-					_, _ = green.Printf("Provider:  %s\n", notetaker.MeetingInfo.Provider)
+					_, _ = common.Green.Printf("Provider:  %s\n", notetaker.MeetingInfo.Provider)
 				}
 				if notetaker.MeetingInfo.MeetingCode != "" {
 					fmt.Printf("Code:      %s\n", notetaker.MeetingInfo.MeetingCode)
@@ -80,26 +74,26 @@ func newShowCmd() *cobra.Command {
 			}
 
 			if !notetaker.JoinTime.IsZero() {
-				_, _ = yellow.Printf("Join Time: %s\n", notetaker.JoinTime.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+				_, _ = common.Yellow.Printf("Join Time: %s\n", notetaker.JoinTime.Local().Format(common.DisplayWeekdayFullWithTZ))
 			}
 
 			// Show media info if available
 			if notetaker.MediaData != nil {
 				fmt.Println("\nMedia:")
 				if notetaker.MediaData.Recording != nil {
-					_, _ = green.Printf("  Recording: %s\n", notetaker.MediaData.Recording.URL)
-					_, _ = dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Recording.Size)
+					_, _ = common.Green.Printf("  Recording: %s\n", notetaker.MediaData.Recording.URL)
+					_, _ = common.Dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Recording.Size)
 				}
 				if notetaker.MediaData.Transcript != nil {
-					_, _ = green.Printf("  Transcript: %s\n", notetaker.MediaData.Transcript.URL)
-					_, _ = dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Transcript.Size)
+					_, _ = common.Green.Printf("  Transcript: %s\n", notetaker.MediaData.Transcript.URL)
+					_, _ = common.Dim.Printf("    Size: %d bytes\n", notetaker.MediaData.Transcript.Size)
 				}
 			}
 
 			fmt.Println()
-			_, _ = dim.Printf("Created: %s\n", notetaker.CreatedAt.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+			_, _ = common.Dim.Printf("Created: %s\n", notetaker.CreatedAt.Local().Format(common.DisplayWeekdayFullWithTZ))
 			if !notetaker.UpdatedAt.IsZero() {
-				_, _ = dim.Printf("Updated: %s\n", notetaker.UpdatedAt.Local().Format("Mon Jan 2, 2006 3:04 PM MST"))
+				_, _ = common.Dim.Printf("Updated: %s\n", notetaker.UpdatedAt.Local().Format(common.DisplayWeekdayFullWithTZ))
 			}
 
 			return nil

@@ -7,8 +7,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 // Spinner provides an animated spinner for indeterminate operations.
@@ -81,7 +79,6 @@ func (s *Spinner) Start() {
 	go func() {
 		defer close(s.done)
 		frameIdx := 0
-		cyan := color.New(color.FgCyan)
 
 		for {
 			select {
@@ -91,7 +88,7 @@ func (s *Spinner) Start() {
 				return
 			default:
 				frame := s.frames[frameIdx%len(s.frames)]
-				_, _ = fmt.Fprintf(s.writer, "\r%s %s", cyan.Sprint(frame), s.message)
+				_, _ = fmt.Fprintf(s.writer, "\r%s %s", Cyan.Sprint(frame), s.message)
 				frameIdx++
 				time.Sleep(s.interval)
 			}
@@ -125,8 +122,7 @@ func (s *Spinner) StopWithMessage(message string) {
 func (s *Spinner) StopWithSuccess(message string) {
 	s.Stop()
 	if !IsQuiet() {
-		green := color.New(color.FgGreen)
-		_, _ = fmt.Fprintf(s.writer, "%s %s\n", green.Sprint("✓"), message)
+		_, _ = fmt.Fprintf(s.writer, "%s %s\n", Green.Sprint("✓"), message)
 	}
 }
 
@@ -134,8 +130,7 @@ func (s *Spinner) StopWithSuccess(message string) {
 func (s *Spinner) StopWithError(message string) {
 	s.Stop()
 	if !IsQuiet() {
-		red := color.New(color.FgRed)
-		_, _ = fmt.Fprintf(s.writer, "%s %s\n", red.Sprint("✗"), message)
+		_, _ = fmt.Fprintf(s.writer, "%s %s\n", Red.Sprint("✗"), message)
 	}
 }
 
@@ -226,11 +221,10 @@ func (p *ProgressBar) render() {
 	}
 
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", empty)
-	cyan := color.New(color.FgCyan)
 
 	_, _ = fmt.Fprintf(p.writer, "\r%s %s %s %d/%d (%.0f%%)%s",
 		p.message,
-		cyan.Sprint("["),
+		Cyan.Sprint("["),
 		bar,
 		p.current,
 		p.total,

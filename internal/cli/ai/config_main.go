@@ -58,7 +58,7 @@ func newConfigShowCmd() *cobra.Command {
 			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			if cfg.AI == nil {
@@ -70,7 +70,7 @@ func newConfigShowCmd() *cobra.Command {
 
 			data, err := yaml.Marshal(cfg.AI)
 			if err != nil {
-				return fmt.Errorf("failed to format config: %w", err)
+				return common.WrapMarshalError("config", err)
 			}
 
 			fmt.Printf("AI Configuration:\n\n")
@@ -89,7 +89,7 @@ func newConfigListCmd() *cobra.Command {
 			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			if cfg.AI == nil {
@@ -218,7 +218,7 @@ Examples:
 			store := common.GetConfigStore(cmd)
 			cfg, err := store.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			if cfg.AI == nil {

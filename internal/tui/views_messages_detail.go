@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -78,7 +79,7 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 					}
 
 					_, _ = fmt.Fprintf(detail, "[%s]From:[-] [%s]%s[-]\n", key, value, from)
-					_, _ = fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format("Mon, Jan 2, 2006 3:04 PM"))
+					_, _ = fmt.Fprintf(detail, "[%s]Date:[-] [%s]%s[-]\n", key, value, msg.Date.Format(common.DisplayWeekdayComma))
 
 					// Display attachments if any
 					if len(msg.Attachments) > 0 {

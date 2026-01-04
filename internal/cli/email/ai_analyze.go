@@ -1,15 +1,14 @@
 package email
 
 import (
-	"context"
 	"fmt"
 	"strings"
-	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/spf13/cobra"
 )
 
 func newAnalyzeCmd() *cobra.Command {
@@ -47,27 +46,27 @@ This command fetches your recent emails and uses AI to provide:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()
 			if err != nil {
-				return fmt.Errorf("failed to get client: %w", err)
+				return err
 			}
 
 			grantID, err := common.GetGrantID(args)
 			if err != nil {
-				return fmt.Errorf("failed to get grant ID: %w", err)
+				return err
 			}
 
 			// AI analysis can take time - use longer timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
 			defer cancel()
 
 			// Load config for AI settings
 			configStore := common.GetConfigStore(cmd)
 			cfg, err := configStore.Load()
 			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
+				return common.WrapLoadError("config", err)
 			}
 
 			if cfg.AI == nil || !cfg.AI.IsConfigured() {
-				return fmt.Errorf("AI is not configucommon.Red. Run 'nylas config ai setup' to configure AI providers")
+				return fmt.Errorf("AI is not configured. Run 'nylas config ai setup' to configure AI providers")
 			}
 
 			// Fetch emails
@@ -89,7 +88,7 @@ This command fetches your recent emails and uses AI to provide:
 
 			messages, err := client.GetMessagesWithParams(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("failed to fetch emails: %w", err)
+				return common.WrapFetchError("emails", err)
 			}
 
 			if len(messages) == 0 {

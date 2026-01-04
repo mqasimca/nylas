@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -166,7 +165,7 @@ func formatEventTimeWithTZ(event *domain.Event, targetTZ string) (*EventTimeDisp
 
 	// Convert to target timezone
 	tzService := timezone.NewService()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	convertedStart, err := tzService.ConvertTime(ctx, originalTZ, targetTZ, start)

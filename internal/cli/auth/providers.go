@@ -1,18 +1,18 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-	"github.com/spf13/cobra"
 )
 
 func newProvidersCmd() *cobra.Command {
@@ -37,7 +37,7 @@ This command shows connectors configured for your Nylas application.`,
   # Output as JSON
   nylas auth providers --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			client, err := getProvidersClient()
@@ -47,7 +47,7 @@ This command shows connectors configured for your Nylas application.`,
 
 			connectors, err := client.ListConnectors(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to list providers: %w", err)
+				return common.WrapFetchError("providers", err)
 			}
 
 			if outputJSON {

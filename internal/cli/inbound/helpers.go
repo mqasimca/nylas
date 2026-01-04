@@ -65,9 +65,9 @@ func printInboxDetails(inbox domain.InboundInbox) {
 	fmt.Printf("ID:          %s\n", inbox.ID)
 	fmt.Printf("Email:       %s\n", inbox.Email)
 	fmt.Printf("Status:      %s\n", formatStatus(inbox.GrantStatus))
-	fmt.Printf("Created:     %s (%s)\n", inbox.CreatedAt.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(inbox.CreatedAt.Time))
+	fmt.Printf("Created:     %s (%s)\n", inbox.CreatedAt.Format(common.DisplayDateTime), common.FormatTimeAgo(inbox.CreatedAt.Time))
 	if !inbox.UpdatedAt.IsZero() {
-		fmt.Printf("Updated:     %s (%s)\n", inbox.UpdatedAt.Format("Jan 2, 2006 3:04 PM"), common.FormatTimeAgo(inbox.UpdatedAt.Time))
+		fmt.Printf("Updated:     %s (%s)\n", inbox.UpdatedAt.Format(common.DisplayDateTime), common.FormatTimeAgo(inbox.UpdatedAt.Time))
 	}
 	fmt.Println()
 }

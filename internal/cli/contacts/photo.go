@@ -1,13 +1,13 @@
 package contacts
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newPhotoCmd() *cobra.Command {
@@ -49,12 +49,12 @@ and saves it to a file or displays the Base64 data.`,
 				return err
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			contact, err := client.GetContactWithPicture(ctx, grantID, contactID, true)
 			if err != nil {
-				return fmt.Errorf("failed to get contact: %w", err)
+				return common.WrapGetError("contact", err)
 			}
 
 			if contact.Picture == "" {
@@ -66,12 +66,12 @@ and saves it to a file or displays the Base64 data.`,
 				// Decode Base64 and save to file
 				imageData, err := base64.StdEncoding.DecodeString(contact.Picture)
 				if err != nil {
-					return fmt.Errorf("failed to decode image data: %w", err)
+					return common.WrapDecodeError("image data", err)
 				}
 
 				// Use restrictive permissions (owner-only) for contact photos
 				if err := os.WriteFile(outputFile, imageData, 0600); err != nil {
-					return fmt.Errorf("failed to write file: %w", err)
+					return common.WrapWriteError("file", err)
 				}
 
 				fmt.Printf("Profile picture saved to: %s\n", outputFile)

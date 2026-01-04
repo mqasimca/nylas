@@ -195,26 +195,23 @@ func FormatError(err error) string {
 	}
 
 	var sb strings.Builder
-	red := color.New(color.FgRed)
-	yellow := color.New(color.FgYellow)
-	dim := color.New(color.Faint)
 
 	// Error message
-	_, _ = red.Fprintf(&sb, "Error: %s\n", cliErr.Message)
+	_, _ = Red.Fprintf(&sb, "Error: %s\n", cliErr.Message)
 
 	// Error code (if available)
 	if cliErr.Code != "" {
-		_, _ = dim.Fprintf(&sb, "  Code: %s\n", cliErr.Code)
+		_, _ = Dim.Fprintf(&sb, "  Code: %s\n", cliErr.Code)
 	}
 
 	// Suggestion (if available)
 	if cliErr.Suggestion != "" {
-		_, _ = yellow.Fprintf(&sb, "  Hint: %s\n", cliErr.Suggestion)
+		_, _ = Yellow.Fprintf(&sb, "  Hint: %s\n", cliErr.Suggestion)
 	}
 
 	// Original error in debug mode
 	if IsDebug() && cliErr.Err != nil && cliErr.Err.Error() != cliErr.Message {
-		_, _ = dim.Fprintf(&sb, "  Details: %s\n", cliErr.Err.Error())
+		_, _ = Dim.Fprintf(&sb, "  Details: %s\n", cliErr.Err.Error())
 	}
 
 	return sb.String()
@@ -269,4 +266,54 @@ func WrapDeleteError(resource string, err error) error {
 // WrapSendError wraps an error from a send operation.
 func WrapSendError(resource string, err error) error {
 	return fmt.Errorf("failed to send %s: %w", resource, err)
+}
+
+// WrapListError wraps an error from a list operation.
+func WrapListError(resource string, err error) error {
+	return fmt.Errorf("failed to list %s: %w", resource, err)
+}
+
+// WrapLoadError wraps an error from a load operation.
+func WrapLoadError(resource string, err error) error {
+	return fmt.Errorf("failed to load %s: %w", resource, err)
+}
+
+// WrapSaveError wraps an error from a save operation.
+func WrapSaveError(resource string, err error) error {
+	return fmt.Errorf("failed to save %s: %w", resource, err)
+}
+
+// WrapMarshalError wraps an error from a marshal/encode operation.
+func WrapMarshalError(resource string, err error) error {
+	return fmt.Errorf("failed to marshal %s: %w", resource, err)
+}
+
+// WrapDecodeError wraps an error from a decode operation.
+func WrapDecodeError(resource string, err error) error {
+	return fmt.Errorf("failed to decode %s: %w", resource, err)
+}
+
+// WrapWriteError wraps an error from a write operation.
+func WrapWriteError(resource string, err error) error {
+	return fmt.Errorf("failed to write %s: %w", resource, err)
+}
+
+// WrapDownloadError wraps an error from a download operation.
+func WrapDownloadError(resource string, err error) error {
+	return fmt.Errorf("failed to download %s: %w", resource, err)
+}
+
+// WrapCancelError wraps an error from a cancel operation.
+func WrapCancelError(resource string, err error) error {
+	return fmt.Errorf("failed to cancel %s: %w", resource, err)
+}
+
+// WrapGenerateError wraps an error from a generate operation.
+func WrapGenerateError(resource string, err error) error {
+	return fmt.Errorf("failed to generate %s: %w", resource, err)
+}
+
+// WrapSearchError wraps an error from a search operation.
+func WrapSearchError(resource string, err error) error {
+	return fmt.Errorf("failed to search %s: %w", resource, err)
 }

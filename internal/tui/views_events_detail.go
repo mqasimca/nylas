@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/rivo/tview"
 )
@@ -22,7 +23,7 @@ func (v *EventsView) showDayDetail() {
 	list.SetBackgroundColor(v.app.styles.BgColor)
 	list.SetBorder(true)
 	list.SetBorderColor(v.app.styles.FocusColor)
-	list.SetTitle(fmt.Sprintf(" %s (%d events) ", date.Format("Jan 2, 2006"), len(events)))
+	list.SetTitle(fmt.Sprintf(" %s (%d events) ", date.Format(common.DisplayDateFormat), len(events)))
 	list.SetTitleColor(v.app.styles.TitleFg)
 	list.ShowSecondaryText(true)
 	list.SetHighlightFullLine(true)
@@ -146,10 +147,10 @@ func (v *EventsView) showEventDetail(evt *domain.Event) {
 	if !evt.When.IsAllDay() {
 		start := evt.When.StartDateTime()
 		end := evt.When.EndDateTime()
-		dateStr := start.Format("Monday, January 2, 2006")
-		timeStr = fmt.Sprintf("%s\n%s - %s", dateStr, start.Format("3:04 PM"), end.Format("3:04 PM"))
+		dateStr := start.Format(common.DisplayDateLong)
+		timeStr = fmt.Sprintf("%s\n%s - %s", dateStr, start.Format(common.DisplayTimeFormat), end.Format(common.DisplayTimeFormat))
 	} else {
-		timeStr = evt.When.StartDateTime().Format("Monday, January 2, 2006") + " (All day)"
+		timeStr = evt.When.StartDateTime().Format(common.DisplayDateLong) + " (All day)"
 	}
 	_, _ = fmt.Fprintf(detail, "[%s::b]When[-::-]\n[%s]%s[-]\n\n", info, value, timeStr)
 

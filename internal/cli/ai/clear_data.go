@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newClearDataCmd() *cobra.Command {
@@ -52,7 +54,7 @@ Examples:
 			// Get data directory
 			configDir, err := os.UserConfigDir()
 			if err != nil {
-				return fmt.Errorf("failed to get config directory: %w", err)
+				return common.WrapGetError("config directory", err)
 			}
 
 			dataDir := filepath.Join(configDir, "nylas", "ai-data")
@@ -65,7 +67,7 @@ Examples:
 
 			// Remove AI data directory
 			if err := os.RemoveAll(dataDir); err != nil {
-				return fmt.Errorf("failed to clear AI data: %w", err)
+				return common.WrapDeleteError("AI data", err)
 			}
 
 			fmt.Println("✓ AI data cleared successfully")

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -37,14 +37,11 @@ func newListCmd() *cobra.Command {
 				return enc.Encode(accounts)
 			}
 
-			cyan := color.New(color.FgCyan, color.Bold)
-			bold := color.New(color.Bold)
-
-			_, _ = cyan.Println("Configured Accounts")
+			_, _ = common.BoldCyan.Println("Configured Accounts")
 			fmt.Println()
 
 			// Print header
-			_, _ = bold.Printf("  %-3s  %-28s  %-12s\n", "#", "EMAIL", "PROVIDER")
+			_, _ = common.Bold.Printf("  %-3s  %-28s  %-12s\n", "#", "EMAIL", "PROVIDER")
 
 			for i, acc := range accounts {
 				fmt.Printf("  %-3d  %-28s  %-12s\n",

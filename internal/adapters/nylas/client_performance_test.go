@@ -17,9 +17,13 @@ import (
 
 func TestContextTimeouts(t *testing.T) {
 	t.Run("enforces_default_timeout", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip("skipping long-running timeout test in short mode")
+		}
+
 		// Server that delays response beyond default timeout
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(35 * time.Second) // Longer than default 30s timeout
+			time.Sleep(95 * time.Second) // Longer than default 90s timeout
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer server.Close()
@@ -28,15 +32,15 @@ func TestContextTimeouts(t *testing.T) {
 		client.SetCredentials("client-id", "secret", "api-key")
 		client.SetBaseURL(server.URL)
 
-		// Use context without timeout - should apply default 30s timeout
+		// Use context without timeout - should apply default 90s timeout
 		start := time.Now()
 		_, err := client.GetFolders(context.Background(), "grant-123")
 		elapsed := time.Since(start)
 
-		// Should timeout in ~30 seconds, not wait for full 35 seconds
+		// Should timeout in ~90 seconds, not wait for full 95 seconds
 		assert.Error(t, err)
-		assert.True(t, elapsed < 32*time.Second, "Should timeout near 30 seconds")
-		assert.True(t, elapsed > 29*time.Second, "Should wait at least 29 seconds")
+		assert.True(t, elapsed < 92*time.Second, "Should timeout near 90 seconds")
+		assert.True(t, elapsed > 89*time.Second, "Should wait at least 89 seconds")
 	})
 
 	t.Run("respects_existing_context_timeout", func(t *testing.T) {

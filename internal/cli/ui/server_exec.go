@@ -2,14 +2,14 @@ package ui
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
-	"time"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
@@ -315,7 +315,7 @@ func (s *Server) handleExecCommand(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Execute the nylas command using the same binary that started this server
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	// Use the current executable path instead of relying on PATH

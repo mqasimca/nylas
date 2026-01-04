@@ -47,7 +47,7 @@ func newFoldersListCmd() *cobra.Command {
 
 			folders, err := client.GetFolders(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to get folders: %w", err)
+				return common.WrapGetError("folders", err)
 			}
 
 			if len(folders) == 0 {
@@ -133,7 +133,7 @@ func newFoldersShowCmd() *cobra.Command {
 
 			folder, err := client.GetFolder(ctx, grantID, folderID)
 			if err != nil {
-				return fmt.Errorf("failed to get folder: %w", err)
+				return common.WrapGetError("folder", err)
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
@@ -208,7 +208,7 @@ func newFoldersCreateCmd() *cobra.Command {
 
 			folder, err := client.CreateFolder(ctx, grantID, req)
 			if err != nil {
-				return fmt.Errorf("failed to create folder: %w", err)
+				return common.WrapCreateError("folder", err)
 			}
 
 			printSuccess("Created folder '%s' (ID: %s)", folder.Name, folder.ID)
@@ -271,7 +271,7 @@ func newFoldersRenameCmd() *cobra.Command {
 
 			folder, err := client.UpdateFolder(ctx, grantID, folderID, req)
 			if err != nil {
-				return fmt.Errorf("failed to update folder: %w", err)
+				return common.WrapUpdateError("folder", err)
 			}
 
 			printSuccess("Folder renamed to '%s'", folder.Name)
@@ -326,7 +326,7 @@ func newFoldersDeleteCmd() *cobra.Command {
 
 			err = client.DeleteFolder(ctx, grantID, folderID)
 			if err != nil {
-				return fmt.Errorf("failed to delete folder: %w", err)
+				return common.WrapDeleteError("folder", err)
 			}
 
 			printSuccess("Folder deleted")

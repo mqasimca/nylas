@@ -1,18 +1,17 @@
 package auth
 
 import (
-	"context"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/fatih/color"
+	"github.com/spf13/cobra"
+
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/adapters/nylas"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
-	"github.com/spf13/cobra"
 )
 
 func newShowCmd() *cobra.Command {
@@ -82,20 +81,20 @@ Information includes:
 				}
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			grant, err := client.GetGrant(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to get grant details: %w", err)
+				return common.WrapGetError("grant details", err)
 			}
 
 			// Display grant information
-			boldWhite := color.New(color.Bold, color.FgWhite)
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-			dim := color.New(color.Faint)
+			boldWhite := common.BoldWhite
+			cyan := common.Cyan
+			green := common.Green
+			yellow := common.Yellow
+			dim := common.Dim
 
 			fmt.Println("════════════════════════════════════════════════════════════")
 			_, _ = boldWhite.Printf("Grant Details\n")
@@ -117,10 +116,10 @@ Information includes:
 
 			// Timestamps
 			if !grant.CreatedAt.IsZero() {
-				fmt.Printf("\nCreated:     %s\n", grant.CreatedAt.Format("Jan 2, 2006 3:04 PM"))
+				fmt.Printf("\nCreated:     %s\n", grant.CreatedAt.Format(common.DisplayDateTime))
 			}
 			if !grant.UpdatedAt.IsZero() {
-				fmt.Printf("Updated:     %s\n", grant.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
+				fmt.Printf("Updated:     %s\n", grant.UpdatedAt.Format(common.DisplayDateTime))
 			}
 
 			// Scopes

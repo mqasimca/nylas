@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -85,10 +85,8 @@ func confirmWorkingHoursViolation(violation string, eventTime time.Time, schedul
 		return true
 	}
 
-	yellow := color.New(color.FgYellow, color.Bold)
-
 	fmt.Println()
-	_, _ = yellow.Println("⚠️  Working Hours Warning")
+	_, _ = common.BoldYellow.Println("⚠️  Working Hours Warning")
 	fmt.Println()
 
 	fmt.Printf("This event is scheduled outside your working hours:\n")

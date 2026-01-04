@@ -5,7 +5,6 @@ package slack
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -32,13 +31,10 @@ func newChannelInfoCmd() *cobra.Command {
 			channelID := args[0]
 			ch, err := client.GetChannel(ctx, channelID)
 			if err != nil {
-				return fmt.Errorf("failed to get channel: %w", err)
+				return common.WrapGetError("channel", err)
 			}
 
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
-
-			_, _ = cyan.Printf("Channel: #%s\n", ch.Name)
+			_, _ = common.Cyan.Printf("Channel: #%s\n", ch.Name)
 			fmt.Printf("  ID:           %s\n", ch.ID)
 			fmt.Printf("  Is Channel:   %v\n", ch.IsChannel)
 			fmt.Printf("  Is Private:   %v\n", ch.IsPrivate)
@@ -52,10 +48,10 @@ func newChannelInfoCmd() *cobra.Command {
 			fmt.Printf("  Is Group:     %v\n", ch.IsGroup)
 			fmt.Printf("  Members:      %d\n", ch.MemberCount)
 			if ch.Purpose != "" {
-				_, _ = dim.Printf("  Purpose:      %s\n", ch.Purpose)
+				_, _ = common.Dim.Printf("  Purpose:      %s\n", ch.Purpose)
 			}
 			if ch.Topic != "" {
-				_, _ = dim.Printf("  Topic:        %s\n", ch.Topic)
+				_, _ = common.Dim.Printf("  Topic:        %s\n", ch.Topic)
 			}
 
 			return nil

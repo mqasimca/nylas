@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/domain"
 	"gopkg.in/yaml.v3"
 )
@@ -303,22 +302,20 @@ func (t *Table) Render() {
 	}
 
 	// Print headers
-	headerColor := color.New(color.FgCyan, color.Bold)
 	for i, h := range t.headers {
 		if t.alignRight[i] {
-			_, _ = headerColor.Fprintf(t.writer, "%*s  ", widths[i], h)
+			_, _ = BoldCyan.Fprintf(t.writer, "%*s  ", widths[i], h)
 		} else {
-			_, _ = headerColor.Fprintf(t.writer, "%-*s  ", widths[i], h)
+			_, _ = BoldCyan.Fprintf(t.writer, "%-*s  ", widths[i], h)
 		}
 	}
 	_, _ = fmt.Fprintln(t.writer)
 
 	// Print separator
-	dim := color.New(color.Faint)
 	for i, w := range widths {
-		_, _ = dim.Fprint(t.writer, strings.Repeat("─", w))
+		_, _ = Dim.Fprint(t.writer, strings.Repeat("─", w))
 		if i < len(widths)-1 {
-			_, _ = dim.Fprint(t.writer, "──")
+			_, _ = Dim.Fprint(t.writer, "──")
 		}
 	}
 	_, _ = fmt.Fprintln(t.writer)
@@ -346,14 +343,12 @@ func PrintSuccess(format string, args ...any) {
 	if IsQuiet() {
 		return
 	}
-	green := color.New(color.FgGreen)
-	_, _ = green.Printf("✓ "+format+"\n", args...)
+	_, _ = Green.Printf("✓ "+format+"\n", args...)
 }
 
 // PrintError prints an error message.
 func PrintError(format string, args ...any) {
-	red := color.New(color.FgRed)
-	_, _ = red.Fprintf(os.Stderr, "✗ "+format+"\n", args...)
+	_, _ = Red.Fprintf(os.Stderr, "✗ "+format+"\n", args...)
 }
 
 // PrintWarning prints a warning message.
@@ -361,8 +356,7 @@ func PrintWarning(format string, args ...any) {
 	if IsQuiet() {
 		return
 	}
-	yellow := color.New(color.FgYellow)
-	_, _ = yellow.Printf("⚠ "+format+"\n", args...)
+	_, _ = Yellow.Printf("⚠ "+format+"\n", args...)
 }
 
 // PrintInfo prints an info message.
@@ -370,8 +364,7 @@ func PrintInfo(format string, args ...any) {
 	if IsQuiet() {
 		return
 	}
-	cyan := color.New(color.FgCyan)
-	_, _ = cyan.Printf("ℹ "+format+"\n", args...)
+	_, _ = Cyan.Printf("ℹ "+format+"\n", args...)
 }
 
 // Confirm prompts for user confirmation.

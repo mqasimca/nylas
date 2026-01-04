@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 func newStatusCmd() *cobra.Command {
@@ -27,7 +26,7 @@ func newStatusCmd() *cobra.Command {
 			}
 
 			// Get current grant info
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			var grantInfo struct {
@@ -63,27 +62,23 @@ func newStatusCmd() *cobra.Command {
 				return enc.Encode(output)
 			}
 
-			bold := color.New(color.Bold)
-			green := color.New(color.FgGreen)
-			yellow := color.New(color.FgYellow)
-
-			_, _ = bold.Println("Authentication Status")
+			_, _ = common.Bold.Println("Authentication Status")
 			fmt.Println()
 
 			if grantInfo.ID != "" {
-				_, _ = bold.Println("Current Account:")
+				_, _ = common.Bold.Println("Current Account:")
 				fmt.Printf("  Email: %s\n", grantInfo.Email)
 				fmt.Printf("  Provider: %s\n", grantInfo.Provider)
 				fmt.Printf("  Grant ID: %s\n", grantInfo.ID)
 				if grantInfo.Status == "valid" {
-					_, _ = green.Printf("  Status: ✓ Valid\n")
+					_, _ = common.Green.Printf("  Status: ✓ Valid\n")
 				} else {
-					_, _ = yellow.Printf("  Status: %s\n", grantInfo.Status)
+					_, _ = common.Yellow.Printf("  Status: %s\n", grantInfo.Status)
 				}
 				fmt.Println()
 			}
 
-			_, _ = bold.Println("Configuration:")
+			_, _ = common.Bold.Println("Configuration:")
 			fmt.Printf("  Region: %s\n", status.Region)
 			fmt.Printf("  Config Path: %s\n", status.ConfigPath)
 			fmt.Printf("  Secret Store: %s\n", status.SecretStore)

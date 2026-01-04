@@ -62,7 +62,7 @@ func newDemoConfigListCmd() *cobra.Command {
 
 			configs, err := client.ListSchedulerConfigurations(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to get demo scheduler configs: %w", err)
+				return common.WrapListError("scheduler configs", err)
 			}
 
 			fmt.Println()

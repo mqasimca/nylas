@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -30,26 +30,22 @@ func runStatus() error {
 	fmt.Println("MCP Installation Status:")
 	fmt.Println()
 
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
-	gray := color.New(color.FgHiBlack)
-
 	for _, a := range Assistants {
 		configPath := a.GetConfigPath()
 		if configPath == "" {
-			_, _ = gray.Printf("  - %-16s  unsupported on this platform\n", a.Name)
+			_, _ = common.HiBlack.Printf("  - %-16s  unsupported on this platform\n", a.Name)
 			continue
 		}
 
 		// Check if app is installed
 		if !a.IsProjectConfig() && !a.IsInstalled() {
-			_, _ = gray.Printf("  - %-16s  application not installed\n", a.Name)
+			_, _ = common.HiBlack.Printf("  - %-16s  application not installed\n", a.Name)
 			continue
 		}
 
 		// Check if config file exists
 		if !a.IsConfigured() {
-			_, _ = yellow.Printf("  ○ %-16s  ", a.Name)
+			_, _ = common.Yellow.Printf("  ○ %-16s  ", a.Name)
 			fmt.Printf("not configured  %s\n", configPath)
 			continue
 		}
@@ -57,25 +53,25 @@ func runStatus() error {
 		// Check if nylas is in the config
 		hasNylas, binaryPath := checkNylasInConfig(configPath)
 		if !hasNylas {
-			_, _ = yellow.Printf("  ○ %-16s  ", a.Name)
+			_, _ = common.Yellow.Printf("  ○ %-16s  ", a.Name)
 			fmt.Printf("config exists, nylas not added  %s\n", configPath)
 			continue
 		}
 
-		_, _ = green.Printf("  ✓ %-16s  ", a.Name)
+		_, _ = common.Green.Printf("  ✓ %-16s  ", a.Name)
 		fmt.Printf("configured  %s\n", configPath)
 		if binaryPath != "" {
-			_, _ = gray.Printf("                       binary: %s\n", binaryPath)
+			_, _ = common.HiBlack.Printf("                       binary: %s\n", binaryPath)
 		}
 	}
 
 	fmt.Println()
 	fmt.Println("Legend:")
-	_, _ = green.Print("  ✓")
+	_, _ = common.Green.Print("  ✓")
 	fmt.Println(" Nylas MCP configured")
-	_, _ = yellow.Print("  ○")
+	_, _ = common.Yellow.Print("  ○")
 	fmt.Println(" Available but not configured")
-	_, _ = gray.Print("  -")
+	_, _ = common.HiBlack.Print("  -")
 	fmt.Println(" Not available")
 
 	return nil

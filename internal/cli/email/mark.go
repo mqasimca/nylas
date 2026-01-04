@@ -1,8 +1,6 @@
 package email
 
 import (
-	"fmt"
-
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -101,7 +99,7 @@ func markMessage(args []string, unread bool, starred *bool) error {
 
 	_, err = client.UpdateMessage(ctx, grantID, messageID, req)
 	if err != nil {
-		return fmt.Errorf("failed to update message: %w", err)
+		return common.WrapUpdateError("message", err)
 	}
 
 	if starred != nil {

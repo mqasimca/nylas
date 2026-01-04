@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // CalendarViewMode represents the calendar display mode.
@@ -48,7 +49,7 @@ func (c *CalendarView) drawMonthView(screen tcell.Screen, x, y, width, height in
 	y += 1
 
 	// Draw month/year header
-	monthYear := c.currentMonth.Format("January 2006")
+	monthYear := c.currentMonth.Format(common.DisplayMonthYear)
 	headerText := fmt.Sprintf("◀  %s  ▶", monthYear)
 	headerX := x + (width-len(headerText))/2
 	for i, ch := range headerText {

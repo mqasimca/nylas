@@ -3,7 +3,6 @@ package contacts
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -77,11 +76,10 @@ Examples:
 			spinner.Stop()
 
 			if err != nil {
-				return fmt.Errorf("failed to create contact: %w", err)
+				return common.WrapCreateError("contact", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Contact created successfully!\n\n", green.Sprint("✓"))
+			fmt.Printf("%s Contact created successfully!\n\n", common.Green.Sprint("✓"))
 			fmt.Printf("Name: %s\n", contact.DisplayName())
 			if contact.PrimaryEmail() != "" {
 				fmt.Printf("Email: %s\n", contact.PrimaryEmail())

@@ -6,9 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/adapters/slack"
@@ -77,12 +75,10 @@ Examples:
 			}
 
 			// Use longer timeout when fetching all messages
-			var ctx context.Context
-			var cancel context.CancelFunc
+			ctx, cancel := common.CreateContext()
 			if fetchAll || expandThreads {
-				ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
-			} else {
-				ctx, cancel = common.CreateContext()
+				cancel() // Cancel the default context
+				ctx, cancel = common.CreateContextWithTimeout(domain.TimeoutBulkOperation)
 			}
 			defer cancel()
 
@@ -105,37 +101,41 @@ Examples:
 				return showThreadReplies(ctx, client, resolvedChannelID, threadTS, limit, showID)
 			}
 
-			var allMessages []domain.SlackMessage
-			cursor := ""
+			// Create pagination fetcher
 			pageSize := limit
 			if fetchAll {
 				pageSize = 1000 // Max per request when fetching all
 			}
-
-			for {
-				resp, err := client.GetMessages(ctx, &domain.SlackMessageQueryParams{
+			fetcher := func(ctx context.Context, cursor string) (common.PageResult[domain.SlackMessage], error) {
+				resp, fetchErr := client.GetMessages(ctx, &domain.SlackMessageQueryParams{
 					ChannelID: resolvedChannelID,
 					Limit:     pageSize,
 					Cursor:    cursor,
 				})
-				if err != nil {
-					return fmt.Errorf("failed to get messages: %w", err)
+				if fetchErr != nil {
+					return common.PageResult[domain.SlackMessage]{}, fetchErr
 				}
+				return common.PageResult[domain.SlackMessage]{
+					Data:       resp.Messages,
+					NextCursor: resp.NextCursor,
+				}, nil
+			}
 
-				allMessages = append(allMessages, resp.Messages...)
+			config := common.DefaultPaginationConfig()
+			config.PageSize = pageSize
+			if !fetchAll {
+				config.MaxPages = 1
+				config.ShowProgress = false
+			}
 
-				// If not fetching all, or no more pages, stop
-				if !fetchAll || resp.NextCursor == "" {
-					if !fetchAll && resp.HasMore {
-						dim := color.New(color.Faint)
-						_, _ = dim.Printf("(fetched %d messages, more available - use --all to fetch all)\n\n", len(allMessages))
-					}
-					break
-				}
+			allMessages, err := common.FetchAllPages(ctx, config, fetcher)
+			if err != nil {
+				return common.WrapGetError("messages", err)
+			}
 
-				cursor = resp.NextCursor
-				dim := color.New(color.Faint)
-				_, _ = dim.Printf("Fetched %d messages...\n", len(allMessages))
+			// Show hint when more messages are available
+			if !fetchAll && len(allMessages) >= limit {
+				_, _ = common.Dim.Printf("(fetched %d messages, more available - use --all to fetch all)\n\n", len(allMessages))
 			}
 
 			if len(allMessages) == 0 {
@@ -153,7 +153,6 @@ Examples:
 			// If expanding threads, fetch replies for messages with threads
 			threadReplies := make(map[string][]domain.SlackMessage)
 			if expandThreads {
-				dim := color.New(color.Faint)
 				var allReplies []domain.SlackMessage
 				for _, msg := range allMessages {
 					if msg.ReplyCount > 0 {
@@ -182,7 +181,7 @@ Examples:
 					}
 				}
 				if len(threadReplies) > 0 {
-					_, _ = dim.Printf("Expanded %d threads\n\n", len(threadReplies))
+					_, _ = common.Dim.Printf("Expanded %d threads\n\n", len(threadReplies))
 				}
 			}
 
@@ -199,8 +198,7 @@ Examples:
 				}
 			}
 
-			dim := color.New(color.Faint)
-			_, _ = dim.Printf("\nTotal: %d messages\n", len(allMessages))
+			_, _ = common.Dim.Printf("\nTotal: %d messages\n", len(allMessages))
 
 			return nil
 		},
@@ -221,7 +219,7 @@ Examples:
 func showThreadReplies(ctx context.Context, client ports.SlackClient, channelID, threadTS string, limit int, showID bool) error {
 	replies, err := client.GetThreadReplies(ctx, channelID, threadTS, limit)
 	if err != nil {
-		return fmt.Errorf("failed to get thread replies: %w", err)
+		return common.WrapGetError("thread replies", err)
 	}
 
 	if len(replies) == 0 {
@@ -229,8 +227,7 @@ func showThreadReplies(ctx context.Context, client ports.SlackClient, channelID,
 		return nil
 	}
 
-	cyan := color.New(color.FgCyan)
-	_, _ = cyan.Printf("Thread with %d messages:\n\n", len(replies))
+	_, _ = common.Cyan.Printf("Thread with %d messages:\n\n", len(replies))
 
 	for _, msg := range replies {
 		printMessage(msg, showID, false)
@@ -241,9 +238,9 @@ func showThreadReplies(ctx context.Context, client ports.SlackClient, channelID,
 
 // printMessage formats and prints a single Slack message to stdout.
 func printMessage(msg domain.SlackMessage, showID bool, hideReplies bool) {
-	cyan := color.New(color.FgCyan)
-	dim := color.New(color.Faint)
-	yellow := color.New(color.FgYellow)
+	cyan := common.Cyan
+	dim := common.Dim
+	yellow := common.Yellow
 
 	username := msg.Username
 	if username == "" {
@@ -286,8 +283,8 @@ func printMessage(msg domain.SlackMessage, showID bool, hideReplies bool) {
 
 // printThreadReply formats and prints a thread reply with indentation.
 func printThreadReply(msg domain.SlackMessage, showID bool) {
-	cyan := color.New(color.FgCyan)
-	dim := color.New(color.Faint)
+	cyan := common.Cyan
+	dim := common.Dim
 
 	username := msg.Username
 	if username == "" {

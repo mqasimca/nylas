@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -99,32 +99,30 @@ func runInstall(assistantID, binaryPath string, installAll bool) error {
 	}
 
 	// Install for each assistant
-	green := color.New(color.FgGreen)
-	yellow := color.New(color.FgYellow)
 	successCount := 0
 
 	for _, a := range assistants {
 		configPath := a.GetConfigPath()
 		if configPath == "" {
-			_, _ = yellow.Printf("  ! %s: unsupported on this platform\n", a.Name)
+			_, _ = common.Yellow.Printf("  ! %s: unsupported on this platform\n", a.Name)
 			continue
 		}
 
 		// Check if app is installed (for non-project configs)
 		if !a.IsProjectConfig() && !a.IsInstalled() {
-			_, _ = yellow.Printf("  ! %s: application not installed\n", a.Name)
+			_, _ = common.Yellow.Printf("  ! %s: application not installed\n", a.Name)
 			continue
 		}
 
 		err := installForAssistant(a, binaryPath)
 		if err != nil {
-			_, _ = yellow.Printf("  ! %s: %v\n", a.Name, err)
+			_, _ = common.Yellow.Printf("  ! %s: %v\n", a.Name, err)
 			continue
 		}
 
-		_, _ = green.Printf("  ✓ %s: configured at %s\n", a.Name, configPath)
+		_, _ = common.Green.Printf("  ✓ %s: configured at %s\n", a.Name, configPath)
 		if a.ID == "claude-code" {
-			_, _ = green.Printf("  ✓ %s: permissions added to ~/.claude/settings.json\n", a.Name)
+			_, _ = common.Green.Printf("  ✓ %s: permissions added to ~/.claude/settings.json\n", a.Name)
 		}
 		successCount++
 	}

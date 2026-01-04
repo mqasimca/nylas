@@ -14,6 +14,8 @@ import (
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
+// Note: fatih/color import needed for *color.Color type in stateColor variables
+
 // newDemoNotetakerCmd creates the demo notetaker command with subcommands.
 func newDemoNotetakerCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -49,7 +51,7 @@ func newDemoNotetakerListCmd() *cobra.Command {
 
 			notetakers, err := client.ListNotetakers(ctx, "demo-grant", nil)
 			if err != nil {
-				return fmt.Errorf("failed to get demo notetakers: %w", err)
+				return common.WrapListError("notetakers", err)
 			}
 
 			fmt.Println()
@@ -99,7 +101,7 @@ func newDemoNotetakerShowCmd() *cobra.Command {
 
 			nt, err := client.GetNotetaker(ctx, "demo-grant", notetakerID)
 			if err != nil {
-				return fmt.Errorf("failed to get demo notetaker: %w", err)
+				return common.WrapGetError("notetaker", err)
 			}
 
 			// Get media info

@@ -1,13 +1,12 @@
 package calendar
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/utilities/timezone"
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
@@ -24,7 +23,7 @@ func checkDSTWarning(eventTime time.Time, tz string) string {
 
 	// Use timezone service to check for DST warnings
 	tzService := timezone.NewService()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	// Check for warnings within 7 days
@@ -70,7 +69,7 @@ func checkDSTConflict(eventTime time.Time, tz string, duration time.Duration) (*
 	}
 
 	tzService := timezone.NewService()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := common.CreateContext()
 	defer cancel()
 
 	// Check for DST warning at event time (no warning window, only exact conflicts)
@@ -94,8 +93,8 @@ func confirmDSTConflict(warning *domain.DSTWarning) bool {
 		return true
 	}
 
-	yellow := color.New(color.FgYellow, color.Bold)
-	red := color.New(color.FgRed, color.Bold)
+	yellow := common.Yellow
+	red := common.Red
 
 	fmt.Println()
 	if warning.InTransitionGap {

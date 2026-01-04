@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
@@ -50,7 +49,7 @@ func newGroupsListCmd() *cobra.Command {
 
 			groups, err := client.GetContactGroups(ctx, grantID)
 			if err != nil {
-				return fmt.Errorf("failed to get contact groups: %w", err)
+				return common.WrapListError("contact groups", err)
 			}
 
 			if len(groups) == 0 {
@@ -58,16 +57,13 @@ func newGroupsListCmd() *cobra.Command {
 				return nil
 			}
 
-			cyan := color.New(color.FgCyan)
-			dim := color.New(color.Faint)
-
 			fmt.Printf("Found %d contact group(s):\n\n", len(groups))
 
 			table := common.NewTable("NAME", "ID", "PATH")
 			for _, group := range groups {
 				table.AddRow(
-					cyan.Sprint(group.Name),
-					dim.Sprint(group.ID),
+					common.Cyan.Sprint(group.Name),
+					common.Dim.Sprint(group.ID),
 					group.Path,
 				)
 			}
@@ -106,17 +102,14 @@ func newGroupsShowCmd() *cobra.Command {
 
 			group, err := client.GetContactGroup(ctx, grantID, groupID)
 			if err != nil {
-				return fmt.Errorf("failed to get contact group: %w", err)
+				return common.WrapGetError("contact group", err)
 			}
 
-			boldWhite := color.New(color.Bold, color.FgWhite)
-			dim := color.New(color.Faint)
-
 			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = boldWhite.Printf("Contact Group: %s\n", group.Name)
+			_, _ = common.BoldWhite.Printf("Contact Group: %s\n", group.Name)
 			fmt.Println("════════════════════════════════════════════════════════════")
 
-			fmt.Printf("ID:   %s\n", dim.Sprint(group.ID))
+			fmt.Printf("ID:   %s\n", common.Dim.Sprint(group.ID))
 			fmt.Printf("Name: %s\n", group.Name)
 			if group.Path != "" {
 				fmt.Printf("Path: %s\n", group.Path)
@@ -164,11 +157,10 @@ Examples:
 
 			group, err := client.CreateContactGroup(ctx, grantID, req)
 			if err != nil {
-				return fmt.Errorf("failed to create contact group: %w", err)
+				return common.WrapCreateError("contact group", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Created contact group '%s' (ID: %s)\n", green.Sprint("✓"), group.Name, group.ID)
+			fmt.Printf("%s Created contact group '%s' (ID: %s)\n", common.Green.Sprint("✓"), group.Name, group.ID)
 
 			return nil
 		},
@@ -215,11 +207,10 @@ Examples:
 
 			group, err := client.UpdateContactGroup(ctx, grantID, groupID, req)
 			if err != nil {
-				return fmt.Errorf("failed to update contact group: %w", err)
+				return common.WrapUpdateError("contact group", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Updated contact group '%s'\n", green.Sprint("✓"), group.Name)
+			fmt.Printf("%s Updated contact group '%s'\n", common.Green.Sprint("✓"), group.Name)
 
 			return nil
 		},
@@ -271,11 +262,10 @@ func newGroupsDeleteCmd() *cobra.Command {
 
 			err = client.DeleteContactGroup(ctx, grantID, groupID)
 			if err != nil {
-				return fmt.Errorf("failed to delete contact group: %w", err)
+				return common.WrapDeleteError("contact group", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Contact group deleted\n", green.Sprint("✓"))
+			fmt.Printf("%s Contact group deleted\n", common.Green.Sprint("✓"))
 
 			return nil
 		},

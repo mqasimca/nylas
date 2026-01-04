@@ -122,13 +122,13 @@ Use --max to limit total messages when using --all.`,
 
 				messages, err = common.FetchAllPages(ctx, config, fetcher)
 				if err != nil {
-					return fmt.Errorf("failed to fetch messages: %w", err)
+					return common.WrapFetchError("messages", err)
 				}
 			} else {
 				// Standard single-page fetch
 				messages, err = client.GetMessagesWithParams(ctx, grantID, params)
 				if err != nil {
-					return fmt.Errorf("failed to get messages: %w", err)
+					return common.WrapGetError("messages", err)
 				}
 			}
 

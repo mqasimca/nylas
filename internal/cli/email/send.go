@@ -193,7 +193,7 @@ Supports custom metadata:
 				fmt.Printf("  Body:    %s\n", common.Truncate(body, 50))
 			}
 			if !scheduledTime.IsZero() {
-				fmt.Printf("  \033[33mScheduled:\033[0m %s\n", scheduledTime.Format("Mon Jan 2, 2006 3:04 PM MST"))
+				fmt.Printf("  \033[33mScheduled:\033[0m %s\n", scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
 			}
 			if trackOpens || trackLinks {
 				tracking := []string{}
@@ -231,12 +231,12 @@ Supports custom metadata:
 
 			msg, err := client.SendMessage(ctx, grantID, req)
 			if err != nil {
-				return fmt.Errorf("failed to send email: %w", err)
+				return common.WrapSendError("email", err)
 			}
 
 			if !scheduledTime.IsZero() {
 				printSuccess("Email scheduled successfully! Message ID: %s", msg.ID)
-				fmt.Printf("Scheduled to send: %s\n", scheduledTime.Format("Mon Jan 2, 2006 3:04 PM MST"))
+				fmt.Printf("Scheduled to send: %s\n", scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
 			} else {
 				printSuccess("Email sent successfully! Message ID: %s", msg.ID)
 			}

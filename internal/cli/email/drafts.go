@@ -53,7 +53,7 @@ func newDraftsListCmd() *cobra.Command {
 
 			drafts, err := client.GetDrafts(ctx, grantID, limit)
 			if err != nil {
-				return fmt.Errorf("failed to get drafts: %w", err)
+				return common.WrapGetError("drafts", err)
 			}
 
 			if len(drafts) == 0 {
@@ -179,7 +179,7 @@ func newDraftsCreateCmd() *cobra.Command {
 			if len(attachFiles) > 0 {
 				attachments, err := loadAttachmentsFromFiles(attachFiles)
 				if err != nil {
-					return fmt.Errorf("failed to load attachments: %w", err)
+					return common.WrapLoadError("attachments", err)
 				}
 				req.Attachments = attachments
 				fmt.Printf("Attaching %d file(s)...\n", len(attachments))
@@ -187,7 +187,7 @@ func newDraftsCreateCmd() *cobra.Command {
 
 			draft, err := client.CreateDraft(ctx, grantID, req)
 			if err != nil {
-				return fmt.Errorf("failed to create draft: %w", err)
+				return common.WrapCreateError("draft", err)
 			}
 
 			printSuccess("Draft created! ID: %s", draft.ID)
@@ -320,7 +320,7 @@ func newDraftsShowCmd() *cobra.Command {
 
 			draft, err := client.GetDraft(ctx, grantID, draftID)
 			if err != nil {
-				return fmt.Errorf("failed to get draft: %w", err)
+				return common.WrapGetError("draft", err)
 			}
 
 			fmt.Println("════════════════════════════════════════════════════════════")
@@ -334,7 +334,7 @@ func newDraftsShowCmd() *cobra.Command {
 			if len(draft.Cc) > 0 {
 				fmt.Printf("Cc:      %s\n", common.FormatParticipants(draft.Cc))
 			}
-			fmt.Printf("Updated: %s\n", draft.UpdatedAt.Format("Jan 2, 2006 3:04 PM"))
+			fmt.Printf("Updated: %s\n", draft.UpdatedAt.Format(common.DisplayDateTime))
 
 			// Show attachments if any
 			if len(draft.Attachments) > 0 {
@@ -386,7 +386,7 @@ func newDraftsSendCmd() *cobra.Command {
 
 			draft, err := client.GetDraft(ctx, grantID, draftID)
 			if err != nil {
-				return fmt.Errorf("failed to get draft: %w", err)
+				return common.WrapGetError("draft", err)
 			}
 
 			// Confirmation
@@ -406,7 +406,7 @@ func newDraftsSendCmd() *cobra.Command {
 
 			msg, err := client.SendDraft(ctx, grantID, draftID)
 			if err != nil {
-				return fmt.Errorf("failed to send draft: %w", err)
+				return common.WrapSendError("draft", err)
 			}
 
 			printSuccess("Draft sent! Message ID: %s", msg.ID)
@@ -459,7 +459,7 @@ func newDraftsDeleteCmd() *cobra.Command {
 
 			err = client.DeleteDraft(ctx, grantID, draftID)
 			if err != nil {
-				return fmt.Errorf("failed to delete draft: %w", err)
+				return common.WrapDeleteError("draft", err)
 			}
 
 			printSuccess("Draft deleted")

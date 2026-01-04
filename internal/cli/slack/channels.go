@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -94,12 +93,10 @@ Examples:
 			}
 
 			// Use longer timeout when fetching all channels
-			var ctx context.Context
-			var cancel context.CancelFunc
+			ctx, cancel := common.CreateContext()
 			if fetchAll {
-				ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
-			} else {
-				ctx, cancel = common.CreateContext()
+				cancel() // Cancel the default context
+				ctx, cancel = common.CreateLongContext()
 			}
 			defer cancel()
 
@@ -111,10 +108,8 @@ Examples:
 				}
 			}
 
-			var allChannels []domain.SlackChannel
-			cursor := ""
-
-			for {
+			// Create pagination fetcher
+			fetcher := func(ctx context.Context, cursor string) (common.PageResult[domain.SlackChannel], error) {
 				params := &domain.SlackChannelQueryParams{
 					Types:           channelTypes,
 					ExcludeArchived: excludeArchived,
@@ -124,23 +119,31 @@ Examples:
 				}
 
 				var resp *domain.SlackChannelListResponse
+				var fetchErr error
 				if allWorkspace {
-					resp, err = client.ListChannels(ctx, params)
+					resp, fetchErr = client.ListChannels(ctx, params)
 				} else {
-					resp, err = client.ListMyChannels(ctx, params)
+					resp, fetchErr = client.ListMyChannels(ctx, params)
 				}
-				if err != nil {
-					return fmt.Errorf("failed to list channels: %w", err)
+				if fetchErr != nil {
+					return common.PageResult[domain.SlackChannel]{}, fetchErr
 				}
+				return common.PageResult[domain.SlackChannel]{
+					Data:       resp.Channels,
+					NextCursor: resp.NextCursor,
+				}, nil
+			}
 
-				allChannels = append(allChannels, resp.Channels...)
+			config := common.DefaultPaginationConfig()
+			config.PageSize = limit
+			if !fetchAll {
+				config.MaxPages = 1
+				config.ShowProgress = false
+			}
 
-				// If not fetching all, stop after first page
-				if !fetchAll || resp.NextCursor == "" {
-					break
-				}
-
-				cursor = resp.NextCursor
+			allChannels, err := common.FetchAllPages(ctx, config, fetcher)
+			if err != nil {
+				return common.WrapListError("channels", err)
 			}
 
 			// Filter by creation date if specified
@@ -179,9 +182,9 @@ Examples:
 
 // printChannels formats and prints a list of Slack channels to stdout.
 func printChannels(channels []domain.SlackChannel, showID bool) {
-	cyan := color.New(color.FgCyan)
-	dim := color.New(color.Faint)
-	yellow := color.New(color.FgYellow)
+	cyan := common.Cyan
+	dim := common.Dim
+	yellow := common.Yellow
 
 	for _, ch := range channels {
 		name := ch.ChannelDisplayName()

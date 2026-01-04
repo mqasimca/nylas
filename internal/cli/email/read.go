@@ -42,7 +42,7 @@ func newReadCmd() *cobra.Command {
 
 			msg, err := client.GetMessage(ctx, grantID, messageID)
 			if err != nil {
-				return fmt.Errorf("failed to get message: %w", err)
+				return common.WrapGetError("message", err)
 			}
 
 			// Handle JSON output
@@ -50,7 +50,7 @@ func newReadCmd() *cobra.Command {
 			if jsonOutput {
 				data, err := json.MarshalIndent(msg, "", "  ")
 				if err != nil {
-					return fmt.Errorf("failed to marshal JSON: %w", err)
+					return common.WrapMarshalError("JSON", err)
 				}
 				fmt.Println(string(data))
 				return nil

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -75,7 +74,7 @@ Examples:
 			if calendarID == "" {
 				calendars, err := client.GetCalendars(ctx, grantID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendars: %w", err)
+					return common.WrapListError("calendars", err)
 				}
 				for _, cal := range calendars {
 					if cal.IsPrimary && !cal.ReadOnly {
@@ -136,8 +135,7 @@ Examples:
 					// Check for break violations first (hard block - cannot override)
 					breakViolation := checkBreakViolation(eventStart, cfg)
 					if breakViolation != "" {
-						red := color.New(color.FgRed, color.Bold)
-						_, _ = red.Println("\n⛔ Break Time Conflict")
+						_, _ = common.BoldRed.Println("\n⛔ Break Time Conflict")
 						fmt.Printf("\n%s\n\n", breakViolation)
 						fmt.Println("Tip: Schedule the event outside of break times, or update your")
 						fmt.Println("     break configuration in ~/.nylas/config.yaml")
@@ -194,16 +192,14 @@ Examples:
 			spinner.Stop()
 
 			if err != nil {
-				return fmt.Errorf("failed to create event: %w", err)
+				return common.WrapCreateError("event", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Event created successfully!\n\n", green.Sprint("✓"))
+			fmt.Printf("%s Event created successfully!\n\n", common.Green.Sprint("✓"))
 			fmt.Printf("Title: %s\n", event.Title)
 			fmt.Printf("When: %s\n", formatEventTime(event.When))
 			if lockTimezone && !allDay {
-				cyan := color.New(color.FgCyan)
-				fmt.Printf("%s %s\n", cyan.Sprint("🔒 Timezone locked:"), when.StartTimezone)
+				fmt.Printf("%s %s\n", common.Cyan.Sprint("🔒 Timezone locked:"), when.StartTimezone)
 				fmt.Println("     This event will always display in this timezone, regardless of viewer's location.")
 			}
 			fmt.Printf("ID: %s\n", event.ID)
@@ -279,7 +275,7 @@ func newEventsDeleteCmd() *cobra.Command {
 			if calendarID == "" {
 				calendars, err := client.GetCalendars(ctx, grantID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendars: %w", err)
+					return common.WrapListError("calendars", err)
 				}
 				for _, cal := range calendars {
 					if cal.IsPrimary {
@@ -299,11 +295,10 @@ func newEventsDeleteCmd() *cobra.Command {
 			spinner.Stop()
 
 			if err != nil {
-				return fmt.Errorf("failed to delete event: %w", err)
+				return common.WrapDeleteError("event", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Event deleted successfully.\n", green.Sprint("✓"))
+			fmt.Printf("%s Event deleted successfully.\n", common.Green.Sprint("✓"))
 
 			return nil
 		},
@@ -372,7 +367,7 @@ Examples:
 			if calendarID == "" {
 				calendars, err := client.GetCalendars(ctx, grantID)
 				if err != nil {
-					return fmt.Errorf("failed to get calendars: %w", err)
+					return common.WrapListError("calendars", err)
 				}
 				for _, cal := range calendars {
 					if cal.IsPrimary {
@@ -453,19 +448,16 @@ Examples:
 			spinner.Stop()
 
 			if err != nil {
-				return fmt.Errorf("failed to update event: %w", err)
+				return common.WrapUpdateError("event", err)
 			}
 
-			green := color.New(color.FgGreen)
-			fmt.Printf("%s Event updated successfully!\n\n", green.Sprint("✓"))
+			fmt.Printf("%s Event updated successfully!\n\n", common.Green.Sprint("✓"))
 			fmt.Printf("Title: %s\n", event.Title)
 			fmt.Printf("When: %s\n", formatEventTime(event.When))
 			if lockTimezone {
-				cyan := color.New(color.FgCyan)
-				fmt.Printf("%s Timezone is now locked\n", cyan.Sprint("🔒"))
+				fmt.Printf("%s Timezone is now locked\n", common.Cyan.Sprint("🔒"))
 			} else if unlockTimezone {
-				cyan := color.New(color.FgCyan)
-				fmt.Printf("%s Timezone lock removed\n", cyan.Sprint("🔓"))
+				fmt.Printf("%s Timezone lock removed\n", common.Cyan.Sprint("🔓"))
 			}
 			fmt.Printf("ID: %s\n", event.ID)
 
