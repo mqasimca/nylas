@@ -97,12 +97,9 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 				NotificationEmailAddresses: notifyEmails,
 			}
 
-			spinner := common.NewSpinner("Creating webhook...")
-			spinner.Start()
-
-			webhook, err := c.CreateWebhook(ctx, req)
-			spinner.Stop()
-
+			webhook, err := common.RunWithSpinnerResult("Creating webhook...", func() (*domain.Webhook, error) {
+				return c.CreateWebhook(ctx, req)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to create webhook: "+err.Error(),
 					"Check that the webhook URL is accessible and you have permission to create webhooks")

@@ -186,7 +186,7 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 
 			// Validate the final path is not a directory
 			if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
-				return fmt.Errorf("output path is a directory: %s", outputPath)
+				return common.NewInputError(fmt.Sprintf("output path is a directory: %s", outputPath))
 			}
 
 			// Download the attachment

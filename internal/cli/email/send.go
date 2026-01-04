@@ -118,7 +118,7 @@ Supports custom metadata:
 			// Parse and validate recipients
 			toContacts, err := parseContacts(to)
 			if err != nil {
-				return fmt.Errorf("invalid 'to' recipient: %w", err)
+				return common.WrapRecipientError("to", err)
 			}
 
 			// Build request
@@ -131,14 +131,14 @@ Supports custom metadata:
 			if len(cc) > 0 {
 				ccContacts, err := parseContacts(cc)
 				if err != nil {
-					return fmt.Errorf("invalid 'cc' recipient: %w", err)
+					return common.WrapRecipientError("cc", err)
 				}
 				req.Cc = ccContacts
 			}
 			if len(bcc) > 0 {
 				bccContacts, err := parseContacts(bcc)
 				if err != nil {
-					return fmt.Errorf("invalid 'bcc' recipient: %w", err)
+					return common.WrapRecipientError("bcc", err)
 				}
 				req.Bcc = bccContacts
 			}
@@ -163,7 +163,7 @@ Supports custom metadata:
 					if len(parts) == 2 {
 						req.Metadata[parts[0]] = parts[1]
 					} else {
-						return fmt.Errorf("invalid metadata format: %s (expected key=value)", m)
+						return common.NewInputError(fmt.Sprintf("invalid metadata format: %s (expected key=value)", m))
 					}
 				}
 			}
@@ -174,7 +174,7 @@ Supports custom metadata:
 				var err error
 				scheduledTime, err = parseScheduleTime(scheduleAt)
 				if err != nil {
-					return fmt.Errorf("invalid schedule time: %w", err)
+					return err // parseScheduleTime already returns CLIError
 				}
 				req.SendAt = scheduledTime.Unix()
 			}
@@ -305,6 +305,9 @@ func parseContacts(emails []string) ([]domain.EmailParticipant, error) {
 	return contacts, nil
 }
 
+// errScheduleInPast is returned when the scheduled time is in the past.
+var errScheduleInPast = common.NewUserError("scheduled time is in the past", "Specify a future time")
+
 // parseScheduleTime parses various time formats for scheduling.
 func parseScheduleTime(input string) (time.Time, error) {
 	now := time.Now()
@@ -315,7 +318,7 @@ func parseScheduleTime(input string) (time.Time, error) {
 	if ts, err := strconv.ParseInt(input, 10, 64); err == nil && ts > 1000000000 {
 		t := time.Unix(ts, 0)
 		if t.Before(now) {
-			return time.Time{}, fmt.Errorf("scheduled time is in the past")
+			return time.Time{}, errScheduleInPast
 		}
 		return t, nil
 	}
@@ -356,12 +359,12 @@ func parseScheduleTime(input string) (time.Time, error) {
 		rest := strings.TrimPrefix(lower, "today")
 		rest = strings.TrimSpace(rest)
 		if rest == "" {
-			return time.Time{}, fmt.Errorf("please specify a time, e.g., 'today 3pm'")
+			return time.Time{}, common.NewInputError("please specify a time, e.g., 'today 3pm'")
 		}
 		if t, err := common.ParseTimeOfDay(rest); err == nil {
 			result := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
 			if result.Before(now) {
-				return time.Time{}, fmt.Errorf("scheduled time is in the past")
+				return time.Time{}, errScheduleInPast
 			}
 			return result, nil
 		}
@@ -386,7 +389,7 @@ func parseScheduleTime(input string) (time.Time, error) {
 				t = time.Date(now.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
 			}
 			if t.Before(now) {
-				return time.Time{}, fmt.Errorf("scheduled time is in the past")
+				return time.Time{}, errScheduleInPast
 			}
 			return t, nil
 		}
@@ -402,5 +405,5 @@ func parseScheduleTime(input string) (time.Time, error) {
 		return result, nil
 	}
 
-	return time.Time{}, fmt.Errorf("could not parse time format: %s", input)
+	return time.Time{}, common.NewInputError(fmt.Sprintf("could not parse time format: %s", input))
 }

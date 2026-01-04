@@ -56,7 +56,7 @@ Examples:
 
 			messages, err := client.SearchMessages(ctx, query, limit)
 			if err != nil {
-				return fmt.Errorf("search failed: %w", err)
+				return common.WrapSearchError("messages", err)
 			}
 
 			if len(messages) == 0 {

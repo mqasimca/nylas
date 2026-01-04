@@ -64,7 +64,7 @@ Example:
 
 			auth, err := client.TestAuth(ctx)
 			if err != nil {
-				return fmt.Errorf("invalid token: %w", err)
+				return common.NewUserError("invalid token", "Check that your token is correct and has the required scopes")
 			}
 
 			if err := storeSlackToken(token); err != nil {
@@ -102,7 +102,7 @@ func newAuthStatusCmd() *cobra.Command {
 
 			auth, err := client.TestAuth(ctx)
 			if err != nil {
-				return fmt.Errorf("authentication failed: %w", err)
+				return common.NewUserError("authentication failed", "Token may have expired or been revoked")
 			}
 
 			_, _ = common.Green.Println("✓ Authenticated with Slack")

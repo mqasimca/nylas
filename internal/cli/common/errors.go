@@ -317,3 +317,29 @@ func WrapGenerateError(resource string, err error) error {
 func WrapSearchError(resource string, err error) error {
 	return fmt.Errorf("failed to search %s: %w", resource, err)
 }
+
+// WrapDateParseError wraps a date parsing error with context.
+func WrapDateParseError(flagName string, err error) error {
+	return &CLIError{
+		Err:     err,
+		Message: fmt.Sprintf("invalid '%s' date format", flagName),
+		Code:    ErrCodeInvalidInput,
+	}
+}
+
+// NewMutuallyExclusiveError creates an error for mutually exclusive flags.
+func NewMutuallyExclusiveError(flag1, flag2 string) error {
+	return &CLIError{
+		Message: fmt.Sprintf("cannot specify both --%s and --%s", flag1, flag2),
+		Code:    ErrCodeInvalidInput,
+	}
+}
+
+// WrapRecipientError wraps a recipient parsing error.
+func WrapRecipientError(recipientType string, err error) error {
+	return &CLIError{
+		Err:     err,
+		Message: fmt.Sprintf("invalid '%s' recipient format", recipientType),
+		Code:    ErrCodeInvalidInput,
+	}
+}

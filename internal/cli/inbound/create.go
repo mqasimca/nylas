@@ -47,13 +47,13 @@ func runCreate(emailPrefix string, jsonOutput bool) error {
 	emailPrefix = strings.TrimSpace(emailPrefix)
 	if emailPrefix == "" {
 		printError("Email prefix cannot be empty")
-		return fmt.Errorf("email prefix cannot be empty")
+		return common.NewInputError("email prefix cannot be empty")
 	}
 
 	// Basic validation - no @ symbol, no spaces
 	if strings.Contains(emailPrefix, "@") || strings.Contains(emailPrefix, " ") {
 		printError("Email prefix should not contain '@' or spaces. Just provide the local part (e.g., 'support')")
-		return fmt.Errorf("invalid email prefix")
+		return common.NewInputError("invalid email prefix - should not contain '@' or spaces")
 	}
 
 	client, err := getClient()

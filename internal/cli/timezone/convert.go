@@ -66,7 +66,7 @@ func runConvert(fromZone, toZone, timeStr string, jsonOut bool) error {
 	} else {
 		inputTime, err = time.Parse(time.RFC3339, timeStr)
 		if err != nil {
-			return fmt.Errorf("invalid time format (use RFC3339, e.g., 2025-01-01T12:00:00Z): %w", err)
+			return common.NewInputError("invalid time format (use RFC3339, e.g., 2025-01-01T12:00:00Z)")
 		}
 	}
 
@@ -77,7 +77,7 @@ func runConvert(fromZone, toZone, timeStr string, jsonOut bool) error {
 
 	converted, err := svc.ConvertTime(ctx, fromZone, toZone, inputTime)
 	if err != nil {
-		return fmt.Errorf("convert time: %w", err)
+		return common.WrapError(err)
 	}
 
 	// Get time zone info for both zones

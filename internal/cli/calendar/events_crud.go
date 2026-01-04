@@ -185,12 +185,9 @@ Examples:
 				req.Metadata["timezone_locked"] = "true"
 			}
 
-			spinner := common.NewSpinner("Creating event...")
-			spinner.Start()
-
-			event, err := client.CreateEvent(ctx, grantID, calendarID, req)
-			spinner.Stop()
-
+			event, err := common.RunWithSpinnerResult("Creating event...", func() (*domain.Event, error) {
+				return client.CreateEvent(ctx, grantID, calendarID, req)
+			})
 			if err != nil {
 				return common.WrapCreateError("event", err)
 			}
@@ -288,12 +285,9 @@ func newEventsDeleteCmd() *cobra.Command {
 				}
 			}
 
-			spinner := common.NewSpinner("Deleting event...")
-			spinner.Start()
-
-			err = client.DeleteEvent(ctx, grantID, calendarID, eventID)
-			spinner.Stop()
-
+			err = common.RunWithSpinner("Deleting event...", func() error {
+				return client.DeleteEvent(ctx, grantID, calendarID, eventID)
+			})
 			if err != nil {
 				return common.WrapDeleteError("event", err)
 			}
@@ -441,12 +435,9 @@ Examples:
 				req.Metadata["timezone_locked"] = "false"
 			}
 
-			spinner := common.NewSpinner("Updating event...")
-			spinner.Start()
-
-			event, err := client.UpdateEvent(ctx, grantID, calendarID, eventID, req)
-			spinner.Stop()
-
+			event, err := common.RunWithSpinnerResult("Updating event...", func() (*domain.Event, error) {
+				return client.UpdateEvent(ctx, grantID, calendarID, eventID, req)
+			})
 			if err != nil {
 				return common.WrapUpdateError("event", err)
 			}

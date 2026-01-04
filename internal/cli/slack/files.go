@@ -93,7 +93,7 @@ Examples:
 			if channelName != "" && channelID == "" {
 				resolvedChannelID, err = resolveChannelName(ctx, client, channelName)
 				if err != nil {
-					return fmt.Errorf("channel not found: %s", channelName)
+					return common.NewUserError(fmt.Sprintf("channel not found: %s", channelName), "Use --channel-id with the channel ID instead")
 				}
 			}
 
@@ -320,12 +320,12 @@ Examples:
 			}
 			tempDir := os.TempDir()
 			if !strings.HasPrefix(absPath, cwd) && !strings.HasPrefix(absPath, tempDir) {
-				return fmt.Errorf("output path must be within current directory or temp directory (got: %s)", absPath)
+				return common.NewInputError(fmt.Sprintf("output path must be within current directory or temp directory (got: %s)", absPath))
 			}
 
 			// Validate the final path is not a directory
 			if info, statErr := os.Stat(outputPath); statErr == nil && info.IsDir() {
-				return fmt.Errorf("output path is a directory: %s", outputPath)
+				return common.NewInputError(fmt.Sprintf("output path is a directory: %s", outputPath))
 			}
 
 			// Download the file

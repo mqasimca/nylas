@@ -2,7 +2,6 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -80,31 +79,13 @@ func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 	if err := validateRequired("event ID", eventID); err != nil {
 		return nil, err
 	}
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, domain.ErrEventNotFound
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events/%s", c.baseURL, grantID, eventID)
+	queryURL := NewQueryBuilder().Add("calendar_id", calendarID).BuildURL(baseURL)
 
 	var result struct {
 		Data eventResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrEventNotFound); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +95,8 @@ func (c *HTTPClient) GetEvent(ctx context.Context, grantID, calendarID, eventID 
 
 // CreateEvent creates a new event.
 func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string, req *domain.CreateEventRequest) (*domain.Event, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events?calendar_id=%s", c.baseURL, grantID, calendarID)
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().Add("calendar_id", calendarID).BuildURL(baseURL)
 
 	payload := map[string]any{
 		"title": req.Title,
@@ -165,7 +147,8 @@ func (c *HTTPClient) CreateEvent(ctx context.Context, grantID, calendarID string
 
 // UpdateEvent updates an existing event.
 func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, eventID string, req *domain.UpdateEventRequest) (*domain.Event, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events/%s", c.baseURL, grantID, eventID)
+	queryURL := NewQueryBuilder().Add("calendar_id", calendarID).BuildURL(baseURL)
 
 	payload := make(map[string]any)
 	if req.Title != nil {
@@ -217,13 +200,15 @@ func (c *HTTPClient) UpdateEvent(ctx context.Context, grantID, calendarID, event
 
 // DeleteEvent deletes an event.
 func (c *HTTPClient) DeleteEvent(ctx context.Context, grantID, calendarID, eventID string) error {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events/%s", c.baseURL, grantID, eventID)
+	queryURL := NewQueryBuilder().Add("calendar_id", calendarID).BuildURL(baseURL)
 	return c.doDelete(ctx, queryURL)
 }
 
 // SendRSVP sends an RSVP response to an event invitation.
 func (c *HTTPClient) SendRSVP(ctx context.Context, grantID, calendarID, eventID string, req *domain.SendRSVPRequest) error {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events/%s/send-rsvp?calendar_id=%s", c.baseURL, grantID, eventID, calendarID)
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events/%s/send-rsvp", c.baseURL, grantID, eventID)
+	queryURL := NewQueryBuilder().Add("calendar_id", calendarID).BuildURL(baseURL)
 
 	payload := map[string]any{
 		"status": req.Status,

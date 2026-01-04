@@ -298,3 +298,23 @@ func (c *Counter) Count() int {
 	defer c.mu.Unlock()
 	return c.count
 }
+
+// RunWithSpinner executes a function while displaying a spinner.
+// It handles spinner start/stop and error propagation.
+func RunWithSpinner(message string, fn func() error) error {
+	spinner := NewSpinner(message)
+	spinner.Start()
+	err := fn()
+	spinner.Stop()
+	return err
+}
+
+// RunWithSpinnerResult executes a function while displaying a spinner.
+// Returns the result and any error from the function.
+func RunWithSpinnerResult[T any](message string, fn func() (T, error)) (T, error) {
+	spinner := NewSpinner(message)
+	spinner.Start()
+	result, err := fn()
+	spinner.Stop()
+	return result, err
+}

@@ -26,7 +26,7 @@ func getInboxID(args []string) (string, error) {
 		return envID, nil
 	}
 
-	return "", fmt.Errorf("inbox ID required. Provide as argument or set NYLAS_INBOUND_GRANT_ID environment variable")
+	return "", common.NewUserError("inbox ID required", "Provide as argument or set NYLAS_INBOUND_GRANT_ID environment variable")
 }
 
 // printError prints an error message in red.

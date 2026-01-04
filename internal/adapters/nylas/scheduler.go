@@ -136,10 +136,8 @@ func (c *HTTPClient) GetSchedulerSession(ctx context.Context, sessionID string) 
 
 // ListBookings retrieves all bookings for a configuration.
 func (c *HTTPClient) ListBookings(ctx context.Context, configID string) ([]domain.Booking, error) {
-	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings", c.baseURL)
-	if configID != "" {
-		queryURL = fmt.Sprintf("%s?configuration_id=%s", queryURL, url.QueryEscape(configID))
-	}
+	baseURL := fmt.Sprintf("%s/v3/scheduling/bookings", c.baseURL)
+	queryURL := NewQueryBuilder().Add("configuration_id", configID).BuildURL(baseURL)
 
 	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {
@@ -222,10 +220,8 @@ func (c *HTTPClient) CancelBooking(ctx context.Context, bookingID string, reason
 		return err
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s", c.baseURL, url.PathEscape(bookingID))
-	if reason != "" {
-		queryURL = fmt.Sprintf("%s?reason=%s", queryURL, url.QueryEscape(reason))
-	}
+	baseURL := fmt.Sprintf("%s/v3/scheduling/bookings/%s", c.baseURL, url.PathEscape(bookingID))
+	queryURL := NewQueryBuilder().Add("reason", reason).BuildURL(baseURL)
 
 	resp, err := c.doJSONRequest(ctx, "DELETE", queryURL, nil, http.StatusOK, http.StatusNoContent)
 	if err != nil {

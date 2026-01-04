@@ -88,12 +88,9 @@ Examples:
 				Comment: comment,
 			}
 
-			spinner := common.NewSpinner("Sending RSVP...")
-			spinner.Start()
-
-			err = client.SendRSVP(ctx, grantID, calendarID, eventID, req)
-			spinner.Stop()
-
+			err = common.RunWithSpinner("Sending RSVP...", func() error {
+				return client.SendRSVP(ctx, grantID, calendarID, eventID, req)
+			})
 			if err != nil {
 				return common.WrapSendError("RSVP", err)
 			}

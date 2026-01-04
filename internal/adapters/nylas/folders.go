@@ -2,9 +2,7 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/util"
@@ -59,29 +57,10 @@ func (c *HTTPClient) GetFolder(ctx context.Context, grantID, folderID string) (*
 
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/folders/%s", c.baseURL, grantID, folderID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: folder not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data folderResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: folder not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 

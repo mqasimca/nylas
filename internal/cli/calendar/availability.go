@@ -117,18 +117,15 @@ Shows busy time slots within the specified time range.`,
 				}
 			}
 
-			spinner := common.NewSpinner("Checking availability...")
-			spinner.Start()
-
 			req := &domain.FreeBusyRequest{
 				StartTime: startTime.Unix(),
 				EndTime:   endTime.Unix(),
 				Emails:    emails,
 			}
 
-			result, err := c.GetFreeBusy(ctx, grantID, req)
-			spinner.Stop()
-
+			result, err := common.RunWithSpinnerResult("Checking availability...", func() (*domain.FreeBusyResponse, error) {
+				return c.GetFreeBusy(ctx, grantID, req)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to get availability: "+err.Error(),
 					"Check that the email addresses are valid")
@@ -227,9 +224,6 @@ This searches for time slots when all participants are free.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Finding available times...")
-			spinner.Start()
-
 			req := &domain.AvailabilityRequest{
 				StartTime:       startTime.Unix(),
 				EndTime:         endTime.Unix(),
@@ -238,9 +232,9 @@ This searches for time slots when all participants are free.`,
 				IntervalMinutes: intervalMins,
 			}
 
-			result, err := c.GetAvailability(ctx, req)
-			spinner.Stop()
-
+			result, err := common.RunWithSpinnerResult("Finding available times...", func() (*domain.AvailabilityResponse, error) {
+				return c.GetAvailability(ctx, req)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to find availability: "+err.Error(),
 					"Check that the participant email addresses are valid")

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -44,12 +45,9 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Fetching webhooks...")
-			spinner.Start()
-
-			webhooks, err := c.ListWebhooks(ctx)
-			spinner.Stop()
-
+			webhooks, err := common.RunWithSpinnerResult("Fetching webhooks...", func() ([]domain.Webhook, error) {
+				return c.ListWebhooks(ctx)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to list webhooks: "+err.Error(),
 					"Check your API key has webhook management permissions")
