@@ -4,12 +4,15 @@
 # Local files (not auto-loaded)
 *.local.md
 local/
+CLAUDE-QUICKSTART.md
 
 # Go dependency files (auto-generated, large, not needed in context)
 go.sum
 
+# Documentation (load on-demand with Read tool)
+docs/
+
 # Example/sample files (load on-demand only)
-docs/examples/
 **/examples/**
 
 # Build artifacts and temporary files
@@ -41,31 +44,6 @@ vendor/
 # Large generated files
 **/*_generated.go
 
-# Detailed command documentation (load on-demand)
-docs/commands/
-docs/ai/
-
-# Detailed timezone documentation (load on-demand)
-docs/timezone/
-
-# Detailed troubleshooting guides (load on-demand)
-docs/troubleshooting/
-
-# Developer guides (load on-demand)
-docs/development/
-
-# User-facing guides (load on-demand)
-docs/FAQ.md
-docs/TROUBLESHOOTING.md
-docs/INDEX.md
-
-# Large reference docs (load on-demand to reduce context)
-# Use Read tool when working on related features
-docs/COMMANDS.md
-docs/MCP.md
-docs/AI.md
-docs/ARCHITECTURE.md
-
 # Historical planning documents
 plan.md
 *.plan.md
@@ -80,7 +58,8 @@ plan.md
 .claude/agents/security-auditor.md
 .claude/agents/frontend-agent.md
 
-# Command reference files (loaded on-demand by skills)
+# Skill command files (loaded by Task tool when invoked)
+.claude/commands/*.md
 .claude/commands/add-command/references/
 .claude/commands/generate-crud-command/templates/
 
@@ -97,6 +76,7 @@ Brewfile
 **/testdata/**
 **/fixtures/**
 tests/PLAYWRIGHT_STATUS.md
+tests/README.md
 
 # License and legal files (rarely changed)
 LICENSE
