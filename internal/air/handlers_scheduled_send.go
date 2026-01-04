@@ -1,7 +1,6 @@
 package air
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -78,8 +77,7 @@ func (s *Server) listScheduledMessages(w http.ResponseWriter, r *http.Request) {
 // createScheduledMessage schedules a message for later sending.
 func (s *Server) createScheduledMessage(w http.ResponseWriter, r *http.Request) {
 	var req ScheduledSendRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 

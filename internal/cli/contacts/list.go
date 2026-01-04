@@ -48,7 +48,7 @@ func newListCmd() *cobra.Command {
 			}
 
 			if len(contacts) == 0 {
-				fmt.Println("No contacts found.")
+				common.PrintEmptyState("contacts")
 				return nil
 			}
 

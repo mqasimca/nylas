@@ -158,7 +158,7 @@ Examples:
 			}
 
 			if len(allChannels) == 0 {
-				fmt.Println("No channels found")
+				common.PrintEmptyState("channels")
 				return nil
 			}
 

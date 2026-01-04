@@ -29,7 +29,7 @@ func newListCmd() *cobra.Command {
 			}
 
 			if len(grants) == 0 {
-				fmt.Println("No authenticated accounts")
+				common.PrintEmptyState("accounts")
 				return nil
 			}
 

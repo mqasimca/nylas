@@ -67,7 +67,7 @@ func newListCmd() *cobra.Command {
 			}
 
 			if len(notetakers) == 0 {
-				fmt.Println("No notetakers found.")
+				common.PrintEmptyState("notetakers")
 				return nil
 			}
 

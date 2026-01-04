@@ -60,7 +60,7 @@ func newBookingListCmd() *cobra.Command {
 			}
 
 			if len(bookings) == 0 {
-				fmt.Println("No bookings found.")
+				common.PrintEmptyState("bookings")
 				return nil
 			}
 

@@ -64,7 +64,7 @@ func runDST(zone string, year int, jsonOut bool) error {
 
 	transitions, err := svc.GetDSTTransitions(ctx, zone, year)
 	if err != nil {
-		return fmt.Errorf("get DST transitions: %w", err)
+		return common.WrapGetError("DST transitions", err)
 	}
 
 	// Output

@@ -25,8 +25,7 @@ func newListCmd() *cobra.Command {
 			}
 
 			if len(accounts) == 0 {
-				fmt.Println("No accounts configured")
-				fmt.Println("Run 'nylas auth login' to add an account")
+				common.PrintEmptyStateWithHint("accounts", "Run 'nylas auth login' to add an account")
 				return nil
 			}
 

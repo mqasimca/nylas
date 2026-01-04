@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 
@@ -90,10 +89,7 @@ text searches, use the regular list command with additional filtering.`,
 			}
 
 			// Print results as table
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			_, _ = fmt.Fprintln(w, "ID\tName\tEmail\tCompany\tJob Title")
-			_, _ = fmt.Fprintln(w, "---\t----\t-----\t-------\t---------")
-
+			table := common.NewTable("ID", "Name", "Email", "Company", "Job Title")
 			for _, contact := range filtered {
 				name := contact.DisplayName()
 				email := contact.PrimaryEmail()
@@ -105,11 +101,9 @@ text searches, use the regular list command with additional filtering.`,
 				if jobTitle == "" {
 					jobTitle = "-"
 				}
-
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-					contact.ID, name, email, company, jobTitle)
+				table.AddRow(contact.ID, name, email, company, jobTitle)
 			}
-			_ = w.Flush()
+			table.Render()
 
 			fmt.Printf("\nFound %d contacts\n", len(filtered))
 

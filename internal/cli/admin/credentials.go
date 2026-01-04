@@ -54,7 +54,7 @@ func newCredentialListCmd() *cobra.Command {
 			}
 
 			if len(credentials) == 0 {
-				fmt.Println("No credentials found for this connector.")
+				common.PrintEmptyState("credentials")
 				return nil
 			}
 

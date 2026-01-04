@@ -69,7 +69,7 @@ func newThreadsListCmd() *cobra.Command {
 			}
 
 			if len(threads) == 0 {
-				fmt.Println("No threads found.")
+				common.PrintEmptyState("threads")
 				return nil
 			}
 
@@ -466,7 +466,7 @@ Examples:
 			}
 
 			if len(threads) == 0 {
-				fmt.Println("No threads found matching your search.")
+				common.PrintEmptyStateWithHint("threads", "try different search terms")
 				return nil
 			}
 

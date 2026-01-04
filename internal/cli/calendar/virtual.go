@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -60,13 +59,12 @@ func newVirtualListCmd() *cobra.Command {
 				return json.NewEncoder(os.Stdout).Encode(grants)
 			}
 
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			_, _ = fmt.Fprintln(w, "ID\tEMAIL\tSTATUS\tCREATED")
+			table := common.NewTable("ID", "EMAIL", "STATUS", "CREATED")
 			for _, grant := range grants {
 				created := time.Unix(grant.CreatedAt, 0).Format(common.DateTimeFormat)
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", grant.ID, grant.Email, grant.GrantStatus, created)
+				table.AddRow(grant.ID, grant.Email, grant.GrantStatus, created)
 			}
-			_ = w.Flush()
+			table.Render()
 
 			return nil
 		},

@@ -2,7 +2,6 @@ package air
 
 import (
 	"cmp"
-	"encoding/json"
 	"net/http"
 	"slices"
 	"time"
@@ -52,8 +51,7 @@ func (s *Server) listSnoozedEmails(w http.ResponseWriter, _ *http.Request) {
 // snoozeEmail snoozes an email until a specific time.
 func (s *Server) snoozeEmail(w http.ResponseWriter, r *http.Request) {
 	var req SnoozeRequest
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request"})
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 

@@ -53,7 +53,7 @@ func newPageListCmd() *cobra.Command {
 			}
 
 			if len(pages) == 0 {
-				fmt.Println("No scheduler pages found.")
+				common.PrintEmptyState("pages")
 				return nil
 			}
 

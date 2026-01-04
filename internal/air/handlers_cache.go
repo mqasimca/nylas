@@ -1,7 +1,6 @@
 package air
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -420,8 +419,7 @@ func (s *Server) updateCacheSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CacheSettingsResponse
-	if err := json.NewDecoder(limitedBody(w, r)).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !parseJSONBody(w, r, &req) {
 		return
 	}
 

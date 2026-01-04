@@ -58,9 +58,7 @@ func runList(jsonOutput bool) error {
 	}
 
 	if len(inboxes) == 0 {
-		fmt.Println("No inbound inboxes found.")
-		fmt.Println()
-		_, _ = common.Dim.Println("Create one with: nylas inbound create <email-prefix>")
+		common.PrintEmptyStateWithHint("inboxes", "Create one with: nylas inbound create <email-prefix>")
 		return nil
 	}
 

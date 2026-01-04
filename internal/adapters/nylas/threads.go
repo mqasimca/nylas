@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -44,33 +42,17 @@ func (c *HTTPClient) GetThreads(ctx context.Context, grantID string, params *dom
 		params.Limit = 10
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/threads", c.baseURL, grantID)
-	q := url.Values{}
-	q.Set("limit", strconv.Itoa(params.Limit))
-
-	if params.Offset > 0 {
-		q.Set("offset", strconv.Itoa(params.Offset))
-	}
-	if params.Subject != "" {
-		q.Set("subject", params.Subject)
-	}
-	if params.From != "" {
-		q.Set("from", params.From)
-	}
-	if params.To != "" {
-		q.Set("to", params.To)
-	}
-	if params.Unread != nil {
-		q.Set("unread", strconv.FormatBool(*params.Unread))
-	}
-	if params.Starred != nil {
-		q.Set("starred", strconv.FormatBool(*params.Starred))
-	}
-	if params.SearchQuery != "" {
-		q.Set("q", params.SearchQuery)
-	}
-
-	queryURL += "?" + q.Encode()
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/threads", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().
+		AddInt("limit", params.Limit).
+		AddInt("offset", params.Offset).
+		Add("subject", params.Subject).
+		Add("from", params.From).
+		Add("to", params.To).
+		AddBoolPtr("unread", params.Unread).
+		AddBoolPtr("starred", params.Starred).
+		Add("q", params.SearchQuery).
+		BuildURL(baseURL)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
 	if err != nil {

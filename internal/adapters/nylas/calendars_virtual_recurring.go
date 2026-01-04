@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -80,21 +78,15 @@ func (c *HTTPClient) GetRecurringEventInstances(ctx context.Context, grantID, ca
 		params.ExpandRecurring = true
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/events", c.baseURL, grantID)
-	q := url.Values{}
-	q.Set("calendar_id", calendarID)
-	q.Set("event_id", masterEventID)
-	q.Set("expand_recurring", "true")
-	q.Set("limit", strconv.Itoa(params.Limit))
-
-	if params.Start > 0 {
-		q.Set("start", strconv.FormatInt(params.Start, 10))
-	}
-	if params.End > 0 {
-		q.Set("end", strconv.FormatInt(params.End, 10))
-	}
-
-	queryURL += "?" + q.Encode()
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/events", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().
+		Add("calendar_id", calendarID).
+		Add("event_id", masterEventID).
+		AddBool("expand_recurring", true).
+		AddInt("limit", params.Limit).
+		AddInt64("start", params.Start).
+		AddInt64("end", params.End).
+		BuildURL(baseURL)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
 	if err != nil {

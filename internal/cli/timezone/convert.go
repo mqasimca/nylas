@@ -83,12 +83,12 @@ func runConvert(fromZone, toZone, timeStr string, jsonOut bool) error {
 	// Get time zone info for both zones
 	fromInfo, err := svc.GetTimeZoneInfo(ctx, fromZone, inputTime)
 	if err != nil {
-		return fmt.Errorf("get source zone info: %w", err)
+		return common.WrapGetError("source zone info", err)
 	}
 
 	toInfo, err := svc.GetTimeZoneInfo(ctx, toZone, converted)
 	if err != nil {
-		return fmt.Errorf("get target zone info: %w", err)
+		return common.WrapGetError("target zone info", err)
 	}
 
 	// Output

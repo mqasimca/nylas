@@ -311,26 +311,16 @@ func (c *HTTPClient) DeleteCredential(ctx context.Context, credentialID string) 
 
 // ListAllGrants retrieves all grants with optional filtering.
 func (c *HTTPClient) ListAllGrants(ctx context.Context, params *domain.GrantsQueryParams) ([]domain.Grant, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants", c.baseURL)
+	baseURL := fmt.Sprintf("%s/v3/grants", c.baseURL)
 
+	qb := NewQueryBuilder()
 	if params != nil {
-		query := ""
-		if params.Limit > 0 {
-			query = fmt.Sprintf("%s&limit=%d", query, params.Limit)
-		}
-		if params.Offset > 0 {
-			query = fmt.Sprintf("%s&offset=%d", query, params.Offset)
-		}
-		if params.ConnectorID != "" {
-			query = fmt.Sprintf("%s&connector_id=%s", query, params.ConnectorID)
-		}
-		if params.Status != "" {
-			query = fmt.Sprintf("%s&status=%s", query, params.Status)
-		}
-		if query != "" {
-			queryURL = fmt.Sprintf("%s?%s", queryURL, query[1:]) // Remove leading &
-		}
+		qb.AddInt("limit", params.Limit).
+			AddInt("offset", params.Offset).
+			Add("connector_id", params.ConnectorID).
+			Add("status", params.Status)
 	}
+	queryURL := qb.BuildURL(baseURL)
 
 	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
 	if err != nil {

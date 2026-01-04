@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -56,18 +54,12 @@ func (c *HTTPClient) ListNotetakers(ctx context.Context, grantID string, params 
 		params.Limit = 10
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/notetakers", c.baseURL, grantID)
-	q := url.Values{}
-	q.Set("limit", strconv.Itoa(params.Limit))
-
-	if params.PageToken != "" {
-		q.Set("page_token", params.PageToken)
-	}
-	if params.State != "" {
-		q.Set("state", params.State)
-	}
-
-	queryURL += "?" + q.Encode()
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/notetakers", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().
+		AddInt("limit", params.Limit).
+		Add("page_token", params.PageToken).
+		Add("state", params.State).
+		BuildURL(baseURL)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
 	if err != nil {

@@ -308,8 +308,7 @@ func displayFreeBusy(result *domain.FreeBusyResponse, startTime, endTime time.Ti
 
 func displayAvailableSlots(result *domain.AvailabilityResponse, durationMins int) error {
 	if len(result.Data.TimeSlots) == 0 {
-		fmt.Println("No available time slots found.")
-		fmt.Println("\nTry expanding the search range or reducing the meeting duration.")
+		common.PrintEmptyStateWithHint("available time slots", "Try expanding the search range or reducing the meeting duration")
 		return nil
 	}
 

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/util"
@@ -58,39 +56,20 @@ func (c *HTTPClient) GetContacts(ctx context.Context, grantID string, params *do
 
 // GetContactsWithCursor retrieves contacts with pagination cursor.
 func (c *HTTPClient) GetContactsWithCursor(ctx context.Context, grantID string, params *domain.ContactQueryParams) (*domain.ContactListResponse, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts", c.baseURL, grantID)
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/contacts", c.baseURL, grantID)
 
-	queryParams := url.Values{}
+	qb := NewQueryBuilder()
 	if params != nil {
-		if params.Limit > 0 {
-			queryParams.Set("limit", strconv.Itoa(params.Limit))
-		}
-		if params.PageToken != "" {
-			queryParams.Set("page_token", params.PageToken)
-		}
-		if params.Email != "" {
-			queryParams.Set("email", params.Email)
-		}
-		if params.PhoneNumber != "" {
-			queryParams.Set("phone_number", params.PhoneNumber)
-		}
-		if params.Source != "" {
-			queryParams.Set("source", params.Source)
-		}
-		if params.Group != "" {
-			queryParams.Set("group", params.Group)
-		}
-		if params.Recurse {
-			queryParams.Set("recurse", "true")
-		}
-		if params.ProfilePicture {
-			queryParams.Set("profile_picture", "true")
-		}
+		qb.AddInt("limit", params.Limit).
+			Add("page_token", params.PageToken).
+			Add("email", params.Email).
+			Add("phone_number", params.PhoneNumber).
+			Add("source", params.Source).
+			Add("group", params.Group).
+			AddBool("recurse", params.Recurse).
+			AddBool("profile_picture", params.ProfilePicture)
 	}
-
-	if len(queryParams) > 0 {
-		queryURL += "?" + queryParams.Encode()
-	}
+	queryURL := qb.BuildURL(baseURL)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
 	if err != nil {

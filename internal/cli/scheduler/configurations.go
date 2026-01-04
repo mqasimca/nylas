@@ -54,7 +54,7 @@ func newConfigListCmd() *cobra.Command {
 			}
 
 			if len(configs) == 0 {
-				fmt.Println("No scheduler configurations found.")
+				common.PrintEmptyState("configurations")
 				return nil
 			}
 

@@ -53,7 +53,7 @@ func newConnectorListCmd() *cobra.Command {
 			}
 
 			if len(connectors) == 0 {
-				fmt.Println("No connectors found.")
+				common.PrintEmptyState("connectors")
 				return nil
 			}
 

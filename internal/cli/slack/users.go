@@ -64,7 +64,7 @@ Examples:
 			}
 
 			if len(resp.Users) == 0 {
-				fmt.Println("No users found")
+				common.PrintEmptyState("users")
 				return nil
 			}
 

@@ -55,7 +55,7 @@ func newAttachmentsListCmd() *cobra.Command {
 			}
 
 			if len(attachments) == 0 {
-				fmt.Println("No attachments found in this message.")
+				common.PrintEmptyState("attachments")
 				return nil
 			}
 

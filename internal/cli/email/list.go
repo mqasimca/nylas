@@ -133,7 +133,7 @@ Use --max to limit total messages when using --all.`,
 			}
 
 			if len(messages) == 0 {
-				fmt.Println("No messages found.")
+				common.PrintEmptyState("messages")
 				return nil
 			}
 

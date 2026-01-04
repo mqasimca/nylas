@@ -119,7 +119,7 @@ Examples:
 			}
 
 			if len(resp.Files) == 0 {
-				fmt.Println("No files found.")
+				common.PrintEmptyState("files")
 				return nil
 			}
 

@@ -48,7 +48,7 @@ func newScheduledListCmd() *cobra.Command {
 			}
 
 			if len(scheduled) == 0 {
-				fmt.Println("No scheduled messages found.")
+				common.PrintEmptyState("scheduled messages")
 				return nil
 			}
 
