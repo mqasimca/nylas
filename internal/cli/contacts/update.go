@@ -40,25 +40,11 @@ Examples:
   nylas contacts update <contact-id> --email "new@example.com"`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			contactID := args[0]
-
-			client, err := getClient()
+			setup, err := common.SetupUpdateCommand(args)
 			if err != nil {
 				return err
 			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = getGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+			defer setup.Cancel()
 
 			req := &domain.UpdateContactRequest{}
 
@@ -113,7 +99,7 @@ Examples:
 				}
 			}
 
-			contact, err := client.UpdateContact(ctx, grantID, contactID, req)
+			contact, err := setup.Client.UpdateContact(setup.Ctx, setup.GrantID, setup.ResourceID, req)
 			if err != nil {
 				return common.WrapUpdateError("contact", err)
 			}

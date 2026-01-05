@@ -2,6 +2,7 @@ package email
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"mime"
@@ -293,35 +294,17 @@ func detectContentType(filename string, content []byte) string {
 }
 
 func newDraftsShowCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "show <draft-id> [grant-id]",
-		Short: "Show draft details",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			draftID := args[0]
+	client, _ := getClient()
 
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			draft, err := client.GetDraft(ctx, grantID, draftID)
-			if err != nil {
-				return common.WrapGetError("draft", err)
-			}
+	return common.NewShowCommand(common.ShowCommandConfig{
+		Use:          "show <draft-id> [grant-id]",
+		Short:        "Show draft details",
+		ResourceName: "draft",
+		GetFunc: func(ctx context.Context, grantID, resourceID string) (interface{}, error) {
+			return client.GetDraft(ctx, grantID, resourceID)
+		},
+		DisplayFunc: func(resource interface{}) error {
+			draft := resource.(*domain.Draft)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
 			_, _ = common.BoldWhite.Printf("Draft: %s\n", draft.Subject)
@@ -352,7 +335,8 @@ func newDraftsShowCmd() *cobra.Command {
 
 			return nil
 		},
-	}
+		GetClient: getClient,
+	})
 }
 
 func newDraftsSendCmd() *cobra.Command {
@@ -420,54 +404,13 @@ func newDraftsSendCmd() *cobra.Command {
 }
 
 func newDraftsDeleteCmd() *cobra.Command {
-	var force bool
+	client, _ := getClient()
 
-	cmd := &cobra.Command{
-		Use:   "delete <draft-id> [grant-id]",
-		Short: "Delete a draft",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			draftID := args[0]
-
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			if !force {
-				fmt.Printf("Delete draft %s? [y/N]: ", draftID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if confirm != "y" && confirm != "Y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			err = client.DeleteDraft(ctx, grantID, draftID)
-			if err != nil {
-				return common.WrapDeleteError("draft", err)
-			}
-
-			printSuccess("Draft deleted")
-			return nil
-		},
-	}
-
-	cmd.Flags().BoolVarP(&force, "force", "f", false, "Skip confirmation")
-
-	return cmd
+	return common.NewDeleteCommand(common.DeleteCommandConfig{
+		Use:          "delete <draft-id> [grant-id]",
+		Short:        "Delete a draft",
+		ResourceName: "draft",
+		DeleteFunc:   client.DeleteDraft,
+		GetClient:    getClient,
+	})
 }

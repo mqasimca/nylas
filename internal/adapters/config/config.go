@@ -64,6 +64,45 @@ func (f *FileStore) Load() (*domain.Config, error) {
 		config.WatchInterval = 10
 	}
 
+	// Apply API defaults
+	if config.API == nil {
+		config.API = &domain.APIConfig{
+			BaseURL:    "https://api.us.nylas.com",
+			Timeout:    "90s",
+			RateLimit:  10,
+			RetryCount: 3,
+		}
+	} else {
+		if config.API.BaseURL == "" {
+			config.API.BaseURL = "https://api.us.nylas.com"
+		}
+		if config.API.Timeout == "" {
+			config.API.Timeout = "90s"
+		}
+		if config.API.RateLimit == 0 {
+			config.API.RateLimit = 10
+		}
+		if config.API.RetryCount == 0 {
+			config.API.RetryCount = 3
+		}
+	}
+
+	// Apply Output defaults
+	if config.Output == nil {
+		config.Output = &domain.OutputConfig{
+			Format:   "table",
+			Color:    "auto",
+			Timezone: "",
+		}
+	} else {
+		if config.Output.Format == "" {
+			config.Output.Format = "table"
+		}
+		if config.Output.Color == "" {
+			config.Output.Color = "auto"
+		}
+	}
+
 	return &config, nil
 }
 

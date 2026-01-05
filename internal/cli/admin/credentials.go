@@ -192,21 +192,21 @@ func newCredentialUpdateCmd() *cobra.Command {
 				return err
 			}
 
+			ctx, cancel := common.CreateContext()
+			defer cancel()
+
 			req := &domain.UpdateCredentialRequest{}
 
 			if name != "" {
 				req.Name = &name
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			credential, err := client.UpdateCredential(ctx, args[0], req)
 			if err != nil {
 				return common.WrapUpdateError("credential", err)
 			}
 
-			_, _ = common.Green.Printf("Updated credential: %s\n", credential.Name)
+			common.PrintUpdateSuccess("credential", credential.Name)
 
 			return nil
 		},

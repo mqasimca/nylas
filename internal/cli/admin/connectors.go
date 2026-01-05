@@ -230,6 +230,9 @@ func newConnectorUpdateCmd() *cobra.Command {
 				return err
 			}
 
+			ctx, cancel := common.CreateContext()
+			defer cancel()
+
 			req := &domain.UpdateConnectorRequest{}
 
 			if name != "" {
@@ -240,15 +243,12 @@ func newConnectorUpdateCmd() *cobra.Command {
 				req.Scopes = scopes
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			connector, err := client.UpdateConnector(ctx, args[0], req)
 			if err != nil {
 				return common.WrapUpdateError("connector", err)
 			}
 
-			_, _ = common.Green.Printf("✓ Updated connector: %s\n", connector.Name)
+			common.PrintUpdateSuccess("connector", connector.Name)
 
 			return nil
 		},
