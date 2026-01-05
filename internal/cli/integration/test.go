@@ -329,7 +329,7 @@ func checkOllamaAvailable() bool {
 	for _, host := range hosts {
 		resp, err := client.Get(host + "/api/tags")
 		if err == nil {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			if resp.StatusCode == http.StatusOK {
 				return true
 			}

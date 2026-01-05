@@ -71,7 +71,7 @@ Use --max to limit total messages when using --all.`,
 				resolvedFolder, err := resolveFolderName(ctx, client, grantID, folder)
 				if err != nil {
 					// API error - warn user but continue with literal name
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve folder '%s': %v\n", folder, err)
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve folder '%s': %v\n", folder, err)
 					params.In = []string{folder}
 				} else if resolvedFolder != "" {
 					params.In = []string{resolvedFolder}
@@ -84,7 +84,7 @@ Use --max to limit total messages when using --all.`,
 				inboxID, err := resolveFolderName(ctx, client, grantID, "INBOX")
 				if err != nil {
 					// API error - warn but fallback to literal INBOX
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve INBOX folder: %v\n", err)
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve INBOX folder: %v\n", err)
 					params.In = []string{"INBOX"}
 				} else if inboxID != "" {
 					params.In = []string{inboxID}

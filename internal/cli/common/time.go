@@ -87,7 +87,7 @@ func ParseTimeOfDayInLocation(s string, loc *time.Location) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("invalid time format: %s", s)
+	return time.Time{}, NewInputError(fmt.Sprintf("invalid time format: %s", s))
 }
 
 // ParseDuration parses duration strings with extended support for days and weeks.
@@ -122,7 +122,7 @@ func ParseDuration(s string) (time.Duration, error) {
 	// Try standard Go duration parsing (handles h, m, s, etc.)
 	duration, err := time.ParseDuration(s)
 	if err != nil {
-		return 0, fmt.Errorf("invalid duration format: %s (use 1h, 30m, 7d, 2w, etc.)", s)
+		return 0, NewInputError(fmt.Sprintf("invalid duration format: %s (use 1h, 30m, 7d, 2w, etc.)", s))
 	}
 	return duration, nil
 }

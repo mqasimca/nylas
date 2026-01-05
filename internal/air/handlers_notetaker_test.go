@@ -303,7 +303,7 @@ func TestHandleNotetakersRoute_MethodNotAllowed(t *testing.T) {
 	s.handleNotetakersRoute(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
@@ -318,7 +318,7 @@ func TestHandleNotetakerByID_MethodNotAllowed(t *testing.T) {
 	s.handleNotetakerByID(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
@@ -332,7 +332,7 @@ func TestHandleListNotetakers_NilClient(t *testing.T) {
 	s.handleListNotetakers(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 
@@ -352,7 +352,7 @@ func TestHandleCreateNotetaker_NilClient(t *testing.T) {
 	s.handleCreateNotetaker(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }
@@ -366,7 +366,7 @@ func TestHandleGetNotetaker_NilClient(t *testing.T) {
 	s.handleGetNotetaker(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }
@@ -380,7 +380,7 @@ func TestHandleGetNotetakerMedia_NilClient(t *testing.T) {
 	s.handleGetNotetakerMedia(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }
@@ -394,7 +394,7 @@ func TestHandleDeleteNotetaker_NilClient(t *testing.T) {
 	s.handleDeleteNotetaker(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }

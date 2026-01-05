@@ -88,12 +88,9 @@ Examples:
 				Comment: comment,
 			}
 
-			spinner := common.NewSpinner("Sending RSVP...")
-			spinner.Start()
-
-			err = client.SendRSVP(ctx, grantID, calendarID, eventID, req)
-			spinner.Stop()
-
+			err = common.RunWithSpinner("Sending RSVP...", func() error {
+				return client.SendRSVP(ctx, grantID, calendarID, eventID, req)
+			})
 			if err != nil {
 				return common.WrapSendError("RSVP", err)
 			}
@@ -172,7 +169,7 @@ func parseEventTime(startStr, endStr string, allDay bool) (*domain.EventWhen, er
 			if endStr != "" {
 				endDate, err := time.Parse("2006-01-02", endStr)
 				if err != nil {
-					return nil, fmt.Errorf("invalid end date format: %s (use YYYY-MM-DD)", endStr)
+					return nil, common.NewUserError(fmt.Sprintf("invalid end date format: %s", endStr), "use YYYY-MM-DD")
 				}
 				if !endDate.Equal(startDate) {
 					when.Object = "datespan"
@@ -205,7 +202,7 @@ func parseEventTime(startStr, endStr string, allDay bool) (*domain.EventWhen, er
 		}
 	}
 	if !parsed {
-		return nil, fmt.Errorf("invalid start time format: %s (use 'YYYY-MM-DD HH:MM' or 'YYYY-MM-DD')", startStr)
+		return nil, common.NewUserError(fmt.Sprintf("invalid start time format: %s", startStr), "use 'YYYY-MM-DD HH:MM' or 'YYYY-MM-DD'")
 	}
 
 	when.Object = "timespan"
@@ -221,7 +218,7 @@ func parseEventTime(startStr, endStr string, allDay bool) (*domain.EventWhen, er
 			}
 		}
 		if endTime.IsZero() {
-			return nil, fmt.Errorf("invalid end time format: %s", endStr)
+			return nil, common.NewInputError(fmt.Sprintf("invalid end time format: %s", endStr))
 		}
 		when.EndTime = endTime.Unix()
 	} else {

@@ -53,10 +53,10 @@ func TestGetNylasClient_WithEnvVar(t *testing.T) {
 	}()
 
 	// Set test env vars
-	os.Setenv("NYLAS_API_KEY", "test-api-key-12345")
-	os.Setenv("NYLAS_CLIENT_ID", "test-client-id")
-	os.Setenv("NYLAS_CLIENT_SECRET", "test-client-secret")
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Setenv("NYLAS_API_KEY", "test-api-key-12345")
+	_ = os.Setenv("NYLAS_CLIENT_ID", "test-client-id")
+	_ = os.Setenv("NYLAS_CLIENT_SECRET", "test-client-secret")
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	client, err := GetNylasClient()
 
@@ -76,8 +76,8 @@ func TestGetNylasClient_NoAPIKey(t *testing.T) {
 	}()
 
 	// Clear API key and disable keyring
-	os.Unsetenv("NYLAS_API_KEY")
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Unsetenv("NYLAS_API_KEY")
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	client, err := GetNylasClient()
 
@@ -99,8 +99,8 @@ func TestGetAPIKey_WithEnvVar(t *testing.T) {
 
 	// Set test env var
 	testKey := "test-api-key-67890"
-	os.Setenv("NYLAS_API_KEY", testKey)
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Setenv("NYLAS_API_KEY", testKey)
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	apiKey, err := GetAPIKey()
 
@@ -120,8 +120,8 @@ func TestGetAPIKey_NoAPIKey(t *testing.T) {
 	}()
 
 	// Clear API key and disable keyring
-	os.Unsetenv("NYLAS_API_KEY")
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Unsetenv("NYLAS_API_KEY")
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	apiKey, err := GetAPIKey()
 
@@ -141,8 +141,8 @@ func TestGetGrantID_WithArgument(t *testing.T) {
 		setEnvOrUnset("NYLAS_DISABLE_KEYRING", origDisableKeyring)
 	}()
 
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
-	os.Unsetenv("NYLAS_GRANT_ID")
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Unsetenv("NYLAS_GRANT_ID")
 
 	// Test with direct grant ID argument (not email)
 	args := []string{"grant-id-12345"}
@@ -170,8 +170,8 @@ func TestGetGrantID_WithEnvVar(t *testing.T) {
 	}()
 
 	testGrantID := "env-grant-id-67890"
-	os.Setenv("NYLAS_GRANT_ID", testGrantID)
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Setenv("NYLAS_GRANT_ID", testGrantID)
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	// Test with empty args - should fall back to env var
 	grantID, err := GetGrantID([]string{})
@@ -197,8 +197,8 @@ func TestGetGrantID_EmptyArgs(t *testing.T) {
 		setEnvOrUnset("NYLAS_DISABLE_KEYRING", origDisableKeyring)
 	}()
 
-	os.Unsetenv("NYLAS_GRANT_ID")
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Unsetenv("NYLAS_GRANT_ID")
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	// Test with empty args and no env var
 	grantID, err := GetGrantID([]string{})
@@ -220,8 +220,8 @@ func TestGetGrantID_EmptyStringArg(t *testing.T) {
 	}()
 
 	testGrantID := "env-grant-fallback"
-	os.Setenv("NYLAS_GRANT_ID", testGrantID)
-	os.Setenv("NYLAS_DISABLE_KEYRING", "true")
+	_ = os.Setenv("NYLAS_GRANT_ID", testGrantID)
+	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
 	// Test with empty string arg - should fall back to env var
 	grantID, err := GetGrantID([]string{""})
@@ -237,9 +237,9 @@ func TestGetGrantID_EmptyStringArg(t *testing.T) {
 // setEnvOrUnset sets an environment variable if value is non-empty, otherwise unsets it
 func setEnvOrUnset(key, value string) {
 	if value != "" {
-		os.Setenv(key, value)
+		_ = os.Setenv(key, value)
 	} else {
-		os.Unsetenv(key)
+		_ = os.Unsetenv(key)
 	}
 }
 
@@ -258,9 +258,9 @@ func TestGetNylasClient_EnvVarPriority(t *testing.T) {
 	}()
 
 	// Set env vars - these should be used regardless of keyring state
-	os.Setenv("NYLAS_API_KEY", "env-api-key")
-	os.Setenv("NYLAS_CLIENT_ID", "env-client-id")
-	os.Setenv("NYLAS_CLIENT_SECRET", "env-client-secret")
+	_ = os.Setenv("NYLAS_API_KEY", "env-api-key")
+	_ = os.Setenv("NYLAS_CLIENT_ID", "env-client-id")
+	_ = os.Setenv("NYLAS_CLIENT_SECRET", "env-client-secret")
 
 	client, err := GetNylasClient()
 
@@ -278,7 +278,7 @@ func TestGetAPIKey_EnvVarPriority(t *testing.T) {
 	}()
 
 	// Set env var
-	os.Setenv("NYLAS_API_KEY", "priority-test-key")
+	_ = os.Setenv("NYLAS_API_KEY", "priority-test-key")
 
 	apiKey, err := GetAPIKey()
 

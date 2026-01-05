@@ -109,7 +109,7 @@ func runFindMeeting(zonesStr, durationStr, startHour, endHour,
 	} else {
 		dateRange.Start, err = time.Parse("2006-01-02", startDateStr)
 		if err != nil {
-			return fmt.Errorf("invalid start date: %w", err)
+			return common.WrapDateParseError("start date", err)
 		}
 	}
 
@@ -118,7 +118,7 @@ func runFindMeeting(zonesStr, durationStr, startHour, endHour,
 	} else {
 		dateRange.End, err = time.Parse("2006-01-02", endDateStr)
 		if err != nil {
-			return fmt.Errorf("invalid end date: %w", err)
+			return common.WrapDateParseError("end date", err)
 		}
 	}
 

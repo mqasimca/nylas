@@ -3,24 +3,22 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
 
 // BuildAuthURL builds the OAuth authorization URL.
 func (c *HTTPClient) BuildAuthURL(provider domain.Provider, redirectURI string) string {
-	params := url.Values{}
-	params.Set("client_id", c.clientID)
-	params.Set("redirect_uri", redirectURI)
-	params.Set("response_type", "code")
-	params.Set("provider", string(provider))
-	params.Set("access_type", "offline")
-
-	return fmt.Sprintf("%s/v3/connect/auth?%s", c.baseURL, params.Encode())
+	baseURL := fmt.Sprintf("%s/v3/connect/auth", c.baseURL)
+	return NewQueryBuilder().
+		Add("client_id", c.clientID).
+		Add("redirect_uri", redirectURI).
+		Add("response_type", "code").
+		Add("provider", string(provider)).
+		Add("access_type", "offline").
+		BuildURL(baseURL)
 }
 
 // ExchangeCode exchanges an authorization code for tokens.
@@ -68,26 +66,12 @@ func (c *HTTPClient) ExchangeCode(ctx context.Context, code, redirectURI string)
 
 // ListGrants lists all grants for the application.
 func (c *HTTPClient) ListGrants(ctx context.Context) ([]domain.Grant, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/v3/grants", nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
+	queryURL := c.baseURL + "/v3/grants"
 
 	var result struct {
 		Data []domain.Grant `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
@@ -96,29 +80,12 @@ func (c *HTTPClient) ListGrants(ctx context.Context) ([]domain.Grant, error) {
 
 // GetGrant retrieves a specific grant.
 func (c *HTTPClient) GetGrant(ctx context.Context, grantID string) (*domain.Grant, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.baseURL+"/v3/grants/"+grantID, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, domain.ErrGrantNotFound
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
+	queryURL := c.baseURL + "/v3/grants/" + grantID
 
 	var result struct {
 		Data domain.Grant `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrGrantNotFound); err != nil {
 		return nil, err
 	}
 

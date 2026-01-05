@@ -66,18 +66,15 @@ This permanently removes the webhook and stops all event notifications.`,
 			ctx, cancel = common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Deleting webhook...")
-			spinner.Start()
-
-			err = c.DeleteWebhook(ctx, webhookID)
-			spinner.Stop()
-
+			err = common.RunWithSpinner("Deleting webhook...", func() error {
+				return c.DeleteWebhook(ctx, webhookID)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to delete webhook: "+err.Error(),
 					"Check your permissions. The webhook may have already been deleted")
 			}
 
-			fmt.Println("\033[32m✓\033[0m Webhook deleted successfully!")
+			fmt.Printf("%s Webhook deleted successfully!\n", common.Green.Sprint("✓"))
 			return nil
 		},
 	}

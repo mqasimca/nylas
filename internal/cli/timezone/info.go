@@ -72,7 +72,7 @@ func runInfo(zone, timeStr string, jsonOut bool) error {
 	} else {
 		checkTime, err = time.Parse(time.RFC3339, timeStr)
 		if err != nil {
-			return fmt.Errorf("invalid time format (use RFC3339): %w", err)
+			return common.NewUserError("invalid time format", "use RFC3339")
 		}
 	}
 

@@ -2,9 +2,7 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -35,7 +33,8 @@ func (c *HTTPClient) CreateVirtualCalendarGrant(ctx context.Context, email strin
 
 // ListVirtualCalendarGrants lists all virtual calendar grants.
 func (c *HTTPClient) ListVirtualCalendarGrants(ctx context.Context) ([]domain.VirtualCalendarGrant, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants?provider=virtual-calendar", c.baseURL)
+	baseURL := fmt.Sprintf("%s/v3/grants", c.baseURL)
+	queryURL := NewQueryBuilder().Add("provider", "virtual-calendar").BuildURL(baseURL)
 
 	var result struct {
 		Data []domain.VirtualCalendarGrant `json:"data"`
@@ -88,26 +87,10 @@ func (c *HTTPClient) GetRecurringEventInstances(ctx context.Context, grantID, ca
 		AddInt64("end", params.End).
 		BuildURL(baseURL)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data []eventResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 

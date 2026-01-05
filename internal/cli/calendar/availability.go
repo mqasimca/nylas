@@ -77,7 +77,7 @@ Shows busy time slots within the specified time range.`,
 			if start != "" {
 				startTime, err = parseTimeInput(start)
 				if err != nil {
-					return fmt.Errorf("invalid start time: %w", err)
+					return common.WrapDateParseError("start", err)
 				}
 			} else {
 				startTime = now
@@ -86,12 +86,12 @@ Shows busy time slots within the specified time range.`,
 			if end != "" {
 				endTime, err = parseTimeInput(end)
 				if err != nil {
-					return fmt.Errorf("invalid end time: %w", err)
+					return common.WrapDateParseError("end", err)
 				}
 			} else if duration != "" {
 				dur, err := common.ParseDuration(duration)
 				if err != nil {
-					return fmt.Errorf("invalid duration: %w", err)
+					return common.WrapDateParseError("duration", err)
 				}
 				endTime = startTime.Add(dur)
 			} else {
@@ -117,18 +117,15 @@ Shows busy time slots within the specified time range.`,
 				}
 			}
 
-			spinner := common.NewSpinner("Checking availability...")
-			spinner.Start()
-
 			req := &domain.FreeBusyRequest{
 				StartTime: startTime.Unix(),
 				EndTime:   endTime.Unix(),
 				Emails:    emails,
 			}
 
-			result, err := c.GetFreeBusy(ctx, grantID, req)
-			spinner.Stop()
-
+			result, err := common.RunWithSpinnerResult("Checking availability...", func() (*domain.FreeBusyResponse, error) {
+				return c.GetFreeBusy(ctx, grantID, req)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to get availability: "+err.Error(),
 					"Check that the email addresses are valid")
@@ -199,7 +196,7 @@ This searches for time slots when all participants are free.`,
 			if start != "" {
 				startTime, err = parseTimeInput(start)
 				if err != nil {
-					return fmt.Errorf("invalid start time: %w", err)
+					return common.WrapDateParseError("start", err)
 				}
 			} else {
 				// Default to next business hour
@@ -209,7 +206,7 @@ This searches for time slots when all participants are free.`,
 			if end != "" {
 				endTime, err = parseTimeInput(end)
 				if err != nil {
-					return fmt.Errorf("invalid end time: %w", err)
+					return common.WrapDateParseError("end", err)
 				}
 			} else {
 				// Default to 7 days from start
@@ -227,9 +224,6 @@ This searches for time slots when all participants are free.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Finding available times...")
-			spinner.Start()
-
 			req := &domain.AvailabilityRequest{
 				StartTime:       startTime.Unix(),
 				EndTime:         endTime.Unix(),
@@ -238,9 +232,9 @@ This searches for time slots when all participants are free.`,
 				IntervalMinutes: intervalMins,
 			}
 
-			result, err := c.GetAvailability(ctx, req)
-			spinner.Stop()
-
+			result, err := common.RunWithSpinnerResult("Finding available times...", func() (*domain.AvailabilityResponse, error) {
+				return c.GetAvailability(ctx, req)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to find availability: "+err.Error(),
 					"Check that the participant email addresses are valid")
@@ -282,7 +276,7 @@ func displayFreeBusy(result *domain.FreeBusyResponse, startTime, endTime time.Ti
 		fmt.Printf("📧 %s\n", cal.Email)
 
 		if len(cal.TimeSlots) == 0 {
-			fmt.Println("   \033[32m✓ Free during this period\033[0m")
+			fmt.Printf("   %s\n", common.Green.Sprint("✓ Free during this period"))
 		} else {
 			fmt.Println("   Busy times:")
 			for _, slot := range cal.TimeSlots {
@@ -290,11 +284,13 @@ func displayFreeBusy(result *domain.FreeBusyResponse, startTime, endTime time.Ti
 				end := time.Unix(slot.EndTime, 0)
 
 				if start.Day() == end.Day() {
-					fmt.Printf("   \033[31m●\033[0m %s - %s\n",
+					fmt.Printf("   %s %s - %s\n",
+						common.Red.Sprint("●"),
 						start.Format("Mon Jan 2 3:04 PM"),
 						end.Format("3:04 PM"))
 				} else {
-					fmt.Printf("   \033[31m●\033[0m %s - %s\n",
+					fmt.Printf("   %s %s - %s\n",
+						common.Red.Sprint("●"),
 						start.Format("Mon Jan 2 3:04 PM"),
 						end.Format("Mon Jan 2 3:04 PM"))
 				}

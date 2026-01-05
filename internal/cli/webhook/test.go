@@ -49,18 +49,15 @@ that your webhook endpoint is properly configured and receiving events.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Sending test event...")
-			spinner.Start()
-
-			err = c.SendWebhookTestEvent(ctx, webhookURL)
-			spinner.Stop()
-
+			err = common.RunWithSpinner("Sending test event...", func() error {
+				return c.SendWebhookTestEvent(ctx, webhookURL)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to send test event: "+err.Error(),
 					"Check that the URL is correct and accessible. Ensure your endpoint is publicly reachable")
 			}
 
-			fmt.Println("\033[32m✓\033[0m Test event sent successfully!")
+			fmt.Printf("%s Test event sent successfully!\n", common.Green.Sprint("✓"))
 			fmt.Println()
 			fmt.Printf("  URL: %s\n", webhookURL)
 			fmt.Println()
@@ -145,12 +142,9 @@ so you can properly handle them in your application.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Fetching mock payload...")
-			spinner.Start()
-
-			payload, err := c.GetWebhookMockPayload(ctx, triggerType)
-			spinner.Stop()
-
+			payload, err := common.RunWithSpinnerResult("Fetching mock payload...", func() (any, error) {
+				return c.GetWebhookMockPayload(ctx, triggerType)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to get mock payload: "+err.Error(),
 					"Check the trigger type is valid")

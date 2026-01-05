@@ -135,7 +135,7 @@ func TestHandleGetAnalyticsDashboard(t *testing.T) {
 	s.handleGetAnalyticsDashboard(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -192,7 +192,7 @@ func TestHandleGetAnalyticsTrends(t *testing.T) {
 			s.handleGetAnalyticsTrends(w, req)
 
 			resp := w.Result()
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -218,7 +218,7 @@ func TestHandleGetFocusTimeSuggestions(t *testing.T) {
 	s.handleGetFocusTimeSuggestions(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -251,7 +251,7 @@ func TestHandleGetProductivityStats(t *testing.T) {
 	s.handleGetProductivityStats(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))

@@ -51,7 +51,7 @@ record the meeting, and generate a transcript when complete.`,
 			// Validate meeting link URL format
 			u, err := url.Parse(meetingLink)
 			if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-				return fmt.Errorf("invalid meeting link URL: %s (must be a valid http/https URL)", meetingLink)
+				return common.NewUserError(fmt.Sprintf("invalid meeting link URL: %s", meetingLink), "must be a valid http/https URL")
 			}
 
 			client, err := getClient()
@@ -72,7 +72,7 @@ record the meeting, and generate a transcript when complete.`,
 			if joinTime != "" {
 				parsedTime, err := parseJoinTime(joinTime)
 				if err != nil {
-					return fmt.Errorf("invalid join time: %w", err)
+					return common.WrapDateParseError("join time", err)
 				}
 				req.JoinTime = parsedTime.Unix()
 			}
@@ -189,5 +189,5 @@ func parseJoinTime(input string) (time.Time, error) {
 		return result, nil
 	}
 
-	return time.Time{}, fmt.Errorf("could not parse time format: %s", input)
+	return time.Time{}, common.NewInputError(fmt.Sprintf("could not parse time format: %s", input))
 }

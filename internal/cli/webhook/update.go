@@ -114,12 +114,9 @@ You can update the URL, triggers, description, notification emails, or status.`,
 				req.Status = status
 			}
 
-			spinner := common.NewSpinner("Updating webhook...")
-			spinner.Start()
-
-			webhook, err := c.UpdateWebhook(ctx, webhookID, req)
-			spinner.Stop()
-
+			webhook, err := common.RunWithSpinnerResult("Updating webhook...", func() (*domain.Webhook, error) {
+				return c.UpdateWebhook(ctx, webhookID, req)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to update webhook: "+err.Error(),
 					"Check that the webhook ID is correct. Run 'nylas webhook list' to see available webhooks")
@@ -131,7 +128,7 @@ You can update the URL, triggers, description, notification emails, or status.`,
 				return enc.Encode(webhook)
 			}
 
-			fmt.Println("\033[32m✓\033[0m Webhook updated successfully!")
+			fmt.Printf("%s Webhook updated successfully!\n", common.Green.Sprint("✓"))
 			fmt.Println()
 			fmt.Printf("  ID:     %s\n", webhook.ID)
 			fmt.Printf("  URL:    %s\n", webhook.WebhookURL)

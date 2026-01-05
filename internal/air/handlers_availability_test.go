@@ -143,7 +143,7 @@ func TestHandleAvailability_DemoMode(t *testing.T) {
 	s.handleAvailability(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -164,7 +164,7 @@ func TestHandleAvailability_DemoMode_POST(t *testing.T) {
 	s.handleAvailability(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -184,7 +184,7 @@ func TestHandleAvailability_MethodNotAllowed(t *testing.T) {
 	s.handleAvailability(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
@@ -198,7 +198,7 @@ func TestHandleFreeBusy_DemoMode(t *testing.T) {
 	s.handleFreeBusy(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -219,7 +219,7 @@ func TestHandleFreeBusy_DemoMode_POST(t *testing.T) {
 	s.handleFreeBusy(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -233,7 +233,7 @@ func TestHandleFreeBusy_MethodNotAllowed(t *testing.T) {
 	s.handleFreeBusy(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
@@ -247,7 +247,7 @@ func TestHandleConflicts_DemoMode(t *testing.T) {
 	s.handleConflicts(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -268,7 +268,7 @@ func TestHandleConflicts_MethodNotAllowed(t *testing.T) {
 	s.handleConflicts(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 }
@@ -282,7 +282,7 @@ func TestHandleAvailability_NotConfigured(t *testing.T) {
 	s.handleAvailability(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }
@@ -296,7 +296,7 @@ func TestHandleFreeBusy_NotConfigured(t *testing.T) {
 	s.handleFreeBusy(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }
@@ -310,7 +310,7 @@ func TestHandleConflicts_NotConfigured(t *testing.T) {
 	s.handleConflicts(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }

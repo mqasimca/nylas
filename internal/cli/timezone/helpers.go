@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mqasimca/nylas/internal/adapters/utilities/timezone"
+	"github.com/mqasimca/nylas/internal/cli/common"
 )
 
 // getService creates a new timezone service.
@@ -53,11 +54,11 @@ func parseTimeZones(zonesStr string) []string {
 func parseWorkingHours(start, end string) (string, string, error) {
 	// Validate format
 	if _, err := time.Parse("15:04", start); err != nil {
-		return "", "", fmt.Errorf("invalid start time format (use HH:MM): %w", err)
+		return "", "", common.NewUserError("invalid start time format", "use HH:MM")
 	}
 
 	if _, err := time.Parse("15:04", end); err != nil {
-		return "", "", fmt.Errorf("invalid end time format (use HH:MM): %w", err)
+		return "", "", common.NewUserError("invalid end time format", "use HH:MM")
 	}
 
 	return start, end, nil

@@ -115,7 +115,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 
 					var selected int
 					if _, err := fmt.Sscanf(choice, "%d", &selected); err != nil || selected < 1 || selected > len(apps) {
-						return fmt.Errorf("invalid selection: %s", choice)
+						return common.NewInputError(fmt.Sprintf("invalid selection: %s", choice))
 					}
 
 					app := apps[selected-1]

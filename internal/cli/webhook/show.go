@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -38,12 +39,9 @@ status, and notification settings.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Fetching webhook...")
-			spinner.Start()
-
-			webhook, err := c.GetWebhook(ctx, webhookID)
-			spinner.Stop()
-
+			webhook, err := common.RunWithSpinnerResult("Fetching webhook...", func() (*domain.Webhook, error) {
+				return c.GetWebhook(ctx, webhookID)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to get webhook: "+err.Error(),
 					"Check that the webhook ID is correct. Run 'nylas webhook list' to see available webhooks")

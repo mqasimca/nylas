@@ -225,14 +225,14 @@ func newThreadsMarkCmd() *cobra.Command {
 			}
 
 			if flagCount == 0 {
-				return fmt.Errorf("specify at least one of --read, --unread, --star, or --unstar")
+				return common.NewInputError("specify at least one of --read, --unread, --star, or --unstar")
 			}
 
 			if markRead && markUnread {
-				return fmt.Errorf("cannot specify both --read and --unread")
+				return common.NewMutuallyExclusiveError("read", "unread")
 			}
 			if markStar && markUnstar {
-				return fmt.Errorf("cannot specify both --star and --unstar")
+				return common.NewMutuallyExclusiveError("star", "unstar")
 			}
 
 			client, err := getClient()
@@ -448,21 +448,21 @@ Examples:
 			if after != "" {
 				t, err := parseDate(after)
 				if err != nil {
-					return fmt.Errorf("invalid 'after' date: %w", err)
+					return common.WrapDateParseError("after", err)
 				}
 				params.LatestMsgAfter = t.Unix()
 			}
 			if before != "" {
 				t, err := parseDate(before)
 				if err != nil {
-					return fmt.Errorf("invalid 'before' date: %w", err)
+					return common.WrapDateParseError("before", err)
 				}
 				params.LatestMsgBefore = t.Unix()
 			}
 
 			threads, err := client.GetThreads(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("search failed: %w", err)
+				return common.WrapFetchError("threads", err)
 			}
 
 			if len(threads) == 0 {

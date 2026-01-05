@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -44,12 +45,9 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Fetching webhooks...")
-			spinner.Start()
-
-			webhooks, err := c.ListWebhooks(ctx)
-			spinner.Stop()
-
+			webhooks, err := common.RunWithSpinnerResult("Fetching webhooks...", func() ([]domain.Webhook, error) {
+				return c.ListWebhooks(ctx)
+			})
 			if err != nil {
 				return common.NewUserError("Failed to list webhooks: "+err.Error(),
 					"Check your API key has webhook management permissions")
@@ -211,11 +209,11 @@ func outputTable(webhooks any, fullIDs bool) error {
 func getStatusIcon(status string) string {
 	switch status {
 	case "active":
-		return "\033[32m●\033[0m" // Green
+		return common.Green.Sprint("●")
 	case "inactive":
-		return "\033[33m●\033[0m" // Yellow
+		return common.Yellow.Sprint("●")
 	case "failing":
-		return "\033[31m●\033[0m" // Red
+		return common.Red.Sprint("●")
 	default:
 		return "○"
 	}

@@ -196,14 +196,14 @@ This creates an exception for that particular instance.`,
 				if startTime != "" {
 					t, err := time.Parse(time.RFC3339, startTime)
 					if err != nil {
-						return fmt.Errorf("invalid start time format (use RFC3339, e.g., 2024-01-15T14:00:00Z): %w", err)
+						return common.NewUserError("invalid start time format", "use RFC3339 (e.g., 2024-01-15T14:00:00Z)")
 					}
 					when.StartTime = t.Unix()
 				}
 				if endTime != "" {
 					t, err := time.Parse(time.RFC3339, endTime)
 					if err != nil {
-						return fmt.Errorf("invalid end time format (use RFC3339, e.g., 2024-01-15T15:00:00Z): %w", err)
+						return common.NewUserError("invalid end time format", "use RFC3339 (e.g., 2024-01-15T15:00:00Z)")
 					}
 					when.EndTime = t.Unix()
 				}

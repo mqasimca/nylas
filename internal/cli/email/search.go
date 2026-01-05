@@ -103,21 +103,21 @@ Examples:
 			if after != "" {
 				t, err := parseDate(after)
 				if err != nil {
-					return fmt.Errorf("invalid 'after' date: %w", err)
+					return common.WrapDateParseError("after", err)
 				}
 				params.ReceivedAfter = t.Unix()
 			}
 			if before != "" {
 				t, err := parseDate(before)
 				if err != nil {
-					return fmt.Errorf("invalid 'before' date: %w", err)
+					return common.WrapDateParseError("before", err)
 				}
 				params.ReceivedBefore = t.Unix()
 			}
 
 			messages, err := client.GetMessagesWithParams(ctx, grantID, params)
 			if err != nil {
-				return fmt.Errorf("search failed: %w", err)
+				return common.WrapSearchError("messages", err)
 			}
 
 			if len(messages) == 0 {

@@ -86,7 +86,7 @@ Examples:
 			if channelName != "" && channelID == "" {
 				resolvedChannelID, err = resolveChannelName(ctx, client, channelName)
 				if err != nil {
-					return fmt.Errorf("channel not found: %s", channelName)
+					return common.NewUserError(fmt.Sprintf("channel not found: %s", channelName), "Use --channel-id with the channel ID instead")
 				}
 			}
 

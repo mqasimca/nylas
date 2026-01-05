@@ -69,12 +69,9 @@ Examples:
 				req.PhoneNumbers = []domain.ContactPhone{{Number: phone, Type: "mobile"}}
 			}
 
-			spinner := common.NewSpinner("Creating contact...")
-			spinner.Start()
-
-			contact, err := client.CreateContact(ctx, grantID, req)
-			spinner.Stop()
-
+			contact, err := common.RunWithSpinnerResult("Creating contact...", func() (*domain.Contact, error) {
+				return client.CreateContact(ctx, grantID, req)
+			})
 			if err != nil {
 				return common.WrapCreateError("contact", err)
 			}

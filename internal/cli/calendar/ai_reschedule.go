@@ -107,7 +107,7 @@ func newAIRescheduleCmd() *cobra.Command {
 			for _, timeStr := range preferredTimes {
 				t, err := time.Parse(time.RFC3339, timeStr)
 				if err != nil {
-					return fmt.Errorf("invalid preferred time %q (use RFC3339 format): %w", timeStr, err)
+					return common.NewUserError(fmt.Sprintf("invalid preferred time %q", timeStr), "use RFC3339 format")
 				}
 				preferredTimeParsed = append(preferredTimeParsed, t)
 			}

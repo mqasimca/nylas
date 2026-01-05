@@ -2,11 +2,7 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
-	"strconv"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -14,23 +10,8 @@ import (
 // ListInboundInboxes lists all inbound inboxes (grants with provider=inbox).
 func (c *HTTPClient) ListInboundInboxes(ctx context.Context) ([]domain.InboundInbox, error) {
 	// Get all grants and filter by provider=inbox
-	queryURL := fmt.Sprintf("%s/v3/grants?provider=inbox", c.baseURL)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
+	baseURL := fmt.Sprintf("%s/v3/grants", c.baseURL)
+	queryURL := NewQueryBuilder().Add("provider", "inbox").BuildURL(baseURL)
 
 	var result struct {
 		Data []struct {
@@ -42,7 +23,7 @@ func (c *HTTPClient) ListInboundInboxes(ctx context.Context) ([]domain.InboundIn
 			UpdatedAt   domain.UnixTime `json:"updated_at"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
@@ -67,25 +48,6 @@ func (c *HTTPClient) ListInboundInboxes(ctx context.Context) ([]domain.InboundIn
 func (c *HTTPClient) GetInboundInbox(ctx context.Context, grantID string) (*domain.InboundInbox, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s", c.baseURL, grantID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: inbound inbox not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data struct {
 			ID          string          `json:"id"`
@@ -96,7 +58,7 @@ func (c *HTTPClient) GetInboundInbox(ctx context.Context, grantID string) (*doma
 			UpdatedAt   domain.UnixTime `json:"updated_at"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: inbound inbox not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 
@@ -179,54 +141,22 @@ func (c *HTTPClient) GetInboundMessages(ctx context.Context, grantID string, par
 		params.Limit = 10
 	}
 
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages", c.baseURL, grantID)
-	q := url.Values{}
-	q.Set("limit", strconv.Itoa(params.Limit))
-
-	if params.PageToken != "" {
-		q.Set("page_token", params.PageToken)
-	}
-	if params.Offset > 0 {
-		q.Set("offset", strconv.Itoa(params.Offset))
-	}
-	if params.Subject != "" {
-		q.Set("subject", params.Subject)
-	}
-	if params.From != "" {
-		q.Set("from", params.From)
-	}
-	if params.Unread != nil {
-		q.Set("unread", strconv.FormatBool(*params.Unread))
-	}
-	if params.ReceivedBefore > 0 {
-		q.Set("received_before", strconv.FormatInt(params.ReceivedBefore, 10))
-	}
-	if params.ReceivedAfter > 0 {
-		q.Set("received_after", strconv.FormatInt(params.ReceivedAfter, 10))
-	}
-
-	queryURL += "?" + q.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/messages", c.baseURL, grantID)
+	queryURL := NewQueryBuilder().
+		AddInt("limit", params.Limit).
+		Add("page_token", params.PageToken).
+		AddInt("offset", params.Offset).
+		Add("subject", params.Subject).
+		Add("from", params.From).
+		AddBoolPtr("unread", params.Unread).
+		AddInt64("received_before", params.ReceivedBefore).
+		AddInt64("received_after", params.ReceivedAfter).
+		BuildURL(baseURL)
 
 	var result struct {
 		Data []messageResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 

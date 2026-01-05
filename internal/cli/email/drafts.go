@@ -157,7 +157,7 @@ func newDraftsCreateCmd() *cobra.Command {
 			// Parse and validate recipients
 			toContacts, err := parseContacts(to)
 			if err != nil {
-				return fmt.Errorf("invalid 'to' recipient: %w", err)
+				return common.WrapRecipientError("to", err)
 			}
 
 			req := &domain.CreateDraftRequest{
@@ -170,7 +170,7 @@ func newDraftsCreateCmd() *cobra.Command {
 			if len(cc) > 0 {
 				ccContacts, err := parseContacts(cc)
 				if err != nil {
-					return fmt.Errorf("invalid 'cc' recipient: %w", err)
+					return common.WrapRecipientError("cc", err)
 				}
 				req.Cc = ccContacts
 			}

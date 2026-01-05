@@ -48,12 +48,9 @@ func newDeleteCmd() *cobra.Command {
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
-			spinner := common.NewSpinner("Deleting contact...")
-			spinner.Start()
-
-			err = client.DeleteContact(ctx, grantID, contactID)
-			spinner.Stop()
-
+			err = common.RunWithSpinner("Deleting contact...", func() error {
+				return client.DeleteContact(ctx, grantID, contactID)
+			})
 			if err != nil {
 				return common.WrapDeleteError("contact", err)
 			}

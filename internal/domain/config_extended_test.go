@@ -305,7 +305,7 @@ func TestUnixTimeUnmarshalJSON(t *testing.T) {
 
 			require.NoError(t, err)
 			if !tt.skipCheck {
-				assert.Equal(t, tt.wantUnix, ut.Time.Unix())
+				assert.Equal(t, tt.wantUnix, ut.Unix())
 			}
 		})
 	}
