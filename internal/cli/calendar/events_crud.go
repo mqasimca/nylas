@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -238,16 +239,10 @@ func newEventsDeleteCmd() *cobra.Command {
 		Long:    "Delete a calendar event by its ID.",
 		Args:    cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			eventID := args[0]
-
-			if !force {
-				fmt.Printf("Are you sure you want to delete event %s? [y/N] ", eventID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
+			// Parse arguments
+			resourceArgs, err := common.ParseResourceArgs(args, 1)
+			if err != nil {
+				return err
 			}
 
 			client, err := getClient()
@@ -255,22 +250,12 @@ func newEventsDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = getGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
 			// Get calendar ID if not specified
 			if calendarID == "" {
-				calendars, err := client.GetCalendars(ctx, grantID)
+				calendars, err := client.GetCalendars(ctx, resourceArgs.GrantID)
 				if err != nil {
 					return common.WrapListError("calendars", err)
 				}
@@ -285,16 +270,19 @@ func newEventsDeleteCmd() *cobra.Command {
 				}
 			}
 
-			err = common.RunWithSpinner("Deleting event...", func() error {
-				return client.DeleteEvent(ctx, grantID, calendarID, eventID)
-			})
-			if err != nil {
-				return common.WrapDeleteError("event", err)
+			// Wrap DeleteEvent to match the DeleteFunc signature
+			deleteFunc := func(ctx context.Context, grantID, resourceID string) error {
+				return client.DeleteEvent(ctx, grantID, calendarID, resourceID)
 			}
 
-			fmt.Printf("%s Event deleted successfully.\n", common.Green.Sprint("✓"))
-
-			return nil
+			// Run delete with standard helpers
+			return common.RunDelete(common.DeleteConfig{
+				ResourceName: "event",
+				ResourceID:   resourceArgs.ResourceID,
+				GrantID:      resourceArgs.GrantID,
+				Force:        force,
+				DeleteFunc:   deleteFunc,
+			})
 		},
 	}
 

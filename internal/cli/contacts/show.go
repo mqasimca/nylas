@@ -1,44 +1,28 @@
 package contacts
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
 
 func newShowCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "show <contact-id> [grant-id]",
-		Aliases: []string{"get", "read"},
-		Short:   "Show contact details",
-		Long:    "Display detailed information about a specific contact.",
-		Args:    cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			contactID := args[0]
+	client, _ := getClient()
 
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = getGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			contact, err := client.GetContact(ctx, grantID, contactID)
-			if err != nil {
-				return common.WrapGetError("contact", err)
-			}
+	return common.NewShowCommand(common.ShowCommandConfig{
+		Use:          "show <contact-id> [grant-id]",
+		Aliases:      []string{"get", "read"},
+		Short:        "Show contact details",
+		Long:         "Display detailed information about a specific contact.",
+		ResourceName: "contact",
+		GetFunc: func(ctx context.Context, grantID, resourceID string) (interface{}, error) {
+			return client.GetContact(ctx, grantID, resourceID)
+		},
+		DisplayFunc: func(resource interface{}) error {
+			contact := resource.(*domain.Contact)
 
 			// Name
 			fmt.Printf("%s\n\n", common.BoldCyan.Sprint(contact.DisplayName()))
@@ -162,7 +146,6 @@ func newShowCmd() *cobra.Command {
 
 			return nil
 		},
-	}
-
-	return cmd
+		GetClient: getClient,
+	})
 }

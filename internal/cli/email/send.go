@@ -229,7 +229,20 @@ Supports custom metadata:
 			ctx, cancel := common.CreateContext()
 			defer cancel()
 
+			// Show progress spinner while sending
+			var sendMsg string
+			if scheduledTime.IsZero() {
+				sendMsg = "Sending email..."
+			} else {
+				sendMsg = "Scheduling email..."
+			}
+
+			spinner := common.NewSpinner(sendMsg)
+			spinner.Start()
+
 			msg, err := client.SendMessage(ctx, grantID, req)
+			spinner.Stop()
+
 			if err != nil {
 				return common.WrapSendError("email", err)
 			}

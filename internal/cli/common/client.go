@@ -58,12 +58,24 @@ func GetNylasClient() (ports.NylasClient, error) {
 
 	// Validate that we have at least the API key
 	if apiKey == "" {
-		return nil, fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
+		return nil, NewUserErrorWithSuggestions(
+			"API key not configured",
+			"Configure with: nylas auth config",
+			"Or use environment variable: export NYLAS_API_KEY=<your-key>",
+			"Get your API key from: https://dashboard.nylas.com",
+		)
 	}
 
 	// Create and configure the HTTP client
 	c := nylas.NewHTTPClient()
-	c.SetRegion(cfg.Region)
+
+	// Apply API configuration
+	if cfg.API != nil && cfg.API.BaseURL != "" {
+		c.SetBaseURL(cfg.API.BaseURL)
+	} else {
+		c.SetRegion(cfg.Region)
+	}
+
 	c.SetCredentials(clientID, clientSecret, apiKey)
 
 	return c, nil
@@ -108,24 +120,38 @@ func GetAPIKey() (string, error) {
 	}
 
 	if apiKey == "" {
-		return "", fmt.Errorf("API key not configured. Set NYLAS_API_KEY environment variable or run 'nylas auth config'")
+		return "", NewUserErrorWithSuggestions(
+			"API key not configured",
+			"Configure with: nylas auth config",
+			"Or use environment variable: export NYLAS_API_KEY=<your-key>",
+			"Get your API key from: https://dashboard.nylas.com",
+		)
 	}
 
 	return apiKey, nil
 }
 
-// GetGrantID returns the grant ID from arguments, environment variable, or keyring.
+// GetGrantID returns the grant ID from arguments, environment variable, config file, or keyring.
 // It checks in this order:
 // 1. Command line argument (if provided) - supports email lookup if arg contains "@"
 // 2. Environment variable (NYLAS_GRANT_ID)
-// 3. Stored default grant (from keyring/file)
+// 3. Config file (default_grant)
+// 4. Stored default grant (from keyring/file)
 func GetGrantID(args []string) (string, error) {
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
 	if err != nil {
-		// Fall back to env var only if keyring unavailable
+		// Fall back to env var and config only if keyring unavailable
 		if grantID := os.Getenv("NYLAS_GRANT_ID"); grantID != "" {
 			return grantID, nil
 		}
+
+		// Try config file
+		configStore := config.NewDefaultFileStore()
+		cfg, err := configStore.Load()
+		if err == nil && cfg.DefaultGrant != "" {
+			return cfg.DefaultGrant, nil
+		}
+
 		return "", fmt.Errorf("couldn't access secret store and NYLAS_GRANT_ID not set: %w", err)
 	}
 	grantStore := keyring.NewGrantStore(secretStore)
@@ -152,10 +178,23 @@ func GetGrantID(args []string) (string, error) {
 		return grantID, nil
 	}
 
-	// Try to get default grant
+	// Check config file
+	configStore := config.NewDefaultFileStore()
+	cfg, err := configStore.Load()
+	if err == nil && cfg.DefaultGrant != "" {
+		return cfg.DefaultGrant, nil
+	}
+
+	// Try to get default grant from keyring
 	grantID, err := grantStore.GetDefaultGrant()
 	if err != nil {
-		return "", fmt.Errorf("no grant ID provided. Specify grant ID as argument, set NYLAS_GRANT_ID, or use 'nylas auth list' to see available grants")
+		return "", NewUserErrorWithSuggestions(
+			"No grant ID provided",
+			"Check available grants with: nylas auth list",
+			"Set default grant with: nylas config set default_grant <grant-id>",
+			"Use environment variable: export NYLAS_GRANT_ID=<grant-id>",
+			"Or specify as argument: nylas [command] <grant-id>",
+		)
 	}
 
 	return grantID, nil

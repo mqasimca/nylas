@@ -22,6 +22,55 @@ Quick command reference. For detailed docs, see `docs/commands/<feature>.md`
 
 ---
 
+## Shell Completion
+
+Enable tab completion for faster command entry. The CLI automatically generates completion scripts for all major shells.
+
+### Bash
+
+```bash
+# Generate and install completion script
+nylas completion bash > /etc/bash_completion.d/nylas
+
+# Or for user-only install:
+mkdir -p ~/.local/share/bash-completion/completions
+nylas completion bash > ~/.local/share/bash-completion/completions/nylas
+```
+
+### Zsh
+
+```bash
+# Generate and install completion script
+nylas completion zsh > /usr/local/share/zsh/site-functions/_nylas
+
+# Or add to your .zshrc:
+echo "autoload -U compinit; compinit" >> ~/.zshrc
+mkdir -p ~/.zsh/completion
+nylas completion zsh > ~/.zsh/completion/_nylas
+echo "fpath=(~/.zsh/completion $fpath)" >> ~/.zshrc
+```
+
+### Fish
+
+```bash
+# Generate and install completion script
+nylas completion fish > ~/.config/fish/completions/nylas.fish
+```
+
+### PowerShell
+
+```powershell
+# Add to your PowerShell profile
+nylas completion powershell | Out-String | Invoke-Expression
+
+# Or save to profile permanently:
+nylas completion powershell >> $PROFILE
+```
+
+**After installation, restart your shell or source your profile to activate completion.**
+
+---
+
 ## Authentication
 
 ```bash

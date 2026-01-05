@@ -11,10 +11,11 @@ import (
 
 // CLIError wraps an error with additional context for CLI display.
 type CLIError struct {
-	Err        error
-	Message    string
-	Suggestion string
-	Code       string
+	Err         error
+	Message     string
+	Suggestion  string   // Single suggestion (deprecated, use Suggestions)
+	Suggestions []string // Multiple suggestions
+	Code        string
 }
 
 func (e *CLIError) Error() string {
@@ -197,21 +198,31 @@ func FormatError(err error) string {
 	var sb strings.Builder
 
 	// Error message
-	_, _ = Red.Fprintf(&sb, "Error: %s\n", cliErr.Message)
+	_, _ = Red.Fprintf(&sb, "✗ Error: %s\n", cliErr.Message)
 
 	// Error code (if available)
 	if cliErr.Code != "" {
 		_, _ = Dim.Fprintf(&sb, "  Code: %s\n", cliErr.Code)
 	}
 
-	// Suggestion (if available)
-	if cliErr.Suggestion != "" {
-		_, _ = Yellow.Fprintf(&sb, "  Hint: %s\n", cliErr.Suggestion)
+	// Multiple suggestions (preferred)
+	if len(cliErr.Suggestions) > 0 {
+		_, _ = sb.WriteString("\n")
+		_, _ = Yellow.Fprintf(&sb, "Suggestions:\n")
+		for _, suggestion := range cliErr.Suggestions {
+			_, _ = Yellow.Fprintf(&sb, "  • %s\n", suggestion)
+		}
+	} else if cliErr.Suggestion != "" {
+		// Fallback to single suggestion
+		_, _ = sb.WriteString("\n")
+		_, _ = Yellow.Fprintf(&sb, "Suggestion:\n")
+		_, _ = Yellow.Fprintf(&sb, "  • %s\n", cliErr.Suggestion)
 	}
 
 	// Original error in debug mode
 	if IsDebug() && cliErr.Err != nil && cliErr.Err.Error() != cliErr.Message {
-		_, _ = Dim.Fprintf(&sb, "  Details: %s\n", cliErr.Err.Error())
+		_, _ = sb.WriteString("\n")
+		_, _ = Dim.Fprintf(&sb, "Debug details: %s\n", cliErr.Err.Error())
 	}
 
 	return sb.String()
@@ -227,6 +238,15 @@ func NewUserError(message, suggestion string) error {
 	return &CLIError{
 		Message:    message,
 		Suggestion: suggestion,
+	}
+}
+
+// NewUserErrorWithSuggestions creates a user-facing error with multiple suggestions.
+func NewUserErrorWithSuggestions(message string, suggestions ...string) error {
+	return &CLIError{
+		Message:     message,
+		Suggestions: suggestions,
+		Code:        ErrCodeInvalidInput,
 	}
 }
 
