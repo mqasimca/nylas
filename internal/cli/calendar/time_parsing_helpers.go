@@ -392,5 +392,5 @@ func parseTimeOfDay(input string, loc *time.Location) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("invalid time format: %s", input)
+	return time.Time{}, common.NewInputError(fmt.Sprintf("invalid time format: %s", input))
 }

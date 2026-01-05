@@ -69,7 +69,7 @@ func newCheckConflictsCmd() *cobra.Command {
 			// Parse start time
 			start, err := time.Parse(time.RFC3339, startTime)
 			if err != nil {
-				return fmt.Errorf("invalid start time (use RFC3339 format): %w", err)
+				return common.NewUserError("invalid start time", "use RFC3339 format")
 			}
 
 			// Calculate end time
@@ -77,7 +77,7 @@ func newCheckConflictsCmd() *cobra.Command {
 			if endTime != "" {
 				end, err = time.Parse(time.RFC3339, endTime)
 				if err != nil {
-					return fmt.Errorf("invalid end time (use RFC3339 format): %w", err)
+					return common.NewUserError("invalid end time", "use RFC3339 format")
 				}
 			} else {
 				end = start.Add(time.Duration(duration) * time.Minute)

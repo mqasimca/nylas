@@ -171,7 +171,7 @@ func selectAssistant() (*Assistant, error) {
 
 	num, err := strconv.Atoi(input)
 	if err != nil || num < 1 || num > len(available) {
-		return nil, fmt.Errorf("invalid selection: %s", input)
+		return nil, common.NewInputError(fmt.Sprintf("invalid selection: %s", input))
 	}
 
 	return &available[num-1], nil

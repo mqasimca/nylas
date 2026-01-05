@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 )
@@ -41,12 +42,12 @@ custom domains, verify the provider with your IT administrator.`,
 			email := strings.ToLower(strings.TrimSpace(args[0]))
 
 			if !strings.Contains(email, "@") {
-				return fmt.Errorf("invalid email address: %s", email)
+				return common.NewInputError(fmt.Sprintf("invalid email address: %s", email))
 			}
 
 			parts := strings.Split(email, "@")
 			if len(parts) != 2 {
-				return fmt.Errorf("invalid email address format: %s", email)
+				return common.NewInputError(fmt.Sprintf("invalid email address format: %s", email))
 			}
 
 			domainPart := parts[1]

@@ -252,7 +252,7 @@ func scoreSpecificTime(ctx context.Context, learner *analytics.PatternLearner, c
 	// Parse the time
 	proposedTime, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return fmt.Errorf("invalid time format (use RFC3339): %w", err)
+		return common.NewUserError("invalid time format", "use RFC3339 format")
 	}
 
 	// Analyze history to get patterns

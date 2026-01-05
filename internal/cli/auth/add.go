@@ -62,7 +62,7 @@ Example:
 			if provider != "" {
 				p, err := domain.ParseProvider(provider)
 				if err != nil {
-					return fmt.Errorf("invalid provider: %s (use 'google' or 'microsoft')", provider)
+					return common.NewUserError(fmt.Sprintf("invalid provider: %s", provider), "use 'google' or 'microsoft'")
 				}
 				grantProvider = p
 			}

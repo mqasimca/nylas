@@ -116,7 +116,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("fallback not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "enabled":
@@ -132,7 +132,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("ollama not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "host":
@@ -148,7 +148,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("claude not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -164,7 +164,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("openai not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -180,7 +180,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("groq not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -196,7 +196,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("openrouter not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -212,7 +212,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("privacy not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "allow_cloud_ai":
@@ -230,7 +230,7 @@ func getConfigValue(ai *domain.AIConfig, key string) (string, error) {
 			return "", fmt.Errorf("features not configured")
 		}
 		if len(parts) < 2 {
-			return "", fmt.Errorf("invalid key: %s", key)
+			return "", common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "natural_language_scheduling":
@@ -268,7 +268,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			}
 		}
 		if !valid {
-			return fmt.Errorf("invalid provider: %s (must be one of: %s)", value, strings.Join(validProviders, ", "))
+			return common.NewUserError(fmt.Sprintf("invalid provider: %s", value), fmt.Sprintf("must be one of: %s", strings.Join(validProviders, ", ")))
 		}
 		ai.DefaultProvider = value
 
@@ -277,7 +277,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.Fallback = &domain.AIFallbackConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "enabled":
@@ -293,7 +293,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.Ollama = &domain.OllamaConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "host":
@@ -309,7 +309,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.Claude = &domain.ClaudeConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -325,7 +325,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.OpenAI = &domain.OpenAIConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -341,7 +341,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.Groq = &domain.GroqConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -357,7 +357,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.OpenRouter = &domain.OpenRouterConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "api_key":
@@ -373,7 +373,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.Privacy = &domain.PrivacyConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "allow_cloud_ai":
@@ -382,7 +382,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			var retention int
 			_, err := fmt.Sscanf(value, "%d", &retention)
 			if err != nil {
-				return fmt.Errorf("invalid data_retention value: %s (must be integer)", value)
+				return common.NewUserError(fmt.Sprintf("invalid data_retention value: %s", value), "must be an integer")
 			}
 			ai.Privacy.DataRetention = retention
 		case "local_storage_only":
@@ -396,7 +396,7 @@ func setConfigValue(ai *domain.AIConfig, key, value string) error {
 			ai.Features = &domain.FeaturesConfig{}
 		}
 		if len(parts) < 2 {
-			return fmt.Errorf("invalid key: %s", key)
+			return common.NewInputError(fmt.Sprintf("invalid key: %s", key))
 		}
 		switch parts[1] {
 		case "natural_language_scheduling":

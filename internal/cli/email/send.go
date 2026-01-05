@@ -283,7 +283,7 @@ func parseContacts(emails []string) ([]domain.EmailParticipant, error) {
 	for i, email := range emails {
 		email = strings.TrimSpace(email)
 		if email == "" {
-			return nil, fmt.Errorf("email address cannot be empty")
+			return nil, common.NewInputError("email address cannot be empty")
 		}
 
 		// Try parsing as RFC 5322 address (handles "Name <email>" format)
@@ -293,11 +293,11 @@ func parseContacts(emails []string) ([]domain.EmailParticipant, error) {
 		} else {
 			// Check if it's a plain email without angle brackets
 			if !strings.Contains(email, "@") {
-				return nil, fmt.Errorf("invalid email address: %s", email)
+				return nil, common.NewInputError(fmt.Sprintf("invalid email address: %s", email))
 			}
 			// Basic validation for plain email
 			if strings.Count(email, "@") != 1 {
-				return nil, fmt.Errorf("invalid email address: %s", email)
+				return nil, common.NewInputError(fmt.Sprintf("invalid email address: %s", email))
 			}
 			contacts[i] = domain.EmailParticipant{Email: email}
 		}

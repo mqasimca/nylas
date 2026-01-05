@@ -35,7 +35,7 @@ func ParseFormat(s string) (OutputFormat, error) {
 	case "yaml", "yml":
 		return FormatYAML, nil
 	default:
-		return "", fmt.Errorf("invalid format: %s (valid: table, json, csv, yaml)", s)
+		return "", NewInputError(fmt.Sprintf("invalid format: %s (valid: table, json, csv, yaml)", s))
 	}
 }
 

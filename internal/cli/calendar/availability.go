@@ -77,7 +77,7 @@ Shows busy time slots within the specified time range.`,
 			if start != "" {
 				startTime, err = parseTimeInput(start)
 				if err != nil {
-					return fmt.Errorf("invalid start time: %w", err)
+					return common.WrapDateParseError("start", err)
 				}
 			} else {
 				startTime = now
@@ -86,12 +86,12 @@ Shows busy time slots within the specified time range.`,
 			if end != "" {
 				endTime, err = parseTimeInput(end)
 				if err != nil {
-					return fmt.Errorf("invalid end time: %w", err)
+					return common.WrapDateParseError("end", err)
 				}
 			} else if duration != "" {
 				dur, err := common.ParseDuration(duration)
 				if err != nil {
-					return fmt.Errorf("invalid duration: %w", err)
+					return common.WrapDateParseError("duration", err)
 				}
 				endTime = startTime.Add(dur)
 			} else {
@@ -196,7 +196,7 @@ This searches for time slots when all participants are free.`,
 			if start != "" {
 				startTime, err = parseTimeInput(start)
 				if err != nil {
-					return fmt.Errorf("invalid start time: %w", err)
+					return common.WrapDateParseError("start", err)
 				}
 			} else {
 				// Default to next business hour
@@ -206,7 +206,7 @@ This searches for time slots when all participants are free.`,
 			if end != "" {
 				endTime, err = parseTimeInput(end)
 				if err != nil {
-					return fmt.Errorf("invalid end time: %w", err)
+					return common.WrapDateParseError("end", err)
 				}
 			} else {
 				// Default to 7 days from start
