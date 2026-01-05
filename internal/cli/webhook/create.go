@@ -111,7 +111,7 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 				return enc.Encode(webhook)
 			}
 
-			fmt.Println("\033[32m✓\033[0m Webhook created successfully!")
+			fmt.Printf("%s Webhook created successfully!\n", common.Green.Sprint("✓"))
 			fmt.Println()
 			fmt.Printf("  ID:     %s\n", webhook.ID)
 			fmt.Printf("  URL:    %s\n", webhook.WebhookURL)
@@ -124,7 +124,7 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 
 			if webhook.WebhookSecret != "" {
 				fmt.Println()
-				fmt.Println("\033[33mImportant:\033[0m Save your webhook secret - it won't be shown again:")
+				fmt.Printf("%s Save your webhook secret - it won't be shown again:\n", common.Yellow.Sprint("Important:"))
 				fmt.Printf("  Secret: %s\n", webhook.WebhookSecret)
 				fmt.Println()
 				fmt.Println("Use this secret to verify webhook signatures.")

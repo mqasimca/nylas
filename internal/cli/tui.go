@@ -240,21 +240,21 @@ This command checks:
 			fmt.Println()
 
 			if len(result.Errors) > 0 {
-				fmt.Println("\033[31mErrors:\033[0m")
+				fmt.Println(common.Red.Sprint("Errors:"))
 				for _, err := range result.Errors {
 					fmt.Printf("  ✗ %s\n", err)
 				}
 			}
 
 			if len(result.Warnings) > 0 {
-				fmt.Println("\033[33mWarnings:\033[0m")
+				fmt.Println(common.Yellow.Sprint("Warnings:"))
 				for _, warn := range result.Warnings {
 					fmt.Printf("  ! %s\n", warn)
 				}
 			}
 
 			if len(result.ColorsFound) > 0 {
-				fmt.Println("\033[32mColors found:\033[0m")
+				fmt.Println(common.Green.Sprint("Colors found:"))
 				for _, color := range result.ColorsFound {
 					fmt.Printf("  ✓ %s\n", color)
 				}
@@ -263,10 +263,10 @@ This command checks:
 			fmt.Println()
 
 			if result.Valid {
-				fmt.Println("\033[32m✓ Theme is valid!\033[0m")
+				fmt.Println(common.Green.Sprint("✓ Theme is valid!"))
 				fmt.Printf("\nTo use this theme:\n  nylas tui --theme %s\n", themeName)
 			} else {
-				fmt.Println("\033[31m✗ Theme has errors\033[0m")
+				fmt.Println(common.Red.Sprint("✗ Theme has errors"))
 				fmt.Println("\nCommon fixes:")
 				fmt.Println("  - Use proper YAML indentation (2 spaces, no tabs)")
 				fmt.Println("  - Use hex colors like #RRGGBB (e.g., #FF0000 for red)")
@@ -421,7 +421,7 @@ func runTViewTUI(client ports.NylasClient, grantStore ports.GrantStore, grantID 
 	_, themeErr := tui.GetThemeStylesWithError(theme)
 	if themeErr != nil {
 		// Show error but continue with default theme
-		fmt.Fprintf(os.Stderr, "\033[33mWarning:\033[0m %s\n", themeErr)
+		fmt.Fprintf(os.Stderr, "%s %s\n", common.Yellow.Sprint("Warning:"), themeErr)
 		fmt.Fprintf(os.Stderr, "Falling back to default theme (k9s)\n\n")
 		fmt.Fprintf(os.Stderr, "To fix this, run: nylas tui theme validate %s\n\n", theme)
 	}

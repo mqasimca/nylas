@@ -128,7 +128,7 @@ You can update the URL, triggers, description, notification emails, or status.`,
 				return enc.Encode(webhook)
 			}
 
-			fmt.Println("\033[32m✓\033[0m Webhook updated successfully!")
+			fmt.Printf("%s Webhook updated successfully!\n", common.Green.Sprint("✓"))
 			fmt.Println()
 			fmt.Printf("  ID:     %s\n", webhook.ID)
 			fmt.Printf("  URL:    %s\n", webhook.WebhookURL)

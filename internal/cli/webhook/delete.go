@@ -74,7 +74,7 @@ This permanently removes the webhook and stops all event notifications.`,
 					"Check your permissions. The webhook may have already been deleted")
 			}
 
-			fmt.Println("\033[32m✓\033[0m Webhook deleted successfully!")
+			fmt.Printf("%s Webhook deleted successfully!\n", common.Green.Sprint("✓"))
 			return nil
 		},
 	}

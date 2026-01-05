@@ -209,11 +209,11 @@ func outputTable(webhooks any, fullIDs bool) error {
 func getStatusIcon(status string) string {
 	switch status {
 	case "active":
-		return "\033[32m●\033[0m" // Green
+		return common.Green.Sprint("●")
 	case "inactive":
-		return "\033[33m●\033[0m" // Yellow
+		return common.Yellow.Sprint("●")
 	case "failing":
-		return "\033[31m●\033[0m" // Red
+		return common.Red.Sprint("●")
 	default:
 		return "○"
 	}

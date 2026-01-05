@@ -276,7 +276,7 @@ func displayFreeBusy(result *domain.FreeBusyResponse, startTime, endTime time.Ti
 		fmt.Printf("📧 %s\n", cal.Email)
 
 		if len(cal.TimeSlots) == 0 {
-			fmt.Println("   \033[32m✓ Free during this period\033[0m")
+			fmt.Printf("   %s\n", common.Green.Sprint("✓ Free during this period"))
 		} else {
 			fmt.Println("   Busy times:")
 			for _, slot := range cal.TimeSlots {
@@ -284,11 +284,13 @@ func displayFreeBusy(result *domain.FreeBusyResponse, startTime, endTime time.Ti
 				end := time.Unix(slot.EndTime, 0)
 
 				if start.Day() == end.Day() {
-					fmt.Printf("   \033[31m●\033[0m %s - %s\n",
+					fmt.Printf("   %s %s - %s\n",
+						common.Red.Sprint("●"),
 						start.Format("Mon Jan 2 3:04 PM"),
 						end.Format("3:04 PM"))
 				} else {
-					fmt.Printf("   \033[31m●\033[0m %s - %s\n",
+					fmt.Printf("   %s %s - %s\n",
+						common.Red.Sprint("●"),
 						start.Format("Mon Jan 2 3:04 PM"),
 						end.Format("Mon Jan 2 3:04 PM"))
 				}

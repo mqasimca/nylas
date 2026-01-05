@@ -193,7 +193,7 @@ Supports custom metadata:
 				fmt.Printf("  Body:    %s\n", common.Truncate(body, 50))
 			}
 			if !scheduledTime.IsZero() {
-				fmt.Printf("  \033[33mScheduled:\033[0m %s\n", scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
+				fmt.Printf("  %s %s\n", common.Yellow.Sprint("Scheduled:"), scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
 			}
 			if trackOpens || trackLinks {
 				tracking := []string{}
@@ -203,10 +203,10 @@ Supports custom metadata:
 				if trackLinks {
 					tracking = append(tracking, "links")
 				}
-				fmt.Printf("  \033[36mTracking:\033[0m %s\n", strings.Join(tracking, ", "))
+				fmt.Printf("  %s %s\n", common.Cyan.Sprint("Tracking:"), strings.Join(tracking, ", "))
 			}
 			if len(metadata) > 0 {
-				fmt.Printf("  \033[36mMetadata:\033[0m %s\n", strings.Join(metadata, ", "))
+				fmt.Printf("  %s %s\n", common.Cyan.Sprint("Metadata:"), strings.Join(metadata, ", "))
 			}
 
 			if !noConfirm {

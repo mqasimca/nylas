@@ -57,7 +57,7 @@ that your webhook endpoint is properly configured and receiving events.`,
 					"Check that the URL is correct and accessible. Ensure your endpoint is publicly reachable")
 			}
 
-			fmt.Println("\033[32m✓\033[0m Test event sent successfully!")
+			fmt.Printf("%s Test event sent successfully!\n", common.Green.Sprint("✓"))
 			fmt.Println()
 			fmt.Printf("  URL: %s\n", webhookURL)
 			fmt.Println()
