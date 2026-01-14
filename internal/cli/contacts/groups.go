@@ -1,8 +1,8 @@
 package contacts
 
 import (
+	"context"
 	"fmt"
-	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -75,35 +75,17 @@ func newGroupsListCmd() *cobra.Command {
 }
 
 func newGroupsShowCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "show <group-id> [grant-id]",
-		Short: "Show contact group details",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			groupID := args[0]
+	client, _ := getClient()
 
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = getGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			group, err := client.GetContactGroup(ctx, grantID, groupID)
-			if err != nil {
-				return common.WrapGetError("contact group", err)
-			}
+	return common.NewShowCommand(common.ShowCommandConfig{
+		Use:          "show <group-id> [grant-id]",
+		Short:        "Show contact group details",
+		ResourceName: "contact group",
+		GetFunc: func(ctx context.Context, grantID, resourceID string) (interface{}, error) {
+			return client.GetContactGroup(ctx, grantID, resourceID)
+		},
+		DisplayFunc: func(resource interface{}) error {
+			group := resource.(*domain.ContactGroup)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
 			_, _ = common.BoldWhite.Printf("Contact Group: %s\n", group.Name)
@@ -117,7 +99,8 @@ func newGroupsShowCmd() *cobra.Command {
 
 			return nil
 		},
-	}
+		GetClient: getClient,
+	})
 }
 
 func newGroupsCreateCmd() *cobra.Command {
@@ -179,25 +162,11 @@ Examples:
   nylas contacts groups update <group-id> --name "New Name"`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			groupID := args[0]
-
-			client, err := getClient()
+			setup, err := common.SetupUpdateCommand(args)
 			if err != nil {
 				return err
 			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = getGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+			defer setup.Cancel()
 
 			req := &domain.UpdateContactGroupRequest{}
 
@@ -205,12 +174,12 @@ Examples:
 				req.Name = &name
 			}
 
-			group, err := client.UpdateContactGroup(ctx, grantID, groupID, req)
+			group, err := setup.Client.UpdateContactGroup(setup.Ctx, setup.GrantID, setup.ResourceID, req)
 			if err != nil {
 				return common.WrapUpdateError("contact group", err)
 			}
 
-			fmt.Printf("%s Updated contact group '%s'\n", common.Green.Sprint("✓"), group.Name)
+			common.PrintUpdateSuccess("contact group", group.Name)
 
 			return nil
 		},
@@ -222,56 +191,14 @@ Examples:
 }
 
 func newGroupsDeleteCmd() *cobra.Command {
-	var force bool
+	client, _ := getClient()
 
-	cmd := &cobra.Command{
-		Use:     "delete <group-id> [grant-id]",
-		Aliases: []string{"rm", "remove"},
-		Short:   "Delete a contact group",
-		Args:    cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			groupID := args[0]
-
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = getGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			if !force {
-				fmt.Printf("Are you sure you want to delete contact group %s? [y/N] ", groupID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			err = client.DeleteContactGroup(ctx, grantID, groupID)
-			if err != nil {
-				return common.WrapDeleteError("contact group", err)
-			}
-
-			fmt.Printf("%s Contact group deleted\n", common.Green.Sprint("✓"))
-
-			return nil
-		},
-	}
-
-	cmd.Flags().BoolVarP(&force, "force", "f", false, "Skip confirmation")
-
-	return cmd
+	return common.NewDeleteCommand(common.DeleteCommandConfig{
+		Use:          "delete <group-id> [grant-id]",
+		Aliases:      []string{"rm", "remove"},
+		Short:        "Delete a contact group",
+		ResourceName: "contact group",
+		DeleteFunc:   client.DeleteContactGroup,
+		GetClient:    getClient,
+	})
 }

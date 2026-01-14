@@ -238,7 +238,8 @@ func TestFormatError_WithCodeAndSuggestion(t *testing.T) {
 	assert.Contains(t, result, "Error:")
 	assert.Contains(t, result, "Test error message")
 	assert.Contains(t, result, "Code: E001")
-	assert.Contains(t, result, "Hint: Try this fix")
+	assert.Contains(t, result, "Suggestion:")
+	assert.Contains(t, result, "• Try this fix")
 }
 
 // TestErrorCodeConstants tests that all error codes are unique.

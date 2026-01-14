@@ -33,6 +33,20 @@ folder, or --all-folders to show messages from all folders.
 
 Use --all to fetch all messages (paginated automatically).
 Use --max to limit total messages when using --all.`,
+		Example: `  # List recent emails from inbox
+  nylas email list
+
+  # List only unread emails
+  nylas email list --unread
+
+  # List emails from a specific sender
+  nylas email list --from boss@company.com
+
+  # List emails from a specific folder
+  nylas email list --folder SENT
+
+  # Fetch all emails with pagination
+  nylas email list --all --max 500`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := getClient()

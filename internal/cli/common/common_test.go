@@ -450,7 +450,7 @@ func TestFormatError(t *testing.T) {
 	formatted := FormatError(err)
 
 	assert.Contains(t, formatted, "Error:")
-	assert.Contains(t, formatted, "Hint:")
+	assert.Contains(t, formatted, "Suggestion:")
 }
 
 func TestFormatError_DebugMode(t *testing.T) {

@@ -20,6 +20,14 @@ func newLoginCmd() *cobra.Command {
 Supported providers:
   google     Google/Gmail
   microsoft  Microsoft/Outlook`,
+		Example: `  # Login with Google (default)
+  nylas auth login
+
+  # Login with Google explicitly
+  nylas auth login --provider google
+
+  # Login with Microsoft/Outlook
+  nylas auth login --provider microsoft`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Validate provider
 			p, err := domain.ParseProvider(provider)

@@ -11,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/ai"
 	"github.com/mqasimca/nylas/internal/cli/auth"
 	"github.com/mqasimca/nylas/internal/cli/calendar"
+	"github.com/mqasimca/nylas/internal/cli/config"
 	"github.com/mqasimca/nylas/internal/cli/contacts"
 	"github.com/mqasimca/nylas/internal/cli/demo"
 	"github.com/mqasimca/nylas/internal/cli/email"
@@ -29,8 +30,12 @@ import (
 func main() {
 	// Add subcommands
 	rootCmd := cli.GetRootCmd()
+
+	// Enable command typo suggestions (e.g., "Did you mean 'email'?")
+	rootCmd.SuggestionsMinimumDistance = 2
 	rootCmd.AddCommand(ai.NewAICmd())
 	rootCmd.AddCommand(auth.NewAuthCmd())
+	rootCmd.AddCommand(config.NewConfigCmd())
 	rootCmd.AddCommand(otp.NewOTPCmd())
 	rootCmd.AddCommand(email.NewEmailCmd())
 	rootCmd.AddCommand(calendar.NewCalendarCmd())

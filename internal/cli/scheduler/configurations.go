@@ -241,6 +241,9 @@ func newConfigUpdateCmd() *cobra.Command {
 				return err
 			}
 
+			ctx, cancel := common.CreateContext()
+			defer cancel()
+
 			req := &domain.UpdateSchedulerConfigurationRequest{}
 
 			if name != "" {
@@ -253,7 +256,6 @@ func newConfigUpdateCmd() *cobra.Command {
 				}
 			}
 
-			// Only set EventBooking fields that were explicitly changed
 			if cmd.Flags().Changed("title") || cmd.Flags().Changed("description") {
 				eventBooking := &domain.EventBooking{}
 				if cmd.Flags().Changed("title") {
@@ -265,15 +267,12 @@ func newConfigUpdateCmd() *cobra.Command {
 				req.EventBooking = eventBooking
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			config, err := client.UpdateSchedulerConfiguration(ctx, args[0], req)
 			if err != nil {
 				return common.WrapUpdateError("configuration", err)
 			}
 
-			_, _ = common.Green.Printf("✓ Updated configuration: %s\n", config.Name)
+			common.PrintUpdateSuccess("configuration", config.Name)
 
 			return nil
 		},

@@ -1,6 +1,7 @@
 package email
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -106,35 +107,17 @@ func newFoldersListCmd() *cobra.Command {
 }
 
 func newFoldersShowCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "show <folder-id> [grant-id]",
-		Short: "Show folder details",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			folderID := args[0]
+	client, _ := getClient()
 
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			folder, err := client.GetFolder(ctx, grantID, folderID)
-			if err != nil {
-				return common.WrapGetError("folder", err)
-			}
+	return common.NewShowCommand(common.ShowCommandConfig{
+		Use:          "show <folder-id> [grant-id]",
+		Short:        "Show folder details",
+		ResourceName: "folder",
+		GetFunc: func(ctx context.Context, grantID, resourceID string) (interface{}, error) {
+			return client.GetFolder(ctx, grantID, resourceID)
+		},
+		DisplayFunc: func(resource interface{}) error {
+			folder := resource.(*domain.Folder)
 
 			fmt.Println("════════════════════════════════════════════════════════════")
 			_, _ = common.BoldWhite.Printf("Folder: %s\n", folder.Name)
@@ -166,7 +149,8 @@ func newFoldersShowCmd() *cobra.Command {
 
 			return nil
 		},
-	}
+		GetClient: getClient,
+	})
 }
 
 func newFoldersCreateCmd() *cobra.Command {
@@ -287,54 +271,13 @@ func newFoldersRenameCmd() *cobra.Command {
 }
 
 func newFoldersDeleteCmd() *cobra.Command {
-	var force bool
+	client, _ := getClient()
 
-	cmd := &cobra.Command{
-		Use:   "delete <folder-id> [grant-id]",
-		Short: "Delete a folder",
-		Args:  cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			folderID := args[0]
-
-			client, err := getClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
-				}
-			}
-
-			if !force {
-				fmt.Printf("Delete folder %s? [y/N]: ", folderID)
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if confirm != "y" && confirm != "Y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			err = client.DeleteFolder(ctx, grantID, folderID)
-			if err != nil {
-				return common.WrapDeleteError("folder", err)
-			}
-
-			printSuccess("Folder deleted")
-			return nil
-		},
-	}
-
-	cmd.Flags().BoolVarP(&force, "force", "f", false, "Skip confirmation")
-
-	return cmd
+	return common.NewDeleteCommand(common.DeleteCommandConfig{
+		Use:          "delete <folder-id> [grant-id]",
+		Short:        "Delete a folder",
+		ResourceName: "folder",
+		DeleteFunc:   client.DeleteFolder,
+		GetClient:    getClient,
+	})
 }

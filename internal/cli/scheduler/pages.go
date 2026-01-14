@@ -185,6 +185,9 @@ func newPageUpdateCmd() *cobra.Command {
 				return err
 			}
 
+			ctx, cancel := common.CreateContext()
+			defer cancel()
+
 			req := &domain.UpdateSchedulerPageRequest{}
 
 			if name != "" {
@@ -195,15 +198,12 @@ func newPageUpdateCmd() *cobra.Command {
 				req.Slug = &slug
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			page, err := client.UpdateSchedulerPage(ctx, args[0], req)
 			if err != nil {
 				return common.WrapUpdateError("page", err)
 			}
 
-			_, _ = common.Green.Printf("✓ Updated scheduler page: %s\n", page.Name)
+			common.PrintUpdateSuccess("scheduler page", page.Name)
 
 			return nil
 		},
