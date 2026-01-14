@@ -404,13 +404,17 @@ func newDraftsSendCmd() *cobra.Command {
 }
 
 func newDraftsDeleteCmd() *cobra.Command {
-	client, _ := getClient()
-
 	return common.NewDeleteCommand(common.DeleteCommandConfig{
 		Use:          "delete <draft-id> [grant-id]",
 		Short:        "Delete a draft",
 		ResourceName: "draft",
-		DeleteFunc:   client.DeleteDraft,
-		GetClient:    getClient,
+		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+			return client.DeleteDraft(ctx, grantID, resourceID)
+		},
+		GetClient: getClient,
 	})
 }

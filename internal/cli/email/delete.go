@@ -1,19 +1,25 @@
 package email
 
 import (
+	"context"
+
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
 func newDeleteCmd() *cobra.Command {
-	client, _ := getClient()
-
 	return common.NewDeleteCommand(common.DeleteCommandConfig{
 		Use:          "delete <message-id> [grant-id]",
 		Short:        "Delete an email message",
 		Long:         "Delete an email message (moves to trash).",
 		ResourceName: "message",
-		DeleteFunc:   client.DeleteMessage,
-		GetClient:    getClient,
+		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+			return client.DeleteMessage(ctx, grantID, resourceID)
+		},
+		GetClient: getClient,
 	})
 }

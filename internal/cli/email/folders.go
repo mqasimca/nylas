@@ -271,13 +271,17 @@ func newFoldersRenameCmd() *cobra.Command {
 }
 
 func newFoldersDeleteCmd() *cobra.Command {
-	client, _ := getClient()
-
 	return common.NewDeleteCommand(common.DeleteCommandConfig{
 		Use:          "delete <folder-id> [grant-id]",
 		Short:        "Delete a folder",
 		ResourceName: "folder",
-		DeleteFunc:   client.DeleteFolder,
-		GetClient:    getClient,
+		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+			return client.DeleteFolder(ctx, grantID, resourceID)
+		},
+		GetClient: getClient,
 	})
 }

@@ -191,14 +191,18 @@ Examples:
 }
 
 func newGroupsDeleteCmd() *cobra.Command {
-	client, _ := getClient()
-
 	return common.NewDeleteCommand(common.DeleteCommandConfig{
 		Use:          "delete <group-id> [grant-id]",
 		Aliases:      []string{"rm", "remove"},
 		Short:        "Delete a contact group",
 		ResourceName: "contact group",
-		DeleteFunc:   client.DeleteContactGroup,
-		GetClient:    getClient,
+		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
+			client, err := getClient()
+			if err != nil {
+				return err
+			}
+			return client.DeleteContactGroup(ctx, grantID, resourceID)
+		},
+		GetClient: getClient,
 	})
 }
