@@ -72,7 +72,7 @@ changelog:
 brews:
   - repository:
       owner: mqasimca
-      name: nylas
+      name: homebrew-nylas
       branch: main
     directory: Formula
     homepage: "https://github.com/mqasimca/nylas"

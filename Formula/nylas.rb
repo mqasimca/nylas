@@ -5,13 +5,13 @@
 class Nylas < Formula
   desc "CLI for Nylas API - manage email, calendar, and contacts"
   homepage "https://github.com/mqasimca/nylas"
-  version "0.3.6"
+  version "0.3.7"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/mqasimca/nylas/releases/download/v0.3.6/nylas_0.3.6_darwin_amd64.tar.gz"
-      sha256 "7769b677d808d368d20613d18c71344c65f4e862196f891f40a9f5dc40f92c46"
+      url "https://github.com/mqasimca/nylas/releases/download/v0.3.7/nylas_0.3.7_darwin_amd64.tar.gz"
+      sha256 "f25b35de68f285c6b0e76b08cfdb73fcd143effa3343f011ca02e2d021a58488"
 
       def install
         bin.install "nylas"
@@ -21,8 +21,8 @@ class Nylas < Formula
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/mqasimca/nylas/releases/download/v0.3.6/nylas_0.3.6_darwin_arm64.tar.gz"
-      sha256 "ac2edbb83fb188d6add75b300acd1748f2888cc459ecb1aff7be4c26df48975c"
+      url "https://github.com/mqasimca/nylas/releases/download/v0.3.7/nylas_0.3.7_darwin_arm64.tar.gz"
+      sha256 "44b7aa5eebe413471805002ccf42cbe8b0983e3bc45858de084247c4cff20f13"
 
       def install
         bin.install "nylas"
@@ -35,8 +35,8 @@ class Nylas < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/mqasimca/nylas/releases/download/v0.3.6/nylas_0.3.6_linux_amd64.tar.gz"
-      sha256 "52d709e309f30536a58922fe655a3026e1ce6c5a8ea1a68eb7ea2e65621fb277"
+      url "https://github.com/mqasimca/nylas/releases/download/v0.3.7/nylas_0.3.7_linux_amd64.tar.gz"
+      sha256 "286a4b011b982690a43fee0ca5e2165e7f7b1a3a116a701dbbd048bdaff9acce"
       def install
         bin.install "nylas"
 
@@ -45,8 +45,8 @@ class Nylas < Formula
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/mqasimca/nylas/releases/download/v0.3.6/nylas_0.3.6_linux_arm64.tar.gz"
-      sha256 "d0247659855319165549b8d5492c7de3080304ab7968ceb6af9bb2e4f7e3764c"
+      url "https://github.com/mqasimca/nylas/releases/download/v0.3.7/nylas_0.3.7_linux_arm64.tar.gz"
+      sha256 "a396fda89e176ab1b5d7e22a81f9201d19412ed5b54f477f2e12ed69da3c6ca6"
       def install
         bin.install "nylas"
 
