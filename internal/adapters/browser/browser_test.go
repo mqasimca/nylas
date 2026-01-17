@@ -2,6 +2,7 @@ package browser
 
 import (
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -105,5 +106,78 @@ func TestMockBrowser_RecordsMultipleCalls(t *testing.T) {
 	_ = mock.Open("https://second.com")
 	if mock.LastURL != "https://second.com" {
 		t.Errorf("Second URL = %q, want %q", mock.LastURL, "https://second.com")
+	}
+}
+
+func TestCreateCommand(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+	}{
+		{"simple URL", "https://example.com"},
+		{"URL with path", "https://example.com/page"},
+		{"URL with query", "https://example.com?param=value"},
+		{"local URL", "http://localhost:3000"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := createCommand(tt.url)
+
+			if cmd == nil {
+				t.Fatal("createCommand() returned nil")
+			}
+
+			// Verify the command was created (we can't test execution)
+			if cmd.Path == "" {
+				t.Error("Command path is empty")
+			}
+
+			// Verify the URL is in the args
+			if !slices.Contains(cmd.Args, tt.url) {
+				t.Errorf("Command args %v do not contain URL %q", cmd.Args, tt.url)
+			}
+		})
+	}
+}
+
+func TestCreateCommand_ReturnsNonNil(t *testing.T) {
+	// Test that createCommand always returns a non-nil command
+	cmd := createCommand("https://example.com")
+	if cmd == nil {
+		t.Fatal("createCommand() should never return nil")
+	}
+}
+
+func TestMockBrowser_DefaultBehavior(t *testing.T) {
+	mock := NewMockBrowser()
+
+	// Should not panic when OpenFunc is nil
+	err := mock.Open("https://example.com")
+	if err != nil {
+		t.Errorf("Open() with nil OpenFunc should return nil, got %v", err)
+	}
+}
+
+func TestMockBrowser_MultipleDifferentURLs(t *testing.T) {
+	mock := NewMockBrowser()
+
+	urls := []string{
+		"https://nylas.com",
+		"http://localhost:8080",
+		"https://example.com/auth/callback",
+	}
+
+	for _, url := range urls {
+		err := mock.Open(url)
+		if err != nil {
+			t.Errorf("Open(%q) returned unexpected error: %v", url, err)
+		}
+		if mock.LastURL != url {
+			t.Errorf("After Open(%q), LastURL = %q", url, mock.LastURL)
+		}
+		if !mock.OpenCalled {
+			t.Error("OpenCalled should remain true")
+		}
 	}
 }

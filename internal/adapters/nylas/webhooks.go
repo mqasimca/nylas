@@ -54,7 +54,7 @@ func (c *HTTPClient) GetWebhook(ctx context.Context, webhookID string) (*domain.
 	var result struct {
 		Data webhookResponse `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: webhook not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrWebhookNotFound); err != nil {
 		return nil, err
 	}
 

@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var client ports.NylasClient
-
 // NewAdminCmd creates the admin command group.
 func NewAdminCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -29,10 +27,6 @@ the Nylas platform at an organizational level.`,
 }
 
 func getClient() (ports.NylasClient, error) {
-	if client != nil {
-		return client, nil
-	}
-
-	// Use common client initialization which supports both keyring and env vars
+	// Delegate to common.GetNylasClient() which handles caching internally
 	return common.GetNylasClient()
 }

@@ -166,7 +166,7 @@ func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) 
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: message not found", domain.ErrAPIError)
+		return nil, domain.ErrMessageNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)

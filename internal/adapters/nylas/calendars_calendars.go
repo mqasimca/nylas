@@ -55,7 +55,7 @@ func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: calendar not found", domain.ErrAPIError)
+		return nil, domain.ErrCalendarNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)

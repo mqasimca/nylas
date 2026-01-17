@@ -123,7 +123,7 @@ func TestCloudflaredTunnel_ConcurrentAccess(t *testing.T) {
 	// Test concurrent reads don't cause races
 	done := make(chan bool, 10)
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		go func() {
 			_ = tunnel.Status()
 			_ = tunnel.StatusMessage()
@@ -132,7 +132,7 @@ func TestCloudflaredTunnel_ConcurrentAccess(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		<-done
 	}
 }
@@ -186,6 +186,84 @@ func TestValidateLocalURL(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestCloudflaredTunnel_Start_ContextCancelled(t *testing.T) {
+	if IsCloudflaredInstalled() {
+		t.Skip("cloudflared is installed, this test would actually start a tunnel")
+	}
+
+	tunnel := NewCloudflaredTunnel("http://localhost:3000")
+
+	// Create a context that's already cancelled
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := tunnel.Start(ctx)
+	assert.Error(t, err)
+}
+
+func TestCloudflaredTunnel_MultipleStops(t *testing.T) {
+	tunnel := NewCloudflaredTunnel("http://localhost:3000")
+
+	// Multiple stops should not error
+	err := tunnel.Stop()
+	assert.NoError(t, err)
+
+	err = tunnel.Stop()
+	assert.NoError(t, err)
+
+	err = tunnel.Stop()
+	assert.NoError(t, err)
+
+	assert.Equal(t, ports.TunnelStatusDisconnected, tunnel.Status())
+}
+
+func TestCloudflaredTunnel_StatusBeforeAndAfterStop(t *testing.T) {
+	tunnel := NewCloudflaredTunnel("http://localhost:3000")
+
+	// Manually set some state to simulate a running tunnel
+	tunnel.mu.Lock()
+	tunnel.status = ports.TunnelStatusConnected
+	tunnel.statusMessage = "Connected"
+	tunnel.publicURL = "https://test.trycloudflare.com"
+	tunnel.mu.Unlock()
+
+	assert.Equal(t, ports.TunnelStatusConnected, tunnel.Status())
+	assert.Equal(t, "Connected", tunnel.StatusMessage())
+	assert.Equal(t, "https://test.trycloudflare.com", tunnel.GetPublicURL())
+
+	// Stop should reset everything
+	err := tunnel.Stop()
+	assert.NoError(t, err)
+	assert.Equal(t, ports.TunnelStatusDisconnected, tunnel.Status())
+	assert.Equal(t, "Tunnel stopped", tunnel.StatusMessage())
+	assert.Equal(t, "", tunnel.GetPublicURL())
+}
+
+func TestNewCloudflaredTunnel_Initialization(t *testing.T) {
+	tests := []struct {
+		name     string
+		localURL string
+	}{
+		{"http localhost", "http://localhost:3000"},
+		{"https localhost", "https://localhost:8443"},
+		{"127.0.0.1", "http://127.0.0.1:5000"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tunnel := NewCloudflaredTunnel(tt.localURL)
+
+			assert.NotNil(t, tunnel)
+			assert.Equal(t, tt.localURL, tunnel.localURL)
+			assert.Equal(t, ports.TunnelStatusDisconnected, tunnel.status)
+			assert.Empty(t, tunnel.publicURL)
+			assert.Empty(t, tunnel.statusMessage)
+			assert.NotNil(t, tunnel.urlChan)
+			assert.NotNil(t, tunnel.errChan)
 		})
 	}
 }

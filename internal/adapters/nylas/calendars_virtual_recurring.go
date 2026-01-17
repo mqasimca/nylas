@@ -53,7 +53,7 @@ func (c *HTTPClient) GetVirtualCalendarGrant(ctx context.Context, grantID string
 	var result struct {
 		Data domain.VirtualCalendarGrant `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: virtual calendar grant not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrGrantNotFound); err != nil {
 		return nil, err
 	}
 

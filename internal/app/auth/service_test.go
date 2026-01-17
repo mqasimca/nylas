@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"context"
+	"errors"
 	"testing"
 
+	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -230,5 +233,342 @@ func TestService_FirstGrantBecomesDefault(t *testing.T) {
 		defaultID, err := grantStore.GetDefaultGrant()
 		require.NoError(t, err)
 		assert.Equal(t, "grant-1", defaultID)
+	})
+}
+
+// mockOAuthServer implements ports.OAuthServer for testing
+type mockOAuthServer struct {
+	redirectURI string
+	code        string
+	startErr    error
+	waitErr     error
+	startCalled bool
+	stopCalled  bool
+}
+
+func (m *mockOAuthServer) Start() error {
+	m.startCalled = true
+	return m.startErr
+}
+
+func (m *mockOAuthServer) Stop() error {
+	m.stopCalled = true
+	return nil
+}
+
+func (m *mockOAuthServer) GetRedirectURI() string {
+	return m.redirectURI
+}
+
+func (m *mockOAuthServer) WaitForCallback(ctx context.Context) (string, error) {
+	if m.waitErr != nil {
+		return "", m.waitErr
+	}
+	return m.code, nil
+}
+
+// mockBrowser implements ports.Browser for testing
+type mockBrowser struct {
+	openedURL string
+	openErr   error
+}
+
+func (m *mockBrowser) Open(url string) error {
+	m.openedURL = url
+	return m.openErr
+}
+
+func TestNewService(t *testing.T) {
+	client := nylas.NewMockClient()
+	grantStore := newMockGrantStore()
+	configStore := newMockConfigStore()
+	server := &mockOAuthServer{}
+	browser := &mockBrowser{}
+
+	svc := NewService(client, grantStore, configStore, server, browser)
+
+	assert.NotNil(t, svc)
+	assert.Equal(t, client, svc.client)
+	assert.Equal(t, grantStore, svc.grantStore)
+	assert.Equal(t, configStore, svc.config)
+	assert.Equal(t, server, svc.server)
+	assert.Equal(t, browser, svc.browser)
+}
+
+func TestService_Login(t *testing.T) {
+	t.Run("successful login sets grant as default", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		client.ExchangeCodeFunc = func(ctx context.Context, code, redirectURI string) (*domain.Grant, error) {
+			return &domain.Grant{
+				ID:       "grant-123",
+				Email:    "user@example.com",
+				Provider: domain.ProviderGoogle,
+			}, nil
+		}
+
+		grantStore := newMockGrantStore()
+		configStore := newMockConfigStore()
+		server := &mockOAuthServer{
+			redirectURI: "http://localhost:8080/callback",
+			code:        "auth-code-123",
+		}
+		browser := &mockBrowser{}
+
+		svc := NewService(client, grantStore, configStore, server, browser)
+
+		grant, err := svc.Login(context.Background(), domain.ProviderGoogle)
+
+		require.NoError(t, err)
+		assert.NotNil(t, grant)
+		assert.Equal(t, "grant-123", grant.ID)
+		assert.Equal(t, "user@example.com", grant.Email)
+
+		// Verify server was started and stopped
+		assert.True(t, server.startCalled)
+		assert.True(t, server.stopCalled)
+
+		// Verify browser was used (MockClient returns default auth URL)
+		assert.NotEmpty(t, browser.openedURL)
+
+		// Verify grant was saved
+		savedGrant, err := grantStore.GetGrant("grant-123")
+		require.NoError(t, err)
+		assert.Equal(t, "grant-123", savedGrant.ID)
+
+		// Verify grant was set as default
+		defaultID, err := grantStore.GetDefaultGrant()
+		require.NoError(t, err)
+		assert.Equal(t, "grant-123", defaultID)
+	})
+
+	t.Run("server start failure returns error", func(t *testing.T) {
+		server := &mockOAuthServer{
+			startErr: errors.New("server start failed"),
+		}
+		svc := NewService(nylas.NewMockClient(), newMockGrantStore(), newMockConfigStore(), server, &mockBrowser{})
+
+		_, err := svc.Login(context.Background(), domain.ProviderGoogle)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "server start failed")
+	})
+
+	t.Run("browser open failure returns error", func(t *testing.T) {
+		browser := &mockBrowser{
+			openErr: errors.New("browser open failed"),
+		}
+		svc := NewService(
+			nylas.NewMockClient(),
+			newMockGrantStore(),
+			newMockConfigStore(),
+			&mockOAuthServer{redirectURI: "http://localhost:8080/callback"},
+			browser,
+		)
+
+		_, err := svc.Login(context.Background(), domain.ProviderGoogle)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "browser open failed")
+	})
+
+	t.Run("callback wait failure returns error", func(t *testing.T) {
+		server := &mockOAuthServer{
+			redirectURI: "http://localhost:8080/callback",
+			waitErr:     errors.New("callback wait failed"),
+		}
+		svc := NewService(
+			nylas.NewMockClient(),
+			newMockGrantStore(),
+			newMockConfigStore(),
+			server,
+			&mockBrowser{},
+		)
+
+		_, err := svc.Login(context.Background(), domain.ProviderGoogle)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "callback wait failed")
+	})
+
+	t.Run("code exchange failure returns error", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		client.ExchangeCodeFunc = func(ctx context.Context, code, redirectURI string) (*domain.Grant, error) {
+			return nil, errors.New("code exchange failed")
+		}
+
+		server := &mockOAuthServer{
+			redirectURI: "http://localhost:8080/callback",
+			code:        "auth-code",
+		}
+		svc := NewService(client, newMockGrantStore(), newMockConfigStore(), server, &mockBrowser{})
+
+		_, err := svc.Login(context.Background(), domain.ProviderGoogle)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "code exchange failed")
+	})
+}
+
+func TestService_Logout(t *testing.T) {
+	t.Run("successful logout revokes and deletes grant", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-123"] = domain.GrantInfo{ID: "grant-123", Email: "user@example.com"}
+		grantStore.defaultGrant = "grant-123"
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.Logout(context.Background())
+
+		require.NoError(t, err)
+
+		// Verify grant was revoked
+		assert.True(t, client.RevokeGrantCalled)
+
+		// Verify grant was deleted
+		_, err = grantStore.GetGrant("grant-123")
+		assert.ErrorIs(t, err, domain.ErrGrantNotFound)
+
+		// Verify default was cleared
+		_, err = grantStore.GetDefaultGrant()
+		assert.ErrorIs(t, err, domain.ErrNoDefaultGrant)
+	})
+
+	t.Run("no default grant returns error", func(t *testing.T) {
+		grantStore := newMockGrantStore()
+		svc := NewService(nylas.NewMockClient(), grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.Logout(context.Background())
+
+		assert.ErrorIs(t, err, domain.ErrNoDefaultGrant)
+	})
+
+	t.Run("revoke error propagates", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		client.RevokeGrantFunc = func(ctx context.Context, grantID string) error {
+			return errors.New("revoke failed")
+		}
+
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-123"] = domain.GrantInfo{ID: "grant-123"}
+		grantStore.defaultGrant = "grant-123"
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.Logout(context.Background())
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "revoke failed")
+	})
+
+	t.Run("grant not found on revoke is ignored", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		client.RevokeGrantFunc = func(ctx context.Context, grantID string) error {
+			return domain.ErrGrantNotFound
+		}
+
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-123"] = domain.GrantInfo{ID: "grant-123"}
+		grantStore.defaultGrant = "grant-123"
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.Logout(context.Background())
+
+		require.NoError(t, err)
+
+		// Grant should still be deleted locally
+		_, err = grantStore.GetGrant("grant-123")
+		assert.ErrorIs(t, err, domain.ErrGrantNotFound)
+	})
+
+	t.Run("auto-switches to another grant", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-1"] = domain.GrantInfo{ID: "grant-1", Email: "user1@example.com"}
+		grantStore.grants["grant-2"] = domain.GrantInfo{ID: "grant-2", Email: "user2@example.com"}
+		grantStore.defaultGrant = "grant-1"
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.Logout(context.Background())
+
+		require.NoError(t, err)
+
+		// Verify grant-1 was deleted
+		_, err = grantStore.GetGrant("grant-1")
+		assert.ErrorIs(t, err, domain.ErrGrantNotFound)
+
+		// Verify default switched to grant-2
+		defaultID, err := grantStore.GetDefaultGrant()
+		require.NoError(t, err)
+		assert.Equal(t, "grant-2", defaultID)
+	})
+}
+
+func TestService_LogoutGrant(t *testing.T) {
+	t.Run("logs out specific grant", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-1"] = domain.GrantInfo{ID: "grant-1", Email: "user1@example.com"}
+		grantStore.grants["grant-2"] = domain.GrantInfo{ID: "grant-2", Email: "user2@example.com"}
+		grantStore.defaultGrant = "grant-1"
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.LogoutGrant(context.Background(), "grant-2")
+
+		require.NoError(t, err)
+
+		// Verify grant-2 was deleted
+		_, err = grantStore.GetGrant("grant-2")
+		assert.ErrorIs(t, err, domain.ErrGrantNotFound)
+
+		// Verify grant-1 is still default
+		defaultID, err := grantStore.GetDefaultGrant()
+		require.NoError(t, err)
+		assert.Equal(t, "grant-1", defaultID)
+	})
+
+	t.Run("logging out default grant switches to another", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-1"] = domain.GrantInfo{ID: "grant-1", Email: "user1@example.com"}
+		grantStore.grants["grant-2"] = domain.GrantInfo{ID: "grant-2", Email: "user2@example.com"}
+		grantStore.defaultGrant = "grant-1"
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.LogoutGrant(context.Background(), "grant-1")
+
+		require.NoError(t, err)
+
+		// Verify grant-1 was deleted
+		_, err = grantStore.GetGrant("grant-1")
+		assert.ErrorIs(t, err, domain.ErrGrantNotFound)
+
+		// Verify default switched to grant-2
+		defaultID, err := grantStore.GetDefaultGrant()
+		require.NoError(t, err)
+		assert.Equal(t, "grant-2", defaultID)
+	})
+
+	t.Run("grant not found on revoke is ignored", func(t *testing.T) {
+		client := nylas.NewMockClient()
+		client.RevokeGrantFunc = func(ctx context.Context, grantID string) error {
+			return domain.ErrGrantNotFound
+		}
+		grantStore := newMockGrantStore()
+		grantStore.grants["grant-123"] = domain.GrantInfo{ID: "grant-123"}
+
+		svc := NewService(client, grantStore, newMockConfigStore(), &mockOAuthServer{}, &mockBrowser{})
+
+		err := svc.LogoutGrant(context.Background(), "grant-123")
+
+		require.NoError(t, err)
+
+		// Grant should still be deleted locally
+		_, err = grantStore.GetGrant("grant-123")
+		assert.ErrorIs(t, err, domain.ErrGrantNotFound)
 	})
 }

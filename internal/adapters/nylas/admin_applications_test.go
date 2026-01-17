@@ -54,6 +54,61 @@ func TestHTTPClient_ListApplications(t *testing.T) {
 	assert.Equal(t, "us", apps[0].Region)
 }
 
+func TestHTTPClient_ListApplications_SingleObject(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v3/applications", r.URL.Path)
+		assert.Equal(t, "GET", r.Method)
+
+		// API returns single object instead of array
+		response := map[string]any{
+			"data": map[string]any{
+				"id":              "app-single",
+				"application_id":  "app-id-single",
+				"organization_id": "org-single",
+				"region":          "us",
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	apps, err := client.ListApplications(ctx)
+
+	require.NoError(t, err)
+	assert.Len(t, apps, 1)
+	assert.Equal(t, "app-single", apps[0].ID)
+	assert.Equal(t, "app-id-single", apps[0].ApplicationID)
+}
+
+func TestHTTPClient_ListApplications_DecodeFail(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return invalid JSON structure that can't be decoded as array or single object
+		response := map[string]any{
+			"data": "invalid-structure",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	apps, err := client.ListApplications(ctx)
+
+	require.Error(t, err)
+	assert.Nil(t, apps)
+	assert.Contains(t, err.Error(), "failed to decode applications response")
+}
+
 func TestHTTPClient_GetApplication(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v3/applications/app-123", r.URL.Path)
@@ -161,6 +216,21 @@ func TestHTTPClient_UpdateApplication(t *testing.T) {
 	assert.Equal(t, "app-456", app.ID)
 }
 
+func TestHTTPClient_UpdateApplication_EmptyID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	name := "Test"
+	req := &domain.UpdateApplicationRequest{Name: &name}
+
+	app, err := client.UpdateApplication(ctx, "", req)
+
+	require.Error(t, err)
+	assert.Nil(t, app)
+	assert.Contains(t, err.Error(), "application ID")
+}
+
 func TestHTTPClient_DeleteApplication(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v3/applications/app-delete", r.URL.Path)
@@ -178,6 +248,29 @@ func TestHTTPClient_DeleteApplication(t *testing.T) {
 	err := client.DeleteApplication(ctx, "app-delete")
 
 	require.NoError(t, err)
+}
+
+func TestHTTPClient_DeleteApplication_EmptyID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	err := client.DeleteApplication(ctx, "")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "application ID")
+}
+
+func TestHTTPClient_GetApplication_EmptyID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	app, err := client.GetApplication(ctx, "")
+
+	require.Error(t, err)
+	assert.Nil(t, app)
+	assert.Contains(t, err.Error(), "application ID")
 }
 
 // Connector Tests

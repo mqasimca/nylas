@@ -84,6 +84,18 @@ func TestHTTPClient_GetConnector(t *testing.T) {
 	assert.NotNil(t, connector.Settings)
 }
 
+func TestHTTPClient_GetConnector_EmptyID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	conn, err := client.GetConnector(ctx, "")
+
+	require.Error(t, err)
+	assert.Nil(t, conn)
+	assert.Contains(t, err.Error(), "connector ID")
+}
+
 func TestHTTPClient_CreateConnector(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v3/connectors", r.URL.Path)
@@ -157,6 +169,21 @@ func TestHTTPClient_UpdateConnector(t *testing.T) {
 	assert.Equal(t, "conn-789", connector.ID)
 }
 
+func TestHTTPClient_UpdateConnector_EmptyID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	name := "Test"
+	req := &domain.UpdateConnectorRequest{Name: &name}
+
+	conn, err := client.UpdateConnector(ctx, "", req)
+
+	require.Error(t, err)
+	assert.Nil(t, conn)
+	assert.Contains(t, err.Error(), "connector ID")
+}
+
 func TestHTTPClient_DeleteConnector(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v3/connectors/conn-delete", r.URL.Path)
@@ -174,6 +201,17 @@ func TestHTTPClient_DeleteConnector(t *testing.T) {
 	err := client.DeleteConnector(ctx, "conn-delete")
 
 	require.NoError(t, err)
+}
+
+func TestHTTPClient_DeleteConnector_EmptyID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	err := client.DeleteConnector(ctx, "")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "connector ID")
 }
 
 // Connector Credential Tests
@@ -213,6 +251,18 @@ func TestHTTPClient_ListCredentials(t *testing.T) {
 	assert.Len(t, credentials, 2)
 	assert.Equal(t, "cred-1", credentials[0].ID)
 	assert.Equal(t, "oauth", credentials[0].CredentialType)
+}
+
+func TestHTTPClient_ListCredentials_EmptyConnectorID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	creds, err := client.ListCredentials(ctx, "")
+
+	require.Error(t, err)
+	assert.Nil(t, creds)
+	assert.Contains(t, err.Error(), "connector ID")
 }
 
 func TestHTTPClient_GetCredential(t *testing.T) {

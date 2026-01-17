@@ -8,6 +8,35 @@ import (
 	"testing"
 )
 
+// StringPtr returns a pointer to the given string value.
+// This is useful for test data that requires *string fields.
+func StringPtr(s string) *string {
+	return &s
+}
+
+// BoolPtr returns a pointer to the given boolean value.
+// This is useful for test data that requires *bool fields.
+func BoolPtr(b bool) *bool {
+	return &b
+}
+
+// IntPtr returns a pointer to the given integer value.
+// This is useful for test data that requires *int fields.
+func IntPtr(i int) *int {
+	return &i
+}
+
+// RequireEnv retrieves an environment variable and skips the test if not set.
+// This is useful for integration tests that require specific configuration.
+func RequireEnv(t *testing.T, key string) string {
+	t.Helper()
+	value := os.Getenv(key)
+	if value == "" {
+		t.Skipf("Environment variable %s not set, skipping test", key)
+	}
+	return value
+}
+
 // TempConfig creates a temporary config file with the given content for testing.
 // The file is automatically cleaned up when the test completes.
 //

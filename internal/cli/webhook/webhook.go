@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var client ports.NylasClient
-
 // NewWebhookCmd creates the webhook command group.
 func NewWebhookCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -36,10 +34,6 @@ Note: Webhook management requires an API key (admin-level access).`,
 }
 
 func getClient() (ports.NylasClient, error) {
-	if client != nil {
-		return client, nil
-	}
-
-	// Use common client initialization which supports both keyring and env vars
+	// Delegate to common.GetNylasClient() which handles caching internally
 	return common.GetNylasClient()
 }

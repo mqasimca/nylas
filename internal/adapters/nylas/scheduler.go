@@ -40,7 +40,7 @@ func (c *HTTPClient) GetSchedulerConfiguration(ctx context.Context, configID str
 	var result struct {
 		Data domain.SchedulerConfiguration `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: configuration not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrConfigurationNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -126,7 +126,7 @@ func (c *HTTPClient) GetSchedulerSession(ctx context.Context, sessionID string) 
 	var result struct {
 		Data domain.SchedulerSession `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: session not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrSessionNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -164,7 +164,7 @@ func (c *HTTPClient) GetBooking(ctx context.Context, bookingID string) (*domain.
 	var result struct {
 		Data domain.Booking `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: booking not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrBookingNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -263,7 +263,7 @@ func (c *HTTPClient) GetSchedulerPage(ctx context.Context, pageID string) (*doma
 	var result struct {
 		Data domain.SchedulerPage `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: page not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrPageNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil

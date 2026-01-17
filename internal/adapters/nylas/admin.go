@@ -72,7 +72,7 @@ func (c *HTTPClient) GetApplication(ctx context.Context, appID string) (*domain.
 	var result struct {
 		Data domain.Application `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: application not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrApplicationNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -158,7 +158,7 @@ func (c *HTTPClient) GetConnector(ctx context.Context, connectorID string) (*dom
 	var result struct {
 		Data domain.Connector `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: connector not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrConnectorNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil
@@ -248,7 +248,7 @@ func (c *HTTPClient) GetCredential(ctx context.Context, credentialID string) (*d
 	var result struct {
 		Data domain.ConnectorCredential `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: credential not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrCredentialNotFound); err != nil {
 		return nil, err
 	}
 	return &result.Data, nil

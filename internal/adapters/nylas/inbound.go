@@ -58,13 +58,13 @@ func (c *HTTPClient) GetInboundInbox(ctx context.Context, grantID string) (*doma
 			UpdatedAt   domain.UnixTime `json:"updated_at"`
 		} `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: inbound inbox not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrGrantNotFound); err != nil {
 		return nil, err
 	}
 
 	// Verify it's an inbox provider
 	if result.Data.Provider != "inbox" {
-		return nil, fmt.Errorf("%w: grant is not an inbound inbox (provider=%s)", domain.ErrAPIError, result.Data.Provider)
+		return nil, fmt.Errorf("%w: grant is not an inbound inbox (provider=%s)", domain.ErrInvalidGrant, result.Data.Provider)
 	}
 
 	return &domain.InboundInbox{
@@ -125,7 +125,7 @@ func (c *HTTPClient) DeleteInboundInbox(ctx context.Context, grantID string) err
 		return err
 	}
 	if inbox == nil {
-		return fmt.Errorf("%w: inbound inbox not found", domain.ErrAPIError)
+		return domain.ErrGrantNotFound
 	}
 
 	// Use RevokeGrant to delete the inbox

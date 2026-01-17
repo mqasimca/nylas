@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var client ports.NylasClient
-
 // NewSchedulerCmd creates the scheduler command group.
 func NewSchedulerCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -32,14 +30,6 @@ manage availability, and handle scheduling sessions.`,
 // getClient creates and configures a Nylas client with caching.
 // Delegates to common.GetNylasClient() for consistent credential handling.
 func getClient() (ports.NylasClient, error) {
-	if client != nil {
-		return client, nil
-	}
-
-	c, err := common.GetNylasClient()
-	if err != nil {
-		return nil, err
-	}
-	client = c
-	return client, nil
+	// Delegate to common.GetNylasClient() which handles caching internally
+	return common.GetNylasClient()
 }

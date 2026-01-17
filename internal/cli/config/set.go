@@ -53,7 +53,7 @@ The configuration file will be created if it doesn't exist.`,
 	}
 }
 
-func setConfigValue(cfg interface{}, key, value string) error {
+func setConfigValue(cfg any, key, value string) error {
 	parts := strings.Split(key, ".")
 
 	v := reflect.ValueOf(cfg)

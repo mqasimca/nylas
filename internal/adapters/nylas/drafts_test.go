@@ -305,3 +305,188 @@ func TestHTTPClient_CreateDraftWithAttachmentFromReader(t *testing.T) {
 	assert.Len(t, draft.Attachments, 1)
 	assert.Equal(t, "stream.txt", draft.Attachments[0].Filename)
 }
+
+func TestHTTPClient_UpdateDraft_WithoutAttachments(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v3/grants/grant-123/drafts/draft-456", r.URL.Path)
+		assert.Equal(t, "PUT", r.Method)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+
+		assert.Equal(t, "Updated Subject", body["subject"])
+		assert.Equal(t, "Updated Body", body["body"])
+
+		response := map[string]interface{}{
+			"data": map[string]interface{}{
+				"id":       "draft-456",
+				"grant_id": "grant-123",
+				"subject":  "Updated Subject",
+				"body":     "Updated Body",
+				"to": []map[string]string{
+					{"email": "updated@example.com", "name": "Updated"},
+				},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	req := &domain.CreateDraftRequest{
+		Subject: "Updated Subject",
+		Body:    "Updated Body",
+		To:      []domain.EmailParticipant{{Email: "updated@example.com", Name: "Updated"}},
+	}
+
+	draft, err := client.UpdateDraft(ctx, "grant-123", "draft-456", req)
+
+	require.NoError(t, err)
+	assert.Equal(t, "draft-456", draft.ID)
+	assert.Equal(t, "Updated Subject", draft.Subject)
+	assert.Equal(t, "Updated Body", draft.Body)
+}
+
+func TestHTTPClient_UpdateDraft_WithAttachments(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v3/grants/grant-123/drafts/draft-789", r.URL.Path)
+		assert.Equal(t, "PUT", r.Method)
+		assert.True(t, strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data"))
+
+		// Parse multipart form
+		err := r.ParseMultipartForm(10 << 20) // 10MB max
+		require.NoError(t, err)
+
+		// Check message field
+		message := r.FormValue("message")
+		assert.Contains(t, message, "Updated with Attachment")
+		assert.Contains(t, message, "Body with file")
+
+		// Check for file field
+		file, fileHeader, err := r.FormFile("file0")
+		require.NoError(t, err)
+		assert.Equal(t, "updated.pdf", fileHeader.Filename)
+
+		// Read file content
+		content, _ := io.ReadAll(file)
+		assert.Equal(t, "PDF content here", string(content))
+
+		response := map[string]interface{}{
+			"data": map[string]interface{}{
+				"id":       "draft-789",
+				"grant_id": "grant-123",
+				"subject":  "Updated with Attachment",
+				"body":     "Body with file",
+				"attachments": []map[string]interface{}{
+					{
+						"id":           "attach-updated",
+						"filename":     "updated.pdf",
+						"content_type": "application/pdf",
+						"size":         16,
+					},
+				},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	req := &domain.CreateDraftRequest{
+		Subject: "Updated with Attachment",
+		Body:    "Body with file",
+		Attachments: []domain.Attachment{
+			{
+				Filename:    "updated.pdf",
+				ContentType: "application/pdf",
+				Content:     []byte("PDF content here"),
+			},
+		},
+	}
+
+	draft, err := client.UpdateDraft(ctx, "grant-123", "draft-789", req)
+
+	require.NoError(t, err)
+	assert.Equal(t, "draft-789", draft.ID)
+	assert.Equal(t, "Updated with Attachment", draft.Subject)
+	assert.Len(t, draft.Attachments, 1)
+	assert.Equal(t, "updated.pdf", draft.Attachments[0].Filename)
+}
+
+func TestHTTPClient_UpdateDraft_WithMetadata(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+
+		metadata := body["metadata"].(map[string]interface{})
+		assert.Equal(t, "value1", metadata["key1"])
+		assert.Equal(t, "value2", metadata["key2"])
+
+		response := map[string]interface{}{
+			"data": map[string]interface{}{
+				"id":       "draft-meta",
+				"grant_id": "grant-123",
+				"subject":  "With Metadata",
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	req := &domain.CreateDraftRequest{
+		Subject: "With Metadata",
+		Body:    "Body",
+		Metadata: map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		},
+	}
+
+	draft, err := client.UpdateDraft(ctx, "grant-123", "draft-meta", req)
+
+	require.NoError(t, err)
+	assert.Equal(t, "draft-meta", draft.ID)
+}
+
+func TestHTTPClient_UpdateDraft_ErrorResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": "Invalid draft ID",
+		})
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	req := &domain.CreateDraftRequest{
+		Subject: "Test",
+		Body:    "Body",
+	}
+
+	draft, err := client.UpdateDraft(ctx, "grant-123", "invalid-draft", req)
+
+	require.Error(t, err)
+	assert.Nil(t, draft)
+}

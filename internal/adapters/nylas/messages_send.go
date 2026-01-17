@@ -145,7 +145,7 @@ func (c *HTTPClient) GetScheduledMessage(ctx context.Context, grantID, scheduleI
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: scheduled message not found", domain.ErrAPIError)
+		return nil, domain.ErrMessageNotFound
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.parseError(resp)

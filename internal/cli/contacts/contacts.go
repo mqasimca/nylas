@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var client ports.NylasClient
-
 // NewContactsCmd creates the contacts command group.
 func NewContactsCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -34,17 +32,8 @@ View contacts, create new contacts, update and delete contacts.`,
 }
 
 func getClient() (ports.NylasClient, error) {
-	if client != nil {
-		return client, nil
-	}
-
-	c, err := common.GetNylasClient()
-	if err != nil {
-		return nil, err
-	}
-
-	client = c
-	return client, nil
+	// Delegate to common.GetNylasClient() which handles caching internally
+	return common.GetNylasClient()
 }
 
 // getGrantID gets the grant ID from args or default.

@@ -79,7 +79,7 @@ func (c *HTTPClient) GetDraft(ctx context.Context, grantID, draftID string) (*do
 	var result struct {
 		Data draftResponse `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: draft not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrDraftNotFound); err != nil {
 		return nil, err
 	}
 

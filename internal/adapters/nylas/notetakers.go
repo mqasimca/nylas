@@ -94,7 +94,7 @@ func (c *HTTPClient) GetNotetaker(ctx context.Context, grantID, notetakerID stri
 	var result struct {
 		Data notetakerResponse `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: notetaker not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrNotetakerNotFound); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +168,7 @@ func (c *HTTPClient) GetNotetakerMedia(ctx context.Context, grantID, notetakerID
 			} `json:"transcript"`
 		} `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: notetaker media not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrNotetakerNotFound); err != nil {
 		return nil, err
 	}
 

@@ -329,3 +329,229 @@ func TestDemoClient_Folders(t *testing.T) {
 	err = demo.DeleteFolder(ctx, "demo-grant", "folder-id")
 	require.NoError(t, err)
 }
+
+// Validation tests
+func TestHTTPClient_GetFolders_EmptyGrantID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	folders, err := client.GetFolders(ctx, "")
+
+	require.Error(t, err)
+	assert.Nil(t, folders)
+	assert.Contains(t, err.Error(), "grant ID")
+}
+
+func TestHTTPClient_GetFolder_EmptyGrantID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	folder, err := client.GetFolder(ctx, "", "folder-123")
+
+	require.Error(t, err)
+	assert.Nil(t, folder)
+	assert.Contains(t, err.Error(), "grant ID")
+}
+
+func TestHTTPClient_GetFolder_EmptyFolderID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	folder, err := client.GetFolder(ctx, "grant-123", "")
+
+	require.Error(t, err)
+	assert.Nil(t, folder)
+	assert.Contains(t, err.Error(), "folder ID")
+}
+
+func TestHTTPClient_CreateFolder_EmptyGrantID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	req := &domain.CreateFolderRequest{Name: "Test"}
+	folder, err := client.CreateFolder(ctx, "", req)
+
+	require.Error(t, err)
+	assert.Nil(t, folder)
+	assert.Contains(t, err.Error(), "grant ID")
+}
+
+func TestHTTPClient_CreateFolder_WithAllFields(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v3/grants/grant-full/folders", r.URL.Path)
+		assert.Equal(t, "POST", r.Method)
+
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		assert.Equal(t, "Full Folder", body["name"])
+		assert.Equal(t, "parent-123", body["parent_id"])
+		assert.Equal(t, "#0000FF", body["background_color"])
+		assert.Equal(t, "#FFFF00", body["text_color"])
+
+		response := map[string]interface{}{
+			"data": map[string]interface{}{
+				"id":               "folder-full",
+				"name":             "Full Folder",
+				"parent_id":        "parent-123",
+				"background_color": "#0000FF",
+				"text_color":       "#FFFF00",
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	req := &domain.CreateFolderRequest{
+		Name:            "Full Folder",
+		ParentID:        "parent-123",
+		BackgroundColor: "#0000FF",
+		TextColor:       "#FFFF00",
+	}
+	folder, err := client.CreateFolder(ctx, "grant-full", req)
+
+	require.NoError(t, err)
+	assert.Equal(t, "folder-full", folder.ID)
+	assert.Equal(t, "Full Folder", folder.Name)
+	assert.Equal(t, "parent-123", folder.ParentID)
+	assert.Equal(t, "#0000FF", folder.BackgroundColor)
+	assert.Equal(t, "#FFFF00", folder.TextColor)
+}
+
+func TestHTTPClient_UpdateFolder_EmptyGrantID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	req := &domain.UpdateFolderRequest{Name: "Test"}
+	folder, err := client.UpdateFolder(ctx, "", "folder-123", req)
+
+	require.Error(t, err)
+	assert.Nil(t, folder)
+	assert.Contains(t, err.Error(), "grant ID")
+}
+
+func TestHTTPClient_UpdateFolder_EmptyFolderID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	req := &domain.UpdateFolderRequest{Name: "Test"}
+	folder, err := client.UpdateFolder(ctx, "grant-123", "", req)
+
+	require.Error(t, err)
+	assert.Nil(t, folder)
+	assert.Contains(t, err.Error(), "folder ID")
+}
+
+func TestHTTPClient_UpdateFolder_WithParentID(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v3/grants/grant-parent/folders/folder-move", r.URL.Path)
+		assert.Equal(t, "PUT", r.Method)
+
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		assert.Equal(t, "Moved Folder", body["name"])
+		assert.Equal(t, "new-parent-456", body["parent_id"])
+
+		response := map[string]interface{}{
+			"data": map[string]interface{}{
+				"id":        "folder-move",
+				"name":      "Moved Folder",
+				"parent_id": "new-parent-456",
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	req := &domain.UpdateFolderRequest{
+		Name:     "Moved Folder",
+		ParentID: "new-parent-456",
+	}
+	folder, err := client.UpdateFolder(ctx, "grant-parent", "folder-move", req)
+
+	require.NoError(t, err)
+	assert.Equal(t, "folder-move", folder.ID)
+	assert.Equal(t, "Moved Folder", folder.Name)
+	assert.Equal(t, "new-parent-456", folder.ParentID)
+}
+
+func TestHTTPClient_DeleteFolder_EmptyGrantID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	err := client.DeleteFolder(ctx, "", "folder-123")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "grant ID")
+}
+
+func TestHTTPClient_DeleteFolder_EmptyFolderID(t *testing.T) {
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+
+	ctx := context.Background()
+	err := client.DeleteFolder(ctx, "grant-123", "")
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "folder ID")
+}
+
+// SystemFolder handling tests
+func TestHTTPClient_GetFolders_WithBoolSystemFolder(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]interface{}{
+			"data": []map[string]interface{}{
+				{
+					"id":            "folder-bool-true",
+					"name":          "Bool True Folder",
+					"system_folder": true, // Boolean true
+				},
+				{
+					"id":            "folder-bool-false",
+					"name":          "Bool False Folder",
+					"system_folder": false, // Boolean false
+				},
+			},
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := nylas.NewHTTPClient()
+	client.SetCredentials("client-id", "secret", "api-key")
+	client.SetBaseURL(server.URL)
+
+	ctx := context.Background()
+	folders, err := client.GetFolders(ctx, "grant-bool")
+
+	require.NoError(t, err)
+	assert.Len(t, folders, 2)
+
+	// Boolean true should be converted to "true"
+	assert.Equal(t, "folder-bool-true", folders[0].ID)
+	assert.Equal(t, "true", folders[0].SystemFolder)
+
+	// Boolean false should be converted to empty string
+	assert.Equal(t, "folder-bool-false", folders[1].ID)
+	assert.Equal(t, "", folders[1].SystemFolder)
+}

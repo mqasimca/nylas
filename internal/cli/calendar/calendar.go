@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var client ports.NylasClient
 var llmRouter ports.LLMRouter
 
 // NewCalendarCmd creates the calendar command group.
@@ -42,18 +41,8 @@ View calendars, list events, create new events, and more.`,
 }
 
 func getClient() (ports.NylasClient, error) {
-	if client != nil {
-		return client, nil
-	}
-
-	// Use common helper that supports environment variables
-	c, err := common.GetNylasClient()
-	if err != nil {
-		return nil, err
-	}
-
-	client = c
-	return client, nil
+	// Delegate to common.GetNylasClient() which handles caching internally
+	return common.GetNylasClient()
 }
 
 func getGrantID(args []string) (string, error) {

@@ -49,7 +49,7 @@ Examples of keys:
 	}
 }
 
-func getConfigValue(cfg interface{}, key string) (string, error) {
+func getConfigValue(cfg any, key string) (string, error) {
 	parts := strings.Split(key, ".")
 
 	v := reflect.ValueOf(cfg)

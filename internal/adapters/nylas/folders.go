@@ -60,7 +60,7 @@ func (c *HTTPClient) GetFolder(ctx context.Context, grantID, folderID string) (*
 	var result struct {
 		Data folderResponse `json:"data"`
 	}
-	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: folder not found", domain.ErrAPIError)); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrFolderNotFound); err != nil {
 		return nil, err
 	}
 
