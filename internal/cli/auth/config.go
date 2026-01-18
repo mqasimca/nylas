@@ -135,7 +135,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				return common.NewUserError("client ID is required", "Client ID should be auto-detected or can be entered manually")
 			}
 
-			if err := configSvc.SetupConfig(region, clientID, "", apiKey); err != nil {
+			if err := configSvc.SetupConfig(region, clientID, "", apiKey, orgID); err != nil {
 				return err
 			}
 

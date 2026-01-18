@@ -181,6 +181,38 @@ Adapters (internal/adapters/) - Implementations
 - `go.sum` - Auto-generated
 - `.git/`, `vendor/` - Managed externally
 
+## Credential Storage (Keyring)
+
+Credentials are stored securely in the system keyring under service name `"nylas"`.
+
+### Keys Stored
+| Key | Constant | Description |
+|-----|----------|-------------|
+| `client_id` | `ports.KeyClientID` | Nylas Application/Client ID (auto-detected or manual) |
+| `api_key` | `ports.KeyAPIKey` | Nylas API key (required, used for Bearer auth) |
+| `client_secret` | `ports.KeyClientSecret` | Provider OAuth client secret (Google/Microsoft), optional |
+| `org_id` | `ports.KeyOrgID` | Nylas Organization ID (auto-detected) |
+| `grants` | `grantsKey` | JSON array of grant info (ID, email, provider) |
+| `default_grant` | `defaultGrantKey` | Default grant ID for CLI operations |
+| `grant_token_<id>` | `ports.GrantTokenKey()` | Per-grant access tokens |
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `internal/ports/secrets.go` | Key constants (`KeyClientID`, `KeyAPIKey`, etc.) |
+| `internal/adapters/keyring/keyring.go` | System keyring implementation |
+| `internal/adapters/keyring/grants.go` | Grant storage (`grants`, `default_grant` keys) |
+| `internal/app/auth/config.go` | `SetupConfig()` saves credentials |
+
+### Platform Storage
+- **Linux**: Secret Service (GNOME Keyring, KWallet)
+- **macOS**: Keychain
+- **Windows**: Windows Credential Manager
+- **Fallback**: Encrypted file store (`~/.config/nylas/`)
+
+### Environment Override
+Set `NYLAS_DISABLE_KEYRING=true` to force encrypted file store (useful for testing).
+
 ## API Reference
 - **Nylas API v3 ONLY** - Never use v1/v2
 - Docs: https://developer.nylas.com/docs/api/v3/

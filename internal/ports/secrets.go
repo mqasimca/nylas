@@ -24,6 +24,7 @@ const (
 	KeyClientID     = "client_id"
 	KeyClientSecret = "client_secret"
 	KeyAPIKey       = "api_key"
+	KeyOrgID        = "org_id"
 )
 
 // GrantTokenKey returns the keystore key for a grant's access token.

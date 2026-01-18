@@ -26,6 +26,7 @@ type Server struct {
 	grantStore  ports.GrantStore
 	nylasClient ports.NylasClient
 	templates   *template.Template
+	hasAPIKey   bool // True if API key is configured (from env vars or keyring)
 
 	// Cache components
 	cacheManager  *cache.Manager

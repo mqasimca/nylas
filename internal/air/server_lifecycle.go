@@ -22,15 +22,17 @@ func NewServer(addr string) *Server {
 	grantStore := keyring.NewGrantStore(secretStore)
 	configSvc := authapp.NewConfigService(configStore, secretStore)
 
-	// Create Nylas client for API calls
+	// Create Nylas client for API calls (keyring only - env vars are for integration tests)
 	var nylasClient ports.NylasClient
+	var hasAPIKey bool
 	cfg, err := configStore.Load()
 	if err == nil {
 		apiKey, _ := secretStore.Get(ports.KeyAPIKey)
 		clientID, _ := secretStore.Get(ports.KeyClientID)
 		clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
 
-		if apiKey != "" {
+		hasAPIKey = apiKey != ""
+		if hasAPIKey {
 			client := nylas.NewHTTPClient()
 			client.SetRegion(cfg.Region)
 			client.SetCredentials(clientID, clientSecret, apiKey)
@@ -75,6 +77,7 @@ func NewServer(addr string) *Server {
 		grantStore:    grantStore,
 		nylasClient:   nylasClient,
 		templates:     tmpl,
+		hasAPIKey:     hasAPIKey,
 		cacheManager:  cacheManager,
 		cacheSettings: cacheSettings,
 		photoStore:    photoStore,

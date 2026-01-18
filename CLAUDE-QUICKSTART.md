@@ -351,6 +351,26 @@ Hard-won knowledge:
 
 ---
 
+## Credential Storage (Keyring)
+
+When `nylas auth config` runs, credentials are stored in the system keyring:
+
+| Key | Description |
+|-----|-------------|
+| `client_id` | Nylas Application/Client ID |
+| `api_key` | Nylas API key (Bearer auth) |
+| `client_secret` | Provider OAuth secret (Google/Microsoft) |
+| `org_id` | Nylas Organization ID |
+| `grants` | JSON array of grant info (ID, email, provider) |
+| `default_grant` | Default grant ID for CLI |
+| `grant_token_<id>` | Per-grant access tokens |
+
+**Key files:** `internal/ports/secrets.go` (constants), `internal/adapters/keyring/keyring.go` (keyring), `internal/adapters/keyring/grants.go` (grants)
+
+**Service name:** `"nylas"` | **Fallback:** Encrypted file in `~/.config/nylas/`
+
+---
+
 ## Getting Help
 
 - **All commands:** Type `/` and see autocomplete

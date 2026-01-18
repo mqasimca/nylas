@@ -161,15 +161,16 @@ func (s *Server) handleConfigSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the first application's Client ID
+	// Use the first application's Client ID and Org ID
 	app := apps[0]
 	clientID := app.ApplicationID
 	if clientID == "" {
 		clientID = app.ID
 	}
+	orgID := app.OrganizationID
 
 	// Save configuration
-	if err := s.configSvc.SetupConfig(req.Region, clientID, "", req.APIKey); err != nil {
+	if err := s.configSvc.SetupConfig(req.Region, clientID, "", req.APIKey, orgID); err != nil {
 		writeJSON(w, http.StatusInternalServerError, SetupResponse{
 			Success: false,
 			Error:   "Failed to save configuration: " + err.Error(),

@@ -79,6 +79,7 @@ type ConfigStatus struct {
 	IsConfigured    bool   `json:"configured"`
 	Region          string `json:"region"`
 	ClientID        string `json:"client_id,omitempty"`
+	OrgID           string `json:"org_id,omitempty"`
 	HasAPIKey       bool   `json:"has_api_key"`
 	HasClientSecret bool   `json:"has_client_secret"`
 	SecretStore     string `json:"secret_store"`

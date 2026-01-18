@@ -52,6 +52,12 @@ func newStatusCmd() *cobra.Command {
 					"grant_count":   status.GrantCount,
 					"default_grant": status.DefaultGrant,
 				}
+				if status.ClientID != "" {
+					output["client_id"] = status.ClientID
+				}
+				if status.OrgID != "" {
+					output["org_id"] = status.OrgID
+				}
 				if grantInfo.ID != "" {
 					output["grant"] = grantInfo
 				}
@@ -76,6 +82,12 @@ func newStatusCmd() *cobra.Command {
 
 			_, _ = common.Bold.Println("Configuration:")
 			fmt.Printf("  Region: %s\n", status.Region)
+			if status.ClientID != "" {
+				fmt.Printf("  Client ID: %s\n", status.ClientID)
+			}
+			if status.OrgID != "" {
+				fmt.Printf("  Organization ID: %s\n", status.OrgID)
+			}
 			fmt.Printf("  Config Path: %s\n", status.ConfigPath)
 			fmt.Printf("  Secret Store: %s\n", status.SecretStore)
 

@@ -107,3 +107,56 @@ These patterns have been duplicated before - ALWAYS check first:
 | HTTP/API helpers | `internal/adapters/nylas/client.go` |
 | Feature-specific | `internal/cli/{feature}/helpers.go` |
 | Air web UI | `internal/air/server_helpers.go` |
+| Secret storage | `internal/adapters/keyring/keyring.go` |
+| Secret constants | `internal/ports/secrets.go` |
+
+---
+
+## Credential Storage (Keyring)
+
+Credentials are stored in the system keyring under service name `"nylas"`.
+
+### Key Constants (`internal/ports/secrets.go`)
+
+| Constant | Key Value | Description |
+|----------|-----------|-------------|
+| `ports.KeyClientID` | `"client_id"` | Nylas Application/Client ID |
+| `ports.KeyAPIKey` | `"api_key"` | Nylas API key (Bearer auth) |
+| `ports.KeyClientSecret` | `"client_secret"` | Provider OAuth secret (Google/Microsoft) |
+| `ports.KeyOrgID` | `"org_id"` | Nylas Organization ID |
+| `ports.GrantTokenKey(id)` | `"grant_token_<id>"` | Per-grant access tokens |
+
+### Grant Keys (`internal/adapters/keyring/grants.go`)
+
+| Key | Description |
+|-----|-------------|
+| `"grants"` | JSON array of grant info (ID, email, provider) |
+| `"default_grant"` | Default grant ID for CLI operations |
+
+### Usage Pattern
+
+```go
+// Get secret store
+secretStore, _ := keyring.NewSecretStore(configDir)
+
+// Read credentials
+apiKey, _ := secretStore.Get(ports.KeyAPIKey)
+clientID, _ := secretStore.Get(ports.KeyClientID)
+orgID, _ := secretStore.Get(ports.KeyOrgID)
+
+// Save credentials (done in auth/config.go)
+secretStore.Set(ports.KeyAPIKey, apiKey)
+secretStore.Set(ports.KeyClientID, clientID)
+secretStore.Set(ports.KeyOrgID, orgID)
+
+// Grant operations (via GrantStore)
+grantStore := keyring.NewGrantStore(secretStore)
+grants, _ := grantStore.ListGrants()
+defaultID, _ := grantStore.GetDefaultGrant()
+```
+
+### Platform Backends
+- **Linux**: Secret Service (GNOME Keyring, KWallet)
+- **macOS**: Keychain
+- **Windows**: Windows Credential Manager
+- **Fallback**: Encrypted file (`~/.config/nylas/`)

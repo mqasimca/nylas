@@ -49,18 +49,22 @@ func (s *Server) buildPageData() PageData {
 	data.Calendars = nil
 	data.Contacts = nil
 
-	// Get real config status
+	// Get real config status - use same logic as /api/config handler
+	// s.hasAPIKey is set during server initialization from keyring
 	status, err := s.configSvc.GetStatus()
-	if err == nil && status.IsConfigured {
-		data.Configured = true
+	if err == nil {
 		data.ClientID = status.ClientID
 		data.Region = status.Region
-		data.HasAPIKey = status.HasAPIKey
+		data.HasAPIKey = s.hasAPIKey || status.HasAPIKey
 	}
 
 	// Get real grants (filter to supported providers: Google, Microsoft)
+	// Also used to determine if configured (need API key AND at least one grant)
 	grants, err := s.grantStore.ListGrants()
-	if err == nil && len(grants) > 0 {
+	hasGrants := err == nil && len(grants) > 0
+	data.Configured = data.HasAPIKey && hasGrants
+
+	if hasGrants {
 		// Filter to supported providers only
 		var supportedGrants []domain.GrantInfo
 		for _, g := range grants {

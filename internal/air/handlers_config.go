@@ -29,13 +29,30 @@ func (s *Server) handleConfigStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Use s.hasAPIKey which is set during server initialization from keyring
+	hasAPIKey := s.hasAPIKey || status.HasAPIKey
+
+	// Get grant count from grant store (more accurate than config file)
+	grantCount := status.GrantCount
+	if grants, err := s.grantStore.ListGrants(); err == nil {
+		grantCount = len(grants)
+	}
+
+	// Get default grant from grant store
+	defaultGrant := status.DefaultGrant
+	if defaultGrant == "" {
+		if grantID, err := s.grantStore.GetDefaultGrant(); err == nil {
+			defaultGrant = grantID
+		}
+	}
+
 	resp := ConfigStatusResponse{
-		Configured:   status.IsConfigured,
+		Configured:   hasAPIKey && grantCount > 0,
 		Region:       status.Region,
 		ClientID:     status.ClientID,
-		HasAPIKey:    status.HasAPIKey,
-		GrantCount:   status.GrantCount,
-		DefaultGrant: status.DefaultGrant,
+		HasAPIKey:    hasAPIKey,
+		GrantCount:   grantCount,
+		DefaultGrant: defaultGrant,
 	}
 
 	writeJSON(w, http.StatusOK, resp)

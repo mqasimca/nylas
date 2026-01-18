@@ -64,8 +64,40 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 - **CLI Framework**: Cobra
 - **API**: Nylas v3 ONLY (never use v1/v2)
 - **Timezone Support**: Offline utilities + calendar integration ✅
+- **Credential Storage**: System keyring (see below)
 
 **Details:** See `docs/ARCHITECTURE.md`
+
+---
+
+## Credential Storage (Keyring)
+
+Credentials from `nylas auth config` are stored in the system keyring under service name `"nylas"`.
+
+### Keys Stored
+| Key | Constant | Description |
+|-----|----------|-------------|
+| `client_id` | `ports.KeyClientID` | Nylas Application/Client ID |
+| `api_key` | `ports.KeyAPIKey` | Nylas API key (Bearer auth) |
+| `client_secret` | `ports.KeyClientSecret` | Provider OAuth secret (Google/Microsoft) |
+| `org_id` | `ports.KeyOrgID` | Nylas Organization ID |
+| `grants` | `grantsKey` | JSON array of grant info |
+| `default_grant` | `defaultGrantKey` | Default grant ID |
+| `grant_token_<id>` | `ports.GrantTokenKey()` | Per-grant access tokens |
+
+### Key Files
+- `internal/ports/secrets.go` - Key constants
+- `internal/adapters/keyring/keyring.go` - Keyring implementation (service: `"nylas"`)
+- `internal/adapters/keyring/grants.go` - Grant storage
+- `internal/app/auth/config.go` - `SetupConfig()` saves to keyring
+
+### Platform Backends
+- **Linux**: Secret Service (GNOME Keyring, KWallet)
+- **macOS**: Keychain
+- **Windows**: Windows Credential Manager
+- **Fallback**: Encrypted file (`~/.config/nylas/`)
+
+**Disable keyring**: `NYLAS_DISABLE_KEYRING=true`
 
 ---
 

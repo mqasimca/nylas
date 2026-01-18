@@ -3,7 +3,8 @@
   "instructions": [
     "AGENTS.md",
     "README.md",
-    "docs/COMMANDS.md"
+    "docs/COMMANDS.md",
+    "docs/security/overview.md"
   ],
   "default_agent": "build",
   "autoupdate": true,
@@ -13,7 +14,7 @@
       "description": "Reviews code for best practices, security, and Go idioms",
       "mode": "subagent",
       "temperature": 0.1,
-      "prompt": "You are a Go code reviewer specializing in clean architecture, hexagonal patterns, and Go best practices. Focus on:\n- Security vulnerabilities\n- Performance issues\n- Maintainability and code organization\n- Proper error handling\n- Test coverage\n- File size limits (≤600 lines)\n- Following project patterns from AGENTS.md",
+      "prompt": "You are a Go code reviewer specializing in clean architecture, hexagonal patterns, and Go best practices. Focus on:\n- Security vulnerabilities\n- Performance issues\n- Maintainability and code organization\n- Proper error handling\n- Test coverage\n- File size limits (≤600 lines)\n- Following project patterns from AGENTS.md\n- Credential storage: Keyring stores client_id, api_key, client_secret (provider OAuth), org_id, grants, default_grant, grant_token_<id>.",
       "tools": {
         "write": false,
         "edit": false,

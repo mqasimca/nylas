@@ -20,7 +20,7 @@ func NewConfigService(config ports.ConfigStore, secrets ports.SecretStore) *Conf
 }
 
 // SetupConfig saves the initial configuration.
-func (s *ConfigService) SetupConfig(region, clientID, clientSecret, apiKey string) error {
+func (s *ConfigService) SetupConfig(region, clientID, clientSecret, apiKey, orgID string) error {
 	// Save credentials to secret store
 	if err := s.secrets.Set(ports.KeyClientID, clientID); err != nil {
 		return err
@@ -32,6 +32,11 @@ func (s *ConfigService) SetupConfig(region, clientID, clientSecret, apiKey strin
 	}
 	if err := s.secrets.Set(ports.KeyAPIKey, apiKey); err != nil {
 		return err
+	}
+	if orgID != "" {
+		if err := s.secrets.Set(ports.KeyOrgID, orgID); err != nil {
+			return err
+		}
 	}
 
 	// Save config file (without credentials)
@@ -80,6 +85,10 @@ func (s *ConfigService) GetStatus() (*domain.ConfigStatus, error) {
 	clientID, _ := s.secrets.Get(ports.KeyClientID)
 	status.ClientID = clientID
 
+	// Get org_id from keystore
+	orgID, _ := s.secrets.Get(ports.KeyOrgID)
+	status.OrgID = orgID
+
 	// Check for secrets
 	_, err = s.secrets.Get(ports.KeyAPIKey)
 	status.HasAPIKey = err == nil
@@ -108,12 +117,18 @@ func (s *ConfigService) GetClientSecret() (string, error) {
 	return s.secrets.Get(ports.KeyClientSecret)
 }
 
+// GetOrgID retrieves the organization ID from keystore.
+func (s *ConfigService) GetOrgID() (string, error) {
+	return s.secrets.Get(ports.KeyOrgID)
+}
+
 // ResetConfig clears all configuration and secrets.
 func (s *ConfigService) ResetConfig() error {
 	// Delete all secrets
 	_ = s.secrets.Delete(ports.KeyClientID)
 	_ = s.secrets.Delete(ports.KeyClientSecret)
 	_ = s.secrets.Delete(ports.KeyAPIKey)
+	_ = s.secrets.Delete(ports.KeyOrgID)
 
 	// Reset config to defaults
 	return s.config.Save(domain.DefaultConfig())

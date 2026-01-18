@@ -127,6 +127,34 @@ This directory contains skills, workflows, rules, agents, and shared patterns fo
 
 ---
 
+## Credential Storage (Keyring)
+
+Credentials from `nylas auth config` are stored in system keyring under service `"nylas"`.
+
+| Key | Description |
+|-----|-------------|
+| `client_id` | Nylas Application/Client ID |
+| `api_key` | Nylas API key (Bearer auth) |
+| `client_secret` | Provider OAuth secret (Google/Microsoft) |
+| `org_id` | Nylas Organization ID |
+| `grants` | JSON array of grant info |
+| `default_grant` | Default grant ID |
+| `grant_token_<id>` | Per-grant tokens |
+
+**Key Files:**
+- `internal/ports/secrets.go` - Key constants
+- `internal/adapters/keyring/keyring.go` - Keyring implementation
+- `internal/adapters/keyring/grants.go` - Grant storage
+- `internal/app/auth/config.go` - `SetupConfig()` saves credentials
+
+**Platforms:** Linux (Secret Service), macOS (Keychain), Windows (Credential Manager)
+
+**Fallback:** Encrypted file in `~/.config/nylas/`
+
+**Testing:** `NYLAS_DISABLE_KEYRING=true` forces file store
+
+---
+
 ## Related Documentation
 
 - **Quick Start:** [`CLAUDE-QUICKSTART.md`](../CLAUDE-QUICKSTART.md)
