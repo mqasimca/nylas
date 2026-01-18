@@ -36,7 +36,7 @@ func newThreadsListCmd() *cobra.Command {
 		Short: "List email threads",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -76,41 +76,7 @@ func newThreadsListCmd() *cobra.Command {
 			fmt.Printf("Found %d threads:\n\n", len(threads))
 
 			for _, t := range threads {
-				status := " "
-				if t.Unread {
-					status = common.Cyan.Sprint("●")
-				}
-
-				star := " "
-				if t.Starred {
-					star = common.Yellow.Sprint("★")
-				}
-
-				attach := " "
-				if t.HasAttachments {
-					attach = "📎"
-				}
-
-				// Format participants
-				participants := common.FormatParticipants(t.Participants)
-				if len(participants) > 25 {
-					participants = participants[:22] + "..."
-				}
-
-				subj := t.Subject
-				if len(subj) > 35 {
-					subj = subj[:32] + "..."
-				}
-
-				msgCount := fmt.Sprintf("(%d)", len(t.MessageIDs))
-				dateStr := common.FormatTimeAgo(t.LatestMessageRecvDate)
-
-				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
-					status, star, attach, participants, subj, msgCount, common.Dim.Sprint(dateStr))
-
-				if showID {
-					_, _ = common.Dim.Printf("      ID: %s\n", t.ID)
-				}
+				DisplayThreadListItem(t, showID)
 			}
 
 			return nil
@@ -134,7 +100,7 @@ func newThreadsShowCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threadID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -235,7 +201,7 @@ func newThreadsMarkCmd() *cobra.Command {
 				return common.NewMutuallyExclusiveError("star", "unstar")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -314,7 +280,7 @@ func newThreadsDeleteCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threadID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -405,7 +371,7 @@ Examples:
   nylas email threads search --subject "invoice" --after 2024-01-01 --before 2024-12-31`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -473,41 +439,7 @@ Examples:
 			fmt.Printf("Found %d threads:\n\n", len(threads))
 
 			for _, t := range threads {
-				status := " "
-				if t.Unread {
-					status = common.Cyan.Sprint("●")
-				}
-
-				star := " "
-				if t.Starred {
-					star = common.Yellow.Sprint("★")
-				}
-
-				attach := " "
-				if t.HasAttachments {
-					attach = "📎"
-				}
-
-				// Format participants
-				participants := common.FormatParticipants(t.Participants)
-				if len(participants) > 25 {
-					participants = participants[:22] + "..."
-				}
-
-				subj := t.Subject
-				if len(subj) > 35 {
-					subj = subj[:32] + "..."
-				}
-
-				msgCount := fmt.Sprintf("(%d)", len(t.MessageIDs))
-				dateStr := common.FormatTimeAgo(t.LatestMessageRecvDate)
-
-				fmt.Printf("%s %s %s %-25s %-35s %-5s %s\n",
-					status, star, attach, participants, subj, msgCount, common.Dim.Sprint(dateStr))
-
-				if showID {
-					_, _ = common.Dim.Printf("      ID: %s\n", t.ID)
-				}
+				DisplayThreadListItem(t, showID)
 			}
 
 			return nil
