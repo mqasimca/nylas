@@ -1,10 +1,12 @@
 package contacts
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +25,27 @@ func newListCmd() *cobra.Command {
 		Long:    "List all contacts for the specified grant or default account.",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Check if we should use structured output (JSON/YAML/quiet)
+			if common.IsJSON(cmd) {
+				_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+					params := &domain.ContactQueryParams{
+						Limit:  limit,
+						Email:  email,
+						Source: source,
+					}
+
+					contacts, err := client.GetContacts(ctx, grantID, params)
+					if err != nil {
+						return struct{}{}, common.WrapListError("contacts", err)
+					}
+
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(contacts)
+				})
+				return err
+			}
+
+			// Traditional table output
 			client, err := common.GetNylasClient()
 			if err != nil {
 				return err

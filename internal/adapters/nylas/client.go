@@ -104,6 +104,11 @@ func (c *HTTPClient) SetBaseURL(url string) {
 	c.baseURL = url
 }
 
+// SetMaxRetries sets the maximum number of retries (for testing purposes).
+func (c *HTTPClient) SetMaxRetries(retries int) {
+	c.maxRetries = retries
+}
+
 // setAuthHeader sets the authorization header on the request.
 func (c *HTTPClient) setAuthHeader(req *http.Request) {
 	if c.apiKey != "" {
@@ -194,7 +199,7 @@ func (c *HTTPClient) doRequest(ctx context.Context, req *http.Request) (*http.Re
 		// Check if we should retry based on status code
 		if c.shouldRetryStatus(resp.StatusCode) && attempt < c.maxRetries {
 			lastResp = resp
-			resp.Body.Close()
+			_ = resp.Body.Close() // Close body before retry; error doesn't affect retry logic
 
 			delay := c.calculateBackoff(attempt, resp)
 			select {

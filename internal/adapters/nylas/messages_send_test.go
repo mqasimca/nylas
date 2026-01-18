@@ -218,6 +218,7 @@ func TestHTTPClient_SendMessage_ErrorHandling(t *testing.T) {
 			client := nylas.NewHTTPClient()
 			client.SetCredentials("client-id", "secret", "api-key")
 			client.SetBaseURL(server.URL)
+			client.SetMaxRetries(0) // Disable retries for error handling tests
 
 			ctx := context.Background()
 			req := &domain.SendMessageRequest{

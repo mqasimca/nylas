@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -36,6 +38,24 @@ Shows webhook ID, description, URL, status, and trigger types.`,
   # List in YAML format
   nylas webhook list --format yaml`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Check if we should use structured output from global flags
+			if common.IsJSON(cmd) {
+				_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+					webhooks, err := common.RunWithSpinnerResult("Fetching webhooks...", func() ([]domain.Webhook, error) {
+						return client.ListWebhooks(ctx)
+					})
+					if err != nil {
+						return struct{}{}, common.NewUserError("Failed to list webhooks: "+err.Error(),
+							"Check your API key has webhook management permissions")
+					}
+
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(webhooks)
+				})
+				return err
+			}
+
+			// Legacy format flag support
 			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),

@@ -49,6 +49,12 @@ Use --max to limit total messages when using --all.`,
   nylas email list --all --max 500`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Check if we should use structured output (JSON/YAML/quiet)
+			if common.IsJSON(cmd) {
+				return runListStructured(cmd, args, limit, unread, starred, from, folder, allFolders, all, maxItems, metadataPair)
+			}
+
+			// Traditional formatted output
 			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
@@ -232,4 +238,93 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// runListStructured handles structured output (JSON/YAML/quiet) for the list command.
+func runListStructured(cmd *cobra.Command, args []string, limit int, unread, starred bool,
+	from, folder string, allFolders, all bool, maxItems int, metadataPair string) error {
+
+	_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+		params := &domain.MessageQueryParams{
+			Limit: limit,
+		}
+
+		if cmd.Flags().Changed("unread") {
+			params.Unread = &unread
+		}
+		if cmd.Flags().Changed("starred") {
+			params.Starred = &starred
+		}
+		if from != "" {
+			params.From = from
+		}
+		if metadataPair != "" {
+			params.MetadataPair = metadataPair
+		}
+
+		// Default to INBOX unless --all-folders is set or specific folder is provided
+		if folder != "" {
+			resolvedFolder, err := resolveFolderName(ctx, client, grantID, folder)
+			if err != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve folder '%s': %v\n", folder, err)
+				params.In = []string{folder}
+			} else if resolvedFolder != "" {
+				params.In = []string{resolvedFolder}
+			} else {
+				params.In = []string{folder}
+			}
+		} else if !allFolders {
+			inboxID, err := resolveFolderName(ctx, client, grantID, "INBOX")
+			if err != nil {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve INBOX folder: %v\n", err)
+				params.In = []string{"INBOX"}
+			} else if inboxID != "" {
+				params.In = []string{inboxID}
+			} else {
+				params.In = []string{"INBOX"}
+			}
+		}
+
+		var messages []domain.Message
+		var err error
+
+		if all {
+			pageSize := 50
+			if limit > 0 && limit < pageSize {
+				pageSize = limit
+			}
+			params.Limit = pageSize
+
+			fetcher := func(ctx context.Context, cursor string) (common.PageResult[domain.Message], error) {
+				params.PageToken = cursor
+				resp, err := client.GetMessagesWithCursor(ctx, grantID, params)
+				if err != nil {
+					return common.PageResult[domain.Message]{}, err
+				}
+				return common.PageResult[domain.Message]{
+					Data:       resp.Data,
+					NextCursor: resp.Pagination.NextCursor,
+				}, nil
+			}
+
+			config := common.DefaultPaginationConfig()
+			config.PageSize = pageSize
+			config.MaxItems = maxItems
+
+			messages, err = common.FetchAllPages(ctx, config, fetcher)
+			if err != nil {
+				return struct{}{}, common.WrapFetchError("messages", err)
+			}
+		} else {
+			messages, err = client.GetMessagesWithParams(ctx, grantID, params)
+			if err != nil {
+				return struct{}{}, common.WrapGetError("messages", err)
+			}
+		}
+
+		// Output structured data
+		out := common.GetOutputWriter(cmd)
+		return struct{}{}, out.Write(messages)
+	})
+	return err
 }

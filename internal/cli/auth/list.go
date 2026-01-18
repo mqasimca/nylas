@@ -31,9 +31,10 @@ func newListCmd() *cobra.Command {
 				return nil
 			}
 
-			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
-			if jsonOutput {
-				return common.PrintJSON(grants)
+			// Check if we should use structured output
+			if common.IsJSON(cmd) {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(grants)
 			}
 
 			verbose, _ := cmd.Root().PersistentFlags().GetBool("verbose")
