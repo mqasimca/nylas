@@ -32,7 +32,7 @@ Get your credentials from https://dashboardv3.nylas.com
 
 The CLI only requires your API Key - Client ID is auto-detected.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			configSvc, _, _, err := createConfigService()
+			configSvc, configStore, _, err := createConfigService()
 			if err != nil {
 				return err
 			}
@@ -77,6 +77,9 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			}
 
 			// Auto-detect Client ID from API key if not provided
+			var selectedApp *domain.Application
+			var orgID string
+
 			if clientID == "" {
 				fmt.Println()
 				fmt.Println("Detecting applications...")
@@ -100,7 +103,9 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				} else if len(apps) == 1 {
 					// Single app - auto-select
 					app := apps[0]
+					selectedApp = &app
 					clientID = getAppClientID(app)
+					orgID = app.OrganizationID
 					_, _ = common.Green.Printf("  ✓ Found application: %s\n", getAppDisplayName(app))
 				} else {
 					// Multiple apps - let user choose
@@ -119,7 +124,9 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					}
 
 					app := apps[selected-1]
+					selectedApp = &app
 					clientID = getAppClientID(app)
+					orgID = app.OrganizationID
 					_, _ = common.Green.Printf("  ✓ Selected: %s\n", getAppDisplayName(app))
 				}
 			}
@@ -133,6 +140,83 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 			}
 
 			_, _ = common.Green.Println("✓ Configuration saved")
+
+			// Display organization ID if available
+			if orgID != "" {
+				fmt.Printf("  Organization ID: %s\n", orgID)
+			}
+
+			// Load config to get callback port
+			cfg, err := configStore.Load()
+			if err != nil {
+				_, _ = common.Yellow.Printf("  Warning: Could not load config: %v\n", err)
+			}
+
+			// Ensure callback URI exists in the application
+			if selectedApp != nil && cfg != nil {
+				// Get callback port from config (defaults to 9007)
+				callbackPort := cfg.CallbackPort
+				if callbackPort == 0 {
+					callbackPort = 9007
+				}
+
+				requiredCallbackURI := fmt.Sprintf("http://localhost:%d/callback", callbackPort)
+				hasCallbackURI := false
+
+				// Check if callback URI already exists
+				for _, cb := range selectedApp.CallbackURIs {
+					if cb.URL == requiredCallbackURI {
+						hasCallbackURI = true
+						break
+					}
+				}
+
+				fmt.Println()
+				if !hasCallbackURI {
+					fmt.Println("Setting up callback URI for OAuth authentication...")
+
+					client := nylasadapter.NewHTTPClient()
+					client.SetRegion(region)
+					client.SetCredentials(clientID, "", apiKey)
+
+					// Get the application ID to use for update
+					appID := selectedApp.ID
+					if appID == "" {
+						appID = selectedApp.ApplicationID
+					}
+
+					// Build list of all callback URIs (existing + new)
+					callbackURIs := make([]string, 0, len(selectedApp.CallbackURIs)+1)
+					for _, cb := range selectedApp.CallbackURIs {
+						if cb.URL != "" {
+							callbackURIs = append(callbackURIs, cb.URL)
+						}
+					}
+					callbackURIs = append(callbackURIs, requiredCallbackURI)
+
+					// Try to update the application
+					ctx, cancel := common.CreateContext()
+					updateReq := &domain.UpdateApplicationRequest{
+						CallbackURIs: callbackURIs,
+					}
+					_, err := client.UpdateApplication(ctx, appID, updateReq)
+					cancel()
+
+					if err != nil {
+						// If update fails (e.g., sandbox limitation), provide manual instructions
+						_, _ = common.Yellow.Printf("  Could not add callback URI automatically: %v\n", err)
+						fmt.Printf("  Please add this callback URI manually in the Nylas dashboard:\n")
+						fmt.Printf("    %s\n", requiredCallbackURI)
+						fmt.Println()
+						fmt.Printf("  Dashboard: https://dashboard.nylas.com/applications\n")
+						fmt.Printf("  Navigate to: Your App → Settings → Callback URIs → Add URI\n")
+					} else {
+						_, _ = common.Green.Printf("  ✓ Added callback URI: %s\n", requiredCallbackURI)
+					}
+				} else {
+					_, _ = common.Green.Println("✓ Callback URI already configured")
+				}
+			}
 
 			// Auto-detect existing grants from Nylas API
 			fmt.Println()
@@ -169,9 +253,9 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 				return nil
 			}
 
-			// Add all valid grants, first one becomes default
-			addedCount := 0
-			for i, grant := range grants {
+			// First pass: Add all valid grants without setting default
+			var validGrants []domain.Grant
+			for _, grant := range grants {
 				if !grant.IsValid() {
 					continue
 				}
@@ -186,27 +270,73 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					continue
 				}
 
-				// Set first grant as default
-				if addedCount == 0 {
-					_ = grantStore.SetDefaultGrant(grant.ID)
-				}
-
-				addedCount++
-				if i == 0 {
-					_, _ = common.Green.Printf("  ✓ Added %s (%s) [default]\n", grant.Email, grant.Provider.DisplayName())
-				} else {
-					_, _ = common.Green.Printf("  ✓ Added %s (%s)\n", grant.Email, grant.Provider.DisplayName())
-				}
+				validGrants = append(validGrants, grant)
+				_, _ = common.Green.Printf("  ✓ Added %s (%s)\n", grant.Email, grant.Provider.DisplayName())
 			}
 
-			if addedCount > 0 {
-				fmt.Println()
-				fmt.Printf("Added %d grant(s). Run 'nylas auth list' to see all accounts.\n", addedCount)
-			} else {
+			if len(validGrants) == 0 {
 				fmt.Println("  No valid grants found")
 				fmt.Println()
 				fmt.Println("Next steps:")
 				fmt.Println("  nylas auth login    Authenticate with your email provider")
+				return nil
+			}
+
+			// Second pass: Set default grant
+			var defaultGrantID string
+			if len(validGrants) == 1 {
+				// Single grant - auto-select as default
+				defaultGrantID = validGrants[0].ID
+				_ = grantStore.SetDefaultGrant(defaultGrantID)
+				fmt.Println()
+				_, _ = common.Green.Printf("✓ Set %s as default account\n", validGrants[0].Email)
+			} else {
+				// Multiple grants - let user choose default
+				fmt.Println()
+				fmt.Println("Select default account:")
+				for i, grant := range validGrants {
+					fmt.Printf("  [%d] %s (%s)\n", i+1, grant.Email, grant.Provider.DisplayName())
+				}
+				fmt.Println()
+				fmt.Print("Select default account (1-", len(validGrants), "): ")
+				input, _ := reader.ReadString('\n')
+				choice := strings.TrimSpace(input)
+
+				var selected int
+				if _, err := fmt.Sscanf(choice, "%d", &selected); err != nil || selected < 1 || selected > len(validGrants) {
+					// If invalid selection, default to first
+					_, _ = common.Yellow.Printf("Invalid selection, defaulting to %s\n", validGrants[0].Email)
+					defaultGrantID = validGrants[0].ID
+				} else {
+					defaultGrantID = validGrants[selected-1].ID
+				}
+
+				_ = grantStore.SetDefaultGrant(defaultGrantID)
+				selectedGrant := validGrants[0]
+				for _, g := range validGrants {
+					if g.ID == defaultGrantID {
+						selectedGrant = g
+						break
+					}
+				}
+				_, _ = common.Green.Printf("✓ Set %s as default account\n", selectedGrant.Email)
+			}
+
+			fmt.Println()
+			fmt.Printf("Added %d grant(s). Run 'nylas auth list' to see all accounts.\n", len(validGrants))
+
+			// Update config file with default grant and grants list
+			cfg.DefaultGrant = defaultGrantID
+			cfg.Grants = make([]domain.GrantInfo, len(validGrants))
+			for i, grant := range validGrants {
+				cfg.Grants[i] = domain.GrantInfo{
+					ID:       grant.ID,
+					Email:    grant.Email,
+					Provider: grant.Provider,
+				}
+			}
+			if err := configStore.Save(cfg); err != nil {
+				_, _ = common.Yellow.Printf("  Warning: Could not update config file: %v\n", err)
 			}
 
 			return nil

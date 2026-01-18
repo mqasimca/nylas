@@ -51,13 +51,6 @@ type Config struct {
 	// API settings
 	API *APIConfig `yaml:"api,omitempty"`
 
-	// Output settings
-	Output *OutputConfig `yaml:"output,omitempty"`
-
-	// OTP-specific settings
-	CopyToClipboard bool `yaml:"copy_to_clipboard"`
-	WatchInterval   int  `yaml:"watch_interval"`
-
 	// TUI settings
 	TUITheme string `yaml:"tui_theme,omitempty"`
 
@@ -70,37 +63,14 @@ type Config struct {
 
 // APIConfig represents API-specific configuration.
 type APIConfig struct {
-	BaseURL    string `yaml:"base_url,omitempty"`    // API base URL
-	Timeout    string `yaml:"timeout,omitempty"`     // Request timeout (e.g., "30s", "1m")
-	RateLimit  int    `yaml:"rate_limit,omitempty"`  // Requests per second (0 = no limit)
-	RetryCount int    `yaml:"retry_count,omitempty"` // Max retry attempts
-}
-
-// OutputConfig represents output formatting preferences.
-type OutputConfig struct {
-	Format   string `yaml:"format,omitempty"`   // Output format: table, json, yaml
-	Color    string `yaml:"color,omitempty"`    // Color mode: auto, always, never
-	Timezone string `yaml:"timezone,omitempty"` // Default timezone for display
+	BaseURL string `yaml:"base_url,omitempty"` // API base URL
 }
 
 // DefaultConfig returns a config with sensible defaults.
 func DefaultConfig() *Config {
 	return &Config{
-		Region:          "us",
-		CallbackPort:    8080,
-		CopyToClipboard: true,
-		WatchInterval:   10,
-		API: &APIConfig{
-			BaseURL:    "https://api.us.nylas.com",
-			Timeout:    "90s",
-			RateLimit:  10,
-			RetryCount: 3,
-		},
-		Output: &OutputConfig{
-			Format:   "table",
-			Color:    "auto",
-			Timezone: "",
-		},
+		Region:       "us",
+		CallbackPort: 9007,
 	}
 }
 

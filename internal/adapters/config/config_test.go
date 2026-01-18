@@ -97,10 +97,8 @@ func TestFileStore_LoadSaveRoundTrip(t *testing.T) {
 
 	// Test config
 	config := &domain.Config{
-		Region:          "eu",
-		CallbackPort:    9000,
-		WatchInterval:   15,
-		CopyToClipboard: false,
+		Region:       "eu",
+		CallbackPort: 9000,
 	}
 
 	// Save config
@@ -120,12 +118,6 @@ func TestFileStore_LoadSaveRoundTrip(t *testing.T) {
 	}
 	if loaded.CallbackPort != config.CallbackPort {
 		t.Errorf("CallbackPort = %d, want %d", loaded.CallbackPort, config.CallbackPort)
-	}
-	if loaded.WatchInterval != config.WatchInterval {
-		t.Errorf("WatchInterval = %d, want %d", loaded.WatchInterval, config.WatchInterval)
-	}
-	if loaded.CopyToClipboard != config.CopyToClipboard {
-		t.Errorf("CopyToClipboard = %v, want %v", loaded.CopyToClipboard, config.CopyToClipboard)
 	}
 }
 
@@ -167,11 +159,12 @@ func TestFileStore_LoadAppliesDefaults(t *testing.T) {
 	}
 
 	// Verify defaults are applied for missing fields
-	if config.CallbackPort != 8080 {
-		t.Errorf("CallbackPort = %d, want %d (default)", config.CallbackPort, 8080)
+	if config.CallbackPort != 9007 {
+		t.Errorf("CallbackPort = %d, want %d (default)", config.CallbackPort, 9007)
 	}
-	if config.WatchInterval != 10 {
-		t.Errorf("WatchInterval = %d, want %d (default)", config.WatchInterval, 10)
+	// API config should be nil by default (region determines base URL)
+	if config.API != nil {
+		t.Errorf("API config = %+v, want nil (region determines base URL)", config.API)
 	}
 }
 
@@ -330,10 +323,8 @@ func TestMockConfigStore_SetConfig(t *testing.T) {
 	store := NewMockConfigStore()
 
 	customConfig := &domain.Config{
-		Region:          "eu",
-		CallbackPort:    9000,
-		WatchInterval:   15,
-		CopyToClipboard: true,
+		Region:       "eu",
+		CallbackPort: 9000,
 	}
 
 	store.SetConfig(customConfig)
@@ -347,9 +338,6 @@ func TestMockConfigStore_SetConfig(t *testing.T) {
 	}
 	if loaded.CallbackPort != 9000 {
 		t.Errorf("CallbackPort = %d, want %d", loaded.CallbackPort, 9000)
-	}
-	if !loaded.CopyToClipboard {
-		t.Error("CopyToClipboard = false, want true")
 	}
 	if !store.Exists() {
 		t.Error("Exists() = false, want true after SetConfig")

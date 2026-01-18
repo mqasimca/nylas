@@ -15,9 +15,9 @@ func TestDefaultConfig(t *testing.T) {
 
 	require.NotNil(t, cfg)
 	assert.Equal(t, "us", cfg.Region)
-	assert.Equal(t, 8080, cfg.CallbackPort)
-	assert.True(t, cfg.CopyToClipboard)
-	assert.Equal(t, 10, cfg.WatchInterval)
+	assert.Equal(t, 9007, cfg.CallbackPort)
+	// API should be nil by default - region determines base URL
+	assert.Nil(t, cfg.API)
 }
 
 func TestDefaultWorkingHours(t *testing.T) {
