@@ -41,6 +41,12 @@ func newGroupsListCmd() *cobra.Command {
 					return struct{}{}, common.WrapListError("contact groups", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(groups)
+				}
+
 				if len(groups) == 0 {
 					common.PrintEmptyState("contact groups")
 					return struct{}{}, nil

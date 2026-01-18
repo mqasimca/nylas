@@ -40,6 +40,12 @@ func newFoldersListCmd() *cobra.Command {
 					return struct{}{}, common.WrapGetError("folders", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(folders)
+				}
+
 				if len(folders) == 0 {
 					common.PrintEmptyState("folders")
 					return struct{}{}, nil

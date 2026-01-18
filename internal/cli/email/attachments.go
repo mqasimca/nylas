@@ -45,6 +45,12 @@ func newAttachmentsListCmd() *cobra.Command {
 					return struct{}{}, common.WrapListError("attachments", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(attachments)
+				}
+
 				if len(attachments) == 0 {
 					common.PrintEmptyState("attachments")
 					return struct{}{}, nil

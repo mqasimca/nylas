@@ -37,6 +37,12 @@ func newScheduledListCmd() *cobra.Command {
 					return struct{}{}, common.WrapListError("scheduled messages", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(scheduled)
+				}
+
 				if len(scheduled) == 0 {
 					common.PrintEmptyState("scheduled messages")
 					return struct{}{}, nil

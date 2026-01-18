@@ -46,6 +46,12 @@ func newDraftsListCmd() *cobra.Command {
 					return struct{}{}, common.WrapGetError("drafts", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(drafts)
+				}
+
 				if len(drafts) == 0 {
 					common.PrintEmptyState("drafts")
 					return struct{}{}, nil

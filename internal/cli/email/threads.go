@@ -58,6 +58,12 @@ func newThreadsListCmd() *cobra.Command {
 					return struct{}{}, common.WrapGetError("threads", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(threads)
+				}
+
 				if len(threads) == 0 {
 					common.PrintEmptyState("threads")
 					return struct{}{}, nil

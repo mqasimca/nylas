@@ -82,6 +82,12 @@ Examples:
 					return struct{}{}, common.WrapListError("events", err)
 				}
 
+				// JSON output (including empty array)
+				if common.IsJSON(cmd) {
+					out := common.GetOutputWriter(cmd)
+					return struct{}{}, out.Write(events)
+				}
+
 				if len(events) == 0 {
 					common.PrintEmptyState("events")
 					return struct{}{}, nil
