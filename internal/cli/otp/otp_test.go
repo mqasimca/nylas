@@ -3,7 +3,6 @@ package otp
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -212,29 +211,4 @@ func TestOTPCommandHelp(t *testing.T) {
 	}
 }
 
-// TestFormatTimeAgo tests the time formatting function.
-func TestFormatTimeAgo(t *testing.T) {
-	tests := []struct {
-		duration time.Duration
-		expected string
-	}{
-		{30 * time.Second, "just now"},
-		{1 * time.Minute, "1 minute ago"},
-		{5 * time.Minute, "5 minutes ago"},
-		{1 * time.Hour, "1 hour ago"},
-		{5 * time.Hour, "5 hours ago"},
-		{24 * time.Hour, "yesterday"},
-		{48 * time.Hour, "2 days ago"},
-		{72 * time.Hour, "3 days ago"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.expected, func(t *testing.T) {
-			past := time.Now().Add(-tt.duration)
-			got := formatTimeAgo(past)
-			if got != tt.expected {
-				t.Errorf("formatTimeAgo(%v ago) = %q, want %q", tt.duration, got, tt.expected)
-			}
-		})
-	}
-}
+// Note: FormatTimeAgo tests are in common/time_test.go

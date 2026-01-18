@@ -1,9 +1,7 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
@@ -32,9 +30,7 @@ func newTokenCmd() *cobra.Command {
 			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
 			if jsonOutput {
 				output := map[string]string{"api_key": apiKey}
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(output)
+				return common.PrintJSON(output)
 			}
 
 			if copyToClipboard {

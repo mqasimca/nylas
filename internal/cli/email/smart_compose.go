@@ -1,9 +1,7 @@
 package email
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -37,7 +35,7 @@ Examples:
 				return common.NewUserError("prompt is required", "Use --prompt to describe the email you want to compose")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -66,9 +64,7 @@ Examples:
 			}
 
 			if jsonOutput {
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(suggestion)
+				return common.PrintJSON(suggestion)
 			}
 
 			// Pretty print the suggestion

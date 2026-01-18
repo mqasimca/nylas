@@ -1,11 +1,11 @@
 package webhook
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -53,9 +53,7 @@ Use these values when creating or updating webhooks.`,
 
 			switch format {
 			case "json":
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(categories)
+				return common.PrintJSON(categories)
 			case "yaml":
 				return yaml.NewEncoder(os.Stdout).Encode(categories)
 			case "list":

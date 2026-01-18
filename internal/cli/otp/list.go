@@ -1,9 +1,7 @@
 package otp
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
@@ -31,9 +29,7 @@ func newListCmd() *cobra.Command {
 
 			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
 			if jsonOutput {
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(accounts)
+				return common.PrintJSON(accounts)
 			}
 
 			_, _ = common.BoldCyan.Println("Configured Accounts")

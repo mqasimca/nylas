@@ -33,7 +33,7 @@ func newFoldersListCmd() *cobra.Command {
 		Short: "List all folders",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -107,7 +107,7 @@ func newFoldersListCmd() *cobra.Command {
 }
 
 func newFoldersShowCmd() *cobra.Command {
-	client, _ := getClient()
+	client, _ := common.GetNylasClient()
 
 	return common.NewShowCommand(common.ShowCommandConfig{
 		Use:          "show <folder-id> [grant-id]",
@@ -149,7 +149,7 @@ func newFoldersShowCmd() *cobra.Command {
 
 			return nil
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }
 
@@ -165,7 +165,7 @@ func newFoldersCreateCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -221,7 +221,7 @@ func newFoldersRenameCmd() *cobra.Command {
 			folderID := args[0]
 			newName := args[1]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -276,12 +276,12 @@ func newFoldersDeleteCmd() *cobra.Command {
 		Short:        "Delete a folder",
 		ResourceName: "folder",
 		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 			return client.DeleteFolder(ctx, grantID, resourceID)
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }

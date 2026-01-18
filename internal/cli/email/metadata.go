@@ -42,7 +42,7 @@ This shows all metadata stored on the message, including both indexed
 (key1-key5) and custom keys.`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

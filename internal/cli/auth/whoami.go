@@ -1,9 +1,7 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -36,9 +34,7 @@ func newWhoamiCmd() *cobra.Command {
 					"grant_id": grant.ID,
 					"status":   grant.Status,
 				}
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(output)
+				return common.PrintJSON(output)
 			}
 
 			fmt.Println(grant.Email)

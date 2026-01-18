@@ -42,7 +42,7 @@ func newBookingListCmd() *cobra.Command {
 		Short:   "List scheduler bookings",
 		Long:    "List all scheduler bookings, optionally filtered by configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -102,7 +102,7 @@ func newBookingShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific booking.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -166,7 +166,7 @@ func newBookingConfirmCmd() *cobra.Command {
 		Long:  "Confirm a pending booking.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -225,7 +225,7 @@ You must provide the new start and end times as Unix timestamps.`,
 				return fmt.Errorf("end-time must be after start-time")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -283,7 +283,7 @@ func newBookingCancelCmd() *cobra.Command {
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

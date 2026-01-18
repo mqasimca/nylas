@@ -56,7 +56,7 @@ func runCreate(emailPrefix string, jsonOutput bool) error {
 		return common.NewInputError("invalid email prefix - should not contain '@' or spaces")
 	}
 
-	client, err := getClient()
+	client, err := common.GetNylasClient()
 	if err != nil {
 		printError("%v", err)
 		return err

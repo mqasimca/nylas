@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mqasimca/nylas/internal/cli/ui"
+	"github.com/mqasimca/nylas/internal/ui"
 )
 
 // newDemoUICmd creates the demo ui command.

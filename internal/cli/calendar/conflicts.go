@@ -56,12 +56,12 @@ func newCheckConflictsCmd() *cobra.Command {
     --duration 30 \
     --auto-resolve`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return common.WrapGetError("client", err)
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return common.WrapGetError("grant ID", err)
 			}

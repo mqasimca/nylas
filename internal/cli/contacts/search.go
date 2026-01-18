@@ -40,12 +40,12 @@ Advanced Search Options:
 Note: Company name filtering searches the company_name field. For more advanced
 text searches, use the regular list command with additional filtering.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}

@@ -87,13 +87,13 @@ Examples:
 			router := ai.NewRouter(cfg.AI)
 
 			// Get Nylas client
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return common.WrapGetError("client", err)
 			}
 
 			// Get grant ID
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return common.WrapGetError("grant ID", err)
 			}

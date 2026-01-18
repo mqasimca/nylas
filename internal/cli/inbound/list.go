@@ -36,7 +36,7 @@ Examples:
 }
 
 func runList(jsonOutput bool) error {
-	client, err := getClient()
+	client, err := common.GetNylasClient()
 	if err != nil {
 		printError("%v", err)
 		return err

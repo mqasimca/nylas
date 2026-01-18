@@ -36,7 +36,7 @@ Shows webhook ID, description, URL, status, and trigger types.`,
   # List in YAML format
   nylas webhook list --format yaml`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")
@@ -78,9 +78,7 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 }
 
 func outputJSON(webhooks any) error {
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	return enc.Encode(webhooks)
+	return common.PrintJSON(webhooks)
 }
 
 func outputYAML(webhooks any) error {

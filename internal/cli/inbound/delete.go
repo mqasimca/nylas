@@ -52,7 +52,7 @@ func runDelete(args []string, skipConfirm bool) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := common.GetNylasClient()
 	if err != nil {
 		printError("%v", err)
 		return err

@@ -57,7 +57,7 @@ func (c *OpenAIClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 	// Prepare OpenAI request
 	openaiReq := map[string]any{
 		"model":    c.GetModel(req.Model),
-		"messages": c.convertMessages(req.Messages),
+		"messages": ConvertMessagesToMaps(req.Messages),
 	}
 
 	if req.MaxTokens > 0 {
@@ -70,7 +70,7 @@ func (c *OpenAIClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 
 	// Tools support
 	if len(tools) > 0 {
-		openaiReq["tools"] = c.convertTools(tools)
+		openaiReq["tools"] = ConvertToolsOpenAIFormat(tools)
 		openaiReq["tool_choice"] = "auto"
 	}
 
@@ -138,38 +138,5 @@ func (c *OpenAIClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 
 // StreamChat streams chat responses.
 func (c *OpenAIClient) StreamChat(ctx context.Context, req *domain.ChatRequest, callback func(chunk string) error) error {
-	// Simplified streaming implementation
-	resp, err := c.Chat(ctx, req)
-	if err != nil {
-		return err
-	}
-	return callback(resp.Content)
-}
-
-// Helper methods
-
-func (c *OpenAIClient) convertMessages(messages []domain.ChatMessage) []map[string]string {
-	result := make([]map[string]string, len(messages))
-	for i, msg := range messages {
-		result[i] = map[string]string{
-			"role":    msg.Role,
-			"content": msg.Content,
-		}
-	}
-	return result
-}
-
-func (c *OpenAIClient) convertTools(tools []domain.Tool) []map[string]any {
-	result := make([]map[string]any, len(tools))
-	for i, tool := range tools {
-		result[i] = map[string]any{
-			"type": "function",
-			"function": map[string]any{
-				"name":        tool.Name,
-				"description": tool.Description,
-				"parameters":  tool.Parameters,
-			},
-		}
-	}
-	return result
+	return FallbackStreamChat(ctx, req, c.Chat, callback)
 }

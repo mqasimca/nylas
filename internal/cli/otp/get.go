@@ -1,11 +1,8 @@
 package otp
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
@@ -56,9 +53,7 @@ If no email is specified, uses the default account.`,
 
 			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
 			if jsonOutput {
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(result)
+				return common.PrintJSON(result)
 			}
 
 			if raw {
@@ -100,35 +95,9 @@ func displayOTP(result *domain.OTPResult, copied bool) {
 	fmt.Println()
 	_, _ = dim.Printf("From:        %s\n", result.From)
 	_, _ = dim.Printf("Subject:     %s\n", result.Subject)
-	_, _ = dim.Printf("Received:    %s\n", formatTimeAgo(result.Received))
+	_, _ = dim.Printf("Received:    %s\n", common.FormatTimeAgo(result.Received))
 
 	if copied {
 		_, _ = green.Println("\n✓ Copied to clipboard")
 	}
-}
-
-func formatTimeAgo(t time.Time) string {
-	d := time.Since(t)
-
-	if d < time.Minute {
-		return "just now"
-	} else if d < time.Hour {
-		m := int(d.Minutes())
-		if m == 1 {
-			return "1 minute ago"
-		}
-		return fmt.Sprintf("%d minutes ago", m)
-	} else if d < 24*time.Hour {
-		h := int(d.Hours())
-		if h == 1 {
-			return "1 hour ago"
-		}
-		return fmt.Sprintf("%d hours ago", h)
-	}
-
-	days := int(d.Hours() / 24)
-	if days == 1 {
-		return "yesterday"
-	}
-	return fmt.Sprintf("%d days ago", days)
 }

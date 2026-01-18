@@ -15,12 +15,12 @@ func newDeleteCmd() *cobra.Command {
 		Long:         "Delete a contact by its ID.",
 		ResourceName: "contact",
 		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 			return client.DeleteContact(ctx, grantID, resourceID)
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }

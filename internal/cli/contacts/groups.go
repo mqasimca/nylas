@@ -34,12 +34,12 @@ func newGroupsListCmd() *cobra.Command {
 		Long:    "List all contact groups for the specified grant or default account.",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -75,7 +75,7 @@ func newGroupsListCmd() *cobra.Command {
 }
 
 func newGroupsShowCmd() *cobra.Command {
-	client, _ := getClient()
+	client, _ := common.GetNylasClient()
 
 	return common.NewShowCommand(common.ShowCommandConfig{
 		Use:          "show <group-id> [grant-id]",
@@ -99,7 +99,7 @@ func newGroupsShowCmd() *cobra.Command {
 
 			return nil
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }
 
@@ -116,7 +116,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -125,7 +125,7 @@ Examples:
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -197,12 +197,12 @@ func newGroupsDeleteCmd() *cobra.Command {
 		Short:        "Delete a contact group",
 		ResourceName: "contact group",
 		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 			return client.DeleteContactGroup(ctx, grantID, resourceID)
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }

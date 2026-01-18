@@ -36,7 +36,7 @@ func newConfigListCmd() *cobra.Command {
 		Short:   "List scheduler configurations",
 		Long:    "List all scheduler configurations (meeting types).",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -85,7 +85,7 @@ func newConfigShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific scheduler configuration.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -163,7 +163,7 @@ func newConfigCreateCmd() *cobra.Command {
 				participants[i] = p
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -236,7 +236,7 @@ func newConfigUpdateCmd() *cobra.Command {
 		Long:  "Update an existing scheduler configuration.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -305,7 +305,7 @@ func newConfigDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

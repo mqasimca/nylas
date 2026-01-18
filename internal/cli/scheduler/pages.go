@@ -35,7 +35,7 @@ func newPageListCmd() *cobra.Command {
 		Short:   "List scheduler pages",
 		Long:    "List all scheduler pages.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -83,7 +83,7 @@ func newPageShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific scheduler page.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -129,7 +129,7 @@ func newPageCreateCmd() *cobra.Command {
 		Short: "Create a scheduler page",
 		Long:  "Create a new scheduler page (public booking page).",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -180,7 +180,7 @@ func newPageUpdateCmd() *cobra.Command {
 		Long:  "Update an existing scheduler page.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -234,7 +234,7 @@ func newPageDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

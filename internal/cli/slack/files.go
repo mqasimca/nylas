@@ -141,7 +141,7 @@ Examples:
 					fmt.Printf(" (.%s)", f.FileType)
 				}
 				fmt.Println()
-				fmt.Printf("   Size: %s\n", formatFileSize(f.Size))
+				fmt.Printf("   Size: %s\n", common.FormatSize(f.Size))
 
 				// Image dimensions if available
 				if f.ImageWidth > 0 && f.ImageHeight > 0 {
@@ -212,7 +212,7 @@ func newFilesShowCmd() *cobra.Command {
 				fmt.Printf(" (.%s)", file.FileType)
 			}
 			fmt.Println()
-			fmt.Printf("Size:      %s (%d bytes)\n", formatFileSize(file.Size), file.Size)
+			fmt.Printf("Size:      %s (%d bytes)\n", common.FormatSize(file.Size), file.Size)
 
 			if file.ImageWidth > 0 && file.ImageHeight > 0 {
 				fmt.Printf("Dimensions: %dx%d pixels\n", file.ImageWidth, file.ImageHeight)
@@ -348,7 +348,7 @@ Examples:
 				return common.WrapWriteError("file", err)
 			}
 
-			_, _ = common.Green.Printf("✓ Downloaded %s (%s) to %s\n", file.Name, formatFileSize(written), outputPath)
+			_, _ = common.Green.Printf("✓ Downloaded %s (%s) to %s\n", file.Name, common.FormatSize(written), outputPath)
 
 			return nil
 		},
@@ -357,24 +357,4 @@ Examples:
 	cmd.Flags().StringVarP(&outputPath, "output", "o", "", "Output file path (default: original filename)")
 
 	return cmd
-}
-
-// formatFileSize formats bytes into human-readable size.
-func formatFileSize(bytes int64) string {
-	const (
-		KB = 1024
-		MB = KB * 1024
-		GB = MB * 1024
-	)
-
-	switch {
-	case bytes >= GB:
-		return fmt.Sprintf("%.2f GB", float64(bytes)/GB)
-	case bytes >= MB:
-		return fmt.Sprintf("%.2f MB", float64(bytes)/MB)
-	case bytes >= KB:
-		return fmt.Sprintf("%.2f KB", float64(bytes)/KB)
-	default:
-		return fmt.Sprintf("%d bytes", bytes)
-	}
 }

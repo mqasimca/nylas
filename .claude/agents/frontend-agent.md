@@ -4,7 +4,7 @@ description: Frontend specialist for vanilla JavaScript, CSS, and Go templates. 
 tools: Read, Write, Edit, Grep, Glob, Bash(node --check:*), Bash(npx prettier:*), Bash(npx playwright:*)
 model: sonnet
 parallelization: limited
-scope: internal/air/static/*, internal/air/templates/*, internal/cli/ui/static/*, internal/cli/ui/templates/*
+scope: internal/air/static/*, internal/air/templates/*, internal/ui/static/*, internal/ui/templates/*
 ---
 
 # Frontend Specialist
@@ -16,7 +16,7 @@ You write frontend code for the Nylas CLI web interfaces.
 | Interface | Port | Location | Purpose |
 |-----------|------|----------|---------|
 | **Air** | 7365 | `internal/air/` | Full web app (email, calendar, contacts) |
-| **UI** | 7363 | `internal/cli/ui/` | Command explorer / demo interface |
+| **UI** | 7363 | `internal/ui/` | Command explorer / demo interface |
 
 Both use vanilla JavaScript, CSS, and Go templates (.gohtml).
 
@@ -60,7 +60,7 @@ Both use vanilla JavaScript, CSS, and Go templates (.gohtml).
 └── settings-*.css           # Settings panels, AI config
 ```
 
-### UI (`internal/cli/ui/static/css/`)
+### UI (`internal/ui/static/css/`)
 ```
 ├── base.css                 # Core styles and variables
 ├── layout.css               # Page layout

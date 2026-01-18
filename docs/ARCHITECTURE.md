@@ -42,9 +42,9 @@ internal/
     scheduler/                # Booking pages
     slack/                    # Slack integration
     timezone/                 # Timezone utilities
-    ui/                       # Web UI (port 7363)
     update/                   # Self-update
     webhook/                  # Webhook management
+  ui/                         # Web UI (port 7363)
   air/                        # Web email client (port 7365)
   tui/                        # Terminal UI
   app/                        # Shared app logic (auth, otp)
@@ -79,7 +79,7 @@ docs/                         # Documentation
 | Timezone service | `internal/adapters/utilities/timezone/` |
 | **User Interfaces** | |
 | Air web client (port 7365) | `internal/air/` |
-| UI config tool (port 7363) | `internal/cli/ui/` |
+| UI config tool (port 7363) | `internal/ui/` |
 | TUI terminal client | `internal/tui/` |
 | **Tests** | |
 | CLI integration tests | `internal/cli/integration/*_test.go` |
@@ -279,7 +279,7 @@ The CLI provides three different interfaces:
 | Interface | Command | Port | Purpose | Location |
 |-----------|---------|------|---------|----------|
 | **TUI** | `nylas tui` | N/A | Terminal-based email/calendar client | `internal/tui/` |
-| **UI** | `nylas ui` | 7363 | Web-based CLI configuration tool | `internal/cli/ui/` |
+| **UI** | `nylas ui` | 7363 | Web-based CLI configuration tool | `internal/ui/` |
 | **Air** | `nylas air` | 7365 | Full web-based email/calendar client | `internal/air/` |
 
 > **Which to use?** TUI for terminal lovers, Air for browser-based email client, UI for API credential setup.

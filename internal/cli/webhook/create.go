@@ -81,7 +81,7 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 				}
 			}
 
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")

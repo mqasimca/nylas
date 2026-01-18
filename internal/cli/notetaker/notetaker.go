@@ -1,8 +1,6 @@
 package notetaker
 
 import (
-	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -43,18 +41,6 @@ Use subcommands to create, list, show, delete notetakers and retrieve media.`,
 	cmd.AddCommand(newMediaCmd())
 
 	return cmd
-}
-
-// getClient creates and configures a Nylas client.
-// Delegates to common.GetNylasClient() for consistent credential handling.
-func getClient() (ports.NylasClient, error) {
-	return common.GetNylasClient()
-}
-
-// getGrantID gets the grant ID from args or default.
-// Delegates to common.GetGrantID for consistent behavior across CLI commands.
-func getGrantID(args []string) (string, error) {
-	return common.GetGrantID(args)
 }
 
 // createContext creates a context with timeout.

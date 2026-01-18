@@ -77,6 +77,11 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 
 **Quick lookup:** CLI helpers in `internal/cli/common/`, HTTP in `client.go`, Air at `internal/air/`
 
+**New packages (2024):**
+- `internal/ports/output.go` - OutputWriter interface for pluggable formatting
+- `internal/adapters/output/` - Table, JSON, YAML, Quiet output adapters
+- `internal/httputil/` - HTTP response helpers (WriteJSON, LimitedBody, DecodeJSON)
+
 **Full inventory:** `docs/ARCHITECTURE.md`
 
 ---
@@ -159,6 +164,12 @@ This section captures lessons learned from mistakes. Claude updates this section
 - Air handlers: ALWAYS return after error responses (prevents writing to closed response)
 - Integration tests: ALWAYS use acquireRateLimit(t) before API calls in parallel tests
 - Frontend JS: ALWAYS use textContent for user data, NEVER innerHTML (XSS prevention)
+- CLI clients: Use `common.GetNylasClient()` directly, NEVER create package-local `getClient()` wrappers
+- Grant IDs: Use `common.GetGrantID(args)` directly, NEVER create package-local `getGrantID()` wrappers
+- File sizes: Use `common.FormatSize()` for byte formatting, NEVER create duplicate formatBytes/formatFileSize
+- Success/Error messages: Use `common.PrintSuccess()`/`common.PrintError()`, delegate from package-local helpers
+- HTTP handlers: Use `httputil.WriteJSON()`/`httputil.LimitedBody()` for consistent response handling
+- AI clients: Use shared helpers in `adapters/ai/base_client.go` (ConvertMessagesToMaps, ConvertToolsOpenAIFormat, FallbackStreamChat)
 
 ### Non-Obvious Workflows
 - Progressive disclosure: Keep main skill files under 100 lines, use references/ for details

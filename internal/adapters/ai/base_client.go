@@ -133,3 +133,43 @@ func GetAPIKeyFromEnv(configKey, envVarName string) string {
 	}
 	return apiKey
 }
+
+// ConvertMessagesToMaps converts domain.ChatMessage slice to OpenAI-compatible format.
+// Used by OpenAI, Groq, and Ollama clients which share the same message format.
+func ConvertMessagesToMaps(messages []domain.ChatMessage) []map[string]string {
+	result := make([]map[string]string, len(messages))
+	for i, msg := range messages {
+		result[i] = map[string]string{
+			"role":    msg.Role,
+			"content": msg.Content,
+		}
+	}
+	return result
+}
+
+// ConvertToolsOpenAIFormat converts tools to OpenAI-compatible format.
+// Used by OpenAI, Groq, and Ollama clients which share the same tools format.
+func ConvertToolsOpenAIFormat(tools []domain.Tool) []map[string]any {
+	result := make([]map[string]any, len(tools))
+	for i, tool := range tools {
+		result[i] = map[string]any{
+			"type": "function",
+			"function": map[string]any{
+				"name":        tool.Name,
+				"description": tool.Description,
+				"parameters":  tool.Parameters,
+			},
+		}
+	}
+	return result
+}
+
+// FallbackStreamChat provides a simple streaming implementation that calls Chat and returns the result.
+// Used by clients that don't have native streaming support.
+func FallbackStreamChat(ctx context.Context, req *domain.ChatRequest, chatFunc func(context.Context, *domain.ChatRequest) (*domain.ChatResponse, error), callback func(chunk string) error) error {
+	resp, err := chatFunc(ctx, req)
+	if err != nil {
+		return err
+	}
+	return callback(resp.Content)
+}

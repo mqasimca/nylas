@@ -64,13 +64,13 @@ The master event ID is the ID of the parent recurring event.`,
 				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
 			if grantID == "" {
-				grantID, err = getGrantID([]string{})
+				grantID, err = common.GetGrantID([]string{})
 				if err != nil {
 					return err
 				}
@@ -164,13 +164,13 @@ This creates an exception for that particular instance.`,
 				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
 			if grantID == "" {
-				grantID, err = getGrantID([]string{})
+				grantID, err = common.GetGrantID([]string{})
 				if err != nil {
 					return err
 				}
@@ -286,13 +286,13 @@ This adds an exception to the recurrence rule.`,
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
 			if grantID == "" {
-				grantID, err = getGrantID([]string{})
+				grantID, err = common.GetGrantID([]string{})
 				if err != nil {
 					return err
 				}

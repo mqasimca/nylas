@@ -35,7 +35,7 @@ func newConnectorListCmd() *cobra.Command {
 		Short:   "List connectors",
 		Long:    "List all email provider connectors.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -84,7 +84,7 @@ func newConnectorShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific connector.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -155,7 +155,7 @@ func newConnectorCreateCmd() *cobra.Command {
 		Short: "Create a connector",
 		Long:  "Create a new email provider connector.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -225,7 +225,7 @@ func newConnectorUpdateCmd() *cobra.Command {
 		Long:  "Update an existing connector.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -279,7 +279,7 @@ func newConnectorDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

@@ -68,9 +68,14 @@ INTERACTIVE TUI:
 }
 
 func init() {
-	// Global flags
+	// Global output flags (format, json, quiet, wide, no-color)
+	rootCmd.PersistentFlags().String("format", "", "Output format: table, json, yaml")
 	rootCmd.PersistentFlags().Bool("json", false, "Output in JSON format")
+	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Quiet mode - only output essential data (IDs)")
+	rootCmd.PersistentFlags().BoolP("wide", "w", false, "Wide output - show full IDs without truncation")
 	rootCmd.PersistentFlags().Bool("no-color", false, "Disable color output")
+
+	// Other global flags
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().String("config", "", "Custom config file path")
 

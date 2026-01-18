@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -208,4 +209,66 @@ func containsAt(s string) bool {
 		}
 	}
 	return false
+}
+
+// WithClient is a generic helper that handles client setup, context creation, and grant ID resolution.
+// This reduces boilerplate in commands by handling all the common setup in one place.
+//
+// Usage:
+//
+//	return common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) error {
+//	    calendars, err := client.GetCalendars(ctx, grantID)
+//	    if err != nil {
+//	        return err
+//	    }
+//	    // ... process calendars ...
+//	    return nil
+//	})
+func WithClient[T any](args []string, fn func(ctx context.Context, client ports.NylasClient, grantID string) (T, error)) (T, error) {
+	var zero T
+
+	// Get Nylas client
+	client, err := GetNylasClient()
+	if err != nil {
+		return zero, err
+	}
+
+	// Get grant ID
+	grantID, err := GetGrantID(args)
+	if err != nil {
+		return zero, err
+	}
+
+	// Create context with timeout
+	ctx, cancel := CreateContext()
+	defer cancel()
+
+	// Execute function
+	return fn(ctx, client, grantID)
+}
+
+// WithClientNoGrant is a generic helper for commands that don't need a grant ID.
+// This is useful for admin commands or commands that operate without a specific account.
+//
+// Usage:
+//
+//	return common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) error {
+//	    // ... use client ...
+//	    return nil
+//	})
+func WithClientNoGrant[T any](fn func(ctx context.Context, client ports.NylasClient) (T, error)) (T, error) {
+	var zero T
+
+	// Get Nylas client
+	client, err := GetNylasClient()
+	if err != nil {
+		return zero, err
+	}
+
+	// Create context with timeout
+	ctx, cancel := CreateContext()
+	defer cancel()
+
+	// Execute function
+	return fn(ctx, client)
 }

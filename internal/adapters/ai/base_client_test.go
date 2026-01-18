@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/mqasimca/nylas/internal/domain"
 )
 
 func TestNewBaseClient(t *testing.T) {
@@ -311,6 +313,108 @@ func TestDoJSONRequestAndDecode(t *testing.T) {
 		err := client.DoJSONRequestAndDecode(context.Background(), http.MethodGet, "/test", nil, nil, &result)
 		if err == nil {
 			t.Error("expected error for HTTP 400")
+		}
+	})
+}
+
+func TestConvertMessagesToMaps(t *testing.T) {
+	messages := []domain.ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant"},
+		{Role: "user", Content: "Hello"},
+		{Role: "assistant", Content: "Hi there!"},
+	}
+
+	converted := ConvertMessagesToMaps(messages)
+
+	if len(converted) != len(messages) {
+		t.Errorf("converted messages count = %d, want %d", len(converted), len(messages))
+	}
+
+	for i, msg := range converted {
+		if msg["role"] != messages[i].Role {
+			t.Errorf("message[%d] role = %q, want %q", i, msg["role"], messages[i].Role)
+		}
+		if msg["content"] != messages[i].Content {
+			t.Errorf("message[%d] content = %q, want %q", i, msg["content"], messages[i].Content)
+		}
+	}
+}
+
+func TestConvertToolsOpenAIFormat(t *testing.T) {
+	tools := []domain.Tool{
+		{
+			Name:        "get_weather",
+			Description: "Get current weather",
+			Parameters: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"location": map[string]any{
+						"type":        "string",
+						"description": "City name",
+					},
+				},
+			},
+		},
+	}
+
+	converted := ConvertToolsOpenAIFormat(tools)
+
+	if len(converted) != len(tools) {
+		t.Errorf("converted tools count = %d, want %d", len(converted), len(tools))
+	}
+
+	if converted[0]["type"] != "function" {
+		t.Errorf("tool type = %v, want %q", converted[0]["type"], "function")
+	}
+
+	fn, ok := converted[0]["function"].(map[string]any)
+	if !ok {
+		t.Fatal("function field is not a map")
+	}
+
+	if fn["name"] != tools[0].Name {
+		t.Errorf("function name = %v, want %q", fn["name"], tools[0].Name)
+	}
+
+	if fn["description"] != tools[0].Description {
+		t.Errorf("function description = %v, want %q", fn["description"], tools[0].Description)
+	}
+}
+
+func TestFallbackStreamChat(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		chatFunc := func(ctx context.Context, req *domain.ChatRequest) (*domain.ChatResponse, error) {
+			return &domain.ChatResponse{Content: "Hello!"}, nil
+		}
+
+		var received string
+		callback := func(chunk string) error {
+			received = chunk
+			return nil
+		}
+
+		err := FallbackStreamChat(context.Background(), &domain.ChatRequest{}, chatFunc, callback)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if received != "Hello!" {
+			t.Errorf("expected 'Hello!', got %q", received)
+		}
+	})
+
+	t.Run("chat error", func(t *testing.T) {
+		chatFunc := func(ctx context.Context, req *domain.ChatRequest) (*domain.ChatResponse, error) {
+			return nil, context.DeadlineExceeded
+		}
+
+		callback := func(chunk string) error {
+			return nil
+		}
+
+		err := FallbackStreamChat(context.Background(), &domain.ChatRequest{}, chatFunc, callback)
+		if err != context.DeadlineExceeded {
+			t.Errorf("expected DeadlineExceeded, got %v", err)
 		}
 	})
 }

@@ -64,7 +64,7 @@ func (c *OllamaClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 	// Prepare Ollama request
 	ollamaReq := map[string]any{
 		"model":    c.GetModel(req.Model),
-		"messages": c.convertMessages(req.Messages),
+		"messages": ConvertMessagesToMaps(req.Messages),
 		"stream":   false,
 	}
 
@@ -86,7 +86,7 @@ func (c *OllamaClient) ChatWithTools(ctx context.Context, req *domain.ChatReques
 
 	// Tools support (if model supports it)
 	if len(tools) > 0 {
-		ollamaReq["tools"] = c.convertTools(tools)
+		ollamaReq["tools"] = ConvertToolsOpenAIFormat(tools)
 	}
 
 	// Send request using base client
@@ -135,7 +135,7 @@ func (c *OllamaClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 	// Prepare Ollama request
 	ollamaReq := map[string]any{
 		"model":    c.GetModel(req.Model),
-		"messages": c.convertMessages(req.Messages),
+		"messages": ConvertMessagesToMaps(req.Messages),
 		"stream":   true,
 	}
 
@@ -181,32 +181,4 @@ func (c *OllamaClient) StreamChat(ctx context.Context, req *domain.ChatRequest, 
 	}
 
 	return nil
-}
-
-// Helper methods
-
-func (c *OllamaClient) convertMessages(messages []domain.ChatMessage) []map[string]string {
-	result := make([]map[string]string, len(messages))
-	for i, msg := range messages {
-		result[i] = map[string]string{
-			"role":    msg.Role,
-			"content": msg.Content,
-		}
-	}
-	return result
-}
-
-func (c *OllamaClient) convertTools(tools []domain.Tool) []map[string]any {
-	result := make([]map[string]any, len(tools))
-	for i, tool := range tools {
-		result[i] = map[string]any{
-			"type": "function",
-			"function": map[string]any{
-				"name":        tool.Name,
-				"description": tool.Description,
-				"parameters":  tool.Parameters,
-			},
-		}
-	}
-	return result
 }

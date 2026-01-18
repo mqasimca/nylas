@@ -34,7 +34,7 @@ func newSessionCreateCmd() *cobra.Command {
 		Short: "Create a scheduler session",
 		Long:  "Create a new scheduler session for a configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -77,7 +77,7 @@ func newSessionShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a scheduler session.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

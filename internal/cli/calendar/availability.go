@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -58,13 +57,13 @@ Shows busy time slots within the specified time range.`,
   nylas calendar availability check --duration 7d`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return common.NewUserError("Failed to get grant: "+err.Error(),
 					"Run 'nylas auth status' to check authentication")
@@ -133,9 +132,7 @@ Shows busy time slots within the specified time range.`,
 
 			switch format {
 			case "json":
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(result)
+				return common.PrintJSON(result)
 			case "yaml":
 				return yaml.NewEncoder(os.Stdout).Encode(result)
 			default:
@@ -183,7 +180,7 @@ This searches for time slots when all participants are free.`,
 					"Use --participants to specify email addresses")
 			}
 
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")
@@ -242,9 +239,7 @@ This searches for time slots when all participants are free.`,
 
 			switch format {
 			case "json":
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(result)
+				return common.PrintJSON(result)
 			case "yaml":
 				return yaml.NewEncoder(os.Stdout).Encode(result)
 			default:

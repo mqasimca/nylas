@@ -6,7 +6,6 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/adapters/config"
-	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
@@ -38,16 +37,6 @@ View calendars, list events, create new events, and more.`,
 	cmd.AddCommand(newAICmd()) // AI command group includes: analyze, conflicts, reschedule, focus-time, adapt
 
 	return cmd
-}
-
-func getClient() (ports.NylasClient, error) {
-	// Delegate to common.GetNylasClient() which handles caching internally
-	return common.GetNylasClient()
-}
-
-func getGrantID(args []string) (string, error) {
-	// Use common helper that supports environment variables
-	return common.GetGrantID(args)
 }
 
 func getLLMRouter() (ports.LLMRouter, error) {

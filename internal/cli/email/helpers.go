@@ -6,14 +6,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/mqasimca/nylas/internal/ports"
 )
-
-// getClient creates and configures a Nylas client.
-// Supports credentials from keyring/file store or environment variables.
-func getClient() (ports.NylasClient, error) {
-	return common.GetNylasClient()
-}
 
 // printMessage prints a message in a formatted way.
 func printMessage(msg domain.Message, showBody bool) {
@@ -121,6 +114,7 @@ func printMessageSummaryWithID(msg domain.Message, index int, showID bool) {
 }
 
 // printSuccess prints a success message in green.
+// Delegates to common.PrintSuccess for consistent success formatting.
 func printSuccess(format string, args ...any) {
-	_, _ = common.Green.Printf(format+"\n", args...)
+	common.PrintSuccess(format, args...)
 }

@@ -38,7 +38,7 @@ func newGrantListCmd() *cobra.Command {
 		Short:   "List grants",
 		Long:    "List all grants with optional filters.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -111,7 +111,7 @@ func newGrantStatsCmd() *cobra.Command {
 		Short: "Show grant statistics",
 		Long:  "Show statistics about all grants in the organization.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

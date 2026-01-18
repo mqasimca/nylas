@@ -127,73 +127,8 @@ func TestGroqClient_GetModel(t *testing.T) {
 	}
 }
 
-func TestGroqClient_ConvertMessages(t *testing.T) {
-	client := NewGroqClient(nil)
-
-	messages := []domain.ChatMessage{
-		{Role: "system", Content: "You are a helpful assistant"},
-		{Role: "user", Content: "Hello"},
-		{Role: "assistant", Content: "Hi there!"},
-	}
-
-	converted := client.convertMessages(messages)
-
-	if len(converted) != len(messages) {
-		t.Errorf("converted messages count = %d, want %d", len(converted), len(messages))
-	}
-
-	for i, msg := range converted {
-		if msg["role"] != messages[i].Role {
-			t.Errorf("message[%d] role = %q, want %q", i, msg["role"], messages[i].Role)
-		}
-		if msg["content"] != messages[i].Content {
-			t.Errorf("message[%d] content = %q, want %q", i, msg["content"], messages[i].Content)
-		}
-	}
-}
-
-func TestGroqClient_ConvertTools(t *testing.T) {
-	client := NewGroqClient(nil)
-
-	tools := []domain.Tool{
-		{
-			Name:        "get_weather",
-			Description: "Get current weather",
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"location": map[string]any{
-						"type":        "string",
-						"description": "City name",
-					},
-				},
-			},
-		},
-	}
-
-	converted := client.convertTools(tools)
-
-	if len(converted) != len(tools) {
-		t.Errorf("converted tools count = %d, want %d", len(converted), len(tools))
-	}
-
-	if converted[0]["type"] != "function" {
-		t.Errorf("tool type = %v, want %q", converted[0]["type"], "function")
-	}
-
-	fn, ok := converted[0]["function"].(map[string]any)
-	if !ok {
-		t.Fatal("function field is not a map")
-	}
-
-	if fn["name"] != tools[0].Name {
-		t.Errorf("function name = %v, want %q", fn["name"], tools[0].Name)
-	}
-
-	if fn["description"] != tools[0].Description {
-		t.Errorf("function description = %v, want %q", fn["description"], tools[0].Description)
-	}
-}
+// Note: ConvertMessages and ConvertTools tests moved to base_client_test.go
+// since these are now shared functions in base_client.go
 
 func TestGroqClient_ChatWithTools_NoAPIKey(t *testing.T) {
 	client := NewGroqClient(&domain.GroqConfig{

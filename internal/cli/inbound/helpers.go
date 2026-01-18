@@ -7,13 +7,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
-	"github.com/mqasimca/nylas/internal/ports"
 )
-
-// getClient creates and configures a Nylas client.
-func getClient() (ports.NylasClient, error) {
-	return common.GetNylasClient()
-}
 
 // getInboxID gets the inbox ID from args or environment variable.
 func getInboxID(args []string) (string, error) {
@@ -30,13 +24,15 @@ func getInboxID(args []string) (string, error) {
 }
 
 // printError prints an error message in red.
+// Delegates to common.PrintError for consistent error formatting.
 func printError(format string, args ...any) {
-	_, _ = common.Red.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	common.PrintError(format, args...)
 }
 
 // printSuccess prints a success message in green.
+// Delegates to common.PrintSuccess for consistent success formatting.
 func printSuccess(format string, args ...any) {
-	_, _ = common.Green.Printf(format+"\n", args...)
+	common.PrintSuccess(format, args...)
 }
 
 // printInboxSummary prints a single-line inbox summary.

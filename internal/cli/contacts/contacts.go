@@ -2,8 +2,6 @@
 package contacts
 
 import (
-	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -29,15 +27,4 @@ View contacts, create new contacts, update and delete contacts.`,
 	cmd.AddCommand(newSyncCmd())
 
 	return cmd
-}
-
-func getClient() (ports.NylasClient, error) {
-	// Delegate to common.GetNylasClient() which handles caching internally
-	return common.GetNylasClient()
-}
-
-// getGrantID gets the grant ID from args or default.
-// Delegates to common.GetGrantID for consistent behavior across CLI commands.
-func getGrantID(args []string) (string, error) {
-	return common.GetGrantID(args)
 }

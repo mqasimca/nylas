@@ -29,7 +29,7 @@ func newScheduledListCmd() *cobra.Command {
 		Long:  "List all messages that are scheduled to be sent.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -90,7 +90,7 @@ func newScheduledShowCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scheduleID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ func newScheduledCancelCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scheduleID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

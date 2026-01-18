@@ -37,12 +37,12 @@ automatically blocks focus time to protect deep work sessions.`,
 			autoDecline, _ := cmd.Flags().GetBool("auto-decline")
 			allowOverride, _ := cmd.Flags().GetBool("allow-override")
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return common.WrapGetError("client", err)
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return common.WrapGetError("grant ID", err)
 			}
@@ -291,12 +291,12 @@ suggests optimizations to protect focus time and reduce meeting overload.`,
 			triggerStr, _ := cmd.Flags().GetString("trigger")
 			autoApply, _ := cmd.Flags().GetBool("auto-apply")
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return common.WrapGetError("client", err)
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return common.WrapGetError("grant ID", err)
 			}

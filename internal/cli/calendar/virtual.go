@@ -42,7 +42,7 @@ func newVirtualListCmd() *cobra.Command {
   # List in JSON format
   nylas calendar virtual list --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -97,7 +97,7 @@ The email can be any identifier - it doesn't need to be a real email address.`,
 				return common.NewUserError("email is required", "Use --email to specify an identifier for the virtual calendar")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -149,7 +149,7 @@ func newVirtualShowCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			grantID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -210,7 +210,7 @@ func newVirtualDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

@@ -22,9 +22,9 @@ import (
 	"github.com/mqasimca/nylas/internal/cli/scheduler"
 	"github.com/mqasimca/nylas/internal/cli/slack"
 	"github.com/mqasimca/nylas/internal/cli/timezone"
-	"github.com/mqasimca/nylas/internal/cli/ui"
 	"github.com/mqasimca/nylas/internal/cli/update"
 	"github.com/mqasimca/nylas/internal/cli/webhook"
+	"github.com/mqasimca/nylas/internal/ui"
 )
 
 func main() {

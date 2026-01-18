@@ -2,8 +2,6 @@
 package webhook
 
 import (
-	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -31,9 +29,4 @@ Note: Webhook management requires an API key (admin-level access).`,
 	cmd.AddCommand(newServerCmd())
 
 	return cmd
-}
-
-func getClient() (ports.NylasClient, error) {
-	// Delegate to common.GetNylasClient() which handles caching internally
-	return common.GetNylasClient()
 }

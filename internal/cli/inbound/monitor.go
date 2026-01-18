@@ -74,7 +74,7 @@ func runMonitor(args []string, port int, tunnelType, webhookSecret string, jsonO
 	}
 
 	// Get inbox details
-	client, err := getClient()
+	client, err := common.GetNylasClient()
 	if err != nil {
 		printError("%v", err)
 		return err

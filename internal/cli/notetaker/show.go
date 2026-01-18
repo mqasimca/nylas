@@ -1,9 +1,7 @@
 package notetaker
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
@@ -23,13 +21,13 @@ func newShowCmd() *cobra.Command {
   nylas notetaker show abc123 --json`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
 			notetakerID := args[0]
-			grantID, err := getGrantID(args[1:])
+			grantID, err := common.GetGrantID(args[1:])
 			if err != nil {
 				return err
 			}
@@ -43,9 +41,7 @@ func newShowCmd() *cobra.Command {
 			}
 
 			if outputJSON {
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(notetaker)
+				return common.PrintJSON(notetaker)
 			}
 
 			_, _ = common.Cyan.Printf("Notetaker: %s\n", notetaker.ID)

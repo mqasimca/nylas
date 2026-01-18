@@ -2,8 +2,6 @@
 package admin
 
 import (
-	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +22,4 @@ the Nylas platform at an organizational level.`,
 	cmd.AddCommand(newGrantsCmd())
 
 	return cmd
-}
-
-func getClient() (ports.NylasClient, error) {
-	// Delegate to common.GetNylasClient() which handles caching internally
-	return common.GetNylasClient()
 }

@@ -39,12 +39,12 @@ and saves it to a file or displays the Base64 data.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			contactID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
-			grantID, err := getGrantID(args[1:])
+			grantID, err := common.GetGrantID(args[1:])
 			if err != nil {
 				return err
 			}

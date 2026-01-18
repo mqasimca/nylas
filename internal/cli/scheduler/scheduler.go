@@ -2,8 +2,6 @@
 package scheduler
 
 import (
-	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -25,11 +23,4 @@ manage availability, and handle scheduling sessions.`,
 	cmd.AddCommand(newPagesCmd())
 
 	return cmd
-}
-
-// getClient creates and configures a Nylas client with caching.
-// Delegates to common.GetNylasClient() for consistent credential handling.
-func getClient() (ports.NylasClient, error) {
-	// Delegate to common.GetNylasClient() which handles caching internally
-	return common.GetNylasClient()
 }

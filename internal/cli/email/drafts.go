@@ -39,7 +39,7 @@ func newDraftsListCmd() *cobra.Command {
 		Short: "List drafts",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -117,7 +117,7 @@ func newDraftsCreateCmd() *cobra.Command {
 		Long:  "Create a new draft email with optional attachments.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -294,7 +294,7 @@ func detectContentType(filename string, content []byte) string {
 }
 
 func newDraftsShowCmd() *cobra.Command {
-	client, _ := getClient()
+	client, _ := common.GetNylasClient()
 
 	return common.NewShowCommand(common.ShowCommandConfig{
 		Use:          "show <draft-id> [grant-id]",
@@ -335,7 +335,7 @@ func newDraftsShowCmd() *cobra.Command {
 
 			return nil
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }
 
@@ -349,7 +349,7 @@ func newDraftsSendCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			draftID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -409,12 +409,12 @@ func newDraftsDeleteCmd() *cobra.Command {
 		Short:        "Delete a draft",
 		ResourceName: "draft",
 		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 			return client.DeleteDraft(ctx, grantID, resourceID)
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }

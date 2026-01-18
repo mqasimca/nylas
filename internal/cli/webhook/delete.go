@@ -26,7 +26,7 @@ This permanently removes the webhook and stops all event notifications.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			webhookID := args[0]
 
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")

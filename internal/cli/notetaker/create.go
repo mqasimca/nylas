@@ -1,10 +1,8 @@
 package notetaker
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -54,12 +52,12 @@ record the meeting, and generate a transcript when complete.`,
 				return common.NewUserError(fmt.Sprintf("invalid meeting link URL: %s", meetingLink), "must be a valid http/https URL")
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -93,9 +91,7 @@ record the meeting, and generate a transcript when complete.`,
 			}
 
 			if outputJSON {
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(notetaker)
+				return common.PrintJSON(notetaker)
 			}
 
 			_, _ = common.BoldGreen.Println("✓ Notetaker created successfully!")

@@ -10,7 +10,7 @@ import (
 )
 
 func newShowCmd() *cobra.Command {
-	client, _ := getClient()
+	client, _ := common.GetNylasClient()
 
 	return common.NewShowCommand(common.ShowCommandConfig{
 		Use:          "show <contact-id> [grant-id]",
@@ -146,6 +146,6 @@ func newShowCmd() *cobra.Command {
 
 			return nil
 		},
-		GetClient: getClient,
+		GetClient: common.GetNylasClient,
 	})
 }

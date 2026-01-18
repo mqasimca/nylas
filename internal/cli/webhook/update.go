@@ -87,7 +87,7 @@ You can update the URL, triggers, description, notification emails, or status.`,
 				}
 			}
 
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")

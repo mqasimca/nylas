@@ -325,21 +325,7 @@ func formatDate(t time.Time) string {
 
 // formatFileSize formats a file size in bytes to a human-readable string.
 func formatFileSize(size int64) string {
-	const (
-		KB = 1024
-		MB = KB * 1024
-		GB = MB * 1024
-	)
-	switch {
-	case size >= GB:
-		return fmt.Sprintf("%.1f GB", float64(size)/float64(GB))
-	case size >= MB:
-		return fmt.Sprintf("%.1f MB", float64(size)/float64(MB))
-	case size >= KB:
-		return fmt.Sprintf("%.1f KB", float64(size)/float64(KB))
-	default:
-		return fmt.Sprintf("%d B", size)
-	}
+	return common.FormatSize(size)
 }
 
 // stripHTMLForTUI removes HTML tags from a string for terminal display.

@@ -56,7 +56,7 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 		return err
 	}
 
-	client, err := getClient()
+	client, err := common.GetNylasClient()
 	if err != nil {
 		printError("%v", err)
 		return err

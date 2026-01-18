@@ -70,7 +70,7 @@ func newMarkUnstarredCmd() *cobra.Command {
 func markMessage(args []string, unread bool, starred *bool) error {
 	messageID := args[0]
 
-	client, err := getClient()
+	client, err := common.GetNylasClient()
 	if err != nil {
 		return err
 	}

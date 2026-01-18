@@ -70,8 +70,8 @@ vendor/
 
 # Node.js
 node_modules/
-internal/cli/ui/static/js/package*.json
-internal/cli/ui/static/js/*.test.js
+internal/ui/static/js/package*.json
+internal/ui/static/js/*.test.js
 
 # ===========================================
 # SECURITY - Credential & Secret Protection

@@ -44,7 +44,7 @@ This command fetches your recent emails and uses AI to provide:
   # Analyze specific folder
   nylas email ai analyze --folder SENT`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

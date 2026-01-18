@@ -8,11 +8,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/mqasimca/nylas/internal/adapters/providers"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"golang.org/x/time/rate"
 )
+
+func init() {
+	// Register Nylas provider with the global registry
+	providers.Register("nylas", func(config providers.ProviderConfig) (ports.NylasClient, error) {
+		client := NewHTTPClient()
+
+		if config.BaseURL != "" {
+			client.SetBaseURL(config.BaseURL)
+		} else if config.Region != "" {
+			client.SetRegion(config.Region)
+		}
+
+		client.SetCredentials(config.ClientID, config.ClientSecret, config.APIKey)
+		return client, nil
+	})
+}
 
 const (
 	baseURLUS = "https://api.us.nylas.com"
@@ -21,6 +40,15 @@ const (
 	// defaultRateLimit is the default rate limit (requests per second)
 	// Set to 10 requests per second to avoid API quota exhaustion
 	defaultRateLimit = 10
+
+	// defaultMaxRetries is the maximum number of retries for failed requests
+	defaultMaxRetries = 3
+
+	// defaultRetryDelay is the base delay between retries
+	defaultRetryDelay = time.Second
+
+	// maxRetryDelay is the maximum delay between retries
+	maxRetryDelay = 30 * time.Second
 )
 
 // HTTPClient implements the NylasClient interface.
@@ -32,11 +60,14 @@ type HTTPClient struct {
 	apiKey         string
 	rateLimiter    *rate.Limiter
 	requestTimeout time.Duration
+	maxRetries     int
+	retryDelay     time.Duration
 }
 
-// NewHTTPClient creates a new Nylas HTTP client with rate limiting.
+// NewHTTPClient creates a new Nylas HTTP client with rate limiting and retry logic.
 // Rate limiting prevents API quota exhaustion and temporary account suspension.
 // Default: 10 requests/second with burst capacity of 20 requests.
+// Retry logic handles transient errors with exponential backoff and Retry-After header support.
 func NewHTTPClient() *HTTPClient {
 	return &HTTPClient{
 		httpClient: &http.Client{
@@ -47,6 +78,8 @@ func NewHTTPClient() *HTTPClient {
 		// Create token bucket rate limiter: 10 requests/second, burst of 20
 		rateLimiter:    rate.NewLimiter(rate.Limit(defaultRateLimit), defaultRateLimit*2),
 		requestTimeout: domain.TimeoutAPI,
+		maxRetries:     defaultMaxRetries,
+		retryDelay:     defaultRetryDelay,
 	}
 }
 
@@ -123,25 +156,102 @@ func (c *HTTPClient) ensureContext(ctx context.Context) (context.Context, contex
 // This method applies rate limiting before making the request and ensures
 // the context has a timeout to prevent hanging requests.
 func (c *HTTPClient) doRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
-	// Apply rate limiting - wait for permission to proceed
-	if err := c.rateLimiter.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("rate limiter: %w", err)
+	var lastErr error
+	var lastResp *http.Response
+
+	for attempt := 0; attempt <= c.maxRetries; attempt++ {
+		// Apply rate limiting - wait for permission to proceed
+		if err := c.rateLimiter.Wait(ctx); err != nil {
+			return nil, fmt.Errorf("rate limiter: %w", err)
+		}
+
+		// Ensure context has timeout
+		ctxWithTimeout, cancel := c.ensureContext(ctx)
+
+		// Update request context
+		reqWithCtx := req.Clone(ctxWithTimeout)
+
+		// Execute request
+		resp, err := c.httpClient.Do(reqWithCtx)
+		cancel() // Cancel timeout context
+
+		if err != nil {
+			lastErr = fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+
+			// Network errors are retryable
+			if attempt < c.maxRetries {
+				delay := c.calculateBackoff(attempt, nil)
+				select {
+				case <-time.After(delay):
+					continue
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				}
+			}
+			return nil, lastErr
+		}
+
+		// Check if we should retry based on status code
+		if c.shouldRetryStatus(resp.StatusCode) && attempt < c.maxRetries {
+			lastResp = resp
+			resp.Body.Close()
+
+			delay := c.calculateBackoff(attempt, resp)
+			select {
+			case <-time.After(delay):
+				continue
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+
+		return resp, nil
 	}
 
-	// Ensure context has timeout
-	ctxWithTimeout, cancel := c.ensureContext(ctx)
-	defer cancel()
+	// All retries exhausted
+	if lastResp != nil {
+		return lastResp, nil
+	}
+	return nil, lastErr
+}
 
-	// Update request context
-	req = req.WithContext(ctxWithTimeout)
+// shouldRetryStatus determines if a status code is retryable
+func (c *HTTPClient) shouldRetryStatus(statusCode int) bool {
+	switch statusCode {
+	case http.StatusTooManyRequests, // 429
+		http.StatusInternalServerError, // 500
+		http.StatusBadGateway,          // 502
+		http.StatusServiceUnavailable,  // 503
+		http.StatusGatewayTimeout:      // 504
+		return true
+	default:
+		return false
+	}
+}
 
-	// Execute request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+// calculateBackoff calculates the delay before the next retry
+// It respects the Retry-After header if present, otherwise uses exponential backoff
+func (c *HTTPClient) calculateBackoff(attempt int, resp *http.Response) time.Duration {
+	// Check Retry-After header if response available
+	if resp != nil {
+		if retryAfter := resp.Header.Get("Retry-After"); retryAfter != "" {
+			// Try parsing as seconds
+			if seconds, err := strconv.Atoi(retryAfter); err == nil {
+				delay := time.Duration(seconds) * time.Second
+				if delay <= maxRetryDelay {
+					return delay
+				}
+				return maxRetryDelay
+			}
+		}
 	}
 
-	return resp, nil
+	// Exponential backoff: 1s, 2s, 4s, 8s, ...
+	delay := c.retryDelay * (1 << attempt)
+	if delay > maxRetryDelay {
+		return maxRetryDelay
+	}
+	return delay
 }
 
 // doJSONRequest performs a JSON API request with proper error handling.

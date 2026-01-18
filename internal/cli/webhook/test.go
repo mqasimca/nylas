@@ -40,7 +40,7 @@ that your webhook endpoint is properly configured and receiving events.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			webhookURL := args[0]
 
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")
@@ -133,7 +133,7 @@ so you can properly handle them in your application.`,
 					"Run 'nylas webhook test payload' to see available trigger types")
 			}
 
-			c, err := getClient()
+			c, err := common.GetNylasClient()
 			if err != nil {
 				return common.NewUserError("Failed to initialize client: "+err.Error(),
 					"Run 'nylas auth login' to authenticate")

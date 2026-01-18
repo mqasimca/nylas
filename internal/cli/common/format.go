@@ -244,6 +244,7 @@ type Table struct {
 	headers    []string
 	rows       [][]string
 	alignRight []bool
+	maxWidths  []int // max width per column (0 = no limit)
 	writer     io.Writer
 }
 
@@ -253,6 +254,7 @@ func NewTable(headers ...string) *Table {
 		headers:    headers,
 		rows:       make([][]string, 0),
 		alignRight: make([]bool, len(headers)),
+		maxWidths:  make([]int, len(headers)),
 		writer:     os.Stdout,
 	}
 }
@@ -267,6 +269,14 @@ func (t *Table) SetWriter(w io.Writer) *Table {
 func (t *Table) AlignRight(col int) *Table {
 	if col < len(t.alignRight) {
 		t.alignRight[col] = true
+	}
+	return t
+}
+
+// SetMaxWidth sets the maximum width for a column (truncates with ellipsis if exceeded).
+func (t *Table) SetMaxWidth(col int, maxWidth int) *Table {
+	if col < len(t.maxWidths) {
+		t.maxWidths[col] = maxWidth
 	}
 	return t
 }
@@ -288,26 +298,32 @@ func (t *Table) Render() {
 		return
 	}
 
-	// Calculate column widths
+	// Calculate column widths using visual width (excludes ANSI codes)
 	widths := make([]int, len(t.headers))
 	for i, h := range t.headers {
-		widths[i] = len(h)
+		widths[i] = visualWidth(h)
 	}
 	for _, row := range t.rows {
 		for i, cell := range row {
-			if len(cell) > widths[i] {
-				widths[i] = len(cell)
+			cellWidth := visualWidth(cell)
+			if cellWidth > widths[i] {
+				widths[i] = cellWidth
 			}
+		}
+	}
+
+	// Apply max width limits
+	for i := range widths {
+		if t.maxWidths[i] > 0 && widths[i] > t.maxWidths[i] {
+			widths[i] = t.maxWidths[i]
 		}
 	}
 
 	// Print headers
 	for i, h := range t.headers {
-		if t.alignRight[i] {
-			_, _ = BoldCyan.Fprintf(t.writer, "%*s  ", widths[i], h)
-		} else {
-			_, _ = BoldCyan.Fprintf(t.writer, "%-*s  ", widths[i], h)
-		}
+		padded := padString(h, widths[i], t.alignRight[i])
+		_, _ = BoldCyan.Fprint(t.writer, padded)
+		_, _ = fmt.Fprint(t.writer, "  ")
 	}
 	_, _ = fmt.Fprintln(t.writer)
 
@@ -323,11 +339,15 @@ func (t *Table) Render() {
 	// Print rows
 	for _, row := range t.rows {
 		for i, cell := range row {
-			if t.alignRight[i] {
-				_, _ = fmt.Fprintf(t.writer, "%*s  ", widths[i], cell)
-			} else {
-				_, _ = fmt.Fprintf(t.writer, "%-*s  ", widths[i], cell)
+			// Truncate cell if it exceeds column width
+			displayCell := cell
+			if t.maxWidths[i] > 0 && visualWidth(cell) > widths[i] {
+				displayCell = truncateCell(cell, widths[i])
 			}
+
+			padded := padString(displayCell, widths[i], t.alignRight[i])
+			_, _ = fmt.Fprint(t.writer, padded)
+			_, _ = fmt.Fprint(t.writer, "  ")
 		}
 		_, _ = fmt.Fprintln(t.writer)
 	}
@@ -452,4 +472,91 @@ func PrintListHeader(count int, resourceName string) {
 	} else {
 		fmt.Printf("Found %d %ss:\n\n", count, resourceName)
 	}
+}
+
+// PrintJSON writes data to stdout as pretty-printed JSON.
+// This is a convenience function for commands that need simple JSON output.
+func PrintJSON(data any) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(data)
+}
+
+// PrintSeparator prints a horizontal line separator of specified width.
+// Common widths: 40 (narrow), 50 (medium), 60 (wide), 70 (extra wide).
+func PrintSeparator(width int) {
+	if IsQuiet() {
+		return
+	}
+	fmt.Println(strings.Repeat("─", width))
+}
+
+// PrintDoubleSeparator prints a double-line separator for section headers.
+func PrintDoubleSeparator(width int) {
+	if IsQuiet() {
+		return
+	}
+	fmt.Println(strings.Repeat("═", width))
+}
+
+// truncateCell truncates a table cell to maxLen characters with ellipsis using proper UTF-8 rune counting
+func truncateCell(s string, maxLen int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	if maxLen <= 3 {
+		return string(runes[:maxLen])
+	}
+	return string(runes[:maxLen-3]) + "..."
+}
+
+// stripAnsiCodes removes ANSI escape sequences from a string
+func stripAnsiCodes(s string) string {
+	// ANSI codes start with ESC[ and end with a letter
+	// This regex matches: ESC + [ + any chars + letter
+	var result strings.Builder
+	inEscape := false
+	escStart := false
+
+	for _, r := range s {
+		if r == '\x1b' { // ESC character
+			inEscape = true
+			escStart = true
+			continue
+		}
+		if inEscape {
+			if escStart && r == '[' {
+				escStart = false
+				continue
+			}
+			if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || r == 'm' {
+				inEscape = false
+				escStart = false
+				continue
+			}
+			continue
+		}
+		result.WriteRune(r)
+	}
+	return result.String()
+}
+
+// visualWidth returns the display width of a string (excluding ANSI codes)
+func visualWidth(s string) int {
+	return len([]rune(stripAnsiCodes(s)))
+}
+
+// padString pads a string to the specified width (in runes) with spaces
+// alignRight=true pads on the left, false pads on the right
+func padString(s string, width int, alignRight bool) string {
+	runeCount := visualWidth(s)
+	if runeCount >= width {
+		return s
+	}
+	padding := strings.Repeat(" ", width-runeCount)
+	if alignRight {
+		return padding + s
+	}
+	return s + padding
 }

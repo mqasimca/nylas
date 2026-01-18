@@ -49,7 +49,7 @@ Use --max to limit total messages when using --all.`,
   nylas email list --all --max 500`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

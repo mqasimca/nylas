@@ -1,9 +1,7 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -57,9 +55,7 @@ func newStatusCmd() *cobra.Command {
 				if grantInfo.ID != "" {
 					output["grant"] = grantInfo
 				}
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(output)
+				return common.PrintJSON(output)
 			}
 
 			_, _ = common.Bold.Println("Authentication Status")

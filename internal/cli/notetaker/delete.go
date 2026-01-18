@@ -28,13 +28,13 @@ that haven't been saved will be lost.`,
   nylas notetaker delete abc123 --yes`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
 			notetakerID := args[0]
-			grantID, err := getGrantID(args[1:])
+			grantID, err := common.GetGrantID(args[1:])
 			if err != nil {
 				return err
 			}

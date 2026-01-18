@@ -22,7 +22,7 @@ func newReadCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			messageID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

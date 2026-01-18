@@ -1,9 +1,7 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -35,9 +33,7 @@ func newListCmd() *cobra.Command {
 
 			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
 			if jsonOutput {
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(grants)
+				return common.PrintJSON(grants)
 			}
 
 			verbose, _ := cmd.Root().PersistentFlags().GetBool("verbose")

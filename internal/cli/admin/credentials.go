@@ -36,7 +36,7 @@ func newCredentialListCmd() *cobra.Command {
 		Long:    "List all authentication credentials for a specific connector.",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -84,7 +84,7 @@ func newCredentialShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific credential.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -131,7 +131,7 @@ func newCredentialCreateCmd() *cobra.Command {
 		Short: "Create a credential",
 		Long:  "Create a new authentication credential for a connector.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -187,7 +187,7 @@ func newCredentialUpdateCmd() *cobra.Command {
 		Long:  "Update an existing credential.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -236,7 +236,7 @@ func newCredentialDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}

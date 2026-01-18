@@ -3,7 +3,6 @@ package inbound
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -363,28 +362,6 @@ func TestGetInboxID(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "arg-inbox-id", id)
 	})
-}
-
-func TestFormatTimeAgo(t *testing.T) {
-	tests := []struct {
-		duration time.Duration
-		expected string
-	}{
-		{30 * time.Second, "just now"},
-		{1 * time.Minute, "1 minute ago"},
-		{5 * time.Minute, "5 minutes ago"},
-		{1 * time.Hour, "1 hour ago"},
-		{5 * time.Hour, "5 hours ago"},
-		{24 * time.Hour, "1 day ago"},
-		{48 * time.Hour, "2 days ago"},
-		{72 * time.Hour, "3 days ago"},
-	}
-
-	for _, tt := range tests {
-		past := time.Now().Add(-tt.duration)
-		got := common.FormatTimeAgo(past)
-		assert.Equal(t, tt.expected, got)
-	}
 }
 
 func TestTruncate(t *testing.T) {

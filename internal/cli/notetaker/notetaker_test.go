@@ -3,7 +3,6 @@ package notetaker
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
@@ -226,51 +225,6 @@ func TestTruncate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			result := common.Truncate(tt.input, tt.length)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestFormatTimeAgo(t *testing.T) {
-	now := time.Now()
-
-	tests := []struct {
-		time     time.Time
-		expected string
-	}{
-		{now.Add(-30 * time.Second), "just now"},
-		{now.Add(-1 * time.Minute), "1 minute ago"},
-		{now.Add(-5 * time.Minute), "5 minutes ago"},
-		{now.Add(-1 * time.Hour), "1 hour ago"},
-		{now.Add(-3 * time.Hour), "3 hours ago"},
-		{now.Add(-24 * time.Hour), "1 day ago"},
-		{now.Add(-72 * time.Hour), "3 days ago"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.expected, func(t *testing.T) {
-			result := common.FormatTimeAgo(tt.time)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestFormatBytes(t *testing.T) {
-	tests := []struct {
-		bytes    int64
-		expected string
-	}{
-		{500, "500 B"},
-		{1024, "1.0 KB"},
-		{1536, "1.5 KB"},
-		{1048576, "1.0 MB"},
-		{1572864, "1.5 MB"},
-		{1073741824, "1.0 GB"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.expected, func(t *testing.T) {
-			result := formatBytes(tt.bytes)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

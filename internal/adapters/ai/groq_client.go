@@ -57,7 +57,7 @@ func (c *GroqClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest,
 	// Prepare Groq request (OpenAI-compatible format)
 	groqReq := map[string]any{
 		"model":    c.GetModel(req.Model),
-		"messages": c.convertMessages(req.Messages),
+		"messages": ConvertMessagesToMaps(req.Messages),
 	}
 
 	if req.MaxTokens > 0 {
@@ -70,7 +70,7 @@ func (c *GroqClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest,
 
 	// Tools support
 	if len(tools) > 0 {
-		groqReq["tools"] = c.convertTools(tools)
+		groqReq["tools"] = ConvertToolsOpenAIFormat(tools)
 		groqReq["tool_choice"] = "auto"
 	}
 
@@ -138,38 +138,5 @@ func (c *GroqClient) ChatWithTools(ctx context.Context, req *domain.ChatRequest,
 
 // StreamChat streams chat responses.
 func (c *GroqClient) StreamChat(ctx context.Context, req *domain.ChatRequest, callback func(chunk string) error) error {
-	// Simplified streaming implementation
-	resp, err := c.Chat(ctx, req)
-	if err != nil {
-		return err
-	}
-	return callback(resp.Content)
-}
-
-// Helper methods
-
-func (c *GroqClient) convertMessages(messages []domain.ChatMessage) []map[string]string {
-	result := make([]map[string]string, len(messages))
-	for i, msg := range messages {
-		result[i] = map[string]string{
-			"role":    msg.Role,
-			"content": msg.Content,
-		}
-	}
-	return result
-}
-
-func (c *GroqClient) convertTools(tools []domain.Tool) []map[string]any {
-	result := make([]map[string]any, len(tools))
-	for i, tool := range tools {
-		result[i] = map[string]any{
-			"type": "function",
-			"function": map[string]any{
-				"name":        tool.Name,
-				"description": tool.Description,
-				"parameters":  tool.Parameters,
-			},
-		}
-	}
-	return result
+	return FallbackStreamChat(ctx, req, c.Chat, callback)
 }
