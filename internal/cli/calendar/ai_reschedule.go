@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 func newRescheduleCmd() *cobra.Command {
@@ -58,96 +60,85 @@ func newAIRescheduleCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventID := args[0]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID([]string{})
-			if err != nil {
-				return err
-			}
-
-			// AI rescheduling can take time - use longer timeout
-			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
-			defer cancel()
-
-			// Fetch the event to reschedule
-			fmt.Printf("📅 Fetching event %s...\n", eventID)
-			event, err := fetchEventByID(ctx, client, grantID, eventID)
-			if err != nil {
-				return common.WrapFetchError("event", err)
-			}
-
-			fmt.Printf("✓ Found: %s\n", event.Title)
-			fmt.Printf("  Current time: %s\n",
-				time.Unix(event.When.StartTime, 0).Format(common.DisplayWeekdayDateTime))
-
-			// Analyze patterns
-			fmt.Println("\n🔍 Analyzing your calendar patterns...")
-			learner := analytics.NewPatternLearner(client)
-			analysis, err := learner.AnalyzeHistory(ctx, grantID, 90)
-			if err != nil {
-				fmt.Printf("⚠️  Could not analyze patterns: %v\n", err)
-			}
-
-			var patterns *domain.MeetingPattern
-			if analysis != nil && analysis.Patterns != nil {
-				patterns = analysis.Patterns
-			}
-
-			// Create conflict resolver
-			resolver := analytics.NewConflictResolver(client, patterns)
-
-			// Parse preferred times if provided
-			var preferredTimeParsed []time.Time
-			for _, timeStr := range preferredTimes {
-				t, err := time.Parse(time.RFC3339, timeStr)
+			_, err := common.WithClient([]string{}, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Fetch the event to reschedule
+				fmt.Printf("📅 Fetching event %s...\n", eventID)
+				event, err := fetchEventByID(ctx, client, grantID, eventID)
 				if err != nil {
-					return common.NewUserError(fmt.Sprintf("invalid preferred time %q", timeStr), "use RFC3339 format")
-				}
-				preferredTimeParsed = append(preferredTimeParsed, t)
-			}
-
-			// Build reschedule request
-			request := &domain.RescheduleRequest{
-				EventID:            eventID,
-				Reason:             reason,
-				PreferredTimes:     preferredTimeParsed,
-				MustInclude:        mustInclude,
-				AvoidDays:          avoidDays,
-				MaxDelayDays:       maxDelayDays,
-				NotifyParticipants: notify,
-			}
-
-			// Get reschedule suggestions
-			fmt.Println("\n⚙️  Finding optimal alternative times...")
-			suggestions, err := findRescheduleSuggestions(ctx, client, resolver, grantID, event, request, patterns)
-			if err != nil {
-				return common.WrapGetError("reschedule suggestions", err)
-			}
-
-			// Display suggestions
-			displayRescheduleSuggestions(event, suggestions, reason)
-
-			// Handle auto-select
-			if autoSelect && len(suggestions) > 0 {
-				fmt.Println("\n🤖 Auto-selecting best alternative...")
-				best := suggestions[0]
-				result, err := applyReschedule(ctx, client, grantID, event, best, notify, reason)
-				if err != nil {
-					return common.WrapUpdateError("reschedule", err)
+					return struct{}{}, common.WrapFetchError("event", err)
 				}
 
-				displayRescheduleResult(result)
-			} else if len(suggestions) > 0 {
-				fmt.Println("\n💡 To apply a suggestion, use:")
-				fmt.Printf("   nylas calendar events update %s --start %s\n",
-					eventID,
-					suggestions[0].ProposedTime.Format(time.RFC3339))
-			}
+				fmt.Printf("✓ Found: %s\n", event.Title)
+				fmt.Printf("  Current time: %s\n",
+					time.Unix(event.When.StartTime, 0).Format(common.DisplayWeekdayDateTime))
 
-			return nil
+				// Analyze patterns
+				fmt.Println("\n🔍 Analyzing your calendar patterns...")
+				learner := analytics.NewPatternLearner(client)
+				analysis, err := learner.AnalyzeHistory(ctx, grantID, 90)
+				if err != nil {
+					fmt.Printf("⚠️  Could not analyze patterns: %v\n", err)
+				}
+
+				var patterns *domain.MeetingPattern
+				if analysis != nil && analysis.Patterns != nil {
+					patterns = analysis.Patterns
+				}
+
+				// Create conflict resolver
+				resolver := analytics.NewConflictResolver(client, patterns)
+
+				// Parse preferred times if provided
+				var preferredTimeParsed []time.Time
+				for _, timeStr := range preferredTimes {
+					t, err := time.Parse(time.RFC3339, timeStr)
+					if err != nil {
+						return struct{}{}, common.NewUserError(fmt.Sprintf("invalid preferred time %q", timeStr), "use RFC3339 format")
+					}
+					preferredTimeParsed = append(preferredTimeParsed, t)
+				}
+
+				// Build reschedule request
+				request := &domain.RescheduleRequest{
+					EventID:            eventID,
+					Reason:             reason,
+					PreferredTimes:     preferredTimeParsed,
+					MustInclude:        mustInclude,
+					AvoidDays:          avoidDays,
+					MaxDelayDays:       maxDelayDays,
+					NotifyParticipants: notify,
+				}
+
+				// Get reschedule suggestions
+				fmt.Println("\n⚙️  Finding optimal alternative times...")
+				suggestions, err := findRescheduleSuggestions(ctx, client, resolver, grantID, event, request, patterns)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("reschedule suggestions", err)
+				}
+
+				// Display suggestions
+				displayRescheduleSuggestions(event, suggestions, reason)
+
+				// Handle auto-select
+				if autoSelect && len(suggestions) > 0 {
+					fmt.Println("\n🤖 Auto-selecting best alternative...")
+					best := suggestions[0]
+					result, err := applyReschedule(ctx, client, grantID, event, best, notify, reason)
+					if err != nil {
+						return struct{}{}, common.WrapUpdateError("reschedule", err)
+					}
+
+					displayRescheduleResult(result)
+				} else if len(suggestions) > 0 {
+					fmt.Println("\n💡 To apply a suggestion, use:")
+					fmt.Printf("   nylas calendar events update %s --start %s\n",
+						eventID,
+						suggestions[0].ProposedTime.Format(time.RFC3339))
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

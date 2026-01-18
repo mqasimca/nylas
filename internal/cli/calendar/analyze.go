@@ -48,20 +48,6 @@ It provides actionable AI recommendations for optimizing your calendar.`,
   # Apply top recommendations automatically
   nylas calendar analyze --apply`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			// AI analysis can take time - use longer timeout
-			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
-			defer cancel()
-
 			// Load config to get working hours - respect --config flag
 			configStore := common.GetConfigStore(cmd)
 			cfg, _ := configStore.Load()
@@ -72,31 +58,34 @@ It provides actionable AI recommendations for optimizing your calendar.`,
 				workingHours = cfg.WorkingHours.Default
 			}
 
-			// Create pattern learner with working hours
-			learner := analytics.NewPatternLearnerWithWorkingHours(client, workingHours)
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Create pattern learner with working hours
+				learner := analytics.NewPatternLearnerWithWorkingHours(client, workingHours)
 
-			// If scoring a specific time
-			if scoreTime != "" {
-				return scoreSpecificTime(ctx, learner, client, grantID, scoreTime, participants, duration)
-			}
+				// If scoring a specific time
+				if scoreTime != "" {
+					return struct{}{}, scoreSpecificTime(ctx, learner, client, grantID, scoreTime, participants, duration)
+				}
 
-			// Analyze historical patterns
-			fmt.Printf("🔍 Analyzing %d days of meeting history...\n\n", days)
+				// Analyze historical patterns
+				fmt.Printf("🔍 Analyzing %d days of meeting history...\n\n", days)
 
-			analysis, err := learner.AnalyzeHistory(ctx, grantID, days)
-			if err != nil {
-				return common.WrapGetError("meeting analysis", err)
-			}
+				analysis, err := learner.AnalyzeHistory(ctx, grantID, days)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("meeting analysis", err)
+				}
 
-			// Display results
-			displayAnalysis(analysis, workingHours)
+				// Display results
+				displayAnalysis(analysis, workingHours)
 
-			// Apply recommendations if requested
-			if applyRecs {
-				return applyRecommendations(ctx, client, grantID, analysis)
-			}
+				// Apply recommendations if requested
+				if applyRecs {
+					return struct{}{}, applyRecommendations(ctx, client, grantID, analysis)
+				}
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 // newAnalyzeThreadCmd creates the analyze-thread AI command.
@@ -64,66 +65,54 @@ This command uses AI to:
 				return common.NewUserError("thread ID is required", "Use --thread flag or provide as argument")
 			}
 
-			// Get Nylas client
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return common.WrapCreateError("client", err)
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get LLM router
+				llmRouter, err := getLLMRouter()
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("LLM router", err)
+				}
 
-			// Get grant ID
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return common.WrapGetError("grant ID", err)
-			}
+				// Create email analyzer
+				analyzer := ai.NewEmailAnalyzer(client, llmRouter)
 
-			// Get LLM router
-			llmRouter, err := getLLMRouter()
-			if err != nil {
-				return common.WrapCreateError("LLM router", err)
-			}
+				// Create analysis request
+				req := &domain.EmailAnalysisRequest{
+					ThreadID:      threadID,
+					IncludeAgenda: includeAgenda,
+					IncludeTime:   includeTime,
+				}
 
-			// Create email analyzer
-			analyzer := ai.NewEmailAnalyzer(client, llmRouter)
+				// Show progress
+				fmt.Printf("🤖 AI Email Thread Analysis\n\n")
+				if provider != "" {
+					fmt.Printf("Using provider: %s\n", provider)
+				}
+				fmt.Printf("Analyzing email thread...\n")
 
-			// Create analysis request
-			req := &domain.EmailAnalysisRequest{
-				ThreadID:      threadID,
-				IncludeAgenda: includeAgenda,
-				IncludeTime:   includeTime,
-			}
+				// Analyze thread
+				analysis, err := analyzer.AnalyzeThread(ctx, grantID, threadID, req)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("thread analysis", err)
+				}
 
-			// Show progress
-			fmt.Printf("🤖 AI Email Thread Analysis\n\n")
-			if provider != "" {
-				fmt.Printf("Using provider: %s\n", provider)
-			}
-			fmt.Printf("Analyzing email thread...\n")
+				// Output results
+				if jsonOutput {
+					enc := json.NewEncoder(cmd.OutOrStdout())
+					enc.SetIndent("", "  ")
+					return struct{}{}, enc.Encode(analysis)
+				}
 
-			// Analyze thread
-			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
-			defer cancel()
+				displayThreadAnalysis(analysis)
 
-			analysis, err := analyzer.AnalyzeThread(ctx, grantID, threadID, req)
-			if err != nil {
-				return common.WrapGetError("thread analysis", err)
-			}
+				// Create meeting if requested
+				if createMeeting {
+					fmt.Println("\n---")
+					return struct{}{}, createMeetingFromAnalysis(ctx, client, grantID, analysis)
+				}
 
-			// Output results
-			if jsonOutput {
-				enc := json.NewEncoder(cmd.OutOrStdout())
-				enc.SetIndent("", "  ")
-				return enc.Encode(analysis)
-			}
-
-			displayThreadAnalysis(analysis)
-
-			// Create meeting if requested
-			if createMeeting {
-				fmt.Println("\n---")
-				return createMeetingFromAnalysis(ctx, client, grantID, analysis)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

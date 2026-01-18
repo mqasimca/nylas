@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -9,7 +10,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/cli/common"
-	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 func newAIScheduleCmd() *cobra.Command {
@@ -86,71 +87,60 @@ Examples:
 			// Create AI router
 			router := ai.NewRouter(cfg.AI)
 
-			// Get Nylas client
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return common.WrapGetError("client", err)
-			}
+			_, err = common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Create AI scheduler
+				scheduler := ai.NewAIScheduler(router, client, selectedProvider)
 
-			// Get grant ID
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return common.WrapGetError("grant ID", err)
-			}
-
-			// Create AI scheduler
-			scheduler := ai.NewAIScheduler(router, client, selectedProvider)
-
-			// Create schedule request
-			scheduleReq := &ai.ScheduleRequest{
-				Query:        query,
-				GrantID:      grantID,
-				UserTimezone: userTimezone,
-				MaxOptions:   maxOptions,
-			}
-
-			// Show processing message
-			fmt.Printf("Processing your request: \"%s\"\n\n", query)
-
-			// Call AI scheduler - use longer timeout for AI operations
-			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
-			defer cancel()
-			response, err := scheduler.Schedule(ctx, scheduleReq)
-			if err != nil {
-				return common.WrapError(err)
-			}
-
-			// Display results
-			if err := displayScheduleOptions(response, userTimezone); err != nil {
-				return err
-			}
-
-			// Show cost/usage info
-			if selectedProvider != "ollama" && response.TokensUsed > 0 {
-				estimatedCost := estimateCost(selectedProvider, response.TokensUsed)
-				fmt.Printf("\n💰 Estimated cost: ~$%.4f (%d tokens)\n", estimatedCost, response.TokensUsed)
-			} else if selectedProvider == "ollama" {
-				fmt.Println("\n🔒 Privacy: All processing done locally, no data sent to cloud.")
-			}
-
-			// Handle confirmation
-			if !autoConfirm && len(response.Options) > 0 {
-				fmt.Print("\nCreate meeting with option #1? [y/N/2/3]: ")
-				var choice string
-				_, _ = fmt.Scanln(&choice) // User input, validation handled below
-
-				choice = strings.ToLower(strings.TrimSpace(choice))
-				if choice == "y" || choice == "yes" {
-					// Create with first option
-					return createMeetingFromOption(cmd, response.Options[0], grantID, client)
-				} else if choice == "2" && len(response.Options) > 1 {
-					return createMeetingFromOption(cmd, response.Options[1], grantID, client)
-				} else if choice == "3" && len(response.Options) > 2 {
-					return createMeetingFromOption(cmd, response.Options[2], grantID, client)
+				// Create schedule request
+				scheduleReq := &ai.ScheduleRequest{
+					Query:        query,
+					GrantID:      grantID,
+					UserTimezone: userTimezone,
+					MaxOptions:   maxOptions,
 				}
-			}
 
-			return nil
+				// Show processing message
+				fmt.Printf("Processing your request: \"%s\"\n\n", query)
+
+				// Call AI scheduler
+				response, err := scheduler.Schedule(ctx, scheduleReq)
+				if err != nil {
+					return struct{}{}, common.WrapError(err)
+				}
+
+				// Display results
+				if err := displayScheduleOptions(response, userTimezone); err != nil {
+					return struct{}{}, err
+				}
+
+				// Show cost/usage info
+				if selectedProvider != "ollama" && response.TokensUsed > 0 {
+					estimatedCost := estimateCost(selectedProvider, response.TokensUsed)
+					fmt.Printf("\n💰 Estimated cost: ~$%.4f (%d tokens)\n", estimatedCost, response.TokensUsed)
+				} else if selectedProvider == "ollama" {
+					fmt.Println("\n🔒 Privacy: All processing done locally, no data sent to cloud.")
+				}
+
+				// Handle confirmation
+				if !autoConfirm && len(response.Options) > 0 {
+					fmt.Print("\nCreate meeting with option #1? [y/N/2/3]: ")
+					var choice string
+					_, _ = fmt.Scanln(&choice) // User input, validation handled below
+
+					choice = strings.ToLower(strings.TrimSpace(choice))
+					if choice == "y" || choice == "yes" {
+						// Create with first option
+						return struct{}{}, createMeetingFromOption(cmd, response.Options[0], grantID, client)
+					} else if choice == "2" && len(response.Options) > 1 {
+						return struct{}{}, createMeetingFromOption(cmd, response.Options[1], grantID, client)
+					} else if choice == "3" && len(response.Options) > 2 {
+						return struct{}{}, createMeetingFromOption(cmd, response.Options[2], grantID, client)
+					}
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

@@ -1,12 +1,14 @@
 package webhook
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -40,30 +42,24 @@ that your webhook endpoint is properly configured and receiving events.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			webhookURL := args[0]
 
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				err := common.RunWithSpinner("Sending test event...", func() error {
+					return client.SendWebhookTestEvent(ctx, webhookURL)
+				})
+				if err != nil {
+					return struct{}{}, common.NewUserError("Failed to send test event: "+err.Error(),
+						"Check that the URL is correct and accessible. Ensure your endpoint is publicly reachable")
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				fmt.Printf("%s Test event sent successfully!\n", common.Green.Sprint("✓"))
+				fmt.Println()
+				fmt.Printf("  URL: %s\n", webhookURL)
+				fmt.Println()
+				fmt.Println("Check your webhook endpoint logs to verify the event was received.")
 
-			err = common.RunWithSpinner("Sending test event...", func() error {
-				return c.SendWebhookTestEvent(ctx, webhookURL)
+				return struct{}{}, nil
 			})
-			if err != nil {
-				return common.NewUserError("Failed to send test event: "+err.Error(),
-					"Check that the URL is correct and accessible. Ensure your endpoint is publicly reachable")
-			}
-
-			fmt.Printf("%s Test event sent successfully!\n", common.Green.Sprint("✓"))
-			fmt.Println()
-			fmt.Printf("  URL: %s\n", webhookURL)
-			fmt.Println()
-			fmt.Println("Check your webhook endpoint logs to verify the event was received.")
-
-			return nil
+			return err
 		},
 	}
 
@@ -133,35 +129,29 @@ so you can properly handle them in your application.`,
 					"Run 'nylas webhook test payload' to see available trigger types")
 			}
 
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				payload, err := common.RunWithSpinnerResult("Fetching mock payload...", func() (any, error) {
+					return client.GetWebhookMockPayload(ctx, triggerType)
+				})
+				if err != nil {
+					return struct{}{}, common.NewUserError("Failed to get mock payload: "+err.Error(),
+						"Check the trigger type is valid")
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				fmt.Printf("Mock payload for '%s':\n\n", triggerType)
 
-			payload, err := common.RunWithSpinnerResult("Fetching mock payload...", func() (any, error) {
-				return c.GetWebhookMockPayload(ctx, triggerType)
+				switch format {
+				case "json":
+					enc := json.NewEncoder(os.Stdout)
+					enc.SetIndent("", "  ")
+					return struct{}{}, enc.Encode(payload)
+				default:
+					enc := json.NewEncoder(os.Stdout)
+					enc.SetIndent("", "  ")
+					return struct{}{}, enc.Encode(payload)
+				}
 			})
-			if err != nil {
-				return common.NewUserError("Failed to get mock payload: "+err.Error(),
-					"Check the trigger type is valid")
-			}
-
-			fmt.Printf("Mock payload for '%s':\n\n", triggerType)
-
-			switch format {
-			case "json":
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(payload)
-			default:
-				enc := json.NewEncoder(os.Stdout)
-				enc.SetIndent("", "  ")
-				return enc.Encode(payload)
-			}
+			return err
 		},
 	}
 

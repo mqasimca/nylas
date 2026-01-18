@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 func newConflictsCmd() *cobra.Command {
@@ -56,16 +58,6 @@ func newCheckConflictsCmd() *cobra.Command {
     --duration 30 \
     --auto-resolve`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return common.WrapGetError("client", err)
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return common.WrapGetError("grant ID", err)
-			}
-
 			// Parse start time
 			start, err := time.Parse(time.RFC3339, startTime)
 			if err != nil {
@@ -99,46 +91,45 @@ func newCheckConflictsCmd() *cobra.Command {
 				})
 			}
 
-			// Pattern analysis can take time - use longer timeout
-			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
-			defer cancel()
+			_, err = common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Analyze patterns first
+				fmt.Println("🔍 Analyzing your calendar patterns...")
+				learner := analytics.NewPatternLearner(client)
+				analysis, err := learner.AnalyzeHistory(ctx, grantID, 90)
+				if err != nil {
+					fmt.Printf("⚠️  Could not analyze patterns: %v\n", err)
+				}
 
-			// Analyze patterns first
-			fmt.Println("🔍 Analyzing your calendar patterns...")
-			learner := analytics.NewPatternLearner(client)
-			analysis, err := learner.AnalyzeHistory(ctx, grantID, 90)
-			if err != nil {
-				fmt.Printf("⚠️  Could not analyze patterns: %v\n", err)
-			}
+				// Create conflict resolver
+				var patterns *domain.MeetingPattern
+				if analysis != nil && analysis.Patterns != nil {
+					patterns = analysis.Patterns
+				}
 
-			// Create conflict resolver
-			var patterns *domain.MeetingPattern
-			if analysis != nil && analysis.Patterns != nil {
-				patterns = analysis.Patterns
-			}
+				resolver := analytics.NewConflictResolver(client, patterns)
 
-			resolver := analytics.NewConflictResolver(client, patterns)
+				// Detect conflicts
+				fmt.Println("\n⚙️  Detecting conflicts...")
+				conflicts, err := resolver.DetectConflicts(ctx, grantID, proposedEvent, patterns)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("conflicts", err)
+				}
 
-			// Detect conflicts
-			fmt.Println("\n⚙️  Detecting conflicts...")
-			conflicts, err := resolver.DetectConflicts(ctx, grantID, proposedEvent, patterns)
-			if err != nil {
-				return common.WrapGetError("conflicts", err)
-			}
+				// Display results
+				displayConflicts(conflicts)
 
-			// Display results
-			displayConflicts(conflicts)
+				// Handle auto-resolve
+				if autoResolve && len(conflicts.AlternativeTimes) > 0 {
+					fmt.Println("\n🤖 Auto-selecting best alternative...")
+					best := conflicts.AlternativeTimes[0]
+					fmt.Printf("✓ Selected: %s (Score: %d/100)\n",
+						best.ProposedTime.Format("Mon, Jan 2, 2006 at 3:04 PM MST"),
+						best.Score)
+				}
 
-			// Handle auto-resolve
-			if autoResolve && len(conflicts.AlternativeTimes) > 0 {
-				fmt.Println("\n🤖 Auto-selecting best alternative...")
-				best := conflicts.AlternativeTimes[0]
-				fmt.Printf("✓ Selected: %s (Score: %d/100)\n",
-					best.ProposedTime.Format("Mon, Jan 2, 2006 at 3:04 PM MST"),
-					best.Score)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
