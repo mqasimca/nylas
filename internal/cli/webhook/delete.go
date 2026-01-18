@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -8,78 +9,46 @@ import (
 )
 
 func newDeleteCmd() *cobra.Command {
-	var force bool
+	cmd := common.NewDeleteCommand(common.DeleteCommandConfig{
+		Use:          "delete <webhook-id>",
+		Aliases:      []string{"rm", "remove"},
+		Short:        "Delete a webhook",
+		Long:         "Delete a webhook by ID.\n\nThis permanently removes the webhook and stops all event notifications.",
+		ResourceName: "webhook",
+		DeleteFuncNoGrant: func(ctx context.Context, resourceID string) error {
+			client, err := common.GetNylasClient()
+			if err != nil {
+				return err
+			}
+			return client.DeleteWebhook(ctx, resourceID)
+		},
+		GetClient: common.GetNylasClient,
+		GetDetailsFunc: func(ctx context.Context, resourceID string) (string, error) {
+			client, err := common.GetNylasClient()
+			if err != nil {
+				return "", err
+			}
+			webhook, err := client.GetWebhook(ctx, resourceID)
+			if err != nil {
+				return "", err
+			}
+			details := "Webhook to delete:\n"
+			details += fmt.Sprintf("  ID:  %s\n", webhook.ID)
+			details += fmt.Sprintf("  URL: %s\n", webhook.WebhookURL)
+			if webhook.Description != "" {
+				details += fmt.Sprintf("  Description: %s\n", webhook.Description)
+			}
+			details += fmt.Sprintf("  Triggers: %v", webhook.TriggerTypes)
+			return details, nil
+		},
+	})
 
-	cmd := &cobra.Command{
-		Use:     "delete <webhook-id>",
-		Aliases: []string{"rm", "remove"},
-		Short:   "Delete a webhook",
-		Long: `Delete a webhook by ID.
-
-This permanently removes the webhook and stops all event notifications.`,
-		Example: `  # Delete a webhook (with confirmation)
+	// Add examples
+	cmd.Example = `  # Delete a webhook (with confirmation)
   nylas webhook delete webhook-abc123
 
   # Delete without confirmation
-  nylas webhook delete webhook-abc123 --force`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			webhookID := args[0]
-
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
-
-			// Get webhook details first for confirmation
-			ctx, cancel := common.CreateContext()
-			webhook, err := c.GetWebhook(ctx, webhookID)
-			cancel()
-
-			if err != nil {
-				return common.NewUserError("Failed to find webhook: "+err.Error(),
-					"Check that the webhook ID is correct. Run 'nylas webhook list' to see available webhooks")
-			}
-
-			// Confirm deletion unless --force is used
-			if !force {
-				fmt.Printf("Webhook to delete:\n")
-				fmt.Printf("  ID:  %s\n", webhook.ID)
-				fmt.Printf("  URL: %s\n", webhook.WebhookURL)
-				if webhook.Description != "" {
-					fmt.Printf("  Description: %s\n", webhook.Description)
-				}
-				fmt.Printf("  Triggers: %v\n", webhook.TriggerTypes)
-				fmt.Println()
-
-				fmt.Print("Are you sure you want to delete this webhook? [y/N] ")
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-
-				if confirm != "y" && confirm != "Y" && confirm != "yes" && confirm != "Yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			ctx, cancel = common.CreateContext()
-			defer cancel()
-
-			err = common.RunWithSpinner("Deleting webhook...", func() error {
-				return c.DeleteWebhook(ctx, webhookID)
-			})
-			if err != nil {
-				return common.NewUserError("Failed to delete webhook: "+err.Error(),
-					"Check your permissions. The webhook may have already been deleted")
-			}
-
-			fmt.Printf("%s Webhook deleted successfully!\n", common.Green.Sprint("✓"))
-			return nil
-		},
-	}
-
-	cmd.Flags().BoolVarP(&force, "force", "f", false, "Delete without confirmation")
+  nylas webhook delete webhook-abc123 --force`
 
 	return cmd
 }

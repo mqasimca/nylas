@@ -34,8 +34,64 @@ Examples:
   # Use environment variable for inbox ID
   export NYLAS_INBOUND_GRANT_ID=abc123
   nylas inbound delete --yes`,
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDelete(args, yes || force)
+			inboxID, err := getInboxID(args)
+			if err != nil {
+				return err
+			}
+
+			client, err := common.GetNylasClient()
+			if err != nil {
+				return err
+			}
+
+			skipConfirm := yes || force
+
+			// Get inbox details first for confirmation
+			ctx, cancel := common.CreateContext()
+			inbox, err := client.GetInboundInbox(ctx, inboxID)
+			cancel()
+
+			if err != nil {
+				return common.WrapGetError("inbox", err)
+			}
+
+			// Confirm deletion unless --yes flag is set
+			// Use stronger confirmation for destructive action
+			if !skipConfirm {
+				fmt.Printf("You are about to delete the inbound inbox:\n")
+				fmt.Printf("  Email: %s\n", common.Cyan.Sprint(inbox.Email))
+				fmt.Printf("  ID:    %s\n", inbox.ID)
+				fmt.Println()
+				_, _ = common.Yellow.Println("This action cannot be undone. All messages in this inbox will be deleted.")
+				fmt.Println()
+
+				fmt.Print("Type 'delete' to confirm: ")
+				reader := bufio.NewReader(os.Stdin)
+				input, _ := reader.ReadString('\n')
+				input = strings.TrimSpace(input)
+
+				if input != "delete" {
+					fmt.Println("Deletion cancelled.")
+					return nil
+				}
+			}
+
+			// Delete the inbox
+			ctx2, cancel2 := common.CreateContext()
+			defer cancel2()
+
+			err = common.RunWithSpinner("Deleting inbox...", func() error {
+				return client.DeleteInboundInbox(ctx2, inboxID)
+			})
+			if err != nil {
+				return common.WrapDeleteError("inbox", err)
+			}
+
+			printSuccess("Inbox %s deleted successfully!", inbox.Email)
+
+			return nil
 		},
 	}
 
@@ -43,58 +99,4 @@ Examples:
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force delete without confirmation (alias for --yes)")
 
 	return cmd
-}
-
-func runDelete(args []string, skipConfirm bool) error {
-	inboxID, err := getInboxID(args)
-	if err != nil {
-		printError("%v", err)
-		return err
-	}
-
-	client, err := common.GetNylasClient()
-	if err != nil {
-		printError("%v", err)
-		return err
-	}
-
-	ctx, cancel := common.CreateContext()
-	defer cancel()
-
-	// Get inbox details first for confirmation
-	inbox, err := client.GetInboundInbox(ctx, inboxID)
-	if err != nil {
-		printError("Failed to find inbox: %v", err)
-		return err
-	}
-
-	// Confirm deletion unless --yes flag is set
-	if !skipConfirm {
-		fmt.Printf("You are about to delete the inbound inbox:\n")
-		fmt.Printf("  Email: %s\n", common.Cyan.Sprint(inbox.Email))
-		fmt.Printf("  ID:    %s\n", inbox.ID)
-		fmt.Println()
-		_, _ = common.Yellow.Println("This action cannot be undone. All messages in this inbox will be deleted.")
-		fmt.Println()
-
-		fmt.Print("Type 'delete' to confirm: ")
-		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		if input != "delete" {
-			fmt.Println("Deletion cancelled.")
-			return nil
-		}
-	}
-
-	// Delete the inbox
-	if err := client.DeleteInboundInbox(ctx, inboxID); err != nil {
-		printError("Failed to delete inbox: %v", err)
-		return err
-	}
-
-	printSuccess("Inbox %s deleted successfully!", inbox.Email)
-
-	return nil
 }

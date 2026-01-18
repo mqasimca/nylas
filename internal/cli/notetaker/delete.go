@@ -1,86 +1,44 @@
 package notetaker
 
 import (
-	"bufio"
+	"context"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/spf13/cobra"
 )
 
 func newDeleteCmd() *cobra.Command {
-	var noConfirm bool
-
-	cmd := &cobra.Command{
-		Use:     "delete <notetaker-id> [grant-id]",
-		Aliases: []string{"rm", "cancel"},
-		Short:   "Delete or cancel a notetaker",
-		Long: `Delete a notetaker. If the notetaker is scheduled or active, this will cancel it.
-
-This action cannot be undone. Once deleted, any recordings or transcripts
-that haven't been saved will be lost.`,
-		Example: `  # Delete a notetaker (with confirmation)
-  nylas notetaker delete abc123
-
-  # Delete without confirmation
-  nylas notetaker delete abc123 --yes`,
-		Args: cobra.RangeArgs(1, 2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+	return common.NewDeleteCommand(common.DeleteCommandConfig{
+		Use:          "delete <notetaker-id> [grant-id]",
+		Aliases:      []string{"rm", "cancel"},
+		Short:        "Delete or cancel a notetaker",
+		Long:         "Delete a notetaker. If the notetaker is scheduled or active, this will cancel it.\n\nThis action cannot be undone. Once deleted, any recordings or transcripts that haven't been saved will be lost.",
+		ResourceName: "notetaker",
+		DeleteFunc: func(ctx context.Context, grantID, resourceID string) error {
 			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
-
-			notetakerID := args[0]
-			grantID, err := common.GetGrantID(args[1:])
-			if err != nil {
-				return err
-			}
-
-			// Get notetaker details first for confirmation
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			notetaker, err := client.GetNotetaker(ctx, grantID, notetakerID)
-			if err != nil {
-				return common.WrapGetError("notetaker", err)
-			}
-
-			// Confirmation
-			if !noConfirm {
-				fmt.Printf("Delete notetaker %s?\n", notetakerID)
-				if notetaker.MeetingTitle != "" {
-					fmt.Printf("  Title: %s\n", notetaker.MeetingTitle)
-				}
-				fmt.Printf("  State: %s\n", formatState(notetaker.State))
-				fmt.Print("\nThis action cannot be undone. Continue? [y/N]: ")
-
-				reader := bufio.NewReader(os.Stdin)
-				confirm, _ := reader.ReadString('\n')
-				confirm = strings.ToLower(strings.TrimSpace(confirm))
-				if confirm != "y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			// Delete
-			ctx2, cancel2 := common.CreateContext()
-			defer cancel2()
-
-			if err := client.DeleteNotetaker(ctx2, grantID, notetakerID); err != nil {
-				return common.WrapDeleteError("notetaker", err)
-			}
-
-			_, _ = common.BoldGreen.Printf("✓ Notetaker %s deleted successfully\n", notetakerID)
-
-			return nil
+			return client.DeleteNotetaker(ctx, grantID, resourceID)
 		},
-	}
-
-	cmd.Flags().BoolVarP(&noConfirm, "yes", "y", false, "Skip confirmation prompt")
-
-	return cmd
+		GetClient: common.GetNylasClient,
+		ShowDetailsFunc: func(ctx context.Context, grantID, resourceID string) (string, error) {
+			client, err := common.GetNylasClient()
+			if err != nil {
+				return "", err
+			}
+			notetaker, err := client.GetNotetaker(ctx, grantID, resourceID)
+			if err != nil {
+				return "", err
+			}
+			details := fmt.Sprintf("Delete notetaker %s?", resourceID)
+			if notetaker.MeetingTitle != "" {
+				details += fmt.Sprintf("\n  Title: %s", notetaker.MeetingTitle)
+			}
+			details += fmt.Sprintf("\n  State: %s", formatState(notetaker.State))
+			details += "\n\nThis action cannot be undone."
+			return details, nil
+		},
+	})
 }

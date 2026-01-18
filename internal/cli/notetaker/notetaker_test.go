@@ -160,8 +160,8 @@ func TestDeleteCommand(t *testing.T) {
 		assert.Contains(t, cmd.Aliases, "cancel")
 	})
 
-	t.Run("has_yes_flag", func(t *testing.T) {
-		flag := cmd.Flags().Lookup("yes")
+	t.Run("has_force_flag", func(t *testing.T) {
+		flag := cmd.Flags().Lookup("force")
 		assert.NotNil(t, flag)
 	})
 }

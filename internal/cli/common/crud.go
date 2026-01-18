@@ -122,7 +122,7 @@ func SetupListCommand(args []string) (*ListSetup, error) {
 
 // NewDeleteCommand creates a standard delete command with common boilerplate handled.
 //
-// Example usage:
+// Example usage (with grantID):
 //
 //	cmd := common.NewDeleteCommand(common.DeleteCommandConfig{
 //	    Use: "delete <contact-id> [grant-id]",
@@ -130,15 +130,39 @@ func SetupListCommand(args []string) (*ListSetup, error) {
 //	    Short: "Delete a contact",
 //	    ResourceName: "contact",
 //	    DeleteFunc: client.DeleteContact,
+//	    ShowDetailsFunc: func(ctx, grantID, resourceID string) (string, error) {
+//	        contact, _ := client.GetContact(ctx, grantID, resourceID)
+//	        return fmt.Sprintf("Name: %s\nEmail: %s", contact.Name, contact.Email), nil
+//	    },
+//	})
+//
+// Example usage (without grantID):
+//
+//	cmd := common.NewDeleteCommand(common.DeleteCommandConfig{
+//	    Use: "delete <webhook-id>",
+//	    Short: "Delete a webhook",
+//	    ResourceName: "webhook",
+//	    DeleteFuncNoGrant: func(ctx context.Context, resourceID string) error {
+//	        client, _ := common.GetNylasClient()
+//	        return client.DeleteWebhook(ctx, resourceID)
+//	    },
+//	    GetDetailsFunc: func(ctx context.Context, resourceID string) (string, error) {
+//	        webhook, _ := client.GetWebhook(ctx, resourceID)
+//	        return fmt.Sprintf("URL: %s", webhook.WebhookURL), nil
+//	    },
 //	})
 type DeleteCommandConfig struct {
-	Use          string                                                      // Cobra Use string
-	Aliases      []string                                                    // Cobra aliases
-	Short        string                                                      // Short description
-	Long         string                                                      // Long description
-	ResourceName string                                                      // Resource name for messages
-	DeleteFunc   func(ctx context.Context, grantID, resourceID string) error // Delete function
-	GetClient    func() (ports.NylasClient, error)                           // Client getter function
+	Use               string                                                                // Cobra Use string
+	Aliases           []string                                                              // Cobra aliases
+	Short             string                                                                // Short description
+	Long              string                                                                // Long description
+	ResourceName      string                                                                // Resource name for messages
+	DeleteFunc        func(ctx context.Context, grantID, resourceID string) error           // Delete function (with grantID)
+	DeleteFuncNoGrant func(ctx context.Context, resourceID string) error                    // Delete function (without grantID)
+	GetClient         func() (ports.NylasClient, error)                                     // Client getter function
+	GetDetailsFunc    func(ctx context.Context, resourceID string) (string, error)          // Optional: Get details for confirmation (no grant)
+	ShowDetailsFunc   func(ctx context.Context, grantID, resourceID string) (string, error) // Optional: Get details for confirmation (with grant)
+	RequiresGrant     bool                                                                  // Whether this resource requires a grant ID
 }
 
 // NewDeleteCommand creates a fully configured delete command.
@@ -149,23 +173,86 @@ func NewDeleteCommand(config DeleteCommandConfig) *cobra.Command {
 		config.Long = fmt.Sprintf("Delete a %s by its ID.", config.ResourceName)
 	}
 
+	// Determine args based on whether grant is required
+	args := cobra.ExactArgs(1)
+	if config.RequiresGrant || config.DeleteFunc != nil {
+		args = cobra.RangeArgs(1, 2)
+	}
+
 	cmd := &cobra.Command{
 		Use:     config.Use,
 		Aliases: config.Aliases,
 		Short:   config.Short,
 		Long:    config.Long,
-		Args:    cobra.RangeArgs(1, 2),
+		Args:    args,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Parse arguments
+			// Get client
+			_, err := config.GetClient()
+			if err != nil {
+				return err
+			}
+
+			// Handle resources that don't need grant ID
+			if config.DeleteFuncNoGrant != nil {
+				resourceID := args[0]
+
+				// Show details if available
+				if !force && config.GetDetailsFunc != nil {
+					ctx, cancel := CreateContext()
+					details, err := config.GetDetailsFunc(ctx, resourceID)
+					cancel()
+					if err == nil && details != "" {
+						fmt.Println(details)
+						fmt.Println()
+					}
+				}
+
+				// Confirm deletion
+				if !force {
+					fmt.Printf("Are you sure you want to delete %s %s? [y/N] ", config.ResourceName, resourceID)
+					var confirm string
+					_, _ = fmt.Scanln(&confirm)
+					if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "yes" {
+						fmt.Println("Cancelled.")
+						return nil
+					}
+				}
+
+				// Create context and delete
+				ctx, cancel := CreateContext()
+				defer cancel()
+
+				err := RunWithSpinner(fmt.Sprintf("Deleting %s...", config.ResourceName), func() error {
+					return config.DeleteFuncNoGrant(ctx, resourceID)
+				})
+				if err != nil {
+					return WrapDeleteError(config.ResourceName, err)
+				}
+
+				// Success message
+				resourceName := config.ResourceName
+				if len(resourceName) > 0 {
+					resourceName = strings.ToUpper(resourceName[:1]) + resourceName[1:]
+				}
+				fmt.Printf("%s %s deleted successfully.\n", Green.Sprint("✓"), resourceName)
+				return nil
+			}
+
+			// Handle resources with grant ID (existing logic)
 			resourceArgs, err := ParseResourceArgs(args, 1)
 			if err != nil {
 				return err
 			}
 
-			// Get client
-			_, err = config.GetClient()
-			if err != nil {
-				return err
+			// Show details if available
+			if !force && config.ShowDetailsFunc != nil {
+				ctx, cancel := CreateContext()
+				details, err := config.ShowDetailsFunc(ctx, resourceArgs.GrantID, resourceArgs.ResourceID)
+				cancel()
+				if err == nil && details != "" {
+					fmt.Println(details)
+					fmt.Println()
+				}
 			}
 
 			// Run delete
