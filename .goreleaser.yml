@@ -74,6 +74,7 @@ brews:
       owner: mqasimca
       name: homebrew-nylas
       branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: "https://github.com/mqasimca/nylas"
     description: "CLI for Nylas API - manage email, calendar, and contacts"
