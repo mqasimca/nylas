@@ -3,7 +3,6 @@ package auth
 import (
 	"fmt"
 
-	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -34,7 +33,7 @@ func newTokenCmd() *cobra.Command {
 			}
 
 			if copyToClipboard {
-				if err := clipboard.WriteAll(apiKey); err != nil {
+				if err := common.CopyToClipboard(apiKey); err != nil {
 					return common.WrapWriteError("clipboard", err)
 				}
 				_, _ = common.Green.Println("✓ API key copied to clipboard")

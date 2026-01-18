@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -74,7 +73,7 @@ Press Ctrl+C to stop watching.`,
 					lastCode = result.Code
 
 					if !noCopy {
-						_ = clipboard.WriteAll(result.Code)
+						_ = common.CopyToClipboard(result.Code)
 					}
 
 					_, _ = cyan.Printf("\n[%s] ", time.Now().Format("15:04:05"))

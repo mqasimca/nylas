@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
@@ -48,7 +47,7 @@ If no email is specified, uses the default account.`,
 
 			// Copy to clipboard unless disabled
 			if !noCopy {
-				_ = clipboard.WriteAll(result.Code)
+				_ = common.CopyToClipboard(result.Code)
 			}
 
 			jsonOutput, _ := cmd.Root().PersistentFlags().GetBool("json")
