@@ -1,11 +1,13 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -52,131 +54,121 @@ Examples:
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			// If no calendar specified, try to get the primary calendar
-			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
-			if err != nil {
-				return err
-			}
-
-			params := &domain.EventQueryParams{
-				Limit:   limit,
-				OrderBy: "start", // Sort by start time ascending
-			}
-
-			// Set time range if days specified
-			if days > 0 {
-				now := time.Now()
-				params.Start = now.Unix()
-				params.End = now.AddDate(0, 0, days).Unix()
-			}
-
-			if showAll {
-				params.ShowCancelled = true
-			}
-
-			events, err := client.GetEvents(ctx, grantID, calendarID, params)
-			if err != nil {
-				return common.WrapListError("events", err)
-			}
-
-			if len(events) == 0 {
-				common.PrintEmptyState("events")
-				return nil
-			}
-
-			fmt.Printf("Found %d event(s):\n\n", len(events))
-
-			for _, event := range events {
-				// Title with timezone badge (if showing timezone info)
-				fmt.Printf("%s", common.Cyan.Sprint(event.Title))
-				if showTZ && !event.When.IsAllDay() {
-					// Get event's original timezone
-					start := event.When.StartDateTime()
-					originalTZ := start.Location().String()
-					if originalTZ == "Local" {
-						originalTZ = getLocalTimeZone()
-					}
-
-					// Add colored timezone badge
-					badge := formatTimezoneBadge(originalTZ, true) // Use abbreviation
-					fmt.Printf(" %s", common.Blue.Sprint(badge))
-				}
-				fmt.Println()
-
-				// Time (with timezone conversion if requested)
-				timeDisplay, err := formatEventTimeWithTZ(&event, targetTZ)
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// If no calendar specified, try to get the primary calendar
+				calID, err := GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
 				if err != nil {
-					fmt.Printf("  %s %s (timezone conversion error: %v)\n",
-						common.Dim.Sprint("When:"),
-						formatEventTime(event.When),
-						err)
-				} else {
-					if timeDisplay.ShowConversion {
-						// Show converted time prominently
-						fmt.Printf("  %s %s", common.Dim.Sprint("When:"), timeDisplay.ConvertedTime)
-						if showTZ {
-							fmt.Printf(" %s", common.BoldBlue.Sprint(timeDisplay.ConvertedTimezone))
+					return struct{}{}, err
+				}
+
+				params := &domain.EventQueryParams{
+					Limit:   limit,
+					OrderBy: "start", // Sort by start time ascending
+				}
+
+				// Set time range if days specified
+				if days > 0 {
+					now := time.Now()
+					params.Start = now.Unix()
+					params.End = now.AddDate(0, 0, days).Unix()
+				}
+
+				if showAll {
+					params.ShowCancelled = true
+				}
+
+				events, err := client.GetEvents(ctx, grantID, calID, params)
+				if err != nil {
+					return struct{}{}, common.WrapListError("events", err)
+				}
+
+				if len(events) == 0 {
+					common.PrintEmptyState("events")
+					return struct{}{}, nil
+				}
+
+				fmt.Printf("Found %d event(s):\n\n", len(events))
+
+				for _, event := range events {
+					// Title with timezone badge (if showing timezone info)
+					fmt.Printf("%s", common.Cyan.Sprint(event.Title))
+					if showTZ && !event.When.IsAllDay() {
+						// Get event's original timezone
+						start := event.When.StartDateTime()
+						originalTZ := start.Location().String()
+						if originalTZ == "Local" {
+							originalTZ = getLocalTimeZone()
 						}
-						fmt.Println()
-						// Show original time as reference
-						fmt.Printf("       %s %s",
-							common.Dim.Sprint("(Original:"),
-							common.Dim.Sprint(timeDisplay.OriginalTime))
-						if showTZ {
-							fmt.Printf(" %s", common.Dim.Sprint(timeDisplay.OriginalTimezone))
-						}
-						fmt.Printf("%s\n", common.Dim.Sprint(")"))
-					} else {
-						// No conversion - show original time
-						fmt.Printf("  %s %s", common.Dim.Sprint("When:"), timeDisplay.OriginalTime)
-						if showTZ && timeDisplay.OriginalTimezone != "" {
-							fmt.Printf(" %s", common.BoldBlue.Sprint(timeDisplay.OriginalTimezone))
-						}
-						fmt.Println()
+
+						// Add colored timezone badge
+						badge := formatTimezoneBadge(originalTZ, true) // Use abbreviation
+						fmt.Printf(" %s", common.Blue.Sprint(badge))
 					}
+					fmt.Println()
+
+					// Time (with timezone conversion if requested)
+					timeDisplay, err := formatEventTimeWithTZ(&event, targetTZ)
+					if err != nil {
+						fmt.Printf("  %s %s (timezone conversion error: %v)\n",
+							common.Dim.Sprint("When:"),
+							formatEventTime(event.When),
+							err)
+					} else {
+						if timeDisplay.ShowConversion {
+							// Show converted time prominently
+							fmt.Printf("  %s %s", common.Dim.Sprint("When:"), timeDisplay.ConvertedTime)
+							if showTZ {
+								fmt.Printf(" %s", common.BoldBlue.Sprint(timeDisplay.ConvertedTimezone))
+							}
+							fmt.Println()
+							// Show original time as reference
+							fmt.Printf("       %s %s",
+								common.Dim.Sprint("(Original:"),
+								common.Dim.Sprint(timeDisplay.OriginalTime))
+							if showTZ {
+								fmt.Printf(" %s", common.Dim.Sprint(timeDisplay.OriginalTimezone))
+							}
+							fmt.Printf("%s\n", common.Dim.Sprint(")"))
+						} else {
+							// No conversion - show original time
+							fmt.Printf("  %s %s", common.Dim.Sprint("When:"), timeDisplay.OriginalTime)
+							if showTZ && timeDisplay.OriginalTimezone != "" {
+								fmt.Printf(" %s", common.BoldBlue.Sprint(timeDisplay.OriginalTimezone))
+							}
+							fmt.Println()
+						}
+					}
+
+					// Location
+					if event.Location != "" {
+						fmt.Printf("  %s %s\n", common.Dim.Sprint("Location:"), event.Location)
+					}
+
+					// Status
+					statusColor := common.Green
+					switch event.Status {
+					case "cancelled":
+						statusColor = common.Red
+					case "tentative":
+						statusColor = common.Yellow
+					}
+					if event.Status != "" {
+						fmt.Printf("  %s %s\n", common.Dim.Sprint("Status:"), statusColor.Sprint(event.Status))
+					}
+
+					// Participants count
+					if len(event.Participants) > 0 {
+						fmt.Printf("  %s %d participant(s)\n", common.Dim.Sprint("Guests:"), len(event.Participants))
+					}
+
+					// ID
+					fmt.Printf("  %s %s\n", common.Dim.Sprint("ID:"), common.Dim.Sprint(event.ID))
+					fmt.Println()
 				}
 
-				// Location
-				if event.Location != "" {
-					fmt.Printf("  %s %s\n", common.Dim.Sprint("Location:"), event.Location)
-				}
-
-				// Status
-				statusColor := common.Green
-				switch event.Status {
-				case "cancelled":
-					statusColor = common.Red
-				case "tentative":
-					statusColor = common.Yellow
-				}
-				if event.Status != "" {
-					fmt.Printf("  %s %s\n", common.Dim.Sprint("Status:"), statusColor.Sprint(event.Status))
-				}
-
-				// Participants count
-				if len(event.Participants) > 0 {
-					fmt.Printf("  %s %d participant(s)\n", common.Dim.Sprint("Guests:"), len(event.Participants))
-				}
-
-				// ID
-				fmt.Printf("  %s %s\n", common.Dim.Sprint("ID:"), common.Dim.Sprint(event.ID))
-				fmt.Println()
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

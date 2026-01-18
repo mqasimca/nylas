@@ -1,10 +1,12 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -15,61 +17,47 @@ func newShowCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			calendarID := args[0]
+			grantArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				cal, err := client.GetCalendar(ctx, grantID, calendarID)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapGetError("calendar", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				fmt.Println("════════════════════════════════════════════════════════════")
+				_, _ = common.BoldWhite.Printf("Calendar: %s\n", cal.Name)
+				fmt.Println("════════════════════════════════════════════════════════════")
 
-			cal, err := client.GetCalendar(ctx, grantID, calendarID)
-			if err != nil {
-				return common.WrapGetError("calendar", err)
-			}
+				fmt.Printf("ID:          %s\n", cal.ID)
+				fmt.Printf("Name:        %s\n", cal.Name)
 
-			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = common.BoldWhite.Printf("Calendar: %s\n", cal.Name)
-			fmt.Println("════════════════════════════════════════════════════════════")
+				if cal.Description != "" {
+					fmt.Printf("Description: %s\n", cal.Description)
+				}
+				if cal.Location != "" {
+					fmt.Printf("Location:    %s\n", cal.Location)
+				}
+				if cal.Timezone != "" {
+					fmt.Printf("Timezone:    %s\n", cal.Timezone)
+				}
 
-			fmt.Printf("ID:          %s\n", cal.ID)
-			fmt.Printf("Name:        %s\n", cal.Name)
+				if cal.IsPrimary {
+					_, _ = common.Cyan.Printf("Primary:     Yes\n")
+				}
+				if cal.ReadOnly {
+					_, _ = common.Dim.Printf("Read-only:   Yes\n")
+				}
+				if cal.IsOwner {
+					fmt.Printf("Owner:       Yes\n")
+				}
+				if cal.HexColor != "" {
+					fmt.Printf("Color:       %s\n", cal.HexColor)
+				}
 
-			if cal.Description != "" {
-				fmt.Printf("Description: %s\n", cal.Description)
-			}
-			if cal.Location != "" {
-				fmt.Printf("Location:    %s\n", cal.Location)
-			}
-			if cal.Timezone != "" {
-				fmt.Printf("Timezone:    %s\n", cal.Timezone)
-			}
-
-			if cal.IsPrimary {
-				_, _ = common.Cyan.Printf("Primary:     Yes\n")
-			}
-			if cal.ReadOnly {
-				_, _ = common.Dim.Printf("Read-only:   Yes\n")
-			}
-			if cal.IsOwner {
-				fmt.Printf("Owner:       Yes\n")
-			}
-			if cal.HexColor != "" {
-				fmt.Printf("Color:       %s\n", cal.HexColor)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 }
@@ -83,39 +71,25 @@ func newCreateCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
+			grantArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.CreateCalendarRequest{
+					Name:        name,
+					Description: description,
+					Location:    location,
+					Timezone:    timezone,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				cal, err := client.CreateCalendar(ctx, grantID, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("calendar", err)
+				}
 
-			req := &domain.CreateCalendarRequest{
-				Name:        name,
-				Description: description,
-				Location:    location,
-				Timezone:    timezone,
-			}
-
-			cal, err := client.CreateCalendar(ctx, grantID, req)
-			if err != nil {
-				return common.WrapCreateError("calendar", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
-			return nil
+				_, _ = common.Green.Printf("✓ Created calendar '%s' (ID: %s)\n", cal.Name, cal.ID)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -135,50 +109,36 @@ func newUpdateCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			calendarID := args[0]
+			grantArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.UpdateCalendarRequest{}
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+				if cmd.Flags().Changed("name") {
+					req.Name = &name
 				}
-			}
+				if cmd.Flags().Changed("description") {
+					req.Description = &description
+				}
+				if cmd.Flags().Changed("location") {
+					req.Location = &location
+				}
+				if cmd.Flags().Changed("timezone") {
+					req.Timezone = &timezone
+				}
+				if cmd.Flags().Changed("color") {
+					req.HexColor = &hexColor
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				cal, err := client.UpdateCalendar(ctx, grantID, calendarID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("calendar", err)
+				}
 
-			req := &domain.UpdateCalendarRequest{}
-
-			if cmd.Flags().Changed("name") {
-				req.Name = &name
-			}
-			if cmd.Flags().Changed("description") {
-				req.Description = &description
-			}
-			if cmd.Flags().Changed("location") {
-				req.Location = &location
-			}
-			if cmd.Flags().Changed("timezone") {
-				req.Timezone = &timezone
-			}
-			if cmd.Flags().Changed("color") {
-				req.HexColor = &hexColor
-			}
-
-			cal, err := client.UpdateCalendar(ctx, grantID, calendarID, req)
-			if err != nil {
-				return common.WrapUpdateError("calendar", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Updated calendar '%s'\n", cal.Name)
-			return nil
+				_, _ = common.Green.Printf("✓ Updated calendar '%s'\n", cal.Name)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -200,54 +160,40 @@ func newDeleteCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			calendarID := args[0]
+			grantArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				if !force {
+					cal, err := client.GetCalendar(ctx, grantID, calendarID)
+					if err != nil {
+						return struct{}{}, common.WrapGetError("calendar", err)
+					}
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+					fmt.Println("Delete this calendar?")
+					fmt.Printf("  Name: %s\n", cal.Name)
+					fmt.Printf("  ID:   %s\n", cal.ID)
+					if cal.IsPrimary {
+						_, _ = common.Yellow.Printf("  Warning: This is a PRIMARY calendar!\n")
+					}
+					fmt.Print("\n[y/N]: ")
+
+					var confirm string
+					_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
+					if confirm != "y" && confirm != "Y" && confirm != "yes" {
+						fmt.Println("Cancelled.")
+						return struct{}{}, nil
+					}
+				}
+
+				err := client.DeleteCalendar(ctx, grantID, calendarID)
 				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			if !force {
-				cal, err := client.GetCalendar(ctx, grantID, calendarID)
-				if err != nil {
-					return common.WrapGetError("calendar", err)
+					return struct{}{}, common.WrapDeleteError("calendar", err)
 				}
 
-				fmt.Println("Delete this calendar?")
-				fmt.Printf("  Name: %s\n", cal.Name)
-				fmt.Printf("  ID:   %s\n", cal.ID)
-				if cal.IsPrimary {
-					_, _ = common.Yellow.Printf("  Warning: This is a PRIMARY calendar!\n")
-				}
-				fmt.Print("\n[y/N]: ")
-
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if confirm != "y" && confirm != "Y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			err = client.DeleteCalendar(ctx, grantID, calendarID)
-			if err != nil {
-				return common.WrapDeleteError("calendar", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Calendar deleted\n")
-			return nil
+				_, _ = common.Green.Printf("✓ Calendar deleted\n")
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

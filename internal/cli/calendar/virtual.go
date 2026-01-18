@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 // newVirtualCmd creates the virtual calendar command.
@@ -42,31 +44,26 @@ func newVirtualListCmd() *cobra.Command {
   # List in JSON format
   nylas calendar virtual list --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				grants, err := client.ListVirtualCalendarGrants(ctx)
+				if err != nil {
+					return struct{}{}, common.WrapFetchError("virtual calendar grants", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(os.Stdout).Encode(grants)
+				}
 
-			grants, err := client.ListVirtualCalendarGrants(ctx)
-			if err != nil {
-				return common.WrapFetchError("virtual calendar grants", err)
-			}
+				table := common.NewTable("ID", "EMAIL", "STATUS", "CREATED")
+				for _, grant := range grants {
+					created := time.Unix(grant.CreatedAt, 0).Format(common.DateTimeFormat)
+					table.AddRow(grant.ID, grant.Email, grant.GrantStatus, created)
+				}
+				table.Render()
 
-			if jsonOutput {
-				return json.NewEncoder(os.Stdout).Encode(grants)
-			}
-
-			table := common.NewTable("ID", "EMAIL", "STATUS", "CREATED")
-			for _, grant := range grants {
-				created := time.Unix(grant.CreatedAt, 0).Format(common.DateTimeFormat)
-				table.AddRow(grant.ID, grant.Email, grant.GrantStatus, created)
-			}
-			table.Render()
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -97,31 +94,26 @@ The email can be any identifier - it doesn't need to be a real email address.`,
 				return common.NewUserError("email is required", "Use --email to specify an identifier for the virtual calendar")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				grant, err := client.CreateVirtualCalendarGrant(ctx, email)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("virtual calendar grant", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(os.Stdout).Encode(grant)
+				}
 
-			grant, err := client.CreateVirtualCalendarGrant(ctx, email)
-			if err != nil {
-				return common.WrapCreateError("virtual calendar grant", err)
-			}
+				fmt.Printf("✓ Created virtual calendar grant\n")
+				fmt.Printf("  ID:     %s\n", grant.ID)
+				fmt.Printf("  Email:  %s\n", grant.Email)
+				fmt.Printf("  Status: %s\n", grant.GrantStatus)
+				fmt.Printf("\nYou can now create calendars using this grant ID:\n")
+				fmt.Printf("  nylas calendar create %s --name \"My Calendar\"\n", grant.ID)
 
-			if jsonOutput {
-				return json.NewEncoder(os.Stdout).Encode(grant)
-			}
-
-			fmt.Printf("✓ Created virtual calendar grant\n")
-			fmt.Printf("  ID:     %s\n", grant.ID)
-			fmt.Printf("  Email:  %s\n", grant.Email)
-			fmt.Printf("  Status: %s\n", grant.GrantStatus)
-			fmt.Printf("\nYou can now create calendars using this grant ID:\n")
-			fmt.Printf("  nylas calendar create %s --name \"My Calendar\"\n", grant.ID)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -149,32 +141,27 @@ func newVirtualShowCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			grantID := args[0]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				grant, err := client.GetVirtualCalendarGrant(ctx, grantID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("virtual calendar grant", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(os.Stdout).Encode(grant)
+				}
 
-			grant, err := client.GetVirtualCalendarGrant(ctx, grantID)
-			if err != nil {
-				return common.WrapGetError("virtual calendar grant", err)
-			}
+				fmt.Printf("Virtual Calendar Grant\n")
+				fmt.Printf("  ID:       %s\n", grant.ID)
+				fmt.Printf("  Provider: %s\n", grant.Provider)
+				fmt.Printf("  Email:    %s\n", grant.Email)
+				fmt.Printf("  Status:   %s\n", grant.GrantStatus)
+				fmt.Printf("  Created:  %s\n", time.Unix(grant.CreatedAt, 0).Format(common.DisplayDateTime))
+				fmt.Printf("  Updated:  %s\n", time.Unix(grant.UpdatedAt, 0).Format(common.DisplayDateTime))
 
-			if jsonOutput {
-				return json.NewEncoder(os.Stdout).Encode(grant)
-			}
-
-			fmt.Printf("Virtual Calendar Grant\n")
-			fmt.Printf("  ID:       %s\n", grant.ID)
-			fmt.Printf("  Provider: %s\n", grant.Provider)
-			fmt.Printf("  Email:    %s\n", grant.Email)
-			fmt.Printf("  Status:   %s\n", grant.GrantStatus)
-			fmt.Printf("  Created:  %s\n", time.Unix(grant.CreatedAt, 0).Format(common.DisplayDateTime))
-			fmt.Printf("  Updated:  %s\n", time.Unix(grant.UpdatedAt, 0).Format(common.DisplayDateTime))
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -210,21 +197,16 @@ func newVirtualDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				if err := client.DeleteVirtualCalendarGrant(ctx, grantID); err != nil {
+					return struct{}{}, common.WrapDeleteError("virtual calendar grant", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				fmt.Printf("✓ Deleted virtual calendar grant %s\n", grantID)
 
-			if err := client.DeleteVirtualCalendarGrant(ctx, grantID); err != nil {
-				return common.WrapDeleteError("virtual calendar grant", err)
-			}
-
-			fmt.Printf("✓ Deleted virtual calendar grant %s\n", grantID)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

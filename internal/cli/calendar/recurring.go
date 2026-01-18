@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 // newRecurringCmd creates the recurring events command.
@@ -55,64 +57,49 @@ The master event ID is the ID of the parent recurring event.`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			masterEventID := args[0]
-
-			if len(args) > 1 {
-				grantID = args[1]
-			}
+			grantArgs := args[1:]
 
 			if calendarID == "" {
 				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			if grantID == "" {
-				grantID, err = common.GetGrantID([]string{})
-				if err != nil {
-					return err
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				params := &domain.EventQueryParams{
+					Limit:           limit,
+					ExpandRecurring: true,
+					Start:           startUnix,
+					End:             endUnix,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				instances, err := client.GetRecurringEventInstances(ctx, grantID, calendarID, masterEventID, params)
+				if err != nil {
+					return struct{}{}, common.WrapFetchError("recurring event instances", err)
+				}
 
-			params := &domain.EventQueryParams{
-				Limit:           limit,
-				ExpandRecurring: true,
-				Start:           startUnix,
-				End:             endUnix,
-			}
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(os.Stdout).Encode(instances)
+				}
 
-			instances, err := client.GetRecurringEventInstances(ctx, grantID, calendarID, masterEventID, params)
-			if err != nil {
-				return common.WrapFetchError("recurring event instances", err)
-			}
+				if len(instances) == 0 {
+					common.PrintEmptyState("recurring event instances")
+					return struct{}{}, nil
+				}
 
-			if jsonOutput {
-				return json.NewEncoder(os.Stdout).Encode(instances)
-			}
+				table := common.NewTable("INSTANCE ID", "TITLE", "START TIME", "STATUS")
+				for _, event := range instances {
+					startTime := time.Unix(event.When.StartTime, 0).Format("2006-01-02 15:04")
+					table.AddRow(event.ID, event.Title, startTime, event.Status)
+				}
+				table.Render()
 
-			if len(instances) == 0 {
-				common.PrintEmptyState("recurring event instances")
-				return nil
-			}
+				fmt.Printf("\nTotal instances: %d\n", len(instances))
+				if len(instances) > 0 && instances[0].MasterEventID != "" {
+					fmt.Printf("Master Event ID: %s\n", instances[0].MasterEventID)
+				}
 
-			table := common.NewTable("INSTANCE ID", "TITLE", "START TIME", "STATUS")
-			for _, event := range instances {
-				startTime := time.Unix(event.When.StartTime, 0).Format("2006-01-02 15:04")
-				table.AddRow(event.ID, event.Title, startTime, event.Status)
-			}
-			table.Render()
-
-			fmt.Printf("\nTotal instances: %d\n", len(instances))
-			if len(instances) > 0 && instances[0].MasterEventID != "" {
-				fmt.Printf("Master Event ID: %s\n", instances[0].MasterEventID)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -155,81 +142,66 @@ This creates an exception for that particular instance.`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			instanceID := args[0]
-
-			if len(args) > 1 {
-				grantID = args[1]
-			}
+			grantArgs := args[1:]
 
 			if calendarID == "" {
 				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.UpdateEventRequest{}
 
-			if grantID == "" {
-				grantID, err = common.GetGrantID([]string{})
+				if title != "" {
+					req.Title = &title
+				}
+				if description != "" {
+					req.Description = &description
+				}
+				if location != "" {
+					req.Location = &location
+				}
+
+				if startTime != "" || endTime != "" {
+					when := &domain.EventWhen{Object: "timespan"}
+					if startTime != "" {
+						t, err := time.Parse(time.RFC3339, startTime)
+						if err != nil {
+							return struct{}{}, common.NewUserError("invalid start time format", "use RFC3339 (e.g., 2024-01-15T14:00:00Z)")
+						}
+						when.StartTime = t.Unix()
+					}
+					if endTime != "" {
+						t, err := time.Parse(time.RFC3339, endTime)
+						if err != nil {
+							return struct{}{}, common.NewUserError("invalid end time format", "use RFC3339 (e.g., 2024-01-15T15:00:00Z)")
+						}
+						when.EndTime = t.Unix()
+					}
+					req.When = when
+				}
+
+				event, err := client.UpdateRecurringEventInstance(ctx, grantID, calendarID, instanceID, req)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapUpdateError("recurring event instance", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			req := &domain.UpdateEventRequest{}
-
-			if title != "" {
-				req.Title = &title
-			}
-			if description != "" {
-				req.Description = &description
-			}
-			if location != "" {
-				req.Location = &location
-			}
-
-			if startTime != "" || endTime != "" {
-				when := &domain.EventWhen{Object: "timespan"}
-				if startTime != "" {
-					t, err := time.Parse(time.RFC3339, startTime)
-					if err != nil {
-						return common.NewUserError("invalid start time format", "use RFC3339 (e.g., 2024-01-15T14:00:00Z)")
-					}
-					when.StartTime = t.Unix()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(os.Stdout).Encode(event)
 				}
-				if endTime != "" {
-					t, err := time.Parse(time.RFC3339, endTime)
-					if err != nil {
-						return common.NewUserError("invalid end time format", "use RFC3339 (e.g., 2024-01-15T15:00:00Z)")
-					}
-					when.EndTime = t.Unix()
+
+				fmt.Printf("✓ Updated recurring event instance\n")
+				fmt.Printf("  ID:    %s\n", event.ID)
+				fmt.Printf("  Title: %s\n", event.Title)
+				if event.When.StartTime > 0 {
+					fmt.Printf("  Start: %s\n", time.Unix(event.When.StartTime, 0).Format(common.DateTimeFormat))
 				}
-				req.When = when
-			}
+				if event.When.EndTime > 0 {
+					fmt.Printf("  End:   %s\n", time.Unix(event.When.EndTime, 0).Format(common.DateTimeFormat))
+				}
 
-			event, err := client.UpdateRecurringEventInstance(ctx, grantID, calendarID, instanceID, req)
-			if err != nil {
-				return common.WrapUpdateError("recurring event instance", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(os.Stdout).Encode(event)
-			}
-
-			fmt.Printf("✓ Updated recurring event instance\n")
-			fmt.Printf("  ID:    %s\n", event.ID)
-			fmt.Printf("  Title: %s\n", event.Title)
-			if event.When.StartTime > 0 {
-				fmt.Printf("  Start: %s\n", time.Unix(event.When.StartTime, 0).Format(common.DateTimeFormat))
-			}
-			if event.When.EndTime > 0 {
-				fmt.Printf("  End:   %s\n", time.Unix(event.When.EndTime, 0).Format(common.DateTimeFormat))
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -267,10 +239,7 @@ This adds an exception to the recurrence rule.`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			instanceID := args[0]
-
-			if len(args) > 1 {
-				grantID = args[1]
-			}
+			grantArgs := args[1:]
 
 			if calendarID == "" {
 				return common.NewUserError("calendar ID is required", "Use --calendar to specify the calendar")
@@ -286,28 +255,16 @@ This adds an exception to the recurrence rule.`,
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			if grantID == "" {
-				grantID, err = common.GetGrantID([]string{})
-				if err != nil {
-					return err
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				if err := client.DeleteRecurringEventInstance(ctx, grantID, calendarID, instanceID); err != nil {
+					return struct{}{}, common.WrapDeleteError("recurring event instance", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				fmt.Printf("✓ Deleted recurring event instance %s\n", instanceID)
 
-			if err := client.DeleteRecurringEventInstance(ctx, grantID, calendarID, instanceID); err != nil {
-				return common.WrapDeleteError("recurring event instance", err)
-			}
-
-			fmt.Printf("✓ Deleted recurring event instance %s\n", instanceID)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

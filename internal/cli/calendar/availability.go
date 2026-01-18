@@ -1,6 +1,7 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -57,21 +59,10 @@ Shows busy time slots within the specified time range.`,
   nylas calendar availability check --duration 7d`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return common.NewUserError("Failed to get grant: "+err.Error(),
-					"Run 'nylas auth status' to check authentication")
-			}
-
 			// Parse time range
 			now := time.Now()
 			var startTime, endTime time.Time
+			var err error
 
 			if start != "" {
 				startTime, err = parseTimeInput(start)
@@ -98,46 +89,47 @@ Shows busy time slots within the specified time range.`,
 				endTime = startTime.Add(24 * time.Hour)
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+			_, err = common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// If no emails specified, get the grant's email
+				emailList := emails
+				if len(emailList) == 0 {
+					grant, err := client.GetGrant(ctx, grantID)
+					if err != nil {
+						return struct{}{}, common.NewUserError("Failed to get grant details: "+err.Error(),
+							"Run 'nylas auth status' to verify your authentication")
+					}
+					if grant.Email != "" {
+						emailList = []string{grant.Email}
+					} else {
+						return struct{}{}, common.NewUserError("No email found for grant",
+							"Please specify --emails flag with the email addresses to check")
+					}
+				}
 
-			// If no emails specified, get the grant's email
-			if len(emails) == 0 {
-				grant, err := c.GetGrant(ctx, grantID)
+				req := &domain.FreeBusyRequest{
+					StartTime: startTime.Unix(),
+					EndTime:   endTime.Unix(),
+					Emails:    emailList,
+				}
+
+				result, err := common.RunWithSpinnerResult("Checking availability...", func() (*domain.FreeBusyResponse, error) {
+					return client.GetFreeBusy(ctx, grantID, req)
+				})
 				if err != nil {
-					return common.NewUserError("Failed to get grant details: "+err.Error(),
-						"Run 'nylas auth status' to verify your authentication")
+					return struct{}{}, common.NewUserError("Failed to get availability: "+err.Error(),
+						"Check that the email addresses are valid")
 				}
-				if grant.Email != "" {
-					emails = []string{grant.Email}
-				} else {
-					return common.NewUserError("No email found for grant",
-						"Please specify --emails flag with the email addresses to check")
+
+				switch format {
+				case "json":
+					return struct{}{}, common.PrintJSON(result)
+				case "yaml":
+					return struct{}{}, yaml.NewEncoder(os.Stdout).Encode(result)
+				default:
+					return struct{}{}, displayFreeBusy(result, startTime, endTime)
 				}
-			}
-
-			req := &domain.FreeBusyRequest{
-				StartTime: startTime.Unix(),
-				EndTime:   endTime.Unix(),
-				Emails:    emails,
-			}
-
-			result, err := common.RunWithSpinnerResult("Checking availability...", func() (*domain.FreeBusyResponse, error) {
-				return c.GetFreeBusy(ctx, grantID, req)
 			})
-			if err != nil {
-				return common.NewUserError("Failed to get availability: "+err.Error(),
-					"Check that the email addresses are valid")
-			}
-
-			switch format {
-			case "json":
-				return common.PrintJSON(result)
-			case "yaml":
-				return yaml.NewEncoder(os.Stdout).Encode(result)
-			default:
-				return displayFreeBusy(result, startTime, endTime)
-			}
+			return err
 		},
 	}
 
@@ -180,15 +172,10 @@ This searches for time slots when all participants are free.`,
 					"Use --participants to specify email addresses")
 			}
 
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
-
 			// Parse time range
 			now := time.Now()
 			var startTime, endTime time.Time
+			var err error
 
 			if start != "" {
 				startTime, err = parseTimeInput(start)
@@ -218,33 +205,33 @@ This searches for time slots when all participants are free.`,
 				}
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+			_, err = common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				req := &domain.AvailabilityRequest{
+					StartTime:       startTime.Unix(),
+					EndTime:         endTime.Unix(),
+					DurationMinutes: durationMins,
+					Participants:    availParticipants,
+					IntervalMinutes: intervalMins,
+				}
 
-			req := &domain.AvailabilityRequest{
-				StartTime:       startTime.Unix(),
-				EndTime:         endTime.Unix(),
-				DurationMinutes: durationMins,
-				Participants:    availParticipants,
-				IntervalMinutes: intervalMins,
-			}
+				result, err := common.RunWithSpinnerResult("Finding available times...", func() (*domain.AvailabilityResponse, error) {
+					return client.GetAvailability(ctx, req)
+				})
+				if err != nil {
+					return struct{}{}, common.NewUserError("Failed to find availability: "+err.Error(),
+						"Check that the participant email addresses are valid")
+				}
 
-			result, err := common.RunWithSpinnerResult("Finding available times...", func() (*domain.AvailabilityResponse, error) {
-				return c.GetAvailability(ctx, req)
+				switch format {
+				case "json":
+					return struct{}{}, common.PrintJSON(result)
+				case "yaml":
+					return struct{}{}, yaml.NewEncoder(os.Stdout).Encode(result)
+				default:
+					return struct{}{}, displayAvailableSlots(result, durationMins)
+				}
 			})
-			if err != nil {
-				return common.NewUserError("Failed to find availability: "+err.Error(),
-					"Check that the participant email addresses are valid")
-			}
-
-			switch format {
-			case "json":
-				return common.PrintJSON(result)
-			case "yaml":
-				return yaml.NewEncoder(os.Stdout).Encode(result)
-			default:
-				return displayAvailableSlots(result, durationMins)
-			}
+			return err
 		},
 	}
 

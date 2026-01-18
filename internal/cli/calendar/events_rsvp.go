@@ -1,12 +1,14 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +41,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventID := args[0]
 			status := strings.ToLower(args[1])
+			grantArgs := args[2:]
 
 			// Validate status
 			if status != "yes" && status != "no" && status != "maybe" {
@@ -48,50 +51,35 @@ Examples:
 				)
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 2 {
-				grantID = args[2]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get calendar ID if not specified
+				calID, err := GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
 				if err != nil {
-					return err
+					return struct{}{}, err
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				req := &domain.SendRSVPRequest{
+					Status:  status,
+					Comment: comment,
+				}
 
-			// Get calendar ID if not specified
-			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
-			if err != nil {
-				return err
-			}
+				err = common.RunWithSpinner("Sending RSVP...", func() error {
+					return client.SendRSVP(ctx, grantID, calID, eventID, req)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapSendError("RSVP", err)
+				}
 
-			req := &domain.SendRSVPRequest{
-				Status:  status,
-				Comment: comment,
-			}
+				statusText := map[string]string{
+					"yes":   "accepted",
+					"no":    "declined",
+					"maybe": "tentatively accepted",
+				}
+				fmt.Printf("%s RSVP sent! You have %s the invitation.\n", common.Green.Sprint("✓"), statusText[status])
 
-			err = common.RunWithSpinner("Sending RSVP...", func() error {
-				return client.SendRSVP(ctx, grantID, calendarID, eventID, req)
+				return struct{}{}, nil
 			})
-			if err != nil {
-				return common.WrapSendError("RSVP", err)
-			}
-
-			statusText := map[string]string{
-				"yes":   "accepted",
-				"no":    "declined",
-				"maybe": "tentatively accepted",
-			}
-			fmt.Printf("%s RSVP sent! You have %s the invitation.\n", common.Green.Sprint("✓"), statusText[status])
-
-			return nil
+			return err
 		},
 	}
 

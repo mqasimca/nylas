@@ -8,6 +8,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -58,128 +59,118 @@ Examples:
 				)
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			// Get calendar ID if not specified
-			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, true)
-			if err != nil {
-				return err
-			}
-
-			// Parse times
-			when, err := parseEventTime(startTime, endTime, allDay)
-			if err != nil {
-				return err
-			}
-
-			// Check for DST warnings (unless ignored or all-day event)
-			if !ignoreDSTWarning && !allDay {
-				eventStart := when.StartDateTime()
-				eventTZ := eventStart.Location().String()
-				if eventTZ == "Local" {
-					eventTZ = getLocalTimeZone()
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get calendar ID if not specified
+				calID, err := GetDefaultCalendarID(ctx, client, grantID, calendarID, true)
+				if err != nil {
+					return struct{}{}, err
 				}
 
-				// Check for DST conflict
-				dstWarning, err := checkDSTConflict(eventStart, eventTZ, when.EndDateTime().Sub(eventStart))
-				if err == nil && dstWarning != nil {
-					// Display DST warning
-					if !confirmDSTConflict(dstWarning) {
-						fmt.Println("Cancelled.")
-						return nil
-					}
+				// Parse times
+				when, err := parseEventTime(startTime, endTime, allDay)
+				if err != nil {
+					return struct{}{}, err
 				}
-			}
 
-			// Check for working hours violations (unless ignored or all-day event)
-			if !ignoreWorkingHours && !allDay {
-				eventStart := when.StartDateTime()
-
-				// Load config to get working hours settings
-				configStore := config.NewDefaultFileStore()
-				cfg, err := configStore.Load()
-				if err == nil && cfg != nil {
-					// Check for break violations first (hard block - cannot override)
-					breakViolation := checkBreakViolation(eventStart, cfg)
-					if breakViolation != "" {
-						_, _ = common.BoldRed.Println("\n⛔ Break Time Conflict")
-						fmt.Printf("\n%s\n\n", breakViolation)
-						fmt.Println("Tip: Schedule the event outside of break times, or update your")
-						fmt.Println("     break configuration in ~/.nylas/config.yaml")
-						return fmt.Errorf("event conflicts with break time")
+				// Check for DST warnings (unless ignored or all-day event)
+				if !ignoreDSTWarning && !allDay {
+					eventStart := when.StartDateTime()
+					eventTZ := eventStart.Location().String()
+					if eventTZ == "Local" {
+						eventTZ = getLocalTimeZone()
 					}
 
-					// Check for working hours violations (soft warning - can override)
-					violation := checkWorkingHoursViolation(eventStart, cfg)
-					if violation != "" {
-						// Get schedule for display
-						weekday := strings.ToLower(eventStart.Weekday().String())
-						schedule := cfg.WorkingHours.GetScheduleForDay(weekday)
-
-						if !confirmWorkingHoursViolation(violation, eventStart, schedule) {
+					// Check for DST conflict
+					dstWarning, err := checkDSTConflict(eventStart, eventTZ, when.EndDateTime().Sub(eventStart))
+					if err == nil && dstWarning != nil {
+						// Display DST warning
+						if !confirmDSTConflict(dstWarning) {
 							fmt.Println("Cancelled.")
-							return nil
+							return struct{}{}, nil
 						}
 					}
 				}
-			}
 
-			// --free flag overrides --busy
-			if free {
-				busy = false
-			}
+				// Check for working hours violations (unless ignored or all-day event)
+				if !ignoreWorkingHours && !allDay {
+					eventStart := when.StartDateTime()
 
-			req := &domain.CreateEventRequest{
-				Title:       title,
-				Description: description,
-				Location:    location,
-				When:        *when,
-				Busy:        busy,
-			}
+					// Load config to get working hours settings
+					configStore := config.NewDefaultFileStore()
+					cfg, err := configStore.Load()
+					if err == nil && cfg != nil {
+						// Check for break violations first (hard block - cannot override)
+						breakViolation := checkBreakViolation(eventStart, cfg)
+						if breakViolation != "" {
+							_, _ = common.BoldRed.Println("\n⛔ Break Time Conflict")
+							fmt.Printf("\n%s\n\n", breakViolation)
+							fmt.Println("Tip: Schedule the event outside of break times, or update your")
+							fmt.Println("     break configuration in ~/.nylas/config.yaml")
+							return struct{}{}, fmt.Errorf("event conflicts with break time")
+						}
 
-			// Add participants
-			for _, email := range participants {
-				req.Participants = append(req.Participants, domain.Participant{
-					Person: domain.Person{Email: email},
-				})
-			}
+						// Check for working hours violations (soft warning - can override)
+						violation := checkWorkingHoursViolation(eventStart, cfg)
+						if violation != "" {
+							// Get schedule for display
+							weekday := strings.ToLower(eventStart.Weekday().String())
+							schedule := cfg.WorkingHours.GetScheduleForDay(weekday)
 
-			// Set timezone lock in metadata if requested
-			if lockTimezone && !allDay {
-				if req.Metadata == nil {
-					req.Metadata = make(map[string]string)
+							if !confirmWorkingHoursViolation(violation, eventStart, schedule) {
+								fmt.Println("Cancelled.")
+								return struct{}{}, nil
+							}
+						}
+					}
 				}
-				req.Metadata["timezone_locked"] = "true"
-			}
 
-			event, err := common.RunWithSpinnerResult("Creating event...", func() (*domain.Event, error) {
-				return client.CreateEvent(ctx, grantID, calendarID, req)
+				// --free flag overrides --busy
+				if free {
+					busy = false
+				}
+
+				req := &domain.CreateEventRequest{
+					Title:       title,
+					Description: description,
+					Location:    location,
+					When:        *when,
+					Busy:        busy,
+				}
+
+				// Add participants
+				for _, email := range participants {
+					req.Participants = append(req.Participants, domain.Participant{
+						Person: domain.Person{Email: email},
+					})
+				}
+
+				// Set timezone lock in metadata if requested
+				if lockTimezone && !allDay {
+					if req.Metadata == nil {
+						req.Metadata = make(map[string]string)
+					}
+					req.Metadata["timezone_locked"] = "true"
+				}
+
+				event, err := common.RunWithSpinnerResult("Creating event...", func() (*domain.Event, error) {
+					return client.CreateEvent(ctx, grantID, calID, req)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("event", err)
+				}
+
+				fmt.Printf("%s Event created successfully!\n\n", common.Green.Sprint("✓"))
+				fmt.Printf("Title: %s\n", event.Title)
+				fmt.Printf("When: %s\n", formatEventTime(event.When))
+				if lockTimezone && !allDay {
+					fmt.Printf("%s %s\n", common.Cyan.Sprint("🔒 Timezone locked:"), when.StartTimezone)
+					fmt.Println("     This event will always display in this timezone, regardless of viewer's location.")
+				}
+				fmt.Printf("ID: %s\n", event.ID)
+
+				return struct{}{}, nil
 			})
-			if err != nil {
-				return common.WrapCreateError("event", err)
-			}
-
-			fmt.Printf("%s Event created successfully!\n\n", common.Green.Sprint("✓"))
-			fmt.Printf("Title: %s\n", event.Title)
-			fmt.Printf("When: %s\n", formatEventTime(event.When))
-			if lockTimezone && !allDay {
-				fmt.Printf("%s %s\n", common.Cyan.Sprint("🔒 Timezone locked:"), when.StartTimezone)
-				fmt.Println("     This event will always display in this timezone, regardless of viewer's location.")
-			}
-			fmt.Printf("ID: %s\n", event.ID)
-
-			return nil
+			return err
 		},
 	}
 
@@ -292,110 +283,96 @@ Examples:
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventID := args[0]
+			grantArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get calendar ID if not specified
+				calID, err := GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
 				if err != nil {
-					return err
+					return struct{}{}, err
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				req := &domain.UpdateEventRequest{}
 
-			// Get calendar ID if not specified
-			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
-			if err != nil {
-				return err
-			}
+				if cmd.Flags().Changed("title") {
+					req.Title = &title
+				}
+				if cmd.Flags().Changed("description") {
+					req.Description = &description
+				}
+				if cmd.Flags().Changed("location") {
+					req.Location = &location
+				}
+				if cmd.Flags().Changed("busy") {
+					req.Busy = &busy
+				}
+				// --free flag overrides --busy
+				if free {
+					f := false
+					req.Busy = &f
+				}
+				if cmd.Flags().Changed("visibility") {
+					req.Visibility = &visibility
+				}
 
-			req := &domain.UpdateEventRequest{}
+				// Handle time changes
+				if cmd.Flags().Changed("start") {
+					when, err := parseEventTime(startTime, endTime, allDay)
+					if err != nil {
+						return struct{}{}, err
+					}
+					req.When = when
+				}
 
-			if cmd.Flags().Changed("title") {
-				req.Title = &title
-			}
-			if cmd.Flags().Changed("description") {
-				req.Description = &description
-			}
-			if cmd.Flags().Changed("location") {
-				req.Location = &location
-			}
-			if cmd.Flags().Changed("busy") {
-				req.Busy = &busy
-			}
-			// --free flag overrides --busy
-			if free {
-				f := false
-				req.Busy = &f
-			}
-			if cmd.Flags().Changed("visibility") {
-				req.Visibility = &visibility
-			}
+				// Handle participants
+				if len(participants) > 0 {
+					for _, email := range participants {
+						req.Participants = append(req.Participants, domain.Participant{
+							Person: domain.Person{Email: email},
+						})
+					}
+				}
 
-			// Handle time changes
-			if cmd.Flags().Changed("start") {
-				when, err := parseEventTime(startTime, endTime, allDay)
+				// Handle timezone locking/unlocking
+				if lockTimezone && unlockTimezone {
+					return struct{}{}, common.NewUserError(
+						"cannot use both --lock-timezone and --unlock-timezone",
+						"Use only one flag to either lock or unlock timezone",
+					)
+				}
+
+				if lockTimezone {
+					if req.Metadata == nil {
+						req.Metadata = make(map[string]string)
+					}
+					req.Metadata["timezone_locked"] = "true"
+				} else if unlockTimezone {
+					if req.Metadata == nil {
+						req.Metadata = make(map[string]string)
+					}
+					req.Metadata["timezone_locked"] = "false"
+				}
+
+				event, err := common.RunWithSpinnerResult("Updating event...", func() (*domain.Event, error) {
+					return client.UpdateEvent(ctx, grantID, calID, eventID, req)
+				})
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapUpdateError("event", err)
 				}
-				req.When = when
-			}
 
-			// Handle participants
-			if len(participants) > 0 {
-				for _, email := range participants {
-					req.Participants = append(req.Participants, domain.Participant{
-						Person: domain.Person{Email: email},
-					})
+				fmt.Printf("%s Event updated successfully!\n\n", common.Green.Sprint("✓"))
+				fmt.Printf("Title: %s\n", event.Title)
+				fmt.Printf("When: %s\n", formatEventTime(event.When))
+				if lockTimezone {
+					fmt.Printf("%s Timezone is now locked\n", common.Cyan.Sprint("🔒"))
+				} else if unlockTimezone {
+					fmt.Printf("%s Timezone lock removed\n", common.Cyan.Sprint("🔓"))
 				}
-			}
+				fmt.Printf("ID: %s\n", event.ID)
 
-			// Handle timezone locking/unlocking
-			if lockTimezone && unlockTimezone {
-				return common.NewUserError(
-					"cannot use both --lock-timezone and --unlock-timezone",
-					"Use only one flag to either lock or unlock timezone",
-				)
-			}
-
-			if lockTimezone {
-				if req.Metadata == nil {
-					req.Metadata = make(map[string]string)
-				}
-				req.Metadata["timezone_locked"] = "true"
-			} else if unlockTimezone {
-				if req.Metadata == nil {
-					req.Metadata = make(map[string]string)
-				}
-				req.Metadata["timezone_locked"] = "false"
-			}
-
-			event, err := common.RunWithSpinnerResult("Updating event...", func() (*domain.Event, error) {
-				return client.UpdateEvent(ctx, grantID, calendarID, eventID, req)
+				return struct{}{}, nil
 			})
-			if err != nil {
-				return common.WrapUpdateError("event", err)
-			}
-
-			fmt.Printf("%s Event updated successfully!\n\n", common.Green.Sprint("✓"))
-			fmt.Printf("Title: %s\n", event.Title)
-			fmt.Printf("When: %s\n", formatEventTime(event.When))
-			if lockTimezone {
-				fmt.Printf("%s Timezone is now locked\n", common.Cyan.Sprint("🔒"))
-			} else if unlockTimezone {
-				fmt.Printf("%s Timezone lock removed\n", common.Cyan.Sprint("🔓"))
-			}
-			fmt.Printf("ID: %s\n", event.ID)
-
-			return nil
+			return err
 		},
 	}
 

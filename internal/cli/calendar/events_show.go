@@ -1,9 +1,11 @@
 package calendar
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +34,7 @@ Examples:
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventID := args[0]
+			grantArgs := args[1:]
 
 			// Auto-detect timezone if not specified
 			if targetTZ == "" && !cmd.Flags().Changed("timezone") {
@@ -45,144 +48,129 @@ Examples:
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get calendar ID if not specified
+				calID, err := GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
 				if err != nil {
-					return err
+					return struct{}{}, err
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				event, err := client.GetEvent(ctx, grantID, calID, eventID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("event", err)
+				}
 
-			// Get calendar ID if not specified
-			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
-			if err != nil {
-				return err
-			}
+				// Title
+				fmt.Printf("%s\n\n", common.BoldCyan.Sprint(event.Title))
 
-			event, err := client.GetEvent(ctx, grantID, calendarID, eventID)
-			if err != nil {
-				return common.WrapGetError("event", err)
-			}
+				// Time (with timezone conversion if requested)
+				fmt.Printf("%s\n", common.Green.Sprint("When"))
+				timeDisplay, err := formatEventTimeWithTZ(event, targetTZ)
+				if err != nil {
+					fmt.Printf("  %s (timezone conversion error: %v)\n\n",
+						formatEventTime(event.When),
+						err)
+				} else {
+					if timeDisplay.ShowConversion {
+						// Show converted time prominently
+						fmt.Printf("  %s", timeDisplay.ConvertedTime)
+						if showTZ {
+							fmt.Printf(" %s", common.Blue.Sprint(timeDisplay.ConvertedTimezone))
+						}
+						fmt.Println()
+						// Show original time as reference
+						fmt.Printf("  %s %s",
+							common.Dim.Sprint("(Original:"),
+							common.Dim.Sprint(timeDisplay.OriginalTime))
+						if showTZ {
+							fmt.Printf(" %s", common.Dim.Sprint(timeDisplay.OriginalTimezone))
+						}
+						fmt.Printf("%s\n\n", common.Dim.Sprint(")"))
+					} else {
+						// No conversion - show original time
+						fmt.Printf("  %s", timeDisplay.OriginalTime)
+						if showTZ && timeDisplay.OriginalTimezone != "" {
+							fmt.Printf(" %s", common.Blue.Sprint(timeDisplay.OriginalTimezone))
+						}
+						fmt.Printf("\n\n")
+					}
+				}
 
-			// Title
-			fmt.Printf("%s\n\n", common.BoldCyan.Sprint(event.Title))
+				// DST Warning (if applicable)
+				if !event.When.IsAllDay() {
+					start := event.When.StartDateTime()
+					eventTZ := start.Location().String()
+					if eventTZ == "Local" {
+						eventTZ = getLocalTimeZone()
+					}
 
-			// Time (with timezone conversion if requested)
-			fmt.Printf("%s\n", common.Green.Sprint("When"))
-			timeDisplay, err := formatEventTimeWithTZ(event, targetTZ)
-			if err != nil {
-				fmt.Printf("  %s (timezone conversion error: %v)\n\n",
-					formatEventTime(event.When),
-					err)
-			} else {
-				if timeDisplay.ShowConversion {
-					// Show converted time prominently
-					fmt.Printf("  %s", timeDisplay.ConvertedTime)
-					if showTZ {
-						fmt.Printf(" %s", common.Blue.Sprint(timeDisplay.ConvertedTimezone))
+					dstWarning := checkDSTWarning(start, eventTZ)
+					if dstWarning != "" {
+						fmt.Printf("  %s\n\n", common.Yellow.Sprint(dstWarning))
+					}
+				}
+
+				// Location
+				if event.Location != "" {
+					fmt.Printf("%s\n", common.Green.Sprint("Location"))
+					fmt.Printf("  %s\n\n", event.Location)
+				}
+
+				// Description
+				if event.Description != "" {
+					fmt.Printf("%s\n", common.Green.Sprint("Description"))
+					fmt.Printf("  %s\n\n", event.Description)
+				}
+
+				// Organizer
+				if event.Organizer != nil {
+					fmt.Printf("%s\n", common.Green.Sprint("Organizer"))
+					if event.Organizer.Name != "" {
+						fmt.Printf("  %s <%s>\n\n", event.Organizer.Name, event.Organizer.Email)
+					} else {
+						fmt.Printf("  %s\n\n", event.Organizer.Email)
+					}
+				}
+
+				// Participants
+				if len(event.Participants) > 0 {
+					fmt.Printf("%s\n", common.Green.Sprint("Participants"))
+					for _, p := range event.Participants {
+						status := formatParticipantStatus(p.Status)
+						if p.Name != "" {
+							fmt.Printf("  %s <%s> %s\n", p.Name, p.Email, status)
+						} else {
+							fmt.Printf("  %s %s\n", p.Email, status)
+						}
 					}
 					fmt.Println()
-					// Show original time as reference
-					fmt.Printf("  %s %s",
-						common.Dim.Sprint("(Original:"),
-						common.Dim.Sprint(timeDisplay.OriginalTime))
-					if showTZ {
-						fmt.Printf(" %s", common.Dim.Sprint(timeDisplay.OriginalTimezone))
+				}
+
+				// Conferencing
+				if event.Conferencing != nil && event.Conferencing.Details != nil {
+					fmt.Printf("%s\n", common.Green.Sprint("Video Conference"))
+					if event.Conferencing.Provider != "" {
+						fmt.Printf("  Provider: %s\n", event.Conferencing.Provider)
 					}
-					fmt.Printf("%s\n\n", common.Dim.Sprint(")"))
-				} else {
-					// No conversion - show original time
-					fmt.Printf("  %s", timeDisplay.OriginalTime)
-					if showTZ && timeDisplay.OriginalTimezone != "" {
-						fmt.Printf(" %s", common.Blue.Sprint(timeDisplay.OriginalTimezone))
+					if event.Conferencing.Details.URL != "" {
+						fmt.Printf("  URL: %s\n", event.Conferencing.Details.URL)
 					}
-					fmt.Printf("\n\n")
-				}
-			}
-
-			// DST Warning (if applicable)
-			if !event.When.IsAllDay() {
-				start := event.When.StartDateTime()
-				eventTZ := start.Location().String()
-				if eventTZ == "Local" {
-					eventTZ = getLocalTimeZone()
+					fmt.Println()
 				}
 
-				dstWarning := checkDSTWarning(start, eventTZ)
-				if dstWarning != "" {
-					fmt.Printf("  %s\n\n", common.Yellow.Sprint(dstWarning))
+				// Metadata
+				fmt.Printf("%s\n", common.Green.Sprint("Details"))
+				fmt.Printf("  Status: %s\n", event.Status)
+				fmt.Printf("  Busy: %v\n", event.Busy)
+				if event.Visibility != "" {
+					fmt.Printf("  Visibility: %s\n", event.Visibility)
 				}
-			}
+				fmt.Printf("  ID: %s\n", common.Dim.Sprint(event.ID))
+				fmt.Printf("  Calendar: %s\n", common.Dim.Sprint(event.CalendarID))
 
-			// Location
-			if event.Location != "" {
-				fmt.Printf("%s\n", common.Green.Sprint("Location"))
-				fmt.Printf("  %s\n\n", event.Location)
-			}
-
-			// Description
-			if event.Description != "" {
-				fmt.Printf("%s\n", common.Green.Sprint("Description"))
-				fmt.Printf("  %s\n\n", event.Description)
-			}
-
-			// Organizer
-			if event.Organizer != nil {
-				fmt.Printf("%s\n", common.Green.Sprint("Organizer"))
-				if event.Organizer.Name != "" {
-					fmt.Printf("  %s <%s>\n\n", event.Organizer.Name, event.Organizer.Email)
-				} else {
-					fmt.Printf("  %s\n\n", event.Organizer.Email)
-				}
-			}
-
-			// Participants
-			if len(event.Participants) > 0 {
-				fmt.Printf("%s\n", common.Green.Sprint("Participants"))
-				for _, p := range event.Participants {
-					status := formatParticipantStatus(p.Status)
-					if p.Name != "" {
-						fmt.Printf("  %s <%s> %s\n", p.Name, p.Email, status)
-					} else {
-						fmt.Printf("  %s %s\n", p.Email, status)
-					}
-				}
-				fmt.Println()
-			}
-
-			// Conferencing
-			if event.Conferencing != nil && event.Conferencing.Details != nil {
-				fmt.Printf("%s\n", common.Green.Sprint("Video Conference"))
-				if event.Conferencing.Provider != "" {
-					fmt.Printf("  Provider: %s\n", event.Conferencing.Provider)
-				}
-				if event.Conferencing.Details.URL != "" {
-					fmt.Printf("  URL: %s\n", event.Conferencing.Details.URL)
-				}
-				fmt.Println()
-			}
-
-			// Metadata
-			fmt.Printf("%s\n", common.Green.Sprint("Details"))
-			fmt.Printf("  Status: %s\n", event.Status)
-			fmt.Printf("  Busy: %v\n", event.Busy)
-			if event.Visibility != "" {
-				fmt.Printf("  Visibility: %s\n", event.Visibility)
-			}
-			fmt.Printf("  ID: %s\n", common.Dim.Sprint(event.ID))
-			fmt.Printf("  Calendar: %s\n", common.Dim.Sprint(event.CalendarID))
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

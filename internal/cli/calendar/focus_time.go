@@ -8,6 +8,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/analytics"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -37,51 +38,41 @@ automatically blocks focus time to protect deep work sessions.`,
 			autoDecline, _ := cmd.Flags().GetBool("auto-decline")
 			allowOverride, _ := cmd.Flags().GetBool("allow-override")
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return common.WrapGetError("client", err)
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				optimizer := analytics.NewFocusOptimizer(client)
 
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return common.WrapGetError("grant ID", err)
-			}
+				// Create default settings
+				settings := &domain.FocusTimeSettings{
+					Enabled:             enable,
+					AutoBlock:           true,
+					AutoDecline:         autoDecline,
+					MinBlockDuration:    60,  // 1 hour minimum
+					MaxBlockDuration:    240, // 4 hours maximum
+					TargetHoursPerWeek:  targetHours,
+					AllowUrgentOverride: allowOverride,
+					RequireApproval:     true,
+					ProtectedDays:       []string{}, // All days
+					ExcludedTimeRanges:  []domain.TimeRange{},
+					NotificationSettings: domain.FocusTimeNotificationPrefs{
+						NotifyOnDecline:    true,
+						NotifyOnOverride:   true,
+						NotifyOnAdaptation: true,
+						DailySummary:       true,
+						WeeklySummary:      true,
+					},
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if analyze || enable {
+					return struct{}{}, runFocusTimeAnalysis(ctx, optimizer, grantID, settings)
+				}
 
-			optimizer := analytics.NewFocusOptimizer(client)
+				if create {
+					return struct{}{}, runCreateFocusBlocks(ctx, optimizer, grantID, settings)
+				}
 
-			// Create default settings
-			settings := &domain.FocusTimeSettings{
-				Enabled:             enable,
-				AutoBlock:           true,
-				AutoDecline:         autoDecline,
-				MinBlockDuration:    60,  // 1 hour minimum
-				MaxBlockDuration:    240, // 4 hours maximum
-				TargetHoursPerWeek:  targetHours,
-				AllowUrgentOverride: allowOverride,
-				RequireApproval:     true,
-				ProtectedDays:       []string{}, // All days
-				ExcludedTimeRanges:  []domain.TimeRange{},
-				NotificationSettings: domain.FocusTimeNotificationPrefs{
-					NotifyOnDecline:    true,
-					NotifyOnOverride:   true,
-					NotifyOnAdaptation: true,
-					DailySummary:       true,
-					WeeklySummary:      true,
-				},
-			}
-
-			if analyze || enable {
-				return runFocusTimeAnalysis(ctx, optimizer, grantID, settings)
-			}
-
-			if create {
-				return runCreateFocusBlocks(ctx, optimizer, grantID, settings)
-			}
-
-			return cmd.Help()
+				return struct{}{}, cmd.Help()
+			})
+			return err
 		},
 	}
 
@@ -291,25 +282,15 @@ suggests optimizations to protect focus time and reduce meeting overload.`,
 			triggerStr, _ := cmd.Flags().GetString("trigger")
 			autoApply, _ := cmd.Flags().GetBool("auto-apply")
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return common.WrapGetError("client", err)
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				optimizer := analytics.NewFocusOptimizer(client)
 
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return common.WrapGetError("grant ID", err)
-			}
+				// Parse trigger
+				trigger := parseTrigger(triggerStr)
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			optimizer := analytics.NewFocusOptimizer(client)
-
-			// Parse trigger
-			trigger := parseTrigger(triggerStr)
-
-			return runAdaptiveScheduling(ctx, optimizer, grantID, trigger, autoApply)
+				return struct{}{}, runAdaptiveScheduling(ctx, optimizer, grantID, trigger, autoApply)
+			})
+			return err
 		},
 	}
 
