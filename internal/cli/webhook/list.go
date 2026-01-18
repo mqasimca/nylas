@@ -45,8 +45,7 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 						return client.ListWebhooks(ctx)
 					})
 					if err != nil {
-						return struct{}{}, common.NewUserError("Failed to list webhooks: "+err.Error(),
-							"Check your API key has webhook management permissions")
+						return struct{}{}, common.WrapListError("webhooks", err)
 					}
 
 					out := common.GetOutputWriter(cmd)
@@ -55,39 +54,32 @@ Shows webhook ID, description, URL, status, and trigger types.`,
 				return err
 			}
 
-			// Legacy format flag support
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
+			// Use WithClientNoGrant for all output formats
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				webhooks, err := common.RunWithSpinnerResult("Fetching webhooks...", func() ([]domain.Webhook, error) {
+					return client.ListWebhooks(ctx)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapListError("webhooks", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if len(webhooks) == 0 {
+					common.PrintEmptyStateWithHint("webhooks", "Create one with: nylas webhook create --url <URL> --triggers <triggers>")
+					return struct{}{}, nil
+				}
 
-			webhooks, err := common.RunWithSpinnerResult("Fetching webhooks...", func() ([]domain.Webhook, error) {
-				return c.ListWebhooks(ctx)
+				switch format {
+				case "json":
+					return struct{}{}, outputJSON(webhooks)
+				case "yaml":
+					return struct{}{}, outputYAML(webhooks)
+				case "csv":
+					return struct{}{}, outputCSV(webhooks)
+				default:
+					return struct{}{}, outputTable(webhooks, fullIDs)
+				}
 			})
-			if err != nil {
-				return common.NewUserError("Failed to list webhooks: "+err.Error(),
-					"Check your API key has webhook management permissions")
-			}
-
-			if len(webhooks) == 0 {
-				common.PrintEmptyStateWithHint("webhooks", "Create one with: nylas webhook create --url <URL> --triggers <triggers>")
-				return nil
-			}
-
-			switch format {
-			case "json":
-				return outputJSON(webhooks)
-			case "yaml":
-				return outputYAML(webhooks)
-			case "csv":
-				return outputCSV(webhooks)
-			default:
-				return outputTable(webhooks, fullIDs)
-			}
+			return err
 		},
 	}
 

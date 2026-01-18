@@ -1,12 +1,129 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    "README.md",
+    "docs/COMMANDS.md"
+  ],
+  "default_agent": "build",
+  "autoupdate": true,
+  "share": "manual",
+  "agent": {
+    "code-reviewer": {
+      "description": "Reviews code for best practices, security, and Go idioms",
+      "mode": "subagent",
+      "temperature": 0.1,
+      "prompt": "You are a Go code reviewer specializing in clean architecture, hexagonal patterns, and Go best practices. Focus on:\n- Security vulnerabilities\n- Performance issues\n- Maintainability and code organization\n- Proper error handling\n- Test coverage\n- File size limits (≤600 lines)\n- Following project patterns from AGENTS.md",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      },
+      "permission": {
+        "bash": {
+          "*": "deny",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git status*": "allow"
+        }
+      }
+    },
+    "test-writer": {
+      "description": "Writes table-driven tests for Go code",
+      "mode": "subagent",
+      "temperature": 0.2,
+      "prompt": "You are a Go testing specialist. Write comprehensive table-driven tests using t.Run() for all test cases. Include:\n- Edge cases and error conditions\n- Clear test names describing the scenario\n- Proper assertions using t.Errorf with clear messages\n- Mock implementations where needed\n- Integration tests when appropriate"
+    },
+    "doc-writer": {
+      "description": "Writes and maintains project documentation",
+      "mode": "subagent",
+      "temperature": 0.3,
+      "prompt": "You are a technical documentation specialist. Create clear, comprehensive documentation for the Nylas CLI project.\n\nFocus on:\n- Clear explanations with examples\n- Proper markdown structure\n- Code examples that follow project patterns\n- User-friendly language\n- Keeping docs/COMMANDS.md up to date",
+      "tools": {
+        "bash": false
+      }
+    }
+  },
+  "command": {
+    "test": {
+      "template": "Run the full test suite with coverage:\n!`make test-unit`\n\nAnalyze the results and suggest fixes for any failures.",
+      "description": "Run unit tests with coverage"
+    },
+    "lint": {
+      "template": "Run the full CI pipeline:\n!`make ci`\n\nFix any linting errors found. Follow the code style guidelines in AGENTS.md.",
+      "description": "Run linter and fix errors"
+    },
+    "feature": {
+      "template": "Add a new feature to the Nylas CLI:\n$ARGUMENTS\n\nFollow the architecture pattern from AGENTS.md:\n1. Define types in internal/domain/\n2. Add interface methods to internal/ports/\n3. Implement in internal/adapters/nylas/\n4. Add CLI commands in internal/cli/\n5. Write tests\n6. Update docs/COMMANDS.md",
+      "description": "Add a new feature following the project architecture"
+    },
+    "review": {
+      "template": "Review the recent git changes:\n!`git diff --cached`\n\nFocus on:\n- Go best practices\n- Security issues\n- Performance concerns\n- Test coverage\n- Documentation updates needed",
+      "description": "Review recent code changes",
+      "agent": "code-reviewer",
+      "subtask": true
+    },
+    "docs": {
+      "template": "Update the documentation for:\n$ARGUMENTS\n\nEnsure docs/COMMANDS.md is updated with examples and usage information.",
+      "description": "Update project documentation",
+      "agent": "doc-writer",
+      "subtask": true
+    },
+    "refactor": {
+      "template": "Refactor the following code while maintaining the same functionality:\n$ARGUMENTS\n\nFollow these guidelines:\n- Keep files ≤500 lines (max 600)\n- Use shared helpers from internal/cli/common/\n- Follow Go best practices from AGENTS.md\n- Maintain test coverage",
+      "description": "Refactor code following project patterns"
+    }
+  },
+  "formatter": {
+    "gofumpt": {
+      "command": ["gofumpt", "-w", "$FILE"],
+      "extensions": [".go"]
+    },
+    "goimports": {
+      "command": ["goimports", "-w", "$FILE"],
+      "extensions": [".go"]
+    }
+  },
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "make *": "allow",
+      "go test*": "allow",
+      "go build*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow"
+    },
+    "edit": "allow",
+    "write": "allow"
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true
+  },
   "watcher": {
     "ignore": [
       "node_modules/**",
+      "vendor/**",
+      ".git/**",
+      "bin/**",
       "dist/**",
-      "build/**",
-      ".git/**"
+      ".opencode/**",
+      "*.sum",
+      "**/*_test.go"
     ]
-  }
+  },
+  "tools": {
+    "write": true,
+    "edit": true,
+    "bash": true
+  },
+  "tui": {
+    "scroll_speed": 3,
+    "scroll_acceleration": {
+      "enabled": true
+    },
+    "diff_style": "auto"
+  },
+  "lsp": {}
 }
-

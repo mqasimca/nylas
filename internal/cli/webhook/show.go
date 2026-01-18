@@ -1,12 +1,14 @@
 package webhook
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -30,33 +32,26 @@ status, and notification settings.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			webhookID := args[0]
 
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				webhook, err := common.RunWithSpinnerResult("Fetching webhook...", func() (*domain.Webhook, error) {
+					return client.GetWebhook(ctx, webhookID)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapGetError("webhook", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			webhook, err := common.RunWithSpinnerResult("Fetching webhook...", func() (*domain.Webhook, error) {
-				return c.GetWebhook(ctx, webhookID)
+				switch format {
+				case "json":
+					enc := json.NewEncoder(cmd.OutOrStdout())
+					enc.SetIndent("", "  ")
+					return struct{}{}, enc.Encode(webhook)
+				case "yaml":
+					return struct{}{}, yaml.NewEncoder(cmd.OutOrStdout()).Encode(webhook)
+				default:
+					return struct{}{}, displayWebhookDetails(webhook)
+				}
 			})
-			if err != nil {
-				return common.NewUserError("Failed to get webhook: "+err.Error(),
-					"Check that the webhook ID is correct. Run 'nylas webhook list' to see available webhooks")
-			}
-
-			switch format {
-			case "json":
-				enc := json.NewEncoder(cmd.OutOrStdout())
-				enc.SetIndent("", "  ")
-				return enc.Encode(webhook)
-			case "yaml":
-				return yaml.NewEncoder(cmd.OutOrStdout()).Encode(webhook)
-			default:
-				return displayWebhookDetails(webhook)
-			}
+			return err
 		},
 	}
 
