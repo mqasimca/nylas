@@ -6,6 +6,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -34,54 +35,46 @@ func newGroupsListCmd() *cobra.Command {
 		Long:    "List all contact groups for the specified grant or default account.",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				groups, err := client.GetContactGroups(ctx, grantID)
+				if err != nil {
+					return struct{}{}, common.WrapListError("contact groups", err)
+				}
 
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
+				if len(groups) == 0 {
+					common.PrintEmptyState("contact groups")
+					return struct{}{}, nil
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				fmt.Printf("Found %d contact group(s):\n\n", len(groups))
 
-			groups, err := client.GetContactGroups(ctx, grantID)
-			if err != nil {
-				return common.WrapListError("contact groups", err)
-			}
+				table := common.NewTable("NAME", "ID", "PATH")
+				for _, group := range groups {
+					table.AddRow(
+						common.Cyan.Sprint(group.Name),
+						common.Dim.Sprint(group.ID),
+						group.Path,
+					)
+				}
+				table.Render()
 
-			if len(groups) == 0 {
-				common.PrintEmptyState("contact groups")
-				return nil
-			}
-
-			fmt.Printf("Found %d contact group(s):\n\n", len(groups))
-
-			table := common.NewTable("NAME", "ID", "PATH")
-			for _, group := range groups {
-				table.AddRow(
-					common.Cyan.Sprint(group.Name),
-					common.Dim.Sprint(group.ID),
-					group.Path,
-				)
-			}
-			table.Render()
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 }
 
 func newGroupsShowCmd() *cobra.Command {
-	client, _ := common.GetNylasClient()
-
 	return common.NewShowCommand(common.ShowCommandConfig{
 		Use:          "show <group-id> [grant-id]",
 		Short:        "Show contact group details",
 		ResourceName: "contact group",
 		GetFunc: func(ctx context.Context, grantID, resourceID string) (interface{}, error) {
+			client, err := common.GetNylasClient()
+			if err != nil {
+				return nil, err
+			}
 			return client.GetContactGroup(ctx, grantID, resourceID)
 		},
 		DisplayFunc: func(resource interface{}) error {
@@ -115,37 +108,23 @@ Examples:
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
+			grantArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+			_, err := common.WithClient(grantArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.CreateContactGroupRequest{
+					Name: name,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				group, err := client.CreateContactGroup(ctx, grantID, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("contact group", err)
+				}
 
-			req := &domain.CreateContactGroupRequest{
-				Name: name,
-			}
+				fmt.Printf("%s Created contact group '%s' (ID: %s)\n", common.Green.Sprint("✓"), group.Name, group.ID)
 
-			group, err := client.CreateContactGroup(ctx, grantID, req)
-			if err != nil {
-				return common.WrapCreateError("contact group", err)
-			}
-
-			fmt.Printf("%s Created contact group '%s' (ID: %s)\n", common.Green.Sprint("✓"), group.Name, group.ID)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 }

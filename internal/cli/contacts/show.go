@@ -10,8 +10,6 @@ import (
 )
 
 func newShowCmd() *cobra.Command {
-	client, _ := common.GetNylasClient()
-
 	return common.NewShowCommand(common.ShowCommandConfig{
 		Use:          "show <contact-id> [grant-id]",
 		Aliases:      []string{"get", "read"},
@@ -19,6 +17,10 @@ func newShowCmd() *cobra.Command {
 		Long:         "Display detailed information about a specific contact.",
 		ResourceName: "contact",
 		GetFunc: func(ctx context.Context, grantID, resourceID string) (interface{}, error) {
+			client, err := common.GetNylasClient()
+			if err != nil {
+				return nil, err
+			}
 			return client.GetContact(ctx, grantID, resourceID)
 		},
 		DisplayFunc: func(resource interface{}) error {

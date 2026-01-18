@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 func newPhotoCmd() *cobra.Command {
@@ -39,54 +41,44 @@ and saves it to a file or displays the Base64 data.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			contactID := args[0]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args[1:])
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			contact, err := client.GetContactWithPicture(ctx, grantID, contactID, true)
-			if err != nil {
-				return common.WrapGetError("contact", err)
-			}
-
-			if contact.Picture == "" {
-				fmt.Println("No profile picture available for this contact")
-				return nil
-			}
-
-			if outputFile != "" {
-				// Decode Base64 and save to file
-				imageData, err := base64.StdEncoding.DecodeString(contact.Picture)
+			_, err := common.WithClient(args[1:], func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				contact, err := client.GetContactWithPicture(ctx, grantID, contactID, true)
 				if err != nil {
-					return common.WrapDecodeError("image data", err)
+					return struct{}{}, common.WrapGetError("contact", err)
 				}
 
-				// Use restrictive permissions (owner-only) for contact photos
-				if err := os.WriteFile(outputFile, imageData, 0600); err != nil {
-					return common.WrapWriteError("file", err)
+				if contact.Picture == "" {
+					fmt.Println("No profile picture available for this contact")
+					return struct{}{}, nil
 				}
 
-				fmt.Printf("Profile picture saved to: %s\n", outputFile)
-				fmt.Printf("Size: %d bytes\n", len(imageData))
-			} else if jsonOutput {
-				// Print as JSON
-				fmt.Printf(`{"contact_id":"%s","picture":"%s"}`+"\n", contactID, contact.Picture)
-			} else {
-				// Print Base64 data
-				fmt.Println("Base64-encoded profile picture:")
-				fmt.Println(contact.Picture)
-				fmt.Println("\nTo save to a file, use the --output flag")
-			}
+				if outputFile != "" {
+					// Decode Base64 and save to file
+					imageData, err := base64.StdEncoding.DecodeString(contact.Picture)
+					if err != nil {
+						return struct{}{}, common.WrapDecodeError("image data", err)
+					}
 
-			return nil
+					// Use restrictive permissions (owner-only) for contact photos
+					if err := os.WriteFile(outputFile, imageData, 0600); err != nil {
+						return struct{}{}, common.WrapWriteError("file", err)
+					}
+
+					fmt.Printf("Profile picture saved to: %s\n", outputFile)
+					fmt.Printf("Size: %d bytes\n", len(imageData))
+				} else if jsonOutput {
+					// Print as JSON
+					fmt.Printf(`{"contact_id":"%s","picture":"%s"}`+"\n", contactID, contact.Picture)
+				} else {
+					// Print Base64 data
+					fmt.Println("Base64-encoded profile picture:")
+					fmt.Println(contact.Picture)
+					fmt.Println("\nTo save to a file, use the --output flag")
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

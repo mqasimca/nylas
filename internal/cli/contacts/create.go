@@ -1,10 +1,12 @@
 package contacts
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -41,49 +43,39 @@ Examples:
 				)
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.CreateContactRequest{
+					GivenName:   firstName,
+					Surname:     lastName,
+					CompanyName: company,
+					JobTitle:    jobTitle,
+					Notes:       notes,
+				}
 
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
+				if email != "" {
+					req.Emails = []domain.ContactEmail{{Email: email, Type: "work"}}
+				}
+				if phone != "" {
+					req.PhoneNumbers = []domain.ContactPhone{{Number: phone, Type: "mobile"}}
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				contact, err := common.RunWithSpinnerResult("Creating contact...", func() (*domain.Contact, error) {
+					return client.CreateContact(ctx, grantID, req)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("contact", err)
+				}
 
-			req := &domain.CreateContactRequest{
-				GivenName:   firstName,
-				Surname:     lastName,
-				CompanyName: company,
-				JobTitle:    jobTitle,
-				Notes:       notes,
-			}
+				fmt.Printf("%s Contact created successfully!\n\n", common.Green.Sprint("✓"))
+				fmt.Printf("Name: %s\n", contact.DisplayName())
+				if contact.PrimaryEmail() != "" {
+					fmt.Printf("Email: %s\n", contact.PrimaryEmail())
+				}
+				fmt.Printf("ID: %s\n", contact.ID)
 
-			if email != "" {
-				req.Emails = []domain.ContactEmail{{Email: email, Type: "work"}}
-			}
-			if phone != "" {
-				req.PhoneNumbers = []domain.ContactPhone{{Number: phone, Type: "mobile"}}
-			}
-
-			contact, err := common.RunWithSpinnerResult("Creating contact...", func() (*domain.Contact, error) {
-				return client.CreateContact(ctx, grantID, req)
+				return struct{}{}, nil
 			})
-			if err != nil {
-				return common.WrapCreateError("contact", err)
-			}
-
-			fmt.Printf("%s Contact created successfully!\n\n", common.Green.Sprint("✓"))
-			fmt.Printf("Name: %s\n", contact.DisplayName())
-			if contact.PrimaryEmail() != "" {
-				fmt.Printf("Email: %s\n", contact.PrimaryEmail())
-			}
-			fmt.Printf("ID: %s\n", contact.ID)
-
-			return nil
+			return err
 		},
 	}
 

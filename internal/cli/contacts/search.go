@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 func newSearchCmd() *cobra.Command {
@@ -40,74 +42,64 @@ Advanced Search Options:
 Note: Company name filtering searches the company_name field. For more advanced
 text searches, use the regular list command with additional filtering.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			params := &domain.ContactQueryParams{
-				Limit:       limit,
-				Email:       email,
-				PhoneNumber: phoneNumber,
-				Source:      source,
-				Group:       group,
-			}
-
-			contacts, err := client.GetContacts(ctx, grantID, params)
-			if err != nil {
-				return common.WrapSearchError("contacts", err)
-			}
-
-			// Apply client-side filters
-			var filtered []domain.Contact
-			for _, contact := range contacts {
-				// Filter by company name (case-insensitive)
-				if companyName != "" && !strings.Contains(strings.ToLower(contact.CompanyName), strings.ToLower(companyName)) {
-					continue
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				params := &domain.ContactQueryParams{
+					Limit:       limit,
+					Email:       email,
+					PhoneNumber: phoneNumber,
+					Source:      source,
+					Group:       group,
 				}
 
-				// Filter by has-email
-				if hasEmail && len(contact.Emails) == 0 {
-					continue
+				contacts, err := client.GetContacts(ctx, grantID, params)
+				if err != nil {
+					return struct{}{}, common.WrapSearchError("contacts", err)
 				}
 
-				filtered = append(filtered, contact)
-			}
+				// Apply client-side filters
+				var filtered []domain.Contact
+				for _, contact := range contacts {
+					// Filter by company name (case-insensitive)
+					if companyName != "" && !strings.Contains(strings.ToLower(contact.CompanyName), strings.ToLower(companyName)) {
+						continue
+					}
 
-			if jsonOutput {
-				encoder := json.NewEncoder(os.Stdout)
-				encoder.SetIndent("", "  ")
-				return encoder.Encode(filtered)
-			}
+					// Filter by has-email
+					if hasEmail && len(contact.Emails) == 0 {
+						continue
+					}
 
-			// Print results as table
-			table := common.NewTable("ID", "Name", "Email", "Company", "Job Title")
-			for _, contact := range filtered {
-				name := contact.DisplayName()
-				email := contact.PrimaryEmail()
-				company := contact.CompanyName
-				if company == "" {
-					company = "-"
+					filtered = append(filtered, contact)
 				}
-				jobTitle := contact.JobTitle
-				if jobTitle == "" {
-					jobTitle = "-"
+
+				if jsonOutput {
+					encoder := json.NewEncoder(os.Stdout)
+					encoder.SetIndent("", "  ")
+					return struct{}{}, encoder.Encode(filtered)
 				}
-				table.AddRow(contact.ID, name, email, company, jobTitle)
-			}
-			table.Render()
 
-			fmt.Printf("\nFound %d contacts\n", len(filtered))
+				// Print results as table
+				table := common.NewTable("ID", "Name", "Email", "Company", "Job Title")
+				for _, contact := range filtered {
+					name := contact.DisplayName()
+					email := contact.PrimaryEmail()
+					company := contact.CompanyName
+					if company == "" {
+						company = "-"
+					}
+					jobTitle := contact.JobTitle
+					if jobTitle == "" {
+						jobTitle = "-"
+					}
+					table.AddRow(contact.ID, name, email, company, jobTitle)
+				}
+				table.Render()
 
-			return nil
+				fmt.Printf("\nFound %d contacts\n", len(filtered))
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
