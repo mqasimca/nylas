@@ -190,13 +190,18 @@ func TestGetGrantID_EmptyArgs(t *testing.T) {
 	// Save original env vars
 	origGrantID := os.Getenv("NYLAS_GRANT_ID")
 	origDisableKeyring := os.Getenv("NYLAS_DISABLE_KEYRING")
+	origXDGConfigHome := os.Getenv("XDG_CONFIG_HOME")
 
 	// Restore after test
 	defer func() {
 		setEnvOrUnset("NYLAS_GRANT_ID", origGrantID)
 		setEnvOrUnset("NYLAS_DISABLE_KEYRING", origDisableKeyring)
+		setEnvOrUnset("XDG_CONFIG_HOME", origXDGConfigHome)
 	}()
 
+	// Use temp directory to isolate from real config file
+	tempDir := t.TempDir()
+	_ = os.Setenv("XDG_CONFIG_HOME", tempDir)
 	_ = os.Unsetenv("NYLAS_GRANT_ID")
 	_ = os.Setenv("NYLAS_DISABLE_KEYRING", "true")
 
