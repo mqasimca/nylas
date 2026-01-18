@@ -1,12 +1,14 @@
 package scheduler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -36,38 +38,33 @@ func newConfigListCmd() *cobra.Command {
 		Short:   "List scheduler configurations",
 		Long:    "List all scheduler configurations (meeting types).",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				configs, err := client.ListSchedulerConfigurations(ctx)
+				if err != nil {
+					return struct{}{}, common.WrapListError("configurations", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(configs)
+				}
 
-			configs, err := client.ListSchedulerConfigurations(ctx)
-			if err != nil {
-				return common.WrapListError("configurations", err)
-			}
+				if len(configs) == 0 {
+					common.PrintEmptyState("configurations")
+					return struct{}{}, nil
+				}
 
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(configs)
-			}
+				fmt.Printf("Found %d configuration(s):\n\n", len(configs))
 
-			if len(configs) == 0 {
-				common.PrintEmptyState("configurations")
-				return nil
-			}
+				table := common.NewTable("NAME", "ID", "SLUG", "PARTICIPANTS")
+				for _, cfg := range configs {
+					participantCount := fmt.Sprintf("%d", len(cfg.Participants))
+					table.AddRow(common.Cyan.Sprint(cfg.Name), cfg.ID, common.Green.Sprint(cfg.Slug), participantCount)
+				}
+				table.Render()
 
-			fmt.Printf("Found %d configuration(s):\n\n", len(configs))
-
-			table := common.NewTable("NAME", "ID", "SLUG", "PARTICIPANTS")
-			for _, cfg := range configs {
-				participantCount := fmt.Sprintf("%d", len(cfg.Participants))
-				table.AddRow(common.Cyan.Sprint(cfg.Name), cfg.ID, common.Green.Sprint(cfg.Slug), participantCount)
-			}
-			table.Render()
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -85,49 +82,45 @@ func newConfigShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific scheduler configuration.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			config, err := client.GetSchedulerConfiguration(ctx, args[0])
-			if err != nil {
-				return common.WrapGetError("configuration", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(config)
-			}
-
-			_, _ = common.Bold.Printf("Configuration: %s\n", config.Name)
-			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(config.ID))
-			fmt.Printf("  Slug: %s\n", common.Green.Sprint(config.Slug))
-			fmt.Printf("  Duration: %d minutes\n", config.Availability.DurationMinutes)
-
-			if len(config.Participants) > 0 {
-				fmt.Printf("\nParticipants (%d):\n", len(config.Participants))
-				for i, p := range config.Participants {
-					fmt.Printf("  %d. %s <%s>", i+1, p.Name, p.Email)
-					if p.IsOrganizer {
-						fmt.Printf(" %s", common.Green.Sprint("(Organizer)"))
-					}
-					fmt.Println()
+			configID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				config, err := client.GetSchedulerConfiguration(ctx, configID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("configuration", err)
 				}
-			}
 
-			fmt.Printf("\nEvent Booking:\n")
-			fmt.Printf("  Title: %s\n", config.EventBooking.Title)
-			if config.EventBooking.Description != "" {
-				fmt.Printf("  Description: %s\n", config.EventBooking.Description)
-			}
-			if config.EventBooking.Location != "" {
-				fmt.Printf("  Location: %s\n", config.EventBooking.Location)
-			}
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(config)
+				}
 
-			return nil
+				_, _ = common.Bold.Printf("Configuration: %s\n", config.Name)
+				fmt.Printf("  ID: %s\n", common.Cyan.Sprint(config.ID))
+				fmt.Printf("  Slug: %s\n", common.Green.Sprint(config.Slug))
+				fmt.Printf("  Duration: %d minutes\n", config.Availability.DurationMinutes)
+
+				if len(config.Participants) > 0 {
+					fmt.Printf("\nParticipants (%d):\n", len(config.Participants))
+					for i, p := range config.Participants {
+						fmt.Printf("  %d. %s <%s>", i+1, p.Name, p.Email)
+						if p.IsOrganizer {
+							fmt.Printf(" %s", common.Green.Sprint("(Organizer)"))
+						}
+						fmt.Println()
+					}
+				}
+
+				fmt.Printf("\nEvent Booking:\n")
+				fmt.Printf("  Title: %s\n", config.EventBooking.Title)
+				if config.EventBooking.Description != "" {
+					fmt.Printf("  Description: %s\n", config.EventBooking.Description)
+				}
+				if config.EventBooking.Location != "" {
+					fmt.Printf("  Location: %s\n", config.EventBooking.Location)
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -163,48 +156,43 @@ func newConfigCreateCmd() *cobra.Command {
 				participants[i] = p
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Build participants list
+				var participantsList []domain.ConfigurationParticipant
+				for i, email := range participants {
+					participantsList = append(participantsList, domain.ConfigurationParticipant{
+						Email:       email,
+						IsOrganizer: i == 0, // First participant is organizer
+					})
+				}
 
-			// Build participants list
-			var participantsList []domain.ConfigurationParticipant
-			for i, email := range participants {
-				participantsList = append(participantsList, domain.ConfigurationParticipant{
-					Email:       email,
-					IsOrganizer: i == 0, // First participant is organizer
-				})
-			}
+				req := &domain.CreateSchedulerConfigurationRequest{
+					Name:         name,
+					Participants: participantsList,
+					Availability: domain.AvailabilityRules{
+						DurationMinutes: duration,
+					},
+					EventBooking: domain.EventBooking{
+						Title:       title,
+						Description: description,
+						Location:    location,
+					},
+				}
 
-			req := &domain.CreateSchedulerConfigurationRequest{
-				Name:         name,
-				Participants: participantsList,
-				Availability: domain.AvailabilityRules{
-					DurationMinutes: duration,
-				},
-				EventBooking: domain.EventBooking{
-					Title:       title,
-					Description: description,
-					Location:    location,
-				},
-			}
+				config, err := client.CreateSchedulerConfiguration(ctx, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("configuration", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Printf("✓ Created configuration: %s\n", config.Name)
+				fmt.Printf("  ID: %s\n", config.ID)
+				if config.Slug != "" {
+					fmt.Printf("  Slug: %s\n", config.Slug)
+				}
 
-			config, err := client.CreateSchedulerConfiguration(ctx, req)
-			if err != nil {
-				return common.WrapCreateError("configuration", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Created configuration: %s\n", config.Name)
-			fmt.Printf("  ID: %s\n", config.ID)
-			if config.Slug != "" {
-				fmt.Printf("  Slug: %s\n", config.Slug)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -236,45 +224,41 @@ func newConfigUpdateCmd() *cobra.Command {
 		Long:  "Update an existing scheduler configuration.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			configID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.UpdateSchedulerConfigurationRequest{}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			req := &domain.UpdateSchedulerConfigurationRequest{}
-
-			if name != "" {
-				req.Name = &name
-			}
-
-			if cmd.Flags().Changed("duration") {
-				req.Availability = &domain.AvailabilityRules{
-					DurationMinutes: duration,
+				if name != "" {
+					req.Name = &name
 				}
-			}
 
-			if cmd.Flags().Changed("title") || cmd.Flags().Changed("description") {
-				eventBooking := &domain.EventBooking{}
-				if cmd.Flags().Changed("title") {
-					eventBooking.Title = title
+				if cmd.Flags().Changed("duration") {
+					req.Availability = &domain.AvailabilityRules{
+						DurationMinutes: duration,
+					}
 				}
-				if cmd.Flags().Changed("description") {
-					eventBooking.Description = description
+
+				if cmd.Flags().Changed("title") || cmd.Flags().Changed("description") {
+					eventBooking := &domain.EventBooking{}
+					if cmd.Flags().Changed("title") {
+						eventBooking.Title = title
+					}
+					if cmd.Flags().Changed("description") {
+						eventBooking.Description = description
+					}
+					req.EventBooking = eventBooking
 				}
-				req.EventBooking = eventBooking
-			}
 
-			config, err := client.UpdateSchedulerConfiguration(ctx, args[0], req)
-			if err != nil {
-				return common.WrapUpdateError("configuration", err)
-			}
+				config, err := client.UpdateSchedulerConfiguration(ctx, configID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("configuration", err)
+				}
 
-			common.PrintUpdateSuccess("configuration", config.Name)
+				common.PrintUpdateSuccess("configuration", config.Name)
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -305,21 +289,17 @@ func newConfigDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			configID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				if err := client.DeleteSchedulerConfiguration(ctx, configID); err != nil {
+					return struct{}{}, common.WrapDeleteError("configuration", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Printf("✓ Deleted configuration: %s\n", configID)
 
-			if err := client.DeleteSchedulerConfiguration(ctx, args[0]); err != nil {
-				return common.WrapDeleteError("configuration", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Deleted configuration: %s\n", args[0])
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

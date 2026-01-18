@@ -1,11 +1,13 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -38,59 +40,54 @@ func newGrantListCmd() *cobra.Command {
 		Short:   "List grants",
 		Long:    "List all grants with optional filters.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			params := &domain.GrantsQueryParams{
-				Limit:       limit,
-				Offset:      offset,
-				ConnectorID: connectorID,
-				Status:      status,
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			grants, err := client.ListAllGrants(ctx, params)
-			if err != nil {
-				return common.WrapListError("grants", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(grants)
-			}
-
-			if len(grants) == 0 {
-				common.PrintEmptyState("grants")
-				return nil
-			}
-
-			fmt.Printf("Found %d grant(s):\n\n", len(grants))
-
-			table := common.NewTable("EMAIL", "ID", "PROVIDER", "STATUS")
-			for _, grant := range grants {
-				email := grant.Email
-				if email == "" {
-					email = "-"
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				params := &domain.GrantsQueryParams{
+					Limit:       limit,
+					Offset:      offset,
+					ConnectorID: connectorID,
+					Status:      status,
 				}
 
-				status := grant.GrantStatus
-				switch grant.GrantStatus {
-				case "valid":
-					status = common.Green.Sprint(status)
-				case "invalid":
-					status = common.Red.Sprint(status)
-				default:
-					status = common.Yellow.Sprint(status)
+				grants, err := client.ListAllGrants(ctx, params)
+				if err != nil {
+					return struct{}{}, common.WrapListError("grants", err)
 				}
 
-				table.AddRow(common.Cyan.Sprint(email), grant.ID, string(grant.Provider), status)
-			}
-			table.Render()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(grants)
+				}
 
-			return nil
+				if len(grants) == 0 {
+					common.PrintEmptyState("grants")
+					return struct{}{}, nil
+				}
+
+				fmt.Printf("Found %d grant(s):\n\n", len(grants))
+
+				table := common.NewTable("EMAIL", "ID", "PROVIDER", "STATUS")
+				for _, grant := range grants {
+					email := grant.Email
+					if email == "" {
+						email = "-"
+					}
+
+					status := grant.GrantStatus
+					switch grant.GrantStatus {
+					case "valid":
+						status = common.Green.Sprint(status)
+					case "invalid":
+						status = common.Red.Sprint(status)
+					default:
+						status = common.Yellow.Sprint(status)
+					}
+
+					table.AddRow(common.Cyan.Sprint(email), grant.ID, string(grant.Provider), status)
+				}
+				table.Render()
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -111,54 +108,49 @@ func newGrantStatsCmd() *cobra.Command {
 		Short: "Show grant statistics",
 		Long:  "Show statistics about all grants in the organization.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			stats, err := client.GetGrantStats(ctx)
-			if err != nil {
-				return common.WrapGetError("grant stats", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(stats)
-			}
-
-			_, _ = common.Bold.Println("Grant Statistics")
-			fmt.Printf("  Total Grants: %s\n", common.Cyan.Sprintf("%d", stats.Total))
-			fmt.Printf("  Valid: %s\n", common.Green.Sprintf("%d", stats.Valid))
-			fmt.Printf("  Invalid: %s\n", common.Red.Sprintf("%d", stats.Invalid))
-
-			if len(stats.ByProvider) > 0 {
-				fmt.Printf("\nBy Provider:\n")
-				table := common.NewTable("PROVIDER", "COUNT")
-				for provider, count := range stats.ByProvider {
-					table.AddRow(common.Green.Sprint(provider), fmt.Sprintf("%d", count))
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				stats, err := client.GetGrantStats(ctx)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("grant stats", err)
 				}
-				table.Render()
-			}
 
-			if len(stats.ByStatus) > 0 {
-				fmt.Printf("\nBy Status:\n")
-				table := common.NewTable("STATUS", "COUNT")
-				for status, count := range stats.ByStatus {
-					statusColor := common.Yellow
-					switch status {
-					case "valid":
-						statusColor = common.Green
-					case "invalid":
-						statusColor = common.Red
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(stats)
+				}
+
+				_, _ = common.Bold.Println("Grant Statistics")
+				fmt.Printf("  Total Grants: %s\n", common.Cyan.Sprintf("%d", stats.Total))
+				fmt.Printf("  Valid: %s\n", common.Green.Sprintf("%d", stats.Valid))
+				fmt.Printf("  Invalid: %s\n", common.Red.Sprintf("%d", stats.Invalid))
+
+				if len(stats.ByProvider) > 0 {
+					fmt.Printf("\nBy Provider:\n")
+					table := common.NewTable("PROVIDER", "COUNT")
+					for provider, count := range stats.ByProvider {
+						table.AddRow(common.Green.Sprint(provider), fmt.Sprintf("%d", count))
 					}
-					table.AddRow(statusColor.Sprint(status), fmt.Sprintf("%d", count))
+					table.Render()
 				}
-				table.Render()
-			}
 
-			return nil
+				if len(stats.ByStatus) > 0 {
+					fmt.Printf("\nBy Status:\n")
+					table := common.NewTable("STATUS", "COUNT")
+					for status, count := range stats.ByStatus {
+						statusColor := common.Yellow
+						switch status {
+						case "valid":
+							statusColor = common.Green
+						case "invalid":
+							statusColor = common.Red
+						}
+						table.AddRow(statusColor.Sprint(status), fmt.Sprintf("%d", count))
+					}
+					table.Render()
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

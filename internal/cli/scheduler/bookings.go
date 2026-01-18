@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -42,48 +44,43 @@ func newBookingListCmd() *cobra.Command {
 		Short:   "List scheduler bookings",
 		Long:    "List all scheduler bookings, optionally filtered by configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			bookings, err := client.ListBookings(ctx, configID)
-			if err != nil {
-				return common.WrapListError("bookings", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(bookings)
-			}
-
-			if len(bookings) == 0 {
-				common.PrintEmptyState("bookings")
-				return nil
-			}
-
-			fmt.Printf("Found %d booking(s):\n\n", len(bookings))
-
-			table := common.NewTable("TITLE", "ID", "START TIME", "STATUS")
-			for _, b := range bookings {
-				status := b.Status
-				switch b.Status {
-				case "confirmed":
-					status = common.Green.Sprint(status)
-				case "pending":
-					status = common.Yellow.Sprint(status)
-				case "cancelled":
-					status = common.Dim.Sprint(status)
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				bookings, err := client.ListBookings(ctx, configID)
+				if err != nil {
+					return struct{}{}, common.WrapListError("bookings", err)
 				}
 
-				startTime := b.StartTime.Format("2006-01-02 15:04")
-				table.AddRow(common.Cyan.Sprint(b.Title), b.BookingID, startTime, status)
-			}
-			table.Render()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(bookings)
+				}
 
-			return nil
+				if len(bookings) == 0 {
+					common.PrintEmptyState("bookings")
+					return struct{}{}, nil
+				}
+
+				fmt.Printf("Found %d booking(s):\n\n", len(bookings))
+
+				table := common.NewTable("TITLE", "ID", "START TIME", "STATUS")
+				for _, b := range bookings {
+					status := b.Status
+					switch b.Status {
+					case "confirmed":
+						status = common.Green.Sprint(status)
+					case "pending":
+						status = common.Yellow.Sprint(status)
+					case "cancelled":
+						status = common.Dim.Sprint(status)
+					}
+
+					startTime := b.StartTime.Format("2006-01-02 15:04")
+					table.AddRow(common.Cyan.Sprint(b.Title), b.BookingID, startTime, status)
+				}
+				table.Render()
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -102,53 +99,49 @@ func newBookingShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific booking.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			bookingID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				booking, err := client.GetBooking(ctx, bookingID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("booking", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(booking)
+				}
 
-			booking, err := client.GetBooking(ctx, args[0])
-			if err != nil {
-				return common.WrapGetError("booking", err)
-			}
+				_, _ = common.Bold.Printf("Booking: %s\n", booking.Title)
+				fmt.Printf("  ID: %s\n", common.Cyan.Sprint(booking.BookingID))
+				fmt.Printf("  Status: %s\n", getStatusColor(booking.Status).Sprint(booking.Status))
+				fmt.Printf("  Start: %s\n", booking.StartTime.Format(time.RFC1123))
+				fmt.Printf("  End: %s\n", booking.EndTime.Format(time.RFC1123))
 
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(booking)
-			}
+				if booking.EventID != "" {
+					fmt.Printf("  Event ID: %s\n", booking.EventID)
+				}
 
-			_, _ = common.Bold.Printf("Booking: %s\n", booking.Title)
-			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(booking.BookingID))
-			fmt.Printf("  Status: %s\n", getStatusColor(booking.Status).Sprint(booking.Status))
-			fmt.Printf("  Start: %s\n", booking.StartTime.Format(time.RFC1123))
-			fmt.Printf("  End: %s\n", booking.EndTime.Format(time.RFC1123))
-
-			if booking.EventID != "" {
-				fmt.Printf("  Event ID: %s\n", booking.EventID)
-			}
-
-			if len(booking.Participants) > 0 {
-				fmt.Printf("\nParticipants (%d):\n", len(booking.Participants))
-				for i, p := range booking.Participants {
-					fmt.Printf("  %d. %s <%s>", i+1, p.Name, p.Email)
-					if p.Status == "yes" {
-						fmt.Printf(" %s", common.Green.Sprint("✓"))
+				if len(booking.Participants) > 0 {
+					fmt.Printf("\nParticipants (%d):\n", len(booking.Participants))
+					for i, p := range booking.Participants {
+						fmt.Printf("  %d. %s <%s>", i+1, p.Name, p.Email)
+						if p.Status == "yes" {
+							fmt.Printf(" %s", common.Green.Sprint("✓"))
+						}
+						fmt.Println()
 					}
-					fmt.Println()
 				}
-			}
 
-			if booking.Conferencing != nil && booking.Conferencing.URL != "" {
-				fmt.Printf("\nConferencing:\n")
-				fmt.Printf("  URL: %s\n", common.Cyan.Sprint(booking.Conferencing.URL))
-				if booking.Conferencing.MeetingCode != "" {
-					fmt.Printf("  Meeting Code: %s\n", booking.Conferencing.MeetingCode)
+				if booking.Conferencing != nil && booking.Conferencing.URL != "" {
+					fmt.Printf("\nConferencing:\n")
+					fmt.Printf("  URL: %s\n", common.Cyan.Sprint(booking.Conferencing.URL))
+					if booking.Conferencing.MeetingCode != "" {
+						fmt.Printf("  Meeting Code: %s\n", booking.Conferencing.MeetingCode)
+					}
 				}
-			}
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -166,28 +159,24 @@ func newBookingConfirmCmd() *cobra.Command {
 		Long:  "Confirm a pending booking.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			bookingID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.ConfirmBookingRequest{
+					Status: "confirmed",
+					Reason: reason,
+				}
 
-			req := &domain.ConfirmBookingRequest{
-				Status: "confirmed",
-				Reason: reason,
-			}
+				booking, err := client.ConfirmBooking(ctx, bookingID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("booking", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
+				fmt.Printf("  Status: %s\n", booking.Status)
 
-			booking, err := client.ConfirmBooking(ctx, args[0], req)
-			if err != nil {
-				return common.WrapUpdateError("booking", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
-			fmt.Printf("  Status: %s\n", booking.Status)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -225,31 +214,27 @@ You must provide the new start and end times as Unix timestamps.`,
 				return fmt.Errorf("end-time must be after start-time")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			bookingID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.RescheduleBookingRequest{
+					StartTime: startTime,
+					EndTime:   endTime,
+					Timezone:  timezone,
+					Reason:    reason,
+				}
 
-			req := &domain.RescheduleBookingRequest{
-				StartTime: startTime,
-				EndTime:   endTime,
-				Timezone:  timezone,
-				Reason:    reason,
-			}
+				booking, err := client.RescheduleBooking(ctx, bookingID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("booking", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
+				fmt.Printf("  New start: %s\n", booking.StartTime.Format(time.RFC1123))
+				fmt.Printf("  New end: %s\n", booking.EndTime.Format(time.RFC1123))
 
-			booking, err := client.RescheduleBooking(ctx, args[0], req)
-			if err != nil {
-				return common.WrapUpdateError("booking", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
-			fmt.Printf("  New start: %s\n", booking.StartTime.Format(time.RFC1123))
-			fmt.Printf("  New end: %s\n", booking.EndTime.Format(time.RFC1123))
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -283,21 +268,17 @@ func newBookingCancelCmd() *cobra.Command {
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			bookingID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				if err := client.CancelBooking(ctx, bookingID, reason); err != nil {
+					return struct{}{}, common.WrapCancelError("booking", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Printf("✓ Cancelled booking: %s\n", bookingID)
 
-			if err := client.CancelBooking(ctx, args[0], reason); err != nil {
-				return common.WrapCancelError("booking", err)
-			}
-
-			_, _ = common.Green.Printf("✓ Cancelled booking: %s\n", args[0])
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

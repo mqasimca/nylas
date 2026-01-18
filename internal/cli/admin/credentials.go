@@ -1,11 +1,13 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -36,37 +38,33 @@ func newCredentialListCmd() *cobra.Command {
 		Long:    "List all authentication credentials for a specific connector.",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			connectorID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				credentials, err := client.ListCredentials(ctx, connectorID)
+				if err != nil {
+					return struct{}{}, common.WrapListError("credentials", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(credentials)
+				}
 
-			credentials, err := client.ListCredentials(ctx, args[0])
-			if err != nil {
-				return common.WrapListError("credentials", err)
-			}
+				if len(credentials) == 0 {
+					common.PrintEmptyState("credentials")
+					return struct{}{}, nil
+				}
 
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(credentials)
-			}
+				fmt.Printf("Found %d credential(s):\n\n", len(credentials))
 
-			if len(credentials) == 0 {
-				common.PrintEmptyState("credentials")
-				return nil
-			}
+				table := common.NewTable("NAME", "ID", "TYPE", "CREATED AT")
+				for _, cred := range credentials {
+					table.AddRow(common.Cyan.Sprint(cred.Name), cred.ID, common.Green.Sprint(cred.CredentialType), formatUnixTime(cred.CreatedAt))
+				}
+				table.Render()
 
-			fmt.Printf("Found %d credential(s):\n\n", len(credentials))
-
-			table := common.NewTable("NAME", "ID", "TYPE", "CREATED AT")
-			for _, cred := range credentials {
-				table.AddRow(common.Cyan.Sprint(cred.Name), cred.ID, common.Green.Sprint(cred.CredentialType), formatUnixTime(cred.CreatedAt))
-			}
-			table.Render()
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -84,31 +82,27 @@ func newCredentialShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific credential.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			credentialID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				credential, err := client.GetCredential(ctx, credentialID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("credential", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(credential)
+				}
 
-			credential, err := client.GetCredential(ctx, args[0])
-			if err != nil {
-				return common.WrapGetError("credential", err)
-			}
+				_, _ = common.Bold.Printf("Credential: %s\n", credential.Name)
+				fmt.Printf("  ID: %s\n", common.Cyan.Sprint(credential.ID))
+				fmt.Printf("  Connector ID: %s\n", credential.ConnectorID)
+				fmt.Printf("  Type: %s\n", common.Green.Sprint(credential.CredentialType))
+				fmt.Printf("  Created At: %s\n", formatUnixTime(credential.CreatedAt))
+				fmt.Printf("  Updated At: %s\n", formatUnixTime(credential.UpdatedAt))
 
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(credential)
-			}
-
-			_, _ = common.Bold.Printf("Credential: %s\n", credential.Name)
-			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(credential.ID))
-			fmt.Printf("  Connector ID: %s\n", credential.ConnectorID)
-			fmt.Printf("  Type: %s\n", common.Green.Sprint(credential.CredentialType))
-			fmt.Printf("  Created At: %s\n", formatUnixTime(credential.CreatedAt))
-			fmt.Printf("  Updated At: %s\n", formatUnixTime(credential.UpdatedAt))
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -131,37 +125,32 @@ func newCredentialCreateCmd() *cobra.Command {
 		Short: "Create a credential",
 		Long:  "Create a new authentication credential for a connector.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			req := &domain.CreateCredentialRequest{
-				Name:           name,
-				CredentialType: credentialType,
-			}
-
-			// Build credential data based on type
-			if clientID != "" || clientSecret != "" {
-				req.CredentialData = map[string]any{
-					"client_id":     clientID,
-					"client_secret": clientSecret,
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				req := &domain.CreateCredentialRequest{
+					Name:           name,
+					CredentialType: credentialType,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				// Build credential data based on type
+				if clientID != "" || clientSecret != "" {
+					req.CredentialData = map[string]any{
+						"client_id":     clientID,
+						"client_secret": clientSecret,
+					}
+				}
 
-			credential, err := client.CreateCredential(ctx, connectorID, req)
-			if err != nil {
-				return common.WrapCreateError("credential", err)
-			}
+				credential, err := client.CreateCredential(ctx, connectorID, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("credential", err)
+				}
 
-			_, _ = common.Green.Printf("Created credential: %s\n", credential.Name)
-			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(credential.ID))
-			fmt.Printf("  Type: %s\n", credential.CredentialType)
+				_, _ = common.Green.Printf("Created credential: %s\n", credential.Name)
+				fmt.Printf("  ID: %s\n", common.Cyan.Sprint(credential.ID))
+				fmt.Printf("  Type: %s\n", credential.CredentialType)
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -187,28 +176,24 @@ func newCredentialUpdateCmd() *cobra.Command {
 		Long:  "Update an existing credential.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			credentialID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				req := &domain.UpdateCredentialRequest{}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if name != "" {
+					req.Name = &name
+				}
 
-			req := &domain.UpdateCredentialRequest{}
+				credential, err := client.UpdateCredential(ctx, credentialID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("credential", err)
+				}
 
-			if name != "" {
-				req.Name = &name
-			}
+				common.PrintUpdateSuccess("credential", credential.Name)
 
-			credential, err := client.UpdateCredential(ctx, args[0], req)
-			if err != nil {
-				return common.WrapUpdateError("credential", err)
-			}
-
-			common.PrintUpdateSuccess("credential", credential.Name)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -236,21 +221,17 @@ func newCredentialDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			credentialID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				if err := client.DeleteCredential(ctx, credentialID); err != nil {
+					return struct{}{}, common.WrapDeleteError("credential", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Printf("Deleted credential: %s\n", credentialID)
 
-			if err := client.DeleteCredential(ctx, args[0]); err != nil {
-				return common.WrapDeleteError("credential", err)
-			}
-
-			_, _ = common.Green.Printf("Deleted credential: %s\n", args[0])
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

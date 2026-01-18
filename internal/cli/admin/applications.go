@@ -1,11 +1,13 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -35,45 +37,40 @@ func newAppListCmd() *cobra.Command {
 		Short:   "List applications",
 		Long:    "List all applications in your organization.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			apps, err := client.ListApplications(ctx)
-			if err != nil {
-				return common.WrapListError("applications", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(apps)
-			}
-
-			if len(apps) == 0 {
-				common.PrintEmptyState("applications")
-				return nil
-			}
-
-			fmt.Printf("Found %d application(s):\n\n", len(apps))
-
-			table := common.NewTable("APP ID", "REGION", "ENVIRONMENT")
-			for _, app := range apps {
-				region := app.Region
-				if region == "" {
-					region = "-"
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				apps, err := client.ListApplications(ctx)
+				if err != nil {
+					return struct{}{}, common.WrapListError("applications", err)
 				}
-				env := app.Environment
-				if env == "" {
-					env = "-"
-				}
-				table.AddRow(common.Cyan.Sprint(app.ApplicationID), common.Green.Sprint(region), env)
-			}
-			table.Render()
 
-			return nil
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(apps)
+				}
+
+				if len(apps) == 0 {
+					common.PrintEmptyState("applications")
+					return struct{}{}, nil
+				}
+
+				fmt.Printf("Found %d application(s):\n\n", len(apps))
+
+				table := common.NewTable("APP ID", "REGION", "ENVIRONMENT")
+				for _, app := range apps {
+					region := app.Region
+					if region == "" {
+						region = "-"
+					}
+					env := app.Environment
+					if env == "" {
+						env = "-"
+					}
+					table.AddRow(common.Cyan.Sprint(app.ApplicationID), common.Green.Sprint(region), env)
+				}
+				table.Render()
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -91,48 +88,44 @@ func newAppShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a specific application.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			app, err := client.GetApplication(ctx, args[0])
-			if err != nil {
-				return common.WrapGetError("application", err)
-			}
-
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(app)
-			}
-
-			_, _ = common.Bold.Println("Application Details")
-			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(app.ID))
-			fmt.Printf("  Application ID: %s\n", app.ApplicationID)
-			fmt.Printf("  Organization ID: %s\n", app.OrganizationID)
-			fmt.Printf("  Region: %s\n", common.Green.Sprint(app.Region))
-			fmt.Printf("  Environment: %s\n", app.Environment)
-
-			if app.BrandingSettings != nil {
-				fmt.Printf("\nBranding:\n")
-				if app.BrandingSettings.Name != "" {
-					fmt.Printf("  Name: %s\n", app.BrandingSettings.Name)
+			appID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				app, err := client.GetApplication(ctx, appID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("application", err)
 				}
-				if app.BrandingSettings.WebsiteURL != "" {
-					fmt.Printf("  Website: %s\n", common.Cyan.Sprint(app.BrandingSettings.WebsiteURL))
-				}
-			}
 
-			if len(app.CallbackURIs) > 0 {
-				fmt.Printf("\nCallback URIs (%d):\n", len(app.CallbackURIs))
-				for i, uri := range app.CallbackURIs {
-					fmt.Printf("  %d. %s\n", i+1, uri)
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(app)
 				}
-			}
 
-			return nil
+				_, _ = common.Bold.Println("Application Details")
+				fmt.Printf("  ID: %s\n", common.Cyan.Sprint(app.ID))
+				fmt.Printf("  Application ID: %s\n", app.ApplicationID)
+				fmt.Printf("  Organization ID: %s\n", app.OrganizationID)
+				fmt.Printf("  Region: %s\n", common.Green.Sprint(app.Region))
+				fmt.Printf("  Environment: %s\n", app.Environment)
+
+				if app.BrandingSettings != nil {
+					fmt.Printf("\nBranding:\n")
+					if app.BrandingSettings.Name != "" {
+						fmt.Printf("  Name: %s\n", app.BrandingSettings.Name)
+					}
+					if app.BrandingSettings.WebsiteURL != "" {
+						fmt.Printf("  Website: %s\n", common.Cyan.Sprint(app.BrandingSettings.WebsiteURL))
+					}
+				}
+
+				if len(app.CallbackURIs) > 0 {
+					fmt.Printf("\nCallback URIs (%d):\n", len(app.CallbackURIs))
+					for i, uri := range app.CallbackURIs {
+						fmt.Printf("  %d. %s\n", i+1, uri)
+					}
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -155,42 +148,37 @@ func newAppCreateCmd() *cobra.Command {
 		Short: "Create an application",
 		Long:  "Create a new Nylas application.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			req := &domain.CreateApplicationRequest{
-				Name:   name,
-				Region: region,
-			}
-
-			if brandingName != "" || websiteURL != "" {
-				req.BrandingSettings = &domain.BrandingSettings{
-					Name:       brandingName,
-					WebsiteURL: websiteURL,
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				req := &domain.CreateApplicationRequest{
+					Name:   name,
+					Region: region,
 				}
-			}
 
-			if len(callbackURIs) > 0 {
-				req.CallbackURIs = callbackURIs
-			}
+				if brandingName != "" || websiteURL != "" {
+					req.BrandingSettings = &domain.BrandingSettings{
+						Name:       brandingName,
+						WebsiteURL: websiteURL,
+					}
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if len(callbackURIs) > 0 {
+					req.CallbackURIs = callbackURIs
+				}
 
-			app, err := client.CreateApplication(ctx, req)
-			if err != nil {
-				return common.WrapCreateError("application", err)
-			}
+				app, err := client.CreateApplication(ctx, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("application", err)
+				}
 
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = common.Green.Printf("✓ Created application\n")
-			fmt.Printf("  ID: %s\n", common.Cyan.Sprint(app.ID))
-			fmt.Printf("  Application ID: %s\n", app.ApplicationID)
-			fmt.Printf("  Region: %s\n", app.Region)
+				// #nosec G104 -- color output errors are non-critical, best-effort display
+				_, _ = common.Green.Printf("✓ Created application\n")
+				fmt.Printf("  ID: %s\n", common.Cyan.Sprint(app.ID))
+				fmt.Printf("  Application ID: %s\n", app.ApplicationID)
+				fmt.Printf("  Region: %s\n", app.Region)
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -218,36 +206,32 @@ func newAppUpdateCmd() *cobra.Command {
 		Long:  "Update an existing application.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			appID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				req := &domain.UpdateApplicationRequest{}
 
-			req := &domain.UpdateApplicationRequest{}
-
-			if name != "" {
-				req.Name = &name
-			}
-
-			if brandingName != "" || websiteURL != "" {
-				req.BrandingSettings = &domain.BrandingSettings{
-					Name:       brandingName,
-					WebsiteURL: websiteURL,
+				if name != "" {
+					req.Name = &name
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if brandingName != "" || websiteURL != "" {
+					req.BrandingSettings = &domain.BrandingSettings{
+						Name:       brandingName,
+						WebsiteURL: websiteURL,
+					}
+				}
 
-			app, err := client.UpdateApplication(ctx, args[0], req)
-			if err != nil {
-				return common.WrapUpdateError("application", err)
-			}
+				app, err := client.UpdateApplication(ctx, appID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("application", err)
+				}
 
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = common.Green.Printf("✓ Updated application: %s\n", app.ID)
+				// #nosec G104 -- color output errors are non-critical, best-effort display
+				_, _ = common.Green.Printf("✓ Updated application: %s\n", app.ID)
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -277,22 +261,18 @@ func newAppDeleteCmd() *cobra.Command {
 				}
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			appID := args[0]
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				if err := client.DeleteApplication(ctx, appID); err != nil {
+					return struct{}{}, common.WrapDeleteError("application", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				// #nosec G104 -- color output errors are non-critical, best-effort display
+				_, _ = common.Green.Printf("✓ Deleted application: %s\n", appID)
 
-			if err := client.DeleteApplication(ctx, args[0]); err != nil {
-				return common.WrapDeleteError("application", err)
-			}
-
-			// #nosec G104 -- color output errors are non-critical, best-effort display
-			_, _ = common.Green.Printf("✓ Deleted application: %s\n", args[0])
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

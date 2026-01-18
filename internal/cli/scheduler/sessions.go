@@ -1,11 +1,13 @@
 package scheduler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -34,29 +36,24 @@ func newSessionCreateCmd() *cobra.Command {
 		Short: "Create a scheduler session",
 		Long:  "Create a new scheduler session for a configuration.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.CreateSchedulerSessionRequest{
+					ConfigurationID: configID,
+					TimeToLive:      ttl,
+				}
 
-			req := &domain.CreateSchedulerSessionRequest{
-				ConfigurationID: configID,
-				TimeToLive:      ttl,
-			}
+				session, err := client.CreateSchedulerSession(ctx, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("session", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				_, _ = common.Green.Println("✓ Created scheduler session")
+				fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
+				fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
 
-			session, err := client.CreateSchedulerSession(ctx, req)
-			if err != nil {
-				return common.WrapCreateError("session", err)
-			}
-
-			_, _ = common.Green.Println("✓ Created scheduler session")
-			fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
-			fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -77,28 +74,24 @@ func newSessionShowCmd() *cobra.Command {
 		Long:  "Show detailed information about a scheduler session.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			sessionID := args[0]
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				session, err := client.GetSchedulerSession(ctx, sessionID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("session", err)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if jsonOutput {
+					return struct{}{}, json.NewEncoder(cmd.OutOrStdout()).Encode(session)
+				}
 
-			session, err := client.GetSchedulerSession(ctx, args[0])
-			if err != nil {
-				return common.WrapGetError("session", err)
-			}
+				_, _ = common.Bold.Println("Scheduler Session")
+				fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
+				fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
 
-			if jsonOutput {
-				return json.NewEncoder(cmd.OutOrStdout()).Encode(session)
-			}
-
-			_, _ = common.Bold.Println("Scheduler Session")
-			fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
-			fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
