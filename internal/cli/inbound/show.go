@@ -1,10 +1,12 @@
 package inbound
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -39,32 +41,23 @@ Examples:
 func runShow(args []string, jsonOutput bool) error {
 	inboxID, err := getInboxID(args)
 	if err != nil {
-		printError("%v", err)
 		return err
 	}
 
-	client, err := common.GetNylasClient()
-	if err != nil {
-		printError("%v", err)
-		return err
-	}
+	_, err = common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+		inbox, err := client.GetInboundInbox(ctx, inboxID)
+		if err != nil {
+			return struct{}{}, common.WrapGetError("inbox", err)
+		}
 
-	ctx, cancel := common.CreateContext()
-	defer cancel()
+		if jsonOutput {
+			data, _ := json.MarshalIndent(inbox, "", "  ")
+			fmt.Println(string(data))
+			return struct{}{}, nil
+		}
 
-	inbox, err := client.GetInboundInbox(ctx, inboxID)
-	if err != nil {
-		printError("Failed to get inbox: %v", err)
-		return err
-	}
-
-	if jsonOutput {
-		data, _ := json.MarshalIndent(inbox, "", "  ")
-		fmt.Println(string(data))
-		return nil
-	}
-
-	printInboxDetails(*inbox)
-
-	return nil
+		printInboxDetails(*inbox)
+		return struct{}{}, nil
+	})
+	return err
 }

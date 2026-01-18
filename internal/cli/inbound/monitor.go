@@ -12,6 +12,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/tunnel"
 	"github.com/mqasimca/nylas/internal/adapters/webhookserver"
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
@@ -73,18 +74,15 @@ func runMonitor(args []string, port int, tunnelType, webhookSecret string, jsonO
 		return err
 	}
 
-	// Get inbox details
-	client, err := common.GetNylasClient()
+	// Get inbox details using WithClientNoGrant
+	inbox, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (*domain.InboundInbox, error) {
+		inbox, err := client.GetInboundInbox(ctx, inboxID)
+		if err != nil {
+			return nil, common.WrapGetError("inbox", err)
+		}
+		return inbox, nil
+	})
 	if err != nil {
-		printError("%v", err)
-		return err
-	}
-
-	ctx, cancel := common.CreateContext()
-	inbox, err := client.GetInboundInbox(ctx, inboxID)
-	cancel()
-	if err != nil {
-		printError("Failed to get inbox: %v", err)
 		return err
 	}
 

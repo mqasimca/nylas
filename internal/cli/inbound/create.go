@@ -1,11 +1,13 @@
 package inbound
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -56,36 +58,30 @@ func runCreate(emailPrefix string, jsonOutput bool) error {
 		return common.NewInputError("invalid email prefix - should not contain '@' or spaces")
 	}
 
-	client, err := common.GetNylasClient()
-	if err != nil {
-		printError("%v", err)
-		return err
-	}
+	_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+		inbox, err := client.CreateInboundInbox(ctx, emailPrefix)
+		if err != nil {
+			return struct{}{}, common.WrapCreateError("inbound inbox", err)
+		}
 
-	ctx, cancel := common.CreateContext()
-	defer cancel()
+		if jsonOutput {
+			data, _ := json.MarshalIndent(inbox, "", "  ")
+			fmt.Println(string(data))
+			return struct{}{}, nil
+		}
 
-	inbox, err := client.CreateInboundInbox(ctx, emailPrefix)
-	if err != nil {
-		printError("Failed to create inbox: %v", err)
-		return err
-	}
+		printSuccess("Inbound inbox created successfully!")
+		fmt.Println()
+		printInboxDetails(*inbox)
 
-	if jsonOutput {
-		data, _ := json.MarshalIndent(inbox, "", "  ")
-		fmt.Println(string(data))
-		return nil
-	}
+		fmt.Println()
+		_, _ = common.Dim.Println("Next steps:")
+		_, _ = common.Dim.Printf("  1. Set up a webhook: nylas webhooks create --url <your-url> --triggers message.created\n")
+		_, _ = common.Dim.Printf("  2. View messages: nylas inbound messages %s\n", inbox.ID)
+		_, _ = common.Dim.Printf("  3. Monitor in real-time: nylas inbound monitor %s\n", inbox.ID)
 
-	printSuccess("Inbound inbox created successfully!")
-	fmt.Println()
-	printInboxDetails(*inbox)
+		return struct{}{}, nil
+	})
 
-	fmt.Println()
-	_, _ = common.Dim.Println("Next steps:")
-	_, _ = common.Dim.Printf("  1. Set up a webhook: nylas webhooks create --url <your-url> --triggers message.created\n")
-	_, _ = common.Dim.Printf("  2. View messages: nylas inbound messages %s\n", inbox.ID)
-	_, _ = common.Dim.Printf("  3. Monitor in real-time: nylas inbound monitor %s\n", inbox.ID)
-
-	return nil
+	return err
 }

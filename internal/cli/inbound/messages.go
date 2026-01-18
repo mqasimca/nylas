@@ -1,11 +1,13 @@
 package inbound
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -56,65 +58,59 @@ func runMessages(args []string, limit int, unread bool, jsonOutput bool) error {
 		return err
 	}
 
-	client, err := common.GetNylasClient()
-	if err != nil {
-		printError("%v", err)
-		return err
-	}
-
-	ctx, cancel := common.CreateContext()
-	defer cancel()
-
-	// Build query params
-	params := &domain.MessageQueryParams{
-		Limit: limit,
-	}
-	if unread {
-		unreadVal := true
-		params.Unread = &unreadVal
-	}
-
-	messages, err := client.GetInboundMessages(ctx, inboxID, params)
-	if err != nil {
-		printError("Failed to get messages: %v", err)
-		return err
-	}
-
-	if jsonOutput {
-		data, _ := json.MarshalIndent(messages, "", "  ")
-		fmt.Println(string(data))
-		return nil
-	}
-
-	if len(messages) == 0 {
+	_, err = common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+		// Build query params
+		params := &domain.MessageQueryParams{
+			Limit: limit,
+		}
 		if unread {
-			common.PrintEmptyState("unread messages")
+			unreadVal := true
+			params.Unread = &unreadVal
+		}
+
+		messages, err := client.GetInboundMessages(ctx, inboxID, params)
+		if err != nil {
+			return struct{}{}, common.WrapListError("messages", err)
+		}
+
+		if jsonOutput {
+			data, _ := json.MarshalIndent(messages, "", "  ")
+			fmt.Println(string(data))
+			return struct{}{}, nil
+		}
+
+		if len(messages) == 0 {
+			if unread {
+				common.PrintEmptyState("unread messages")
+			} else {
+				common.PrintEmptyStateWithHint("messages", "Send an email to the inbox address to receive messages here")
+			}
+			return struct{}{}, nil
+		}
+
+		// Count unread
+		unreadCount := 0
+		for _, msg := range messages {
+			if msg.Unread {
+				unreadCount++
+			}
+		}
+
+		if unread {
+			_, _ = common.BoldWhite.Printf("Unread Messages (%d)\n\n", len(messages))
 		} else {
-			common.PrintEmptyStateWithHint("messages", "Send an email to the inbox address to receive messages here")
+			_, _ = common.BoldWhite.Printf("Messages (%d total, %d unread)\n\n", len(messages), unreadCount)
 		}
-		return nil
-	}
 
-	// Count unread
-	unreadCount := 0
-	for _, msg := range messages {
-		if msg.Unread {
-			unreadCount++
+		for i, msg := range messages {
+			printInboundMessageSummary(msg, i)
 		}
-	}
 
-	if unread {
-		_, _ = common.BoldWhite.Printf("Unread Messages (%d)\n\n", len(messages))
-	} else {
-		_, _ = common.BoldWhite.Printf("Messages (%d total, %d unread)\n\n", len(messages), unreadCount)
-	}
+		fmt.Println()
+		_, _ = common.Dim.Println("Use 'nylas email read <message-id> [inbox-id]' to view full message")
 
-	for i, msg := range messages {
-		printInboundMessageSummary(msg, i)
-	}
+		return struct{}{}, nil
+	})
 
-	fmt.Println()
-	_, _ = common.Dim.Println("Use 'nylas email read <message-id> [inbox-id]' to view full message")
-
-	return nil
+	return err
 }

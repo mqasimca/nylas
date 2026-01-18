@@ -1,10 +1,12 @@
 package inbound
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -36,40 +38,33 @@ Examples:
 }
 
 func runList(jsonOutput bool) error {
-	client, err := common.GetNylasClient()
-	if err != nil {
-		printError("%v", err)
-		return err
-	}
+	_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+		inboxes, err := client.ListInboundInboxes(ctx)
+		if err != nil {
+			return struct{}{}, common.WrapListError("inboxes", err)
+		}
 
-	ctx, cancel := common.CreateContext()
-	defer cancel()
+		if jsonOutput {
+			data, _ := json.MarshalIndent(inboxes, "", "  ")
+			fmt.Println(string(data))
+			return struct{}{}, nil
+		}
 
-	inboxes, err := client.ListInboundInboxes(ctx)
-	if err != nil {
-		printError("Failed to list inbound inboxes: %v", err)
-		return err
-	}
+		if len(inboxes) == 0 {
+			common.PrintEmptyStateWithHint("inboxes", "Create one with: nylas inbound create <email-prefix>")
+			return struct{}{}, nil
+		}
 
-	if jsonOutput {
-		data, _ := json.MarshalIndent(inboxes, "", "  ")
-		fmt.Println(string(data))
-		return nil
-	}
+		_, _ = common.BoldWhite.Printf("Inbound Inboxes (%d)\n\n", len(inboxes))
 
-	if len(inboxes) == 0 {
-		common.PrintEmptyStateWithHint("inboxes", "Create one with: nylas inbound create <email-prefix>")
-		return nil
-	}
+		for i, inbox := range inboxes {
+			printInboxSummary(inbox, i)
+		}
 
-	_, _ = common.BoldWhite.Printf("Inbound Inboxes (%d)\n\n", len(inboxes))
+		fmt.Println()
+		_, _ = common.Dim.Println("Use 'nylas inbound messages [inbox-id]' to view messages")
 
-	for i, inbox := range inboxes {
-		printInboxSummary(inbox, i)
-	}
-
-	fmt.Println()
-	_, _ = common.Dim.Println("Use 'nylas inbound messages [inbox-id]' to view messages")
-
-	return nil
+		return struct{}{}, nil
+	})
+	return err
 }
