@@ -127,6 +127,23 @@ common.WithClientNoGrant(func(ctx, client) (T, error) {
     return client.DoSomething(ctx)
 })
 
+// Flag helpers (use instead of inline flag definitions)
+common.AddJSONFlag(cmd, &jsonOutput)   // --json
+common.AddLimitFlag(cmd, &limit, 25)   // --limit/-n
+common.AddYesFlag(cmd, &yes)           // --yes/-y
+common.AddFormatFlag(cmd, &format)     // --format/-f
+common.AddIDFlag(cmd, &showID)         // --id
+common.AddPageTokenFlag(cmd, &token)   // --page-token
+
+// Validation helpers (use instead of inline checks)
+common.ValidateRequired("event ID", eventID)
+common.ValidateRequiredFlag("--to", toEmail)
+common.ValidateRequiredArg(args, "message ID")
+common.ValidateURL("webhook URL", webhookURL)
+common.ValidateEmail("recipient", email)
+common.ValidateOneOf("status", status, []string{"pending", "active"})
+common.ValidateAtLeastOne("update field", url, description, status)
+
 // HTTP handlers (in adapters)
 httputil.WriteJSON(w, http.StatusOK, data)
 body, err := httputil.LimitedBody(r, maxSize)

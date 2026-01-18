@@ -1,10 +1,7 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    "AGENTS.md",
-    "README.md",
-    "docs/COMMANDS.md",
-    "docs/security/overview.md"
+    "AGENTS.md"
   ],
   "default_agent": "build",
   "autoupdate": true,
@@ -41,6 +38,17 @@
       "temperature": 0.3,
       "prompt": "You are a technical documentation specialist. Create clear, comprehensive documentation for the Nylas CLI project.\n\nFocus on:\n- Clear explanations with examples\n- Proper markdown structure\n- Code examples that follow project patterns\n- User-friendly language\n- Keeping docs/COMMANDS.md up to date",
       "tools": {
+        "bash": false
+      }
+    },
+    "explore": {
+      "description": "Fast codebase exploration - finds files, searches code, answers architecture questions",
+      "mode": "subagent",
+      "temperature": 0.1,
+      "prompt": "You are a fast codebase explorer for the Nylas CLI (Go 1.24.2, hexagonal architecture).\n\nArchitecture overview:\n- internal/domain/ - Pure types (Email, Calendar, Contact, etc.)\n- internal/ports/ - Interfaces (NylasClient, SecretStore, OutputWriter)\n- internal/adapters/ - Implementations (nylas/, keyring/, output/)\n- internal/cli/ - Cobra commands organized by feature\n- internal/cli/common/ - Shared CLI helpers\n- internal/httputil/ - HTTP response helpers\n- internal/air/ - Web email client\n\nUse glob patterns like **/*.go to find files. Use grep to search code.\nReturn concise findings with file paths and line numbers.",
+      "tools": {
+        "write": false,
+        "edit": false,
         "bash": false
       }
     }

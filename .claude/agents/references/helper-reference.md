@@ -33,6 +33,21 @@ Complete reference for reusable helper functions. **ALWAYS check these before wr
 | **Output** | `WriteListWithWideColumns(cmd, data, normal, wide)` | Write with wide support |
 | **Client** | `WithClient[T](args, fn)` | Execute with client+grant setup |
 | **Client** | `WithClientNoGrant[T](fn)` | Execute with client (no grant) |
+| **Flags** | `AddJSONFlag(cmd, &target)` | Add --json flag |
+| **Flags** | `AddLimitFlag(cmd, &target, default)` | Add --limit/-n flag |
+| **Flags** | `AddYesFlag(cmd, &target)` | Add --yes/-y flag |
+| **Flags** | `AddFormatFlag(cmd, &target)` | Add --format/-f flag |
+| **Flags** | `AddIDFlag(cmd, &target)` | Add --id flag |
+| **Flags** | `AddPageTokenFlag(cmd, &target)` | Add --page-token flag |
+| **Flags** | `AddForceFlag(cmd, &target)` | Add --force/-f flag |
+| **Flags** | `AddVerboseFlag(cmd, &target)` | Add --verbose/-v flag |
+| **Validation** | `ValidateRequired(name, value)` | Validate required argument |
+| **Validation** | `ValidateRequiredFlag(flag, value)` | Validate required flag |
+| **Validation** | `ValidateRequiredArg(args, name)` | Validate args not empty |
+| **Validation** | `ValidateURL(name, value)` | Validate HTTP/HTTPS URL |
+| **Validation** | `ValidateEmail(name, value)` | Validate email format |
+| **Validation** | `ValidateOneOf(name, value, allowed)` | Validate value in list |
+| **Validation** | `ValidateAtLeastOne(name, values...)` | Validate at least one set |
 | **Pagination** | `FetchAllPages[T](ctx, config, fetcher)` | Paginated API calls |
 | **Pagination** | `FetchAllWithProgress[T](...)` | With progress indicator |
 | **Progress** | `NewSpinner(msg)` | Loading spinner |
@@ -88,12 +103,17 @@ These patterns have been duplicated before - ALWAYS check first:
 | Color formatting | `common.Bold`, `common.Cyan`, `common.Green`, etc. |
 | JSON API requests (POST/PUT/PATCH) | `c.doJSONRequest(ctx, method, url, body)` |
 | Response decoding | `c.decodeJSONResponse(resp, &result)` |
-| Field validation | `validateRequired("fieldName", value)` |
+| Field validation | `common.ValidateRequired()`, `ValidateRequiredFlag()` |
+| URL validation | `common.ValidateURL(name, value)` |
+| Email validation | `common.ValidateEmail(name, value)` |
 | Grant validation in Air | `s.requireDefaultGrant(w)` |
 | Pagination handling | `common.FetchAllPages[T]()` |
 | Error formatting for CLI | `common.WrapError(err)` or wrap with `fmt.Errorf` |
 | Retry with backoff | `common.WithRetry(ctx, config, fn)` |
 | Progress indicators | `common.NewSpinner()`, `NewProgressBar()` |
+| --json flag | `common.AddJSONFlag(cmd, &jsonOutput)` |
+| --limit flag | `common.AddLimitFlag(cmd, &limit, default)` |
+| --yes flag | `common.AddYesFlag(cmd, &yes)` |
 
 **Rule:** If you're about to write something from this table, STOP and use the existing helper.
 

@@ -208,7 +208,7 @@ nylas tui --theme amber      # Retro amber CRT theme
 Launch a browser-based interface for visual CLI management:
 
 ```bash
-nylas ui                     # Start on http://localhost:3000
+nylas ui                     # Start on http://localhost:7363
 nylas ui --port 8080         # Custom port
 nylas ui --no-browser        # Don't auto-open browser
 ```
