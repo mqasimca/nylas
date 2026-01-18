@@ -1,10 +1,12 @@
 package email
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -36,50 +38,40 @@ func newThreadsListCmd() *cobra.Command {
 		Short: "List email threads",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				params := &domain.ThreadQueryParams{
+					Limit: limit,
+				}
 
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
+				if cmd.Flags().Changed("unread") {
+					params.Unread = &unread
+				}
+				if cmd.Flags().Changed("starred") {
+					params.Starred = &starred
+				}
+				if subject != "" {
+					params.Subject = subject
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				threads, err := client.GetThreads(ctx, grantID, params)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("threads", err)
+				}
 
-			params := &domain.ThreadQueryParams{
-				Limit: limit,
-			}
+				if len(threads) == 0 {
+					common.PrintEmptyState("threads")
+					return struct{}{}, nil
+				}
 
-			if cmd.Flags().Changed("unread") {
-				params.Unread = &unread
-			}
-			if cmd.Flags().Changed("starred") {
-				params.Starred = &starred
-			}
-			if subject != "" {
-				params.Subject = subject
-			}
+				fmt.Printf("Found %d threads:\n\n", len(threads))
 
-			threads, err := client.GetThreads(ctx, grantID, params)
-			if err != nil {
-				return common.WrapGetError("threads", err)
-			}
+				for _, t := range threads {
+					DisplayThreadListItem(t, showID)
+				}
 
-			if len(threads) == 0 {
-				common.PrintEmptyState("threads")
-				return nil
-			}
-
-			fmt.Printf("Found %d threads:\n\n", len(threads))
-
-			for _, t := range threads {
-				DisplayThreadListItem(t, showID)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -99,67 +91,53 @@ func newThreadsShowCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threadID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				thread, err := client.GetThread(ctx, grantID, threadID)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapGetError("thread", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				// Print thread details
+				fmt.Println("════════════════════════════════════════════════════════════")
+				_, _ = common.BoldWhite.Printf("Thread: %s\n", thread.Subject)
+				fmt.Println("════════════════════════════════════════════════════════════")
 
-			thread, err := client.GetThread(ctx, grantID, threadID)
-			if err != nil {
-				return common.WrapGetError("thread", err)
-			}
+				fmt.Printf("Participants: %s\n", common.FormatParticipants(thread.Participants))
+				fmt.Printf("Messages:     %d\n", len(thread.MessageIDs))
+				if len(thread.DraftIDs) > 0 {
+					fmt.Printf("Drafts:       %d\n", len(thread.DraftIDs))
+				}
 
-			// Print thread details
-			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = common.BoldWhite.Printf("Thread: %s\n", thread.Subject)
-			fmt.Println("════════════════════════════════════════════════════════════")
+				status := []string{}
+				if thread.Unread {
+					status = append(status, common.Cyan.Sprint("unread"))
+				}
+				if thread.Starred {
+					status = append(status, common.Yellow.Sprint("starred"))
+				}
+				if thread.HasAttachments {
+					status = append(status, "has attachments")
+				}
+				if len(status) > 0 {
+					fmt.Printf("Status:       %s\n", common.FormatParticipants(nil))
+				}
 
-			fmt.Printf("Participants: %s\n", common.FormatParticipants(thread.Participants))
-			fmt.Printf("Messages:     %d\n", len(thread.MessageIDs))
-			if len(thread.DraftIDs) > 0 {
-				fmt.Printf("Drafts:       %d\n", len(thread.DraftIDs))
-			}
+				fmt.Printf("\nFirst message: %s\n", thread.EarliestMessageDate.Format(common.DisplayDateTime))
+				fmt.Printf("Latest:        %s\n", thread.LatestMessageRecvDate.Format(common.DisplayDateTime))
 
-			status := []string{}
-			if thread.Unread {
-				status = append(status, common.Cyan.Sprint("unread"))
-			}
-			if thread.Starred {
-				status = append(status, common.Yellow.Sprint("starred"))
-			}
-			if thread.HasAttachments {
-				status = append(status, "has attachments")
-			}
-			if len(status) > 0 {
-				fmt.Printf("Status:       %s\n", common.FormatParticipants(nil))
-			}
+				fmt.Println("\nSnippet:")
+				fmt.Println(thread.Snippet)
 
-			fmt.Printf("\nFirst message: %s\n", thread.EarliestMessageDate.Format(common.DisplayDateTime))
-			fmt.Printf("Latest:        %s\n", thread.LatestMessageRecvDate.Format(common.DisplayDateTime))
+				fmt.Println("\nMessage IDs:")
+				for i, msgID := range thread.MessageIDs {
+					fmt.Printf("  %d. %s\n", i+1, msgID)
+				}
 
-			fmt.Println("\nSnippet:")
-			fmt.Println(thread.Snippet)
-
-			fmt.Println("\nMessage IDs:")
-			for i, msgID := range thread.MessageIDs {
-				fmt.Printf("  %d. %s\n", i+1, msgID)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 }
@@ -174,6 +152,7 @@ func newThreadsMarkCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threadID := args[0]
+			remainingArgs := args[1:]
 
 			// Check flags
 			flagCount := 0
@@ -201,63 +180,48 @@ func newThreadsMarkCmd() *cobra.Command {
 				return common.NewMutuallyExclusiveError("star", "unstar")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.UpdateMessageRequest{}
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+				if markRead {
+					unread := false
+					req.Unread = &unread
+				} else if markUnread {
+					unread := true
+					req.Unread = &unread
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if markStar {
+					starred := true
+					req.Starred = &starred
+				} else if markUnstar {
+					starred := false
+					req.Starred = &starred
+				}
 
-			req := &domain.UpdateMessageRequest{}
+				thread, err := client.UpdateThread(ctx, grantID, threadID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("thread", err)
+				}
 
-			if markRead {
-				unread := false
-				req.Unread = &unread
-			} else if markUnread {
-				unread := true
-				req.Unread = &unread
-			}
+				status := []string{}
+				if markRead {
+					status = append(status, "marked read")
+				}
+				if markUnread {
+					status = append(status, "marked unread")
+				}
+				if markStar {
+					status = append(status, "starred")
+				}
+				if markUnstar {
+					status = append(status, "unstarred")
+				}
 
-			if markStar {
-				starred := true
-				req.Starred = &starred
-			} else if markUnstar {
-				starred := false
-				req.Starred = &starred
-			}
-
-			thread, err := client.UpdateThread(ctx, grantID, threadID, req)
-			if err != nil {
-				return common.WrapUpdateError("thread", err)
-			}
-
-			status := []string{}
-			if markRead {
-				status = append(status, "marked read")
-			}
-			if markUnread {
-				status = append(status, "marked unread")
-			}
-			if markStar {
-				status = append(status, "starred")
-			}
-			if markUnstar {
-				status = append(status, "unstarred")
-			}
-
-			printSuccess("Thread %s: %s (subject: %s)", threadID[:12]+"...", fmt.Sprintf("%v", status), thread.Subject)
-			return nil
+				printSuccess("Thread %s: %s (subject: %s)", threadID[:12]+"...", fmt.Sprintf("%v", status), thread.Subject)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -279,53 +243,39 @@ func newThreadsDeleteCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			threadID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get thread info for confirmation
+				if !force {
+					thread, err := client.GetThread(ctx, grantID, threadID)
+					if err != nil {
+						return struct{}{}, common.WrapGetError("thread", err)
+					}
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+					fmt.Println("Delete this thread?")
+					fmt.Printf("  Subject:      %s\n", thread.Subject)
+					fmt.Printf("  Messages:     %d\n", len(thread.MessageIDs))
+					fmt.Printf("  Participants: %s\n", common.FormatParticipants(thread.Participants))
+					fmt.Print("\n[y/N]: ")
+
+					var confirm string
+					_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
+					if confirm != "y" && confirm != "Y" && confirm != "yes" {
+						fmt.Println("Cancelled.")
+						return struct{}{}, nil
+					}
+				}
+
+				err := client.DeleteThread(ctx, grantID, threadID)
 				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			// Get thread info for confirmation
-			if !force {
-				thread, err := client.GetThread(ctx, grantID, threadID)
-				if err != nil {
-					return common.WrapGetError("thread", err)
+					return struct{}{}, common.WrapDeleteError("thread", err)
 				}
 
-				fmt.Println("Delete this thread?")
-				fmt.Printf("  Subject:      %s\n", thread.Subject)
-				fmt.Printf("  Messages:     %d\n", len(thread.MessageIDs))
-				fmt.Printf("  Participants: %s\n", common.FormatParticipants(thread.Participants))
-				fmt.Print("\n[y/N]: ")
-
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if confirm != "y" && confirm != "Y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			err = client.DeleteThread(ctx, grantID, threadID)
-			if err != nil {
-				return common.WrapDeleteError("thread", err)
-			}
-
-			printSuccess("Thread deleted")
-			return nil
+				printSuccess("Thread deleted")
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -371,78 +321,68 @@ Examples:
   nylas email threads search --subject "invoice" --after 2024-01-01 --before 2024-12-31`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			params := &domain.ThreadQueryParams{
-				Limit: limit,
-			}
-
-			if from != "" {
-				params.From = from
-			}
-			if to != "" {
-				params.To = to
-			}
-			if subject != "" {
-				params.Subject = subject
-			}
-			if inFolder != "" {
-				params.In = []string{inFolder}
-			}
-			if cmd.Flags().Changed("unread") {
-				params.Unread = &unread
-			}
-			if cmd.Flags().Changed("starred") {
-				params.Starred = &starred
-			}
-			if cmd.Flags().Changed("has-attachment") {
-				params.HasAttachment = &hasAttachment
-			}
-
-			// Parse date filters
-			if after != "" {
-				t, err := parseDate(after)
-				if err != nil {
-					return common.WrapDateParseError("after", err)
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				params := &domain.ThreadQueryParams{
+					Limit: limit,
 				}
-				params.LatestMsgAfter = t.Unix()
-			}
-			if before != "" {
-				t, err := parseDate(before)
-				if err != nil {
-					return common.WrapDateParseError("before", err)
+
+				if from != "" {
+					params.From = from
 				}
-				params.LatestMsgBefore = t.Unix()
-			}
+				if to != "" {
+					params.To = to
+				}
+				if subject != "" {
+					params.Subject = subject
+				}
+				if inFolder != "" {
+					params.In = []string{inFolder}
+				}
+				if cmd.Flags().Changed("unread") {
+					params.Unread = &unread
+				}
+				if cmd.Flags().Changed("starred") {
+					params.Starred = &starred
+				}
+				if cmd.Flags().Changed("has-attachment") {
+					params.HasAttachment = &hasAttachment
+				}
 
-			threads, err := client.GetThreads(ctx, grantID, params)
-			if err != nil {
-				return common.WrapFetchError("threads", err)
-			}
+				// Parse date filters
+				if after != "" {
+					t, err := parseDate(after)
+					if err != nil {
+						return struct{}{}, common.WrapDateParseError("after", err)
+					}
+					params.LatestMsgAfter = t.Unix()
+				}
+				if before != "" {
+					t, err := parseDate(before)
+					if err != nil {
+						return struct{}{}, common.WrapDateParseError("before", err)
+					}
+					params.LatestMsgBefore = t.Unix()
+				}
 
-			if len(threads) == 0 {
-				common.PrintEmptyStateWithHint("threads", "try different search terms")
-				return nil
-			}
+				threads, err := client.GetThreads(ctx, grantID, params)
+				if err != nil {
+					return struct{}{}, common.WrapFetchError("threads", err)
+				}
 
-			fmt.Printf("Found %d threads:\n\n", len(threads))
+				if len(threads) == 0 {
+					common.PrintEmptyStateWithHint("threads", "try different search terms")
+					return struct{}{}, nil
+				}
 
-			for _, t := range threads {
-				DisplayThreadListItem(t, showID)
-			}
+				fmt.Printf("Found %d threads:\n\n", len(threads))
 
-			return nil
+				for _, t := range threads {
+					DisplayThreadListItem(t, showID)
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

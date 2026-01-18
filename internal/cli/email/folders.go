@@ -6,6 +6,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -33,71 +34,61 @@ func newFoldersListCmd() *cobra.Command {
 		Short: "List all folders",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			folders, err := client.GetFolders(ctx, grantID)
-			if err != nil {
-				return common.WrapGetError("folders", err)
-			}
-
-			if len(folders) == 0 {
-				common.PrintEmptyState("folders")
-				return nil
-			}
-
-			fmt.Println("Folders:")
-			fmt.Println()
-
-			if showID {
-				fmt.Printf("%-36s %-30s %-12s %8s %8s\n", "ID", "NAME", "TYPE", "TOTAL", "UNREAD")
-				fmt.Println("------------------------------------------------------------------------------------------------------")
-			} else {
-				fmt.Printf("%-30s %-12s %8s %8s\n", "NAME", "TYPE", "TOTAL", "UNREAD")
-				fmt.Println("------------------------------------------------------------")
-			}
-
-			for _, f := range folders {
-				folderType := f.SystemFolder
-				if folderType == "" {
-					folderType = "custom"
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				folders, err := client.GetFolders(ctx, grantID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("folders", err)
 				}
 
-				name := f.Name
-				if len(name) > 28 {
-					name = name[:25] + "..."
+				if len(folders) == 0 {
+					common.PrintEmptyState("folders")
+					return struct{}{}, nil
 				}
 
-				unreadStr := fmt.Sprintf("%d", f.UnreadCount)
-				if f.UnreadCount > 0 {
-					unreadStr = common.Cyan.Sprintf("%d", f.UnreadCount)
-				}
+				fmt.Println("Folders:")
+				fmt.Println()
 
 				if showID {
-					fmt.Printf("%-36s %-30s %-12s %8d %8s\n",
-						common.Dim.Sprint(f.ID), name, folderType, f.TotalCount, unreadStr)
+					fmt.Printf("%-36s %-30s %-12s %8s %8s\n", "ID", "NAME", "TYPE", "TOTAL", "UNREAD")
+					fmt.Println("------------------------------------------------------------------------------------------------------")
 				} else {
-					fmt.Printf("%-30s %-12s %8d %8s\n",
-						name, folderType, f.TotalCount, unreadStr)
+					fmt.Printf("%-30s %-12s %8s %8s\n", "NAME", "TYPE", "TOTAL", "UNREAD")
+					fmt.Println("------------------------------------------------------------")
 				}
-			}
 
-			fmt.Println()
-			if !showID {
-				_, _ = common.Dim.Printf("Use --id to see folder IDs for --folder flag\n")
-			}
+				for _, f := range folders {
+					folderType := f.SystemFolder
+					if folderType == "" {
+						folderType = "custom"
+					}
 
-			return nil
+					name := f.Name
+					if len(name) > 28 {
+						name = name[:25] + "..."
+					}
+
+					unreadStr := fmt.Sprintf("%d", f.UnreadCount)
+					if f.UnreadCount > 0 {
+						unreadStr = common.Cyan.Sprintf("%d", f.UnreadCount)
+					}
+
+					if showID {
+						fmt.Printf("%-36s %-30s %-12s %8d %8s\n",
+							common.Dim.Sprint(f.ID), name, folderType, f.TotalCount, unreadStr)
+					} else {
+						fmt.Printf("%-30s %-12s %8d %8s\n",
+							name, folderType, f.TotalCount, unreadStr)
+					}
+				}
+
+				fmt.Println()
+				if !showID {
+					_, _ = common.Dim.Printf("Use --id to see folder IDs for --folder flag\n")
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -164,39 +155,25 @@ func newFoldersCreateCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.CreateFolderRequest{
+					Name:            name,
+					ParentID:        parentID,
+					BackgroundColor: bgColor,
+					TextColor:       textColor,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				folder, err := client.CreateFolder(ctx, grantID, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("folder", err)
+				}
 
-			req := &domain.CreateFolderRequest{
-				Name:            name,
-				ParentID:        parentID,
-				BackgroundColor: bgColor,
-				TextColor:       textColor,
-			}
-
-			folder, err := client.CreateFolder(ctx, grantID, req)
-			if err != nil {
-				return common.WrapCreateError("folder", err)
-			}
-
-			printSuccess("Created folder '%s' (ID: %s)", folder.Name, folder.ID)
-			return nil
+				printSuccess("Created folder '%s' (ID: %s)", folder.Name, folder.ID)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -220,46 +197,32 @@ func newFoldersRenameCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			folderID := args[0]
 			newName := args[1]
+			remainingArgs := args[2:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 2 {
-				grantID = args[2]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.UpdateFolderRequest{
+					Name: newName,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if cmd.Flags().Changed("bg-color") {
+					req.BackgroundColor = bgColor
+				}
+				if cmd.Flags().Changed("text-color") {
+					req.TextColor = textColor
+				}
+				if cmd.Flags().Changed("parent") {
+					req.ParentID = parentID
+				}
 
-			req := &domain.UpdateFolderRequest{
-				Name: newName,
-			}
+				folder, err := client.UpdateFolder(ctx, grantID, folderID, req)
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("folder", err)
+				}
 
-			if cmd.Flags().Changed("bg-color") {
-				req.BackgroundColor = bgColor
-			}
-			if cmd.Flags().Changed("text-color") {
-				req.TextColor = textColor
-			}
-			if cmd.Flags().Changed("parent") {
-				req.ParentID = parentID
-			}
-
-			folder, err := client.UpdateFolder(ctx, grantID, folderID, req)
-			if err != nil {
-				return common.WrapUpdateError("folder", err)
-			}
-
-			printSuccess("Folder renamed to '%s'", folder.Name)
-			return nil
+				printSuccess("Folder renamed to '%s'", folder.Name)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

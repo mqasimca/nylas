@@ -1,10 +1,12 @@
 package email
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -35,47 +37,38 @@ Examples:
 				return common.NewUserError("prompt is required", "Use --prompt to describe the email you want to compose")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				req := &domain.SmartComposeRequest{
+					Prompt: prompt,
+				}
 
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
+				var suggestion *domain.SmartComposeSuggestion
+				var err error
+				if messageID != "" {
+					suggestion, err = client.SmartComposeReply(ctx, grantID, messageID, req)
+				} else {
+					suggestion, err = client.SmartCompose(ctx, grantID, req)
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				if err != nil {
+					return struct{}{}, common.WrapGenerateError("email", err)
+				}
 
-			req := &domain.SmartComposeRequest{
-				Prompt: prompt,
-			}
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(suggestion)
+				}
 
-			var suggestion *domain.SmartComposeSuggestion
-			if messageID != "" {
-				suggestion, err = client.SmartComposeReply(ctx, grantID, messageID, req)
-			} else {
-				suggestion, err = client.SmartCompose(ctx, grantID, req)
-			}
+				// Pretty print the suggestion
+				fmt.Println("AI-Generated Email:")
+				fmt.Println("==================")
+				fmt.Println()
+				fmt.Println(suggestion.Suggestion)
+				fmt.Println()
+				fmt.Println("Note: This is an AI-generated suggestion. Please review and edit as needed.")
 
-			if err != nil {
-				return common.WrapGenerateError("email", err)
-			}
-
-			if jsonOutput {
-				return common.PrintJSON(suggestion)
-			}
-
-			// Pretty print the suggestion
-			fmt.Println("AI-Generated Email:")
-			fmt.Println("==================")
-			fmt.Println()
-			fmt.Println(suggestion.Suggestion)
-			fmt.Println()
-			fmt.Println("Note: This is an AI-generated suggestion. Please review and edit as needed.")
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

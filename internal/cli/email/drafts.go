@@ -12,6 +12,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -39,62 +40,52 @@ func newDraftsListCmd() *cobra.Command {
 		Short: "List drafts",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			drafts, err := client.GetDrafts(ctx, grantID, limit)
-			if err != nil {
-				return common.WrapGetError("drafts", err)
-			}
-
-			if len(drafts) == 0 {
-				common.PrintEmptyState("drafts")
-				return nil
-			}
-
-			fmt.Printf("Found %d drafts:\n\n", len(drafts))
-			fmt.Printf("%-15s %-25s %-35s %s\n", "ID", "TO", "SUBJECT", "UPDATED")
-			fmt.Println("--------------------------------------------------------------------------------")
-
-			for _, d := range drafts {
-				toStr := ""
-				if len(d.To) > 0 {
-					toStr = common.FormatParticipants(d.To)
-				}
-				if len(toStr) > 23 {
-					toStr = toStr[:20] + "..."
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				drafts, err := client.GetDrafts(ctx, grantID, limit)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("drafts", err)
 				}
 
-				subj := d.Subject
-				if subj == "" {
-					subj = "(no subject)"
-				}
-				if len(subj) > 33 {
-					subj = subj[:30] + "..."
+				if len(drafts) == 0 {
+					common.PrintEmptyState("drafts")
+					return struct{}{}, nil
 				}
 
-				// Show first 12 chars of ID
-				idShort := d.ID
-				if len(idShort) > 12 {
-					idShort = idShort[:12] + "..."
+				fmt.Printf("Found %d drafts:\n\n", len(drafts))
+				fmt.Printf("%-15s %-25s %-35s %s\n", "ID", "TO", "SUBJECT", "UPDATED")
+				fmt.Println("--------------------------------------------------------------------------------")
+
+				for _, d := range drafts {
+					toStr := ""
+					if len(d.To) > 0 {
+						toStr = common.FormatParticipants(d.To)
+					}
+					if len(toStr) > 23 {
+						toStr = toStr[:20] + "..."
+					}
+
+					subj := d.Subject
+					if subj == "" {
+						subj = "(no subject)"
+					}
+					if len(subj) > 33 {
+						subj = subj[:30] + "..."
+					}
+
+					// Show first 12 chars of ID
+					idShort := d.ID
+					if len(idShort) > 12 {
+						idShort = idShort[:12] + "..."
+					}
+
+					dateStr := common.FormatTimeAgo(d.UpdatedAt)
+
+					fmt.Printf("%-15s %-25s %-35s %s\n", idShort, toStr, subj, common.Dim.Sprint(dateStr))
 				}
 
-				dateStr := common.FormatTimeAgo(d.UpdatedAt)
-
-				fmt.Printf("%-15s %-25s %-35s %s\n", idShort, toStr, subj, common.Dim.Sprint(dateStr))
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -117,17 +108,7 @@ func newDraftsCreateCmd() *cobra.Command {
 		Long:  "Create a new draft email with optional attachments.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			// Interactive mode if nothing provided
+			// Interactive mode if nothing provided (runs before WithClient)
 			if len(to) == 0 && subject == "" && body == "" && len(attachFiles) == 0 {
 				reader := bufio.NewReader(os.Stdin)
 
@@ -152,50 +133,50 @@ func newDraftsCreateCmd() *cobra.Command {
 				body = strings.Join(bodyLines, "\n")
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			// Parse and validate recipients
-			toContacts, err := parseContacts(to)
-			if err != nil {
-				return common.WrapRecipientError("to", err)
-			}
-
-			req := &domain.CreateDraftRequest{
-				Subject:      subject,
-				Body:         body,
-				To:           toContacts,
-				ReplyToMsgID: replyTo,
-			}
-
-			if len(cc) > 0 {
-				ccContacts, err := parseContacts(cc)
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Parse and validate recipients
+				toContacts, err := parseContacts(to)
 				if err != nil {
-					return common.WrapRecipientError("cc", err)
+					return struct{}{}, common.WrapRecipientError("to", err)
 				}
-				req.Cc = ccContacts
-			}
 
-			// Load attachments from files
-			if len(attachFiles) > 0 {
-				attachments, err := loadAttachmentsFromFiles(attachFiles)
+				req := &domain.CreateDraftRequest{
+					Subject:      subject,
+					Body:         body,
+					To:           toContacts,
+					ReplyToMsgID: replyTo,
+				}
+
+				if len(cc) > 0 {
+					ccContacts, err := parseContacts(cc)
+					if err != nil {
+						return struct{}{}, common.WrapRecipientError("cc", err)
+					}
+					req.Cc = ccContacts
+				}
+
+				// Load attachments from files
+				if len(attachFiles) > 0 {
+					attachments, err := loadAttachmentsFromFiles(attachFiles)
+					if err != nil {
+						return struct{}{}, common.WrapLoadError("attachments", err)
+					}
+					req.Attachments = attachments
+					fmt.Printf("Attaching %d file(s)...\n", len(attachments))
+				}
+
+				draft, err := client.CreateDraft(ctx, grantID, req)
 				if err != nil {
-					return common.WrapLoadError("attachments", err)
+					return struct{}{}, common.WrapCreateError("draft", err)
 				}
-				req.Attachments = attachments
-				fmt.Printf("Attaching %d file(s)...\n", len(attachments))
-			}
 
-			draft, err := client.CreateDraft(ctx, grantID, req)
-			if err != nil {
-				return common.WrapCreateError("draft", err)
-			}
-
-			printSuccess("Draft created! ID: %s", draft.ID)
-			if len(draft.Attachments) > 0 {
-				fmt.Printf("  Attachments: %d\n", len(draft.Attachments))
-			}
-			return nil
+				printSuccess("Draft created! ID: %s", draft.ID)
+				if len(draft.Attachments) > 0 {
+					fmt.Printf("  Attachments: %d\n", len(draft.Attachments))
+				}
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -348,53 +329,39 @@ func newDraftsSendCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			draftID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get draft info first
+				draft, err := client.GetDraft(ctx, grantID, draftID)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapGetError("draft", err)
 				}
-			}
 
-			// Get draft info first
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				// Confirmation
+				if !force {
+					fmt.Println("Send this draft?")
+					fmt.Printf("  To:      %s\n", common.FormatParticipants(draft.To))
+					fmt.Printf("  Subject: %s\n", draft.Subject)
+					fmt.Print("\n[y/N]: ")
 
-			draft, err := client.GetDraft(ctx, grantID, draftID)
-			if err != nil {
-				return common.WrapGetError("draft", err)
-			}
-
-			// Confirmation
-			if !force {
-				fmt.Println("Send this draft?")
-				fmt.Printf("  To:      %s\n", common.FormatParticipants(draft.To))
-				fmt.Printf("  Subject: %s\n", draft.Subject)
-				fmt.Print("\n[y/N]: ")
-
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if confirm != "y" && confirm != "Y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
+					var confirm string
+					_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
+					if confirm != "y" && confirm != "Y" && confirm != "yes" {
+						fmt.Println("Cancelled.")
+						return struct{}{}, nil
+					}
 				}
-			}
 
-			msg, err := client.SendDraft(ctx, grantID, draftID)
-			if err != nil {
-				return common.WrapSendError("draft", err)
-			}
+				msg, err := client.SendDraft(ctx, grantID, draftID)
+				if err != nil {
+					return struct{}{}, common.WrapSendError("draft", err)
+				}
 
-			printSuccess("Draft sent! Message ID: %s", msg.ID)
-			return nil
+				printSuccess("Draft sent! Message ID: %s", msg.ID)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

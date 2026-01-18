@@ -1,6 +1,7 @@
 package email
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/mqasimca/nylas/internal/adapters/ai"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 )
 
 func newAnalyzeCmd() *cobra.Command {
@@ -44,21 +46,7 @@ This command fetches your recent emails and uses AI to provide:
   # Analyze specific folder
   nylas email ai analyze --folder SENT`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			// AI analysis can take time - use longer timeout
-			ctx, cancel := common.CreateContextWithTimeout(domain.TimeoutAI)
-			defer cancel()
-
-			// Load config for AI settings
+			// Load config for AI settings (runs before WithClient)
 			configStore := common.GetConfigStore(cmd)
 			cfg, err := configStore.Load()
 			if err != nil {
@@ -69,54 +57,57 @@ This command fetches your recent emails and uses AI to provide:
 				return fmt.Errorf("AI is not configured. Run 'nylas config ai setup' to configure AI providers")
 			}
 
-			// Fetch emails
-			fmt.Printf("📧 Fetching %d emails...\n", limit)
+			_, err = common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Fetch emails
+				fmt.Printf("📧 Fetching %d emails...\n", limit)
 
-			params := &domain.MessageQueryParams{
-				Limit: limit,
-			}
+				params := &domain.MessageQueryParams{
+					Limit: limit,
+				}
 
-			if unread {
-				params.Unread = &unread
-			}
+				if unread {
+					params.Unread = &unread
+				}
 
-			if folder != "" {
-				params.In = []string{folder}
-			} else {
-				params.In = []string{"INBOX"}
-			}
+				if folder != "" {
+					params.In = []string{folder}
+				} else {
+					params.In = []string{"INBOX"}
+				}
 
-			messages, err := client.GetMessagesWithParams(ctx, grantID, params)
-			if err != nil {
-				return common.WrapFetchError("emails", err)
-			}
+				messages, err := client.GetMessagesWithParams(ctx, grantID, params)
+				if err != nil {
+					return struct{}{}, common.WrapFetchError("emails", err)
+				}
 
-			if len(messages) == 0 {
-				common.PrintEmptyState("emails")
-				return nil
-			}
+				if len(messages) == 0 {
+					common.PrintEmptyState("emails")
+					return struct{}{}, nil
+				}
 
-			fmt.Printf("🔍 Analyzing %d emails with AI...\n\n", len(messages))
+				fmt.Printf("🔍 Analyzing %d emails with AI...\n\n", len(messages))
 
-			// Create AI router and analyzer
-			router := ai.NewRouter(cfg.AI)
-			analyzer := ai.NewEmailAnalyzer(client, router)
+				// Create AI router and analyzer
+				router := ai.NewRouter(cfg.AI)
+				analyzer := ai.NewEmailAnalyzer(client, router)
 
-			// Analyze emails
-			req := &ai.InboxSummaryRequest{
-				Messages:     messages,
-				ProviderName: provider,
-			}
+				// Analyze emails
+				req := &ai.InboxSummaryRequest{
+					Messages:     messages,
+					ProviderName: provider,
+				}
 
-			result, err := analyzer.AnalyzeInbox(ctx, req)
-			if err != nil {
-				return fmt.Errorf("AI analysis failed: %w", err)
-			}
+				result, err := analyzer.AnalyzeInbox(ctx, req)
+				if err != nil {
+					return struct{}{}, fmt.Errorf("AI analysis failed: %w", err)
+				}
 
-			// Display results
-			displayInboxAnalysis(result, len(messages))
+				// Display results
+				displayInboxAnalysis(result, len(messages))
 
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

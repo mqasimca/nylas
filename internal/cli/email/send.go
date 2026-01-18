@@ -2,6 +2,7 @@ package email
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net/mail"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -66,17 +68,7 @@ Supports custom metadata:
   nylas email send --to user@example.com --subject "Invoice" --metadata campaign=q4 --metadata type=invoice`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			// Interactive mode
+			// Interactive mode (runs before WithClient)
 			if interactive || (len(to) == 0 && subject == "" && body == "") {
 				reader := bufio.NewReader(os.Stdin)
 
@@ -171,10 +163,10 @@ Supports custom metadata:
 			// Parse schedule time if provided
 			var scheduledTime time.Time
 			if scheduleAt != "" {
-				var err error
-				scheduledTime, err = parseScheduleTime(scheduleAt)
-				if err != nil {
-					return err // parseScheduleTime already returns CLIError
+				var parseErr error
+				scheduledTime, parseErr = parseScheduleTime(scheduleAt)
+				if parseErr != nil {
+					return parseErr // parseScheduleTime already returns CLIError
 				}
 				req.SendAt = scheduledTime.Unix()
 			}
@@ -226,34 +218,34 @@ Supports custom metadata:
 			}
 
 			// Send
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+			_, sendErr := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Show progress spinner while sending
+				var sendMsg string
+				if scheduledTime.IsZero() {
+					sendMsg = "Sending email..."
+				} else {
+					sendMsg = "Scheduling email..."
+				}
 
-			// Show progress spinner while sending
-			var sendMsg string
-			if scheduledTime.IsZero() {
-				sendMsg = "Sending email..."
-			} else {
-				sendMsg = "Scheduling email..."
-			}
+				spinner := common.NewSpinner(sendMsg)
+				spinner.Start()
 
-			spinner := common.NewSpinner(sendMsg)
-			spinner.Start()
+				msg, err := client.SendMessage(ctx, grantID, req)
+				spinner.Stop()
 
-			msg, err := client.SendMessage(ctx, grantID, req)
-			spinner.Stop()
+				if err != nil {
+					return struct{}{}, common.WrapSendError("email", err)
+				}
 
-			if err != nil {
-				return common.WrapSendError("email", err)
-			}
-
-			if !scheduledTime.IsZero() {
-				printSuccess("Email scheduled successfully! Message ID: %s", msg.ID)
-				fmt.Printf("Scheduled to send: %s\n", scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
-			} else {
-				printSuccess("Email sent successfully! Message ID: %s", msg.ID)
-			}
-			return nil
+				if !scheduledTime.IsZero() {
+					printSuccess("Email scheduled successfully! Message ID: %s", msg.ID)
+					fmt.Printf("Scheduled to send: %s\n", scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
+				} else {
+					printSuccess("Email sent successfully! Message ID: %s", msg.ID)
+				}
+				return struct{}{}, nil
+			})
+			return sendErr
 		},
 	}
 

@@ -1,10 +1,12 @@
 package email
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -29,54 +31,44 @@ func newScheduledListCmd() *cobra.Command {
 		Long:  "List all messages that are scheduled to be sent.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			scheduled, err := client.ListScheduledMessages(ctx, grantID)
-			if err != nil {
-				return common.WrapListError("scheduled messages", err)
-			}
-
-			if len(scheduled) == 0 {
-				common.PrintEmptyState("scheduled messages")
-				return nil
-			}
-
-			fmt.Printf("Found %d scheduled message(s):\n\n", len(scheduled))
-
-			for _, s := range scheduled {
-				closeTime := time.Unix(s.CloseTime, 0)
-				timeUntil := time.Until(closeTime)
-
-				statusIcon := "⏳"
-				switch s.Status {
-				case "cancelled":
-					statusIcon = "❌"
-				case "sent":
-					statusIcon = "✅"
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				scheduled, err := client.ListScheduledMessages(ctx, grantID)
+				if err != nil {
+					return struct{}{}, common.WrapListError("scheduled messages", err)
 				}
 
-				fmt.Printf("%s  Schedule ID: %s\n", statusIcon, s.ScheduleID)
-				fmt.Printf("   Status:      %s\n", s.Status)
-				fmt.Printf("   Send at:     %s\n", closeTime.Format(common.DisplayDateTime))
-
-				if timeUntil > 0 {
-					fmt.Printf("   Time until:  %s\n", formatDuration(timeUntil))
+				if len(scheduled) == 0 {
+					common.PrintEmptyState("scheduled messages")
+					return struct{}{}, nil
 				}
-				fmt.Println()
-			}
 
-			return nil
+				fmt.Printf("Found %d scheduled message(s):\n\n", len(scheduled))
+
+				for _, s := range scheduled {
+					closeTime := time.Unix(s.CloseTime, 0)
+					timeUntil := time.Until(closeTime)
+
+					statusIcon := "⏳"
+					switch s.Status {
+					case "cancelled":
+						statusIcon = "❌"
+					case "sent":
+						statusIcon = "✅"
+					}
+
+					fmt.Printf("%s  Schedule ID: %s\n", statusIcon, s.ScheduleID)
+					fmt.Printf("   Status:      %s\n", s.Status)
+					fmt.Printf("   Send at:     %s\n", closeTime.Format(common.DisplayDateTime))
+
+					if timeUntil > 0 {
+						fmt.Printf("   Time until:  %s\n", formatDuration(timeUntil))
+					}
+					fmt.Println()
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 }
@@ -89,47 +81,33 @@ func newScheduledShowCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scheduleID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapGetError("scheduled message", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				closeTime := time.Unix(scheduled.CloseTime, 0)
+				timeUntil := time.Until(closeTime)
 
-			scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
-			if err != nil {
-				return common.WrapGetError("scheduled message", err)
-			}
+				fmt.Println("════════════════════════════════════════════════════════════")
+				_, _ = common.BoldWhite.Printf("Scheduled Message: %s\n", scheduled.ScheduleID)
+				fmt.Println("════════════════════════════════════════════════════════════")
 
-			closeTime := time.Unix(scheduled.CloseTime, 0)
-			timeUntil := time.Until(closeTime)
+				fmt.Printf("Status:      %s\n", scheduled.Status)
+				fmt.Printf("Send at:     %s\n", closeTime.Format("Mon, Jan 2, 2006 3:04:05 PM MST"))
 
-			fmt.Println("════════════════════════════════════════════════════════════")
-			_, _ = common.BoldWhite.Printf("Scheduled Message: %s\n", scheduled.ScheduleID)
-			fmt.Println("════════════════════════════════════════════════════════════")
+				if timeUntil > 0 {
+					fmt.Printf("Time until:  %s\n", formatDuration(timeUntil))
+				} else {
+					fmt.Printf("Time since:  %s ago\n", formatDuration(-timeUntil))
+				}
 
-			fmt.Printf("Status:      %s\n", scheduled.Status)
-			fmt.Printf("Send at:     %s\n", closeTime.Format("Mon, Jan 2, 2006 3:04:05 PM MST"))
-
-			if timeUntil > 0 {
-				fmt.Printf("Time until:  %s\n", formatDuration(timeUntil))
-			} else {
-				fmt.Printf("Time since:  %s ago\n", formatDuration(-timeUntil))
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 }
@@ -144,55 +122,41 @@ func newScheduledCancelCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			scheduleID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get scheduled message info for confirmation
+				if !force {
+					scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
+					if err != nil {
+						return struct{}{}, common.WrapGetError("scheduled message", err)
+					}
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+					closeTime := time.Unix(scheduled.CloseTime, 0)
+
+					fmt.Println("Cancel this scheduled message?")
+					fmt.Printf("  Schedule ID: %s\n", scheduled.ScheduleID)
+					fmt.Printf("  Status:      %s\n", scheduled.Status)
+					fmt.Printf("  Send at:     %s\n", closeTime.Format(common.DisplayDateTime))
+					fmt.Print("\n[y/N]: ")
+
+					var confirm string
+					_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
+					if confirm != "y" && confirm != "Y" && confirm != "yes" {
+						fmt.Println("Cancelled.")
+						return struct{}{}, nil
+					}
+				}
+
+				err := client.CancelScheduledMessage(ctx, grantID, scheduleID)
 				if err != nil {
-					return err
-				}
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			// Get scheduled message info for confirmation
-			if !force {
-				scheduled, err := client.GetScheduledMessage(ctx, grantID, scheduleID)
-				if err != nil {
-					return common.WrapGetError("scheduled message", err)
+					return struct{}{}, common.WrapCancelError("scheduled message", err)
 				}
 
-				closeTime := time.Unix(scheduled.CloseTime, 0)
-
-				fmt.Println("Cancel this scheduled message?")
-				fmt.Printf("  Schedule ID: %s\n", scheduled.ScheduleID)
-				fmt.Printf("  Status:      %s\n", scheduled.Status)
-				fmt.Printf("  Send at:     %s\n", closeTime.Format(common.DisplayDateTime))
-				fmt.Print("\n[y/N]: ")
-
-				var confirm string
-				_, _ = fmt.Scanln(&confirm) // Ignore error - empty string treated as "no"
-				if confirm != "y" && confirm != "Y" && confirm != "yes" {
-					fmt.Println("Cancelled.")
-					return nil
-				}
-			}
-
-			err = client.CancelScheduledMessage(ctx, grantID, scheduleID)
-			if err != nil {
-				return common.WrapCancelError("scheduled message", err)
-			}
-
-			printSuccess("Scheduled message %s cancelled", scheduleID)
-			return nil
+				printSuccess("Scheduled message %s cancelled", scheduleID)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

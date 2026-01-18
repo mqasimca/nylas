@@ -1,6 +1,7 @@
 package email
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -35,50 +37,41 @@ func newAttachmentsListCmd() *cobra.Command {
 		Args:  cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			messageID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args[1:])
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			attachments, err := client.ListAttachments(ctx, grantID, messageID)
-			if err != nil {
-				return common.WrapListError("attachments", err)
-			}
-
-			if len(attachments) == 0 {
-				common.PrintEmptyState("attachments")
-				return nil
-			}
-
-			fmt.Printf("Found %d attachment(s):\n\n", len(attachments))
-			fmt.Println(strings.Repeat("─", 70))
-
-			for i, a := range attachments {
-				fmt.Printf("%d. %s\n", i+1, common.BoldWhite.Sprint(a.Filename))
-				fmt.Printf("   ID:   %s\n", a.ID)
-				fmt.Printf("   Type: %s\n", a.ContentType)
-				fmt.Printf("   Size: %s\n", common.FormatSize(a.Size))
-				if a.IsInline {
-					fmt.Printf("   Inline: yes\n")
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				attachments, err := client.ListAttachments(ctx, grantID, messageID)
+				if err != nil {
+					return struct{}{}, common.WrapListError("attachments", err)
 				}
-				if i < len(attachments)-1 {
-					fmt.Println()
+
+				if len(attachments) == 0 {
+					common.PrintEmptyState("attachments")
+					return struct{}{}, nil
 				}
-			}
 
-			fmt.Println(strings.Repeat("─", 70))
-			fmt.Printf("\nUse 'nylas email attachments download <attachment-id> <message-id>' to download.\n")
+				fmt.Printf("Found %d attachment(s):\n\n", len(attachments))
+				fmt.Println(strings.Repeat("─", 70))
 
-			return nil
+				for i, a := range attachments {
+					fmt.Printf("%d. %s\n", i+1, common.BoldWhite.Sprint(a.Filename))
+					fmt.Printf("   ID:   %s\n", a.ID)
+					fmt.Printf("   Type: %s\n", a.ContentType)
+					fmt.Printf("   Size: %s\n", common.FormatSize(a.Size))
+					if a.IsInline {
+						fmt.Printf("   Inline: yes\n")
+					}
+					if i < len(attachments)-1 {
+						fmt.Println()
+					}
+				}
+
+				fmt.Println(strings.Repeat("─", 70))
+				fmt.Printf("\nUse 'nylas email attachments download <attachment-id> <message-id>' to download.\n")
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -95,37 +88,28 @@ func newAttachmentsShowCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			attachmentID := args[0]
 			messageID := args[1]
+			remainingArgs := args[2:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("attachment", err)
+				}
 
-			grantID, err := common.GetGrantID(args[2:])
-			if err != nil {
-				return err
-			}
+				fmt.Println(strings.Repeat("─", 60))
+				_, _ = common.BoldWhite.Printf("Filename:     %s\n", attachment.Filename)
+				fmt.Printf("ID:           %s\n", attachment.ID)
+				fmt.Printf("Content Type: %s\n", attachment.ContentType)
+				fmt.Printf("Size:         %s (%d bytes)\n", common.FormatSize(attachment.Size), attachment.Size)
+				if attachment.ContentID != "" {
+					fmt.Printf("Content ID:   %s\n", attachment.ContentID)
+				}
+				fmt.Printf("Inline:       %v\n", attachment.IsInline)
+				fmt.Println(strings.Repeat("─", 60))
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
-			if err != nil {
-				return common.WrapGetError("attachment", err)
-			}
-
-			fmt.Println(strings.Repeat("─", 60))
-			_, _ = common.BoldWhite.Printf("Filename:     %s\n", attachment.Filename)
-			fmt.Printf("ID:           %s\n", attachment.ID)
-			fmt.Printf("Content Type: %s\n", attachment.ContentType)
-			fmt.Printf("Size:         %s (%d bytes)\n", common.FormatSize(attachment.Size), attachment.Size)
-			if attachment.ContentID != "" {
-				fmt.Printf("Content ID:   %s\n", attachment.ContentID)
-			}
-			fmt.Printf("Inline:       %v\n", attachment.IsInline)
-			fmt.Println(strings.Repeat("─", 60))
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
@@ -144,73 +128,65 @@ func newAttachmentsDownloadCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			attachmentID := args[0]
 			messageID := args[1]
+			remainingArgs := args[2:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				// Get attachment metadata first to get filename
+				attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
+				if err != nil {
+					return struct{}{}, common.WrapGetError("attachment metadata", err)
+				}
 
-			grantID, err := common.GetGrantID(args[2:])
-			if err != nil {
-				return err
-			}
+				// Sanitize filename to prevent path traversal attacks
+				// filepath.Base strips directory components like "../" or "../../"
+				safeFilename := filepath.Base(attachment.Filename)
+				if safeFilename == "" || safeFilename == "." || safeFilename == ".." {
+					safeFilename = "attachment"
+				}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+				// Determine output path
+				finalOutputPath := outputPath
+				if finalOutputPath == "" {
+					finalOutputPath = safeFilename
+				}
 
-			// Get attachment metadata first to get filename
-			attachment, err := client.GetAttachment(ctx, grantID, messageID, attachmentID)
-			if err != nil {
-				return common.WrapGetError("attachment metadata", err)
-			}
+				// Clean the output path to resolve . and ..
+				finalOutputPath = filepath.Clean(finalOutputPath)
 
-			// Sanitize filename to prevent path traversal attacks
-			// filepath.Base strips directory components like "../" or "../../"
-			safeFilename := filepath.Base(attachment.Filename)
-			if safeFilename == "" || safeFilename == "." || safeFilename == ".." {
-				safeFilename = "attachment"
-			}
+				// If outputPath is a directory, append sanitized filename
+				if info, err := os.Stat(finalOutputPath); err == nil && info.IsDir() {
+					finalOutputPath = filepath.Join(finalOutputPath, safeFilename)
+				}
 
-			// Determine output path
-			if outputPath == "" {
-				outputPath = safeFilename
-			}
+				// Validate the final path is not a directory
+				if info, err := os.Stat(finalOutputPath); err == nil && info.IsDir() {
+					return struct{}{}, common.NewInputError(fmt.Sprintf("output path is a directory: %s", finalOutputPath))
+				}
 
-			// Clean the output path to resolve . and ..
-			outputPath = filepath.Clean(outputPath)
+				// Download the attachment
+				reader, err := client.DownloadAttachment(ctx, grantID, messageID, attachmentID)
+				if err != nil {
+					return struct{}{}, common.WrapDownloadError("attachment", err)
+				}
+				defer func() { _ = reader.Close() }()
 
-			// If outputPath is a directory, append sanitized filename
-			if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
-				outputPath = filepath.Join(outputPath, safeFilename)
-			}
+				// Create output file
+				file, err := os.Create(finalOutputPath)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("output file", err)
+				}
+				defer func() { _ = file.Close() }()
 
-			// Validate the final path is not a directory
-			if info, err := os.Stat(outputPath); err == nil && info.IsDir() {
-				return common.NewInputError(fmt.Sprintf("output path is a directory: %s", outputPath))
-			}
+				// Copy content
+				written, err := io.Copy(file, reader)
+				if err != nil {
+					return struct{}{}, common.WrapWriteError("file", err)
+				}
 
-			// Download the attachment
-			reader, err := client.DownloadAttachment(ctx, grantID, messageID, attachmentID)
-			if err != nil {
-				return common.WrapDownloadError("attachment", err)
-			}
-			defer func() { _ = reader.Close() }()
-
-			// Create output file
-			file, err := os.Create(outputPath)
-			if err != nil {
-				return common.WrapCreateError("output file", err)
-			}
-			defer func() { _ = file.Close() }()
-
-			// Copy content
-			written, err := io.Copy(file, reader)
-			if err != nil {
-				return common.WrapWriteError("file", err)
-			}
-
-			printSuccess("Downloaded %s (%s) to %s", attachment.Filename, common.FormatSize(written), outputPath)
-			return nil
+				printSuccess("Downloaded %s (%s) to %s", attachment.Filename, common.FormatSize(written), finalOutputPath)
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

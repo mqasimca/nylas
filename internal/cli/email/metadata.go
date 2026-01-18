@@ -1,11 +1,13 @@
 package email
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -42,57 +44,43 @@ This shows all metadata stored on the message, including both indexed
 (key1-key5) and custom keys.`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
 			messageID := args[0]
+			remainingArgs := args[1:]
 
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				message, err := client.GetMessage(ctx, grantID, messageID)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapGetError("message", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			message, err := client.GetMessage(ctx, grantID, messageID)
-			if err != nil {
-				return common.WrapGetError("message", err)
-			}
-
-			if asJSON {
-				data, err := json.MarshalIndent(message.Metadata, "", "  ")
-				if err != nil {
-					return common.WrapMarshalError("metadata", err)
-				}
-				fmt.Println(string(data))
-				return nil
-			}
-
-			if len(message.Metadata) == 0 {
-				common.PrintEmptyState("metadata")
-				return nil
-			}
-
-			fmt.Printf("Metadata for message %s:\n\n", messageID)
-			for key, value := range message.Metadata {
-				indexed := ""
-				if strings.HasPrefix(key, "key") && len(key) == 4 {
-					if key >= "key1" && key <= "key5" {
-						indexed = " (indexed - searchable)"
+				if asJSON {
+					data, err := json.MarshalIndent(message.Metadata, "", "  ")
+					if err != nil {
+						return struct{}{}, common.WrapMarshalError("metadata", err)
 					}
+					fmt.Println(string(data))
+					return struct{}{}, nil
 				}
-				fmt.Printf("  %s: %s%s\n", key, value, indexed)
-			}
 
-			return nil
+				if len(message.Metadata) == 0 {
+					common.PrintEmptyState("metadata")
+					return struct{}{}, nil
+				}
+
+				fmt.Printf("Metadata for message %s:\n\n", messageID)
+				for key, value := range message.Metadata {
+					indexed := ""
+					if strings.HasPrefix(key, "key") && len(key) == 4 {
+						if key >= "key1" && key <= "key5" {
+							indexed = " (indexed - searchable)"
+						}
+					}
+					fmt.Printf("  %s: %s%s\n", key, value, indexed)
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

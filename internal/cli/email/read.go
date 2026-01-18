@@ -1,11 +1,13 @@
 package email
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -21,62 +23,48 @@ func newReadCmd() *cobra.Command {
 		Args:    cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			messageID := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				msg, err := client.GetMessage(ctx, grantID, messageID)
 				if err != nil {
-					return err
+					return struct{}{}, common.WrapGetError("message", err)
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			msg, err := client.GetMessage(ctx, grantID, messageID)
-			if err != nil {
-				return common.WrapGetError("message", err)
-			}
-
-			// Handle JSON output
-			jsonOutput, _ := cmd.Flags().GetBool("json")
-			if jsonOutput {
-				data, err := json.MarshalIndent(msg, "", "  ")
-				if err != nil {
-					return common.WrapMarshalError("JSON", err)
+				// Handle JSON output
+				jsonOutput, _ := cmd.Flags().GetBool("json")
+				if jsonOutput {
+					data, err := json.MarshalIndent(msg, "", "  ")
+					if err != nil {
+						return struct{}{}, common.WrapMarshalError("JSON", err)
+					}
+					fmt.Println(string(data))
+					return struct{}{}, nil
 				}
-				fmt.Println(string(data))
-				return nil
-			}
 
-			// Handle raw output
-			if rawOutput {
-				printMessageRaw(*msg)
-			} else {
-				printMessage(*msg, true)
-			}
-
-			// Mark as read if requested
-			if markAsRead && msg.Unread {
-				unread := false
-				_, err := client.UpdateMessage(ctx, grantID, messageID, &domain.UpdateMessageRequest{
-					Unread: &unread,
-				})
-				if err != nil {
-					_, _ = common.Dim.Printf("(Failed to mark as read: %v)\n", err)
+				// Handle raw output
+				if rawOutput {
+					printMessageRaw(*msg)
 				} else {
-					_, _ = common.Dim.Println("(Marked as read)")
+					printMessage(*msg, true)
 				}
-			}
 
-			return nil
+				// Mark as read if requested
+				if markAsRead && msg.Unread {
+					unread := false
+					_, err := client.UpdateMessage(ctx, grantID, messageID, &domain.UpdateMessageRequest{
+						Unread: &unread,
+					})
+					if err != nil {
+						_, _ = common.Dim.Printf("(Failed to mark as read: %v)\n", err)
+					} else {
+						_, _ = common.Dim.Println("(Marked as read)")
+					}
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

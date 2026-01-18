@@ -1,8 +1,11 @@
 package email
 
 import (
+	"context"
+
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -69,52 +72,38 @@ func newMarkUnstarredCmd() *cobra.Command {
 
 func markMessage(args []string, unread bool, starred *bool) error {
 	messageID := args[0]
+	remainingArgs := args[1:]
 
-	client, err := common.GetNylasClient()
-	if err != nil {
-		return err
-	}
+	_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+		req := &domain.UpdateMessageRequest{}
 
-	var grantID string
-	if len(args) > 1 {
-		grantID = args[1]
-	} else {
-		grantID, err = common.GetGrantID(nil)
+		// Set the appropriate flags based on which mark command was called
+		if starred != nil {
+			req.Starred = starred
+		} else {
+			req.Unread = &unread
+		}
+
+		_, err := client.UpdateMessage(ctx, grantID, messageID, req)
 		if err != nil {
-			return err
+			return struct{}{}, common.WrapUpdateError("message", err)
 		}
-	}
 
-	ctx, cancel := common.CreateContext()
-	defer cancel()
-
-	req := &domain.UpdateMessageRequest{}
-
-	// Set the appropriate flags based on which mark command was called
-	if starred != nil {
-		req.Starred = starred
-	} else {
-		req.Unread = &unread
-	}
-
-	_, err = client.UpdateMessage(ctx, grantID, messageID, req)
-	if err != nil {
-		return common.WrapUpdateError("message", err)
-	}
-
-	if starred != nil {
-		if *starred {
-			printSuccess("Message starred")
+		if starred != nil {
+			if *starred {
+				printSuccess("Message starred")
+			} else {
+				printSuccess("Star removed from message")
+			}
 		} else {
-			printSuccess("Star removed from message")
+			if unread {
+				printSuccess("Message marked as unread")
+			} else {
+				printSuccess("Message marked as read")
+			}
 		}
-	} else {
-		if unread {
-			printSuccess("Message marked as unread")
-		} else {
-			printSuccess("Message marked as read")
-		}
-	}
 
-	return nil
+		return struct{}{}, nil
+	})
+	return err
 }

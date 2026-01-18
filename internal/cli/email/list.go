@@ -55,114 +55,105 @@ Use --max to limit total messages when using --all.`,
 			}
 
 			// Traditional formatted output
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			params := &domain.MessageQueryParams{
-				Limit: limit,
-			}
-
-			if cmd.Flags().Changed("unread") {
-				params.Unread = &unread
-			}
-			if cmd.Flags().Changed("starred") {
-				params.Starred = &starred
-			}
-			if from != "" {
-				params.From = from
-			}
-			if metadataPair != "" {
-				params.MetadataPair = metadataPair
-			}
-
-			// Default to INBOX unless --all-folders is set or specific folder is provided
-			if folder != "" {
-				// Resolve folder name to ID if needed (for Microsoft accounts)
-				resolvedFolder, err := resolveFolderName(ctx, client, grantID, folder)
-				if err != nil {
-					// API error - warn user but continue with literal name
-					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve folder '%s': %v\n", folder, err)
-					params.In = []string{folder}
-				} else if resolvedFolder != "" {
-					params.In = []string{resolvedFolder}
-				} else {
-					// Folder not found by name, use literal
-					params.In = []string{folder}
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				params := &domain.MessageQueryParams{
+					Limit: limit,
 				}
-			} else if !allFolders {
-				// Try to find inbox folder ID (works for both Google and Microsoft)
-				inboxID, err := resolveFolderName(ctx, client, grantID, "INBOX")
-				if err != nil {
-					// API error - warn but fallback to literal INBOX
-					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve INBOX folder: %v\n", err)
-					params.In = []string{"INBOX"}
-				} else if inboxID != "" {
-					params.In = []string{inboxID}
-				} else {
-					// Fallback to INBOX (works for Google)
-					params.In = []string{"INBOX"}
+
+				if cmd.Flags().Changed("unread") {
+					params.Unread = &unread
 				}
-			}
-
-			var messages []domain.Message
-
-			if all {
-				// Use pagination to fetch all messages
-				pageSize := 50 // Optimal page size for API
-				if limit > 0 && limit < pageSize {
-					pageSize = limit
+				if cmd.Flags().Changed("starred") {
+					params.Starred = &starred
 				}
-				params.Limit = pageSize
+				if from != "" {
+					params.From = from
+				}
+				if metadataPair != "" {
+					params.MetadataPair = metadataPair
+				}
 
-				fetcher := func(ctx context.Context, cursor string) (common.PageResult[domain.Message], error) {
-					params.PageToken = cursor
-					resp, err := client.GetMessagesWithCursor(ctx, grantID, params)
+				// Default to INBOX unless --all-folders is set or specific folder is provided
+				if folder != "" {
+					// Resolve folder name to ID if needed (for Microsoft accounts)
+					resolvedFolder, err := resolveFolderName(ctx, client, grantID, folder)
 					if err != nil {
-						return common.PageResult[domain.Message]{}, err
+						// API error - warn user but continue with literal name
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve folder '%s': %v\n", folder, err)
+						params.In = []string{folder}
+					} else if resolvedFolder != "" {
+						params.In = []string{resolvedFolder}
+					} else {
+						// Folder not found by name, use literal
+						params.In = []string{folder}
 					}
-					return common.PageResult[domain.Message]{
-						Data:       resp.Data,
-						NextCursor: resp.Pagination.NextCursor,
-					}, nil
+				} else if !allFolders {
+					// Try to find inbox folder ID (works for both Google and Microsoft)
+					inboxID, err := resolveFolderName(ctx, client, grantID, "INBOX")
+					if err != nil {
+						// API error - warn but fallback to literal INBOX
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not resolve INBOX folder: %v\n", err)
+						params.In = []string{"INBOX"}
+					} else if inboxID != "" {
+						params.In = []string{inboxID}
+					} else {
+						// Fallback to INBOX (works for Google)
+						params.In = []string{"INBOX"}
+					}
 				}
 
-				config := common.DefaultPaginationConfig()
-				config.PageSize = pageSize
-				config.MaxItems = maxItems
+				var messages []domain.Message
+				var err error
 
-				messages, err = common.FetchAllPages(ctx, config, fetcher)
-				if err != nil {
-					return common.WrapFetchError("messages", err)
+				if all {
+					// Use pagination to fetch all messages
+					pageSize := 50 // Optimal page size for API
+					if limit > 0 && limit < pageSize {
+						pageSize = limit
+					}
+					params.Limit = pageSize
+
+					fetcher := func(ctx context.Context, cursor string) (common.PageResult[domain.Message], error) {
+						params.PageToken = cursor
+						resp, err := client.GetMessagesWithCursor(ctx, grantID, params)
+						if err != nil {
+							return common.PageResult[domain.Message]{}, err
+						}
+						return common.PageResult[domain.Message]{
+							Data:       resp.Data,
+							NextCursor: resp.Pagination.NextCursor,
+						}, nil
+					}
+
+					config := common.DefaultPaginationConfig()
+					config.PageSize = pageSize
+					config.MaxItems = maxItems
+
+					messages, err = common.FetchAllPages(ctx, config, fetcher)
+					if err != nil {
+						return struct{}{}, common.WrapFetchError("messages", err)
+					}
+				} else {
+					// Standard single-page fetch
+					messages, err = client.GetMessagesWithParams(ctx, grantID, params)
+					if err != nil {
+						return struct{}{}, common.WrapGetError("messages", err)
+					}
 				}
-			} else {
-				// Standard single-page fetch
-				messages, err = client.GetMessagesWithParams(ctx, grantID, params)
-				if err != nil {
-					return common.WrapGetError("messages", err)
+
+				if len(messages) == 0 {
+					common.PrintEmptyState("messages")
+					return struct{}{}, nil
 				}
-			}
 
-			if len(messages) == 0 {
-				common.PrintEmptyState("messages")
-				return nil
-			}
+				fmt.Printf("Found %d messages:\n\n", len(messages))
+				for i, msg := range messages {
+					printMessageSummaryWithID(msg, i+1, showID)
+				}
 
-			fmt.Printf("Found %d messages:\n\n", len(messages))
-			for i, msg := range messages {
-				printMessageSummaryWithID(msg, i+1, showID)
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

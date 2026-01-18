@@ -1,11 +1,13 @@
 package email
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -49,88 +51,74 @@ Examples:
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := args[0]
+			remainingArgs := args[1:]
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			var grantID string
-			if len(args) > 1 {
-				grantID = args[1]
-			} else {
-				grantID, err = common.GetGrantID(nil)
-				if err != nil {
-					return err
+			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				params := &domain.MessageQueryParams{
+					Limit: limit,
 				}
-			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
-			params := &domain.MessageQueryParams{
-				Limit: limit,
-			}
-
-			// Use query as subject search unless it's a wildcard
-			// If --subject flag is also provided, it takes precedence
-			if subject != "" {
-				params.Subject = subject
-			} else if query != "*" && query != "" {
-				params.Subject = query
-			}
-
-			if from != "" {
-				params.From = from
-			}
-			if to != "" {
-				params.To = to
-			}
-			if inFolder != "" {
-				params.In = []string{inFolder}
-			}
-			if cmd.Flags().Changed("has-attachment") {
-				params.HasAttachment = &hasAttachment
-			}
-			if cmd.Flags().Changed("unread") {
-				params.Unread = &unread
-			}
-			if cmd.Flags().Changed("starred") {
-				params.Starred = &starred
-			}
-
-			// Parse date filters
-			if after != "" {
-				t, err := parseDate(after)
-				if err != nil {
-					return common.WrapDateParseError("after", err)
+				// Use query as subject search unless it's a wildcard
+				// If --subject flag is also provided, it takes precedence
+				if subject != "" {
+					params.Subject = subject
+				} else if query != "*" && query != "" {
+					params.Subject = query
 				}
-				params.ReceivedAfter = t.Unix()
-			}
-			if before != "" {
-				t, err := parseDate(before)
-				if err != nil {
-					return common.WrapDateParseError("before", err)
+
+				if from != "" {
+					params.From = from
 				}
-				params.ReceivedBefore = t.Unix()
-			}
+				if to != "" {
+					params.To = to
+				}
+				if inFolder != "" {
+					params.In = []string{inFolder}
+				}
+				if cmd.Flags().Changed("has-attachment") {
+					params.HasAttachment = &hasAttachment
+				}
+				if cmd.Flags().Changed("unread") {
+					params.Unread = &unread
+				}
+				if cmd.Flags().Changed("starred") {
+					params.Starred = &starred
+				}
 
-			messages, err := client.GetMessagesWithParams(ctx, grantID, params)
-			if err != nil {
-				return common.WrapSearchError("messages", err)
-			}
+				// Parse date filters
+				if after != "" {
+					t, err := parseDate(after)
+					if err != nil {
+						return struct{}{}, common.WrapDateParseError("after", err)
+					}
+					params.ReceivedAfter = t.Unix()
+				}
+				if before != "" {
+					t, err := parseDate(before)
+					if err != nil {
+						return struct{}{}, common.WrapDateParseError("before", err)
+					}
+					params.ReceivedBefore = t.Unix()
+				}
 
-			if len(messages) == 0 {
-				common.PrintEmptyStateWithHint("messages", "try different search terms")
-				return nil
-			}
+				messages, err := client.GetMessagesWithParams(ctx, grantID, params)
+				if err != nil {
+					return struct{}{}, common.WrapSearchError("messages", err)
+				}
 
-			fmt.Printf("Found %d messages:\n\n", len(messages))
-			for i, msg := range messages {
-				printMessageSummary(msg, i+1)
-			}
+				if len(messages) == 0 {
+					common.PrintEmptyStateWithHint("messages", "try different search terms")
+					return struct{}{}, nil
+				}
 
-			return nil
+				fmt.Printf("Found %d messages:\n\n", len(messages))
+				for i, msg := range messages {
+					printMessageSummary(msg, i+1)
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
