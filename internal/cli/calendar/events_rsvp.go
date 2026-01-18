@@ -48,7 +48,7 @@ Examples:
 				)
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -57,7 +57,7 @@ Examples:
 			if len(args) > 2 {
 				grantID = args[2]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -67,20 +67,9 @@ Examples:
 			defer cancel()
 
 			// Get calendar ID if not specified
-			if calendarID == "" {
-				calendars, err := client.GetCalendars(ctx, grantID)
-				if err != nil {
-					return common.WrapListError("calendars", err)
-				}
-				for _, cal := range calendars {
-					if cal.IsPrimary {
-						calendarID = cal.ID
-						break
-					}
-				}
-				if calendarID == "" && len(calendars) > 0 {
-					calendarID = calendars[0].ID
-				}
+			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
+			if err != nil {
+				return err
 			}
 
 			req := &domain.SendRSVPRequest{

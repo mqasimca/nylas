@@ -58,12 +58,12 @@ Examples:
 				)
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -72,32 +72,9 @@ Examples:
 			defer cancel()
 
 			// Get calendar ID if not specified
-			if calendarID == "" {
-				calendars, err := client.GetCalendars(ctx, grantID)
-				if err != nil {
-					return common.WrapListError("calendars", err)
-				}
-				for _, cal := range calendars {
-					if cal.IsPrimary && !cal.ReadOnly {
-						calendarID = cal.ID
-						break
-					}
-				}
-				// Fallback to any writable calendar
-				if calendarID == "" {
-					for _, cal := range calendars {
-						if !cal.ReadOnly {
-							calendarID = cal.ID
-							break
-						}
-					}
-				}
-				if calendarID == "" {
-					return common.NewUserError(
-						"no writable calendar found",
-						"Specify a calendar with --calendar",
-					)
-				}
+			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, true)
+			if err != nil {
+				return err
 			}
 
 			// Parse times
@@ -245,7 +222,7 @@ func newEventsDeleteCmd() *cobra.Command {
 				return err
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -254,20 +231,9 @@ func newEventsDeleteCmd() *cobra.Command {
 			defer cancel()
 
 			// Get calendar ID if not specified
-			if calendarID == "" {
-				calendars, err := client.GetCalendars(ctx, resourceArgs.GrantID)
-				if err != nil {
-					return common.WrapListError("calendars", err)
-				}
-				for _, cal := range calendars {
-					if cal.IsPrimary {
-						calendarID = cal.ID
-						break
-					}
-				}
-				if calendarID == "" && len(calendars) > 0 {
-					calendarID = calendars[0].ID
-				}
+			calendarID, err = GetDefaultCalendarID(ctx, client, resourceArgs.GrantID, calendarID, false)
+			if err != nil {
+				return err
 			}
 
 			// Wrap DeleteEvent to match the DeleteFunc signature
@@ -327,7 +293,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			eventID := args[0]
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
@@ -336,7 +302,7 @@ Examples:
 			if len(args) > 1 {
 				grantID = args[1]
 			} else {
-				grantID, err = getGrantID(nil)
+				grantID, err = common.GetGrantID(nil)
 				if err != nil {
 					return err
 				}
@@ -346,20 +312,9 @@ Examples:
 			defer cancel()
 
 			// Get calendar ID if not specified
-			if calendarID == "" {
-				calendars, err := client.GetCalendars(ctx, grantID)
-				if err != nil {
-					return common.WrapListError("calendars", err)
-				}
-				for _, cal := range calendars {
-					if cal.IsPrimary {
-						calendarID = cal.ID
-						break
-					}
-				}
-				if calendarID == "" && len(calendars) > 0 {
-					calendarID = calendars[0].ID
-				}
+			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
+			if err != nil {
+				return err
 			}
 
 			req := &domain.UpdateEventRequest{}

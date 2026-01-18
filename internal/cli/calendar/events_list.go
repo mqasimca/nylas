@@ -52,12 +52,12 @@ Examples:
 				}
 			}
 
-			client, err := getClient()
+			client, err := common.GetNylasClient()
 			if err != nil {
 				return err
 			}
 
-			grantID, err := getGrantID(args)
+			grantID, err := common.GetGrantID(args)
 			if err != nil {
 				return err
 			}
@@ -66,26 +66,9 @@ Examples:
 			defer cancel()
 
 			// If no calendar specified, try to get the primary calendar
-			if calendarID == "" {
-				calendars, err := client.GetCalendars(ctx, grantID)
-				if err != nil {
-					return common.WrapListError("calendars", err)
-				}
-				for _, cal := range calendars {
-					if cal.IsPrimary {
-						calendarID = cal.ID
-						break
-					}
-				}
-				if calendarID == "" && len(calendars) > 0 {
-					calendarID = calendars[0].ID
-				}
-				if calendarID == "" {
-					return common.NewUserError(
-						"no calendars found",
-						"Connect a calendar account with: nylas auth login",
-					)
-				}
+			calendarID, err = GetDefaultCalendarID(ctx, client, grantID, calendarID, false)
+			if err != nil {
+				return err
 			}
 
 			params := &domain.EventQueryParams{
