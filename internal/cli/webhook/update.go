@@ -1,12 +1,14 @@
 package webhook
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -87,15 +89,6 @@ You can update the URL, triggers, description, notification emails, or status.`,
 				}
 			}
 
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			// Only set fields that were explicitly provided to avoid clearing existing values
 			req := &domain.UpdateWebhookRequest{}
 			if url != "" {
@@ -114,34 +107,36 @@ You can update the URL, triggers, description, notification emails, or status.`,
 				req.Status = status
 			}
 
-			webhook, err := common.RunWithSpinnerResult("Updating webhook...", func() (*domain.Webhook, error) {
-				return c.UpdateWebhook(ctx, webhookID, req)
-			})
-			if err != nil {
-				return common.NewUserError("Failed to update webhook: "+err.Error(),
-					"Check that the webhook ID is correct. Run 'nylas webhook list' to see available webhooks")
-			}
-
-			if format == "json" {
-				enc := json.NewEncoder(cmd.OutOrStdout())
-				enc.SetIndent("", "  ")
-				return enc.Encode(webhook)
-			}
-
-			fmt.Printf("%s Webhook updated successfully!\n", common.Green.Sprint("✓"))
-			fmt.Println()
-			fmt.Printf("  ID:     %s\n", webhook.ID)
-			fmt.Printf("  URL:    %s\n", webhook.WebhookURL)
-			fmt.Printf("  Status: %s %s\n", getStatusIcon(webhook.Status), webhook.Status)
-
-			if len(webhook.TriggerTypes) > 0 {
-				fmt.Println("\nTriggers:")
-				for _, t := range webhook.TriggerTypes {
-					fmt.Printf("  • %s\n", t)
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				webhook, err := common.RunWithSpinnerResult("Updating webhook...", func() (*domain.Webhook, error) {
+					return client.UpdateWebhook(ctx, webhookID, req)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapUpdateError("webhook", err)
 				}
-			}
 
-			return nil
+				if format == "json" {
+					enc := json.NewEncoder(cmd.OutOrStdout())
+					enc.SetIndent("", "  ")
+					return struct{}{}, enc.Encode(webhook)
+				}
+
+				fmt.Printf("%s Webhook updated successfully!\n", common.Green.Sprint("✓"))
+				fmt.Println()
+				fmt.Printf("  ID:     %s\n", webhook.ID)
+				fmt.Printf("  URL:    %s\n", webhook.WebhookURL)
+				fmt.Printf("  Status: %s %s\n", getStatusIcon(webhook.Status), webhook.Status)
+
+				if len(webhook.TriggerTypes) > 0 {
+					fmt.Println("\nTriggers:")
+					for _, t := range webhook.TriggerTypes {
+						fmt.Printf("  • %s\n", t)
+					}
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

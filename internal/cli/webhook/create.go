@@ -1,12 +1,14 @@
 package webhook
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -81,15 +83,6 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 				}
 			}
 
-			c, err := common.GetNylasClient()
-			if err != nil {
-				return common.NewUserError("Failed to initialize client: "+err.Error(),
-					"Run 'nylas auth login' to authenticate")
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			req := &domain.CreateWebhookRequest{
 				WebhookURL:                 url,
 				TriggerTypes:               allTriggers,
@@ -97,40 +90,42 @@ Use 'nylas webhook triggers' to see available trigger types.`,
 				NotificationEmailAddresses: notifyEmails,
 			}
 
-			webhook, err := common.RunWithSpinnerResult("Creating webhook...", func() (*domain.Webhook, error) {
-				return c.CreateWebhook(ctx, req)
+			_, err := common.WithClientNoGrant(func(ctx context.Context, client ports.NylasClient) (struct{}, error) {
+				webhook, err := common.RunWithSpinnerResult("Creating webhook...", func() (*domain.Webhook, error) {
+					return client.CreateWebhook(ctx, req)
+				})
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("webhook", err)
+				}
+
+				if format == "json" {
+					enc := json.NewEncoder(cmd.OutOrStdout())
+					enc.SetIndent("", "  ")
+					return struct{}{}, enc.Encode(webhook)
+				}
+
+				fmt.Printf("%s Webhook created successfully!\n", common.Green.Sprint("✓"))
+				fmt.Println()
+				fmt.Printf("  ID:     %s\n", webhook.ID)
+				fmt.Printf("  URL:    %s\n", webhook.WebhookURL)
+				fmt.Printf("  Status: %s\n", webhook.Status)
+				fmt.Println()
+				fmt.Println("Triggers:")
+				for _, t := range webhook.TriggerTypes {
+					fmt.Printf("  • %s\n", t)
+				}
+
+				if webhook.WebhookSecret != "" {
+					fmt.Println()
+					fmt.Printf("%s Save your webhook secret - it won't be shown again:\n", common.Yellow.Sprint("Important:"))
+					fmt.Printf("  Secret: %s\n", webhook.WebhookSecret)
+					fmt.Println()
+					fmt.Println("Use this secret to verify webhook signatures.")
+				}
+
+				return struct{}{}, nil
 			})
-			if err != nil {
-				return common.NewUserError("Failed to create webhook: "+err.Error(),
-					"Check that the webhook URL is accessible and you have permission to create webhooks")
-			}
-
-			if format == "json" {
-				enc := json.NewEncoder(cmd.OutOrStdout())
-				enc.SetIndent("", "  ")
-				return enc.Encode(webhook)
-			}
-
-			fmt.Printf("%s Webhook created successfully!\n", common.Green.Sprint("✓"))
-			fmt.Println()
-			fmt.Printf("  ID:     %s\n", webhook.ID)
-			fmt.Printf("  URL:    %s\n", webhook.WebhookURL)
-			fmt.Printf("  Status: %s\n", webhook.Status)
-			fmt.Println()
-			fmt.Println("Triggers:")
-			for _, t := range webhook.TriggerTypes {
-				fmt.Printf("  • %s\n", t)
-			}
-
-			if webhook.WebhookSecret != "" {
-				fmt.Println()
-				fmt.Printf("%s Save your webhook secret - it won't be shown again:\n", common.Yellow.Sprint("Important:"))
-				fmt.Printf("  Secret: %s\n", webhook.WebhookSecret)
-				fmt.Println()
-				fmt.Println("Use this secret to verify webhook signatures.")
-			}
-
-			return nil
+			return err
 		},
 	}
 
