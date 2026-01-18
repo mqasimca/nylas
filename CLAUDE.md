@@ -170,6 +170,8 @@ This section captures lessons learned from mistakes. Claude updates this section
 - Success/Error messages: Use `common.PrintSuccess()`/`common.PrintError()`, delegate from package-local helpers
 - HTTP handlers: Use `httputil.WriteJSON()`/`httputil.LimitedBody()` for consistent response handling
 - AI clients: Use shared helpers in `adapters/ai/base_client.go` (ConvertMessagesToMaps, ConvertToolsOpenAIFormat, FallbackStreamChat)
+- Output formatting: Use `common.GetOutputWriter(cmd)` for JSON/YAML/quiet support, NEVER create custom --format flags
+- Client helpers: Use `common.WithClient()` and `WithClientNoGrant()` to reduce boilerplate, NEVER duplicate setup code
 
 ### Non-Obvious Workflows
 - Progressive disclosure: Keep main skill files under 100 lines, use references/ for details

@@ -24,6 +24,15 @@ Complete reference for reusable helper functions. **ALWAYS check these before wr
 | **Format** | `NewTable(headers...)` | Create display table |
 | **Format** | `PrintSuccess/Error/Warning/Info` | Colored output |
 | **Format** | `Confirm(prompt, default)` | Y/N confirmation |
+| **Output** | `GetOutputWriter(cmd)` | Get output writer based on flags |
+| **Output** | `GetOutputOptions(cmd)` | Extract output options from flags |
+| **Output** | `AddOutputFlags(cmd)` | Add global output flags to command |
+| **Output** | `IsJSON(cmd)` | Check if JSON/YAML/quiet output |
+| **Output** | `IsWide(cmd)` | Check if wide mode enabled |
+| **Output** | `WriteListWithColumns(cmd, data, cols)` | Write list with table/JSON |
+| **Output** | `WriteListWithWideColumns(cmd, data, normal, wide)` | Write with wide support |
+| **Client** | `WithClient[T](args, fn)` | Execute with client+grant setup |
+| **Client** | `WithClientNoGrant[T](fn)` | Execute with client (no grant) |
 | **Pagination** | `FetchAllPages[T](ctx, config, fetcher)` | Paginated API calls |
 | **Pagination** | `FetchAllWithProgress[T](...)` | With progress indicator |
 | **Progress** | `NewSpinner(msg)` | Loading spinner |

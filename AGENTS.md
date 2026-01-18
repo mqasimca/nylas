@@ -115,6 +115,18 @@ common.FormatSize(bytes)      // "1.5 MB"
 common.FormatTimeAgo(time)    // "2 hours ago"
 common.PrintJSON(data)        // Pretty-print JSON
 
+// Structured output (use in list commands)
+out := common.GetOutputWriter(cmd)  // Gets writer based on --json/--yaml/--quiet
+out.Write(data)                     // Outputs in correct format
+
+// Client helpers (reduce boilerplate)
+common.WithClient(args, func(ctx, client, grantID) (T, error) {
+    return client.DoSomething(ctx, grantID)
+})
+common.WithClientNoGrant(func(ctx, client) (T, error) {
+    return client.DoSomething(ctx)
+})
+
 // HTTP handlers (in adapters)
 httputil.WriteJSON(w, http.StatusOK, data)
 body, err := httputil.LimitedBody(r, maxSize)
