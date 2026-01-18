@@ -10,7 +10,6 @@ import (
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
 	"github.com/mqasimca/nylas/internal/adapters/keyring"
-	"github.com/mqasimca/nylas/internal/adapters/nylas"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
@@ -374,26 +373,17 @@ func runTUI(refreshInterval time.Duration, initialView string, theme tui.ThemeNa
 		cfg = &domain.Config{}
 	}
 
-	// Initialize credentials and client
+	// Get Nylas client using the common helper (handles env vars and keyring)
+	client, err := common.GetNylasClient()
+	if err != nil {
+		return err
+	}
+
+	// Initialize secret store for grant management
 	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
 	if err != nil {
 		return common.WrapError(err)
 	}
-
-	// Get API key
-	apiKey, err := secretStore.Get(ports.KeyAPIKey)
-	if err != nil {
-		return fmt.Errorf("API key not configured. Run 'nylas auth config' first")
-	}
-
-	// Get credentials
-	clientID, _ := secretStore.Get(ports.KeyClientID)
-	clientSecret, _ := secretStore.Get(ports.KeyClientSecret)
-
-	// Create Nylas client
-	client := nylas.NewHTTPClient()
-	client.SetRegion(cfg.Region)
-	client.SetCredentials(clientID, clientSecret, apiKey)
 
 	// Get default grant
 	grantStore := keyring.NewGrantStore(secretStore)
