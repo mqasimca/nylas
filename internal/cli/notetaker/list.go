@@ -1,10 +1,12 @@
 package notetaker
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -35,63 +37,53 @@ func newListCmd() *cobra.Command {
   nylas notetaker list --json`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
-			ctx, cancel := common.CreateContext()
-			defer cancel()
-
 			params := &domain.NotetakerQueryParams{
 				Limit: limit,
 				State: state,
 			}
 
-			notetakers, err := client.ListNotetakers(ctx, grantID, params)
-			if err != nil {
-				return common.WrapListError("notetakers", err)
-			}
-
-			if outputJSON {
-				return common.PrintJSON(notetakers)
-			}
-
-			if len(notetakers) == 0 {
-				common.PrintEmptyState("notetakers")
-				return nil
-			}
-
-			fmt.Printf("Found %d notetaker(s):\n\n", len(notetakers))
-
-			for _, n := range notetakers {
-				_, _ = common.Cyan.Printf("ID: %s\n", n.ID)
-				fmt.Printf("  State:   %s\n", formatState(n.State))
-				if n.MeetingTitle != "" {
-					fmt.Printf("  Title:   %s\n", n.MeetingTitle)
+			_, err := common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				notetakers, err := client.ListNotetakers(ctx, grantID, params)
+				if err != nil {
+					return struct{}{}, common.WrapListError("notetakers", err)
 				}
-				if n.MeetingLink != "" {
-					fmt.Printf("  Link:    %s\n", common.Truncate(n.MeetingLink, 60))
-				}
-				if n.MeetingInfo != nil && n.MeetingInfo.Provider != "" {
-					caser := cases.Title(language.English)
-					_, _ = common.Green.Printf("  Provider: %s\n", caser.String(n.MeetingInfo.Provider))
-				}
-				if !n.JoinTime.IsZero() {
-					_, _ = common.Yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format(common.DisplayWeekdayFull))
-				}
-				if !n.CreatedAt.IsZero() {
-					_, _ = common.Dim.Printf("  Created: %s\n", common.FormatTimeAgo(n.CreatedAt))
-				}
-				fmt.Println()
-			}
 
-			return nil
+				if outputJSON {
+					return struct{}{}, common.PrintJSON(notetakers)
+				}
+
+				if len(notetakers) == 0 {
+					common.PrintEmptyState("notetakers")
+					return struct{}{}, nil
+				}
+
+				fmt.Printf("Found %d notetaker(s):\n\n", len(notetakers))
+
+				for _, n := range notetakers {
+					_, _ = common.Cyan.Printf("ID: %s\n", n.ID)
+					fmt.Printf("  State:   %s\n", formatState(n.State))
+					if n.MeetingTitle != "" {
+						fmt.Printf("  Title:   %s\n", n.MeetingTitle)
+					}
+					if n.MeetingLink != "" {
+						fmt.Printf("  Link:    %s\n", common.Truncate(n.MeetingLink, 60))
+					}
+					if n.MeetingInfo != nil && n.MeetingInfo.Provider != "" {
+						caser := cases.Title(language.English)
+						_, _ = common.Green.Printf("  Provider: %s\n", caser.String(n.MeetingInfo.Provider))
+					}
+					if !n.JoinTime.IsZero() {
+						_, _ = common.Yellow.Printf("  Join:    %s\n", n.JoinTime.Local().Format(common.DisplayWeekdayFull))
+					}
+					if !n.CreatedAt.IsZero() {
+						_, _ = common.Dim.Printf("  Created: %s\n", common.FormatTimeAgo(n.CreatedAt))
+					}
+					fmt.Println()
+				}
+
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 

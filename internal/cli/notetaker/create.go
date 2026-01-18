@@ -1,6 +1,7 @@
 package notetaker
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/ports"
 	"github.com/spf13/cobra"
 )
 
@@ -52,16 +54,6 @@ record the meeting, and generate a transcript when complete.`,
 				return common.NewUserError(fmt.Sprintf("invalid meeting link URL: %s", meetingLink), "must be a valid http/https URL")
 			}
 
-			client, err := common.GetNylasClient()
-			if err != nil {
-				return err
-			}
-
-			grantID, err := common.GetGrantID(args)
-			if err != nil {
-				return err
-			}
-
 			req := &domain.CreateNotetakerRequest{
 				MeetingLink: meetingLink,
 			}
@@ -82,28 +74,28 @@ record the meeting, and generate a transcript when complete.`,
 				}
 			}
 
-			ctx, cancel := common.CreateContext()
-			defer cancel()
+			_, err = common.WithClient(args, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
+				notetaker, err := client.CreateNotetaker(ctx, grantID, req)
+				if err != nil {
+					return struct{}{}, common.WrapCreateError("notetaker", err)
+				}
 
-			notetaker, err := client.CreateNotetaker(ctx, grantID, req)
-			if err != nil {
-				return common.WrapCreateError("notetaker", err)
-			}
+				if outputJSON {
+					return struct{}{}, common.PrintJSON(notetaker)
+				}
 
-			if outputJSON {
-				return common.PrintJSON(notetaker)
-			}
+				_, _ = common.BoldGreen.Println("✓ Notetaker created successfully!")
+				fmt.Println()
+				_, _ = common.Cyan.Printf("ID:    %s\n", notetaker.ID)
+				fmt.Printf("State: %s\n", formatState(notetaker.State))
+				fmt.Printf("Link:  %s\n", notetaker.MeetingLink)
+				if !notetaker.JoinTime.IsZero() {
+					fmt.Printf("Join:  %s\n", notetaker.JoinTime.Local().Format(common.DisplayWeekdayFullWithTZ))
+				}
 
-			_, _ = common.BoldGreen.Println("✓ Notetaker created successfully!")
-			fmt.Println()
-			_, _ = common.Cyan.Printf("ID:    %s\n", notetaker.ID)
-			fmt.Printf("State: %s\n", formatState(notetaker.State))
-			fmt.Printf("Link:  %s\n", notetaker.MeetingLink)
-			if !notetaker.JoinTime.IsZero() {
-				fmt.Printf("Join:  %s\n", notetaker.JoinTime.Local().Format(common.DisplayWeekdayFullWithTZ))
-			}
-
-			return nil
+				return struct{}{}, nil
+			})
+			return err
 		},
 	}
 
