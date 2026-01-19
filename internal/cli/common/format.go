@@ -114,18 +114,26 @@ func (f *Formatter) formatCSV(data any) error {
 		first = first.Elem()
 	}
 
-	headers := getCSVHeaders(first)
+	// Pre-compute field info once for all rows (avoids repeated reflection)
+	fields := getFieldInfo(first.Type())
+	headers := make([]string, len(fields))
+	for i, field := range fields {
+		headers[i] = field.name
+	}
 	if err := writer.Write(headers); err != nil {
 		return err
 	}
 
-	// Write rows
+	// Pre-allocate row slice, reuse for all rows
+	row := make([]string, len(fields))
+
+	// Write rows using cached field info
 	for i := 0; i < v.Len(); i++ {
 		elem := v.Index(i)
 		if elem.Kind() == reflect.Ptr {
 			elem = elem.Elem()
 		}
-		row := getCSVRow(elem)
+		getCSVRowInto(elem, fields, row)
 		if err := writer.Write(row); err != nil {
 			return err
 		}
@@ -150,32 +158,56 @@ func (f *Formatter) formatCSVSingle(writer *csv.Writer, data any) error {
 	return writer.Write(row)
 }
 
-// getCSVHeaders extracts CSV headers from a struct.
-func getCSVHeaders(v reflect.Value) []string {
-	if v.Kind() != reflect.Struct {
-		return []string{"value"}
+// fieldInfo caches field metadata to avoid repeated reflection.
+type fieldInfo struct {
+	index int
+	name  string
+}
+
+// getFieldInfo extracts field metadata from a struct type once.
+// This avoids repeated reflection on every row.
+func getFieldInfo(t reflect.Type) []fieldInfo {
+	if t.Kind() != reflect.Struct {
+		return nil
 	}
 
-	t := v.Type()
-	headers := make([]string, 0, t.NumField())
-
+	fields := make([]fieldInfo, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if !field.IsExported() {
 			continue
 		}
 
-		// Use json tag if available
+		// Skip fields with json:"-"
+		tag := field.Tag.Get("json")
+		if tag == "-" {
+			continue
+		}
+
+		// Use json tag name if available
 		name := field.Name
-		if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
+		if tag != "" {
 			parts := strings.Split(tag, ",")
 			if parts[0] != "" {
 				name = parts[0]
 			}
 		}
-		headers = append(headers, name)
+		fields = append(fields, fieldInfo{index: i, name: name})
+	}
+	return fields
+}
+
+// getCSVHeaders extracts CSV headers from a struct.
+func getCSVHeaders(v reflect.Value) []string {
+	if v.Kind() != reflect.Struct {
+		return []string{"value"}
 	}
 
+	fields := getFieldInfo(v.Type())
+	headers := make([]string, len(fields))
+	for i, f := range fields {
+		headers[i] = f.name
+	}
 	return headers
 }
 
@@ -185,25 +217,19 @@ func getCSVRow(v reflect.Value) []string {
 		return []string{fmt.Sprintf("%v", v.Interface())}
 	}
 
-	t := v.Type()
-	row := make([]string, 0, t.NumField())
-
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		if !field.IsExported() {
-			continue
-		}
-
-		// Skip fields with json:"-"
-		if tag := field.Tag.Get("json"); tag == "-" {
-			continue
-		}
-
-		value := v.Field(i)
-		row = append(row, formatValue(value))
+	fields := getFieldInfo(v.Type())
+	row := make([]string, len(fields))
+	for i, f := range fields {
+		row[i] = formatValue(v.Field(f.index))
 	}
-
 	return row
+}
+
+// getCSVRowInto fills an existing slice with row values, avoiding allocation.
+func getCSVRowInto(v reflect.Value, fields []fieldInfo, row []string) {
+	for i, f := range fields {
+		row[i] = formatValue(v.Field(f.index))
+	}
 }
 
 // formatValue formats a reflect.Value as a string.
@@ -511,11 +537,17 @@ func truncateCell(s string, maxLen int) string {
 	return string(runes[:maxLen-3]) + "..."
 }
 
-// stripAnsiCodes removes ANSI escape sequences from a string
+// stripAnsiCodes removes ANSI escape sequences from a string.
+// Fast path: returns original string if no escape sequences present.
 func stripAnsiCodes(s string) string {
+	// Fast path: no escape sequences present
+	if !strings.ContainsRune(s, '\x1b') {
+		return s
+	}
+
 	// ANSI codes start with ESC[ and end with a letter
-	// This regex matches: ESC + [ + any chars + letter
 	var result strings.Builder
+	result.Grow(len(s)) // Pre-allocate for efficiency
 	inEscape := false
 	escStart := false
 

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -117,8 +118,10 @@ func (c *HTTPClient) setAuthHeader(req *http.Request) {
 }
 
 // parseError parses an error response from the API.
+// Uses streaming decoder with size limit to avoid large allocations.
 func (c *HTTPClient) parseError(resp *http.Response) error {
-	body, _ := io.ReadAll(resp.Body)
+	// Limit error response body to 10KB to prevent memory issues
+	limitedReader := io.LimitReader(resp.Body, 10*1024)
 
 	var errResp struct {
 		Error struct {
@@ -126,7 +129,9 @@ func (c *HTTPClient) parseError(resp *http.Response) error {
 			Type    string `json:"type"`
 		} `json:"error"`
 	}
-	if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error.Message != "" {
+
+	// Use streaming decoder instead of ReadAll + Unmarshal
+	if err := json.NewDecoder(limitedReader).Decode(&errResp); err == nil && errResp.Error.Message != "" {
 		return fmt.Errorf("%w: %s", domain.ErrAPIError, errResp.Error.Message)
 	}
 
@@ -173,17 +178,33 @@ func (c *HTTPClient) doRequest(ctx context.Context, req *http.Request) (*http.Re
 		// Ensure context has timeout
 		ctxWithTimeout, cancel := c.ensureContext(ctx)
 
-		// Update request context
-		reqWithCtx := req.Clone(ctxWithTimeout)
+		// Optimize: on first attempt, use WithContext to avoid allocation.
+		// On retries, we must clone since the original request was already used.
+		var reqToUse *http.Request
+		if attempt == 0 {
+			reqToUse = req.WithContext(ctxWithTimeout)
+		} else {
+			reqToUse = req.Clone(ctxWithTimeout)
+		}
 
 		// Execute request
-		resp, err := c.httpClient.Do(reqWithCtx)
+		resp, err := c.httpClient.Do(reqToUse)
 		cancel() // Cancel timeout context
 
 		if err != nil {
+			// Don't retry if the parent context is done
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+
+			// Don't retry context timeout/cancellation errors - they'll just timeout again
+			if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+				return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
+			}
+
 			lastErr = fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
 
-			// Network errors are retryable
+			// Only retry transient network errors (connection refused, DNS, etc.)
 			if attempt < c.maxRetries {
 				delay := c.calculateBackoff(attempt, nil)
 				select {

@@ -58,7 +58,7 @@ func NewManager(cfg Config) (*Manager, error) {
 
 	return &Manager{
 		basePath: cfg.BasePath,
-		dbs:      make(map[string]*sql.DB),
+		dbs:      make(map[string]*sql.DB, 4), // Pre-allocate for typical 1-4 accounts
 	}, nil
 }
 

@@ -235,9 +235,10 @@ func (s *EmailStore) SearchWithQuery(sq *SearchQuery, limit int) ([]*CachedEmail
 	}
 	defer func() { _ = rows.Close() }()
 
-	var emails []*CachedEmail
+	// Pre-allocate slice with expected capacity
+	emails := make([]*CachedEmail, 0, limit)
 	for rows.Next() {
-		email, err := scanEmailRow(rows)
+		email, err := scanEmailGeneric(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scan email: %w", err)
 		}

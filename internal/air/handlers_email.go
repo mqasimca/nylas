@@ -327,34 +327,46 @@ func emailToResponse(m domain.Message, includeBody bool) EmailResponse {
 		resp.Body = m.Body
 	}
 
-	// Convert participants
-	for _, p := range m.From {
-		resp.From = append(resp.From, EmailParticipantResponse{
-			Name:  p.Name,
-			Email: p.Email,
-		})
+	// Convert participants with pre-allocated slices
+	if len(m.From) > 0 {
+		resp.From = make([]EmailParticipantResponse, 0, len(m.From))
+		for _, p := range m.From {
+			resp.From = append(resp.From, EmailParticipantResponse{
+				Name:  p.Name,
+				Email: p.Email,
+			})
+		}
 	}
-	for _, p := range m.To {
-		resp.To = append(resp.To, EmailParticipantResponse{
-			Name:  p.Name,
-			Email: p.Email,
-		})
+	if len(m.To) > 0 {
+		resp.To = make([]EmailParticipantResponse, 0, len(m.To))
+		for _, p := range m.To {
+			resp.To = append(resp.To, EmailParticipantResponse{
+				Name:  p.Name,
+				Email: p.Email,
+			})
+		}
 	}
-	for _, p := range m.Cc {
-		resp.Cc = append(resp.Cc, EmailParticipantResponse{
-			Name:  p.Name,
-			Email: p.Email,
-		})
+	if len(m.Cc) > 0 {
+		resp.Cc = make([]EmailParticipantResponse, 0, len(m.Cc))
+		for _, p := range m.Cc {
+			resp.Cc = append(resp.Cc, EmailParticipantResponse{
+				Name:  p.Name,
+				Email: p.Email,
+			})
+		}
 	}
 
-	// Convert attachments
-	for _, a := range m.Attachments {
-		resp.Attachments = append(resp.Attachments, AttachmentResponse{
-			ID:          a.ID,
-			Filename:    a.Filename,
-			ContentType: a.ContentType,
-			Size:        a.Size,
-		})
+	// Convert attachments with pre-allocated slice
+	if len(m.Attachments) > 0 {
+		resp.Attachments = make([]AttachmentResponse, 0, len(m.Attachments))
+		for _, a := range m.Attachments {
+			resp.Attachments = append(resp.Attachments, AttachmentResponse{
+				ID:          a.ID,
+				Filename:    a.Filename,
+				ContentType: a.ContentType,
+				Size:        a.Size,
+			})
+		}
 	}
 
 	return resp

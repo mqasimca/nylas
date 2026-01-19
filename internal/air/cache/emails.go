@@ -1,11 +1,21 @@
 package cache
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 )
+
+// bufferPool provides reusable buffers for JSON marshaling to reduce allocations.
+var bufferPool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
+}
 
 // CachedEmail represents an email stored in the cache.
 type CachedEmail struct {
@@ -85,15 +95,30 @@ func (s *EmailStore) PutBatch(emails []*CachedEmail) error {
 	}
 	defer func() { _ = stmt.Close() }()
 
+	// Get reusable buffer from pool to avoid allocations per email
+	buf := bufferPool.Get().(*bytes.Buffer)
+	defer bufferPool.Put(buf)
+
 	now := time.Now().Unix()
 	for _, email := range emails {
-		toJSON, _ := json.Marshal(email.To)
-		ccJSON, _ := json.Marshal(email.CC)
-		bccJSON, _ := json.Marshal(email.BCC)
+		// Marshal To field
+		buf.Reset()
+		_ = json.NewEncoder(buf).Encode(email.To)
+		toJSON := strings.TrimSuffix(buf.String(), "\n")
+
+		// Marshal CC field
+		buf.Reset()
+		_ = json.NewEncoder(buf).Encode(email.CC)
+		ccJSON := strings.TrimSuffix(buf.String(), "\n")
+
+		// Marshal BCC field
+		buf.Reset()
+		_ = json.NewEncoder(buf).Encode(email.BCC)
+		bccJSON := strings.TrimSuffix(buf.String(), "\n")
 
 		_, err = stmt.Exec(
 			email.ID, email.ThreadID, email.FolderID, email.Subject, email.Snippet,
-			email.FromName, email.FromEmail, string(toJSON), string(ccJSON), string(bccJSON),
+			email.FromName, email.FromEmail, toJSON, ccJSON, bccJSON,
 			email.Date.Unix(), boolToInt(email.Unread), boolToInt(email.Starred), boolToInt(email.HasAttachments),
 			email.BodyHTML, email.BodyText, now,
 		)
@@ -120,57 +145,65 @@ func (s *EmailStore) Get(id string) (*CachedEmail, error) {
 
 // List retrieves emails with pagination and filtering.
 func (s *EmailStore) List(opts ListOptions) ([]*CachedEmail, error) {
-	query := `
+	// Use strings.Builder to avoid repeated string concatenations
+	var query strings.Builder
+	query.Grow(512) // Pre-allocate for typical query size
+	query.WriteString(`
 		SELECT id, thread_id, folder_id, subject, snippet,
 			from_name, from_email, to_json, cc_json, bcc_json,
 			date, unread, starred, has_attachments,
 			body_html, body_text, cached_at
 		FROM emails
-		WHERE 1=1
-	`
+		WHERE 1=1`)
+
 	var args []any
 
 	if opts.FolderID != "" {
-		query += " AND folder_id = ?"
+		query.WriteString(" AND folder_id = ?")
 		args = append(args, opts.FolderID)
 	}
 	if opts.ThreadID != "" {
-		query += " AND thread_id = ?"
+		query.WriteString(" AND thread_id = ?")
 		args = append(args, opts.ThreadID)
 	}
 	if opts.UnreadOnly {
-		query += " AND unread = 1"
+		query.WriteString(" AND unread = 1")
 	}
 	if opts.StarredOnly {
-		query += " AND starred = 1"
+		query.WriteString(" AND starred = 1")
 	}
 	if !opts.Since.IsZero() {
-		query += " AND date >= ?"
+		query.WriteString(" AND date >= ?")
 		args = append(args, opts.Since.Unix())
 	}
 	if !opts.Before.IsZero() {
-		query += " AND date < ?"
+		query.WriteString(" AND date < ?")
 		args = append(args, opts.Before.Unix())
 	}
 
-	query += " ORDER BY date DESC"
+	query.WriteString(" ORDER BY date DESC")
 
 	if opts.Limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", opts.Limit)
+		fmt.Fprintf(&query, " LIMIT %d", opts.Limit)
 	}
 	if opts.Offset > 0 {
-		query += fmt.Sprintf(" OFFSET %d", opts.Offset)
+		fmt.Fprintf(&query, " OFFSET %d", opts.Offset)
 	}
 
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.Query(query.String(), args...)
 	if err != nil {
 		return nil, fmt.Errorf("query emails: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
+	// Pre-allocate slice if limit is known
 	var emails []*CachedEmail
+	if opts.Limit > 0 {
+		emails = make([]*CachedEmail, 0, opts.Limit)
+	}
+
 	for rows.Next() {
-		email, err := scanEmailRow(rows)
+		email, err := scanEmailGeneric(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scan email: %w", err)
 		}
@@ -215,9 +248,10 @@ func (s *EmailStore) Search(query string, limit int) ([]*CachedEmail, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	var emails []*CachedEmail
+	// Pre-allocate slice with expected capacity
+	emails := make([]*CachedEmail, 0, limit)
 	for rows.Next() {
-		email, err := scanEmailRow(rows)
+		email, err := scanEmailGeneric(rows)
 		if err != nil {
 			return nil, fmt.Errorf("scan email: %w", err)
 		}
@@ -239,27 +273,29 @@ func (s *EmailStore) UpdateFlags(id string, unread, starred *bool) error {
 		return nil
 	}
 
-	query := "UPDATE emails SET"
+	// Use strings.Builder to avoid string concatenation in loop
+	var query strings.Builder
+	query.WriteString("UPDATE emails SET")
 	var args []any
-	var updates []string
+	needComma := false
 
 	if unread != nil {
-		updates = append(updates, " unread = ?")
+		query.WriteString(" unread = ?")
 		args = append(args, boolToInt(*unread))
+		needComma = true
 	}
 	if starred != nil {
-		updates = append(updates, " starred = ?")
+		if needComma {
+			query.WriteString(",")
+		}
+		query.WriteString(" starred = ?")
 		args = append(args, boolToInt(*starred))
 	}
 
-	query += updates[0]
-	for i := 1; i < len(updates); i++ {
-		query += "," + updates[i]
-	}
-	query += " WHERE id = ?"
+	query.WriteString(" WHERE id = ?")
 	args = append(args, id)
 
-	_, err := s.db.Exec(query, args...)
+	_, err := s.db.Exec(query.String(), args...)
 	return err
 }
 
@@ -277,14 +313,20 @@ func (s *EmailStore) CountUnread() (int, error) {
 	return count, err
 }
 
-// scanEmail scans a single row into a CachedEmail.
-func scanEmail(row *sql.Row) (*CachedEmail, error) {
+// scanner is a common interface for sql.Row and sql.Rows.
+type scanner interface {
+	Scan(dest ...any) error
+}
+
+// scanEmailGeneric scans a row into a CachedEmail using the scanner interface.
+// This consolidates scanEmail and scanEmailRow to avoid code duplication.
+func scanEmailGeneric(s scanner) (*CachedEmail, error) {
 	var email CachedEmail
 	var toJSON, ccJSON, bccJSON sql.NullString
 	var dateUnix, cachedAtUnix int64
 	var unread, starred, hasAttach int
 
-	err := row.Scan(
+	err := s.Scan(
 		&email.ID, &email.ThreadID, &email.FolderID, &email.Subject, &email.Snippet,
 		&email.FromName, &email.FromEmail, &toJSON, &ccJSON, &bccJSON,
 		&dateUnix, &unread, &starred, &hasAttach,
@@ -313,40 +355,9 @@ func scanEmail(row *sql.Row) (*CachedEmail, error) {
 	return &email, nil
 }
 
-// scanEmailRow scans a rows result into a CachedEmail.
-func scanEmailRow(rows *sql.Rows) (*CachedEmail, error) {
-	var email CachedEmail
-	var toJSON, ccJSON, bccJSON sql.NullString
-	var dateUnix, cachedAtUnix int64
-	var unread, starred, hasAttach int
-
-	err := rows.Scan(
-		&email.ID, &email.ThreadID, &email.FolderID, &email.Subject, &email.Snippet,
-		&email.FromName, &email.FromEmail, &toJSON, &ccJSON, &bccJSON,
-		&dateUnix, &unread, &starred, &hasAttach,
-		&email.BodyHTML, &email.BodyText, &cachedAtUnix,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	email.Date = time.Unix(dateUnix, 0)
-	email.CachedAt = time.Unix(cachedAtUnix, 0)
-	email.Unread = unread == 1
-	email.Starred = starred == 1
-	email.HasAttachments = hasAttach == 1
-
-	if toJSON.Valid {
-		_ = json.Unmarshal([]byte(toJSON.String), &email.To)
-	}
-	if ccJSON.Valid {
-		_ = json.Unmarshal([]byte(ccJSON.String), &email.CC)
-	}
-	if bccJSON.Valid {
-		_ = json.Unmarshal([]byte(bccJSON.String), &email.BCC)
-	}
-
-	return &email, nil
+// scanEmail scans a single sql.Row into a CachedEmail.
+func scanEmail(row *sql.Row) (*CachedEmail, error) {
+	return scanEmailGeneric(row)
 }
 
 func boolToInt(b bool) int {
