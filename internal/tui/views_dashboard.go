@@ -52,11 +52,12 @@ func (v *DashboardView) HandleKey(event *tcell.EventKey) *tcell.EventKey {
 func (v *DashboardView) Load() {
 	v.view.Clear()
 
-	// k9s style colors
-	title := colorToHex(v.app.styles.TitleFg)
-	key := colorToHex(v.app.styles.MenuKeyFg)
-	desc := colorToHex(v.app.styles.FgColor)
-	muted := colorToHex(v.app.styles.BorderColor)
+	// Use cached Hex() method
+	st := v.app.styles
+	title := st.Hex(st.TitleFg)
+	key := st.Hex(st.MenuKeyFg)
+	desc := st.Hex(st.FgColor)
+	muted := st.Hex(st.BorderColor)
 
 	resources := []struct {
 		cmd  string

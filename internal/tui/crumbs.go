@@ -44,7 +44,7 @@ func (c *Crumbs) render() {
 
 	// k9s style: crumb with background color
 	// Active crumb: black text on orange background
-	fg := colorToHex(c.styles.CrumbActiveFg)
-	bg := colorToHex(c.styles.CrumbActiveBg)
+	fg := c.styles.Hex(c.styles.CrumbActiveFg)
+	bg := c.styles.Hex(c.styles.CrumbActiveBg)
 	_, _ = fmt.Fprintf(c, "[%s:%s:b] :%s [-:-:-]", fg, bg, strings.ToLower(c.path))
 }

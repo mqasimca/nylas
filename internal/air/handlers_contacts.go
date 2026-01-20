@@ -22,14 +22,8 @@ func (s *Server) handleContactsRoute(w http.ResponseWriter, r *http.Request) {
 
 // handleListContacts returns contacts with optional filtering.
 func (s *Server) handleListContacts(w http.ResponseWriter, r *http.Request) {
-	if s.handleDemoMode(w, ContactsResponse{Contacts: demoContacts(), HasMore: false}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, ContactsResponse{Contacts: demoContacts(), HasMore: false})
+	if grantID == "" {
 		return
 	}
 

@@ -138,8 +138,8 @@ func (p *CommandPalette) updateSuggestions(text string) {
 
 	// Populate dropdown
 	styles := p.app.styles
-	cmdColor := colorToHex(styles.InfoColor)
-	aliasColor := colorToHex(styles.BorderColor)
+	cmdColor := styles.Hex(styles.InfoColor)
+	aliasColor := styles.Hex(styles.BorderColor)
 
 	for _, cmd := range p.suggestions {
 		// Format: command name with aliases

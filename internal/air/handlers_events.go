@@ -11,14 +11,8 @@ import (
 
 // handleListEvents returns events for a calendar with optional date filtering.
 func (s *Server) handleListEvents(w http.ResponseWriter, r *http.Request) {
-	if s.handleDemoMode(w, EventsResponse{Events: demoEvents(), HasMore: false}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, EventsResponse{Events: demoEvents(), HasMore: false})
+	if grantID == "" {
 		return
 	}
 
@@ -142,6 +136,7 @@ func (s *Server) handleEventByID(w http.ResponseWriter, r *http.Request) {
 
 // handleCreateEvent creates a new event.
 func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
+	// Special demo mode: generate dynamic response with timestamp
 	if s.demoMode {
 		now := time.Now()
 		writeJSON(w, http.StatusOK, EventActionResponse{
@@ -159,11 +154,8 @@ func (s *Server) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -249,6 +241,7 @@ func (s *Server) handleGetEvent(w http.ResponseWriter, r *http.Request, eventID 
 	if calendarID == "" {
 		calendarID = "primary"
 	}
+	// Special demo mode: return specific event or 404
 	if s.demoMode {
 		for _, e := range demoEvents() {
 			if e.ID == eventID {
@@ -259,11 +252,8 @@ func (s *Server) handleGetEvent(w http.ResponseWriter, r *http.Request, eventID 
 		writeError(w, http.StatusNotFound, "Event not found")
 		return
 	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -287,18 +277,12 @@ func (s *Server) handleUpdateEvent(w http.ResponseWriter, r *http.Request, event
 	if calendarID == "" {
 		calendarID = "primary"
 	}
-	if s.handleDemoMode(w, EventActionResponse{
+	grantID := s.withAuthGrant(w, EventActionResponse{
 		Success: true,
 		Event:   &EventResponse{ID: eventID, CalendarID: calendarID, Title: "Updated Event", Status: "confirmed"},
 		Message: "Event updated (demo mode)",
-	}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	})
+	if grantID == "" {
 		return
 	}
 
@@ -374,14 +358,8 @@ func (s *Server) handleDeleteEvent(w http.ResponseWriter, r *http.Request, event
 	if calendarID == "" {
 		calendarID = "primary"
 	}
-	if s.handleDemoMode(w, EventActionResponse{Success: true, Message: "Event deleted (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, EventActionResponse{Success: true, Message: "Event deleted (demo mode)"})
+	if grantID == "" {
 		return
 	}
 

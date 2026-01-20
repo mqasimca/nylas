@@ -171,10 +171,11 @@ func (v *AvailabilityView) Refresh() {
 
 func (v *AvailabilityView) updateInfoPanel() {
 	styles := v.app.styles
-	info := fmt.Sprintf("[%s]Duration:[-] %d min\n", colorToHex(styles.InfoColor), v.duration)
-	info += fmt.Sprintf("[%s]Start:[-] %s\n", colorToHex(styles.InfoColor), v.startDate.Format(common.DisplayDateFormat))
-	info += fmt.Sprintf("[%s]End:[-] %s\n", colorToHex(styles.InfoColor), v.endDate.Format(common.DisplayDateFormat))
-	info += fmt.Sprintf("[%s]Participants:[-] %d", colorToHex(styles.InfoColor), len(v.participants))
+	infoHex := styles.Hex(styles.InfoColor)
+	info := fmt.Sprintf("[%s]Duration:[-] %d min\n", infoHex, v.duration)
+	info += fmt.Sprintf("[%s]Start:[-] %s\n", infoHex, v.startDate.Format(common.DisplayDateFormat))
+	info += fmt.Sprintf("[%s]End:[-] %s\n", infoHex, v.endDate.Format(common.DisplayDateFormat))
+	info += fmt.Sprintf("[%s]Participants:[-] %d", infoHex, len(v.participants))
 	v.infoPanel.SetText(info)
 }
 

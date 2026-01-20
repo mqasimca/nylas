@@ -22,14 +22,8 @@ func (s *Server) handleDrafts(w http.ResponseWriter, r *http.Request) {
 
 // handleListDrafts returns all drafts.
 func (s *Server) handleListDrafts(w http.ResponseWriter, r *http.Request) {
-	if s.handleDemoMode(w, DraftsResponse{Drafts: demoDrafts()}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, DraftsResponse{Drafts: demoDrafts()})
+	if grantID == "" {
 		return
 	}
 
@@ -57,14 +51,8 @@ func (s *Server) handleListDrafts(w http.ResponseWriter, r *http.Request) {
 
 // handleCreateDraft creates a new draft.
 func (s *Server) handleCreateDraft(w http.ResponseWriter, r *http.Request) {
-	if s.handleDemoMode(w, DraftResponse{ID: "demo-draft-new", Subject: "New Draft", Date: time.Now().Unix()}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, DraftResponse{ID: "demo-draft-new", Subject: "New Draft", Date: time.Now().Unix()})
+	if grantID == "" {
 		return
 	}
 
@@ -127,6 +115,7 @@ func (s *Server) handleDraftByID(w http.ResponseWriter, r *http.Request) {
 
 // handleGetDraft retrieves a single draft.
 func (s *Server) handleGetDraft(w http.ResponseWriter, r *http.Request, draftID string) {
+	// Special demo mode handling: return specific draft or 404
 	if s.demoMode {
 		for _, d := range demoDrafts() {
 			if d.ID == draftID {
@@ -137,11 +126,8 @@ func (s *Server) handleGetDraft(w http.ResponseWriter, r *http.Request, draftID 
 		writeError(w, http.StatusNotFound, "Draft not found")
 		return
 	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -161,14 +147,8 @@ func (s *Server) handleGetDraft(w http.ResponseWriter, r *http.Request, draftID 
 
 // handleUpdateDraft updates an existing draft.
 func (s *Server) handleUpdateDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	if s.handleDemoMode(w, DraftResponse{ID: draftID, Subject: "Updated Draft", Date: time.Now().Unix()}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, DraftResponse{ID: draftID, Subject: "Updated Draft", Date: time.Now().Unix()})
+	if grantID == "" {
 		return
 	}
 
@@ -202,14 +182,8 @@ func (s *Server) handleUpdateDraft(w http.ResponseWriter, r *http.Request, draft
 
 // handleDeleteDraft deletes a draft.
 func (s *Server) handleDeleteDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	if s.handleDemoMode(w, UpdateEmailResponse{Success: true, Message: "Draft deleted (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, UpdateEmailResponse{Success: true, Message: "Draft deleted (demo mode)"})
+	if grantID == "" {
 		return
 	}
 
@@ -233,14 +207,8 @@ func (s *Server) handleDeleteDraft(w http.ResponseWriter, r *http.Request, draft
 
 // handleSendDraft sends a draft.
 func (s *Server) handleSendDraft(w http.ResponseWriter, r *http.Request, draftID string) {
-	if s.handleDemoMode(w, SendMessageResponse{Success: true, MessageID: "demo-sent-" + draftID, Message: "Email sent (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, SendMessageResponse{Success: true, MessageID: "demo-sent-" + draftID, Message: "Email sent (demo mode)"})
+	if grantID == "" {
 		return
 	}
 
@@ -268,14 +236,8 @@ func (s *Server) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodPost) {
 		return
 	}
-	if s.handleDemoMode(w, SendMessageResponse{Success: true, MessageID: "demo-sent-" + time.Now().Format("20060102150405"), Message: "Email sent (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, SendMessageResponse{Success: true, MessageID: "demo-sent-" + time.Now().Format("20060102150405"), Message: "Email sent (demo mode)"})
+	if grantID == "" {
 		return
 	}
 

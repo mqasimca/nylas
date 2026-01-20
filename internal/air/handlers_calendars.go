@@ -11,17 +11,8 @@ func (s *Server) handleListCalendars(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-	if s.handleDemoMode(w, CalendarsResponse{Calendars: demoCalendars()}) {
-		return
-	}
-
-	// Check if configured
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, CalendarsResponse{Calendars: demoCalendars()})
+	if grantID == "" {
 		return
 	}
 

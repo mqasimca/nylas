@@ -73,15 +73,17 @@ func (s *StatusIndicator) render() {
 	s.Clear()
 
 	// Check for flash message
+	// Use cached Hex() method for colors
+	st := s.styles
 	if s.flashMsg != "" && time.Now().Before(s.flashExpiry) {
 		var color string
 		switch s.flashLevel {
 		case FlashError:
-			color = colorToHex(s.styles.ErrorColor)
+			color = st.Hex(st.ErrorColor)
 		case FlashWarn:
-			color = colorToHex(s.styles.WarnColor)
+			color = st.Hex(st.WarnColor)
 		default:
-			color = colorToHex(s.styles.InfoColor)
+			color = st.Hex(st.InfoColor)
 		}
 		_, _ = fmt.Fprintf(s, "[%s::b]%s[-::-]", color, s.flashMsg)
 		return
@@ -89,12 +91,12 @@ func (s *StatusIndicator) render() {
 
 	s.flashMsg = ""
 
-	// k9s style colors
-	muted := colorToHex(s.styles.BorderColor)
-	info := colorToHex(s.styles.InfoColor)
-	section := colorToHex(s.styles.InfoSectionFg)
-	success := colorToHex(s.styles.SuccessColor)
-	highlight := colorToHex(s.styles.HighlightColor)
+	// k9s style colors - use cached Hex() method
+	muted := st.Hex(st.BorderColor)
+	info := st.Hex(st.InfoColor)
+	section := st.Hex(st.InfoSectionFg)
+	success := st.Hex(st.SuccessColor)
+	highlight := st.Hex(st.HighlightColor)
 
 	// Time
 	timeStr := time.Now().Format("15:04:05")

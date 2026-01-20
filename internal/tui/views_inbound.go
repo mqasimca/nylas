@@ -259,11 +259,12 @@ func (v *InboundView) showMessageDetail(msg *domain.InboundMessage) {
 	detail.SetBorderPadding(1, 1, 2, 2)
 	detail.SetScrollable(true)
 
-	// Colors
-	title := colorToHex(v.app.styles.TitleFg)
-	key := colorToHex(v.app.styles.FgColor)
-	value := colorToHex(v.app.styles.InfoSectionFg)
-	muted := colorToHex(v.app.styles.BorderColor)
+	// Use cached Hex() method
+	st := v.app.styles
+	title := st.Hex(st.TitleFg)
+	key := st.Hex(st.FgColor)
+	value := st.Hex(st.InfoSectionFg)
+	muted := st.Hex(st.BorderColor)
 
 	// Format sender
 	from := ""

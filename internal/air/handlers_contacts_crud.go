@@ -8,6 +8,7 @@ import (
 
 // handleGetContact retrieves a single contact.
 func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request, contactID string) {
+	// Special demo mode: return specific contact or 404
 	if s.demoMode {
 		for _, c := range demoContacts() {
 			if c.ID == contactID {
@@ -18,11 +19,8 @@ func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request, contac
 		writeError(w, http.StatusNotFound, "Contact not found")
 		return
 	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -42,18 +40,12 @@ func (s *Server) handleGetContact(w http.ResponseWriter, r *http.Request, contac
 
 // handleCreateContact creates a new contact.
 func (s *Server) handleCreateContact(w http.ResponseWriter, r *http.Request) {
-	if s.handleDemoMode(w, ContactActionResponse{
+	grantID := s.withAuthGrant(w, ContactActionResponse{
 		Success: true,
 		Contact: &ContactResponse{ID: "demo-contact-new", DisplayName: "New Contact"},
 		Message: "Contact created (demo mode)",
-	}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	})
+	if grantID == "" {
 		return
 	}
 
@@ -124,18 +116,12 @@ func (s *Server) handleCreateContact(w http.ResponseWriter, r *http.Request) {
 
 // handleUpdateContact updates an existing contact.
 func (s *Server) handleUpdateContact(w http.ResponseWriter, r *http.Request, contactID string) {
-	if s.handleDemoMode(w, ContactActionResponse{
+	grantID := s.withAuthGrant(w, ContactActionResponse{
 		Success: true,
 		Contact: &ContactResponse{ID: contactID, DisplayName: "Updated Contact"},
 		Message: "Contact updated (demo mode)",
-	}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	})
+	if grantID == "" {
 		return
 	}
 
@@ -212,14 +198,8 @@ func (s *Server) handleUpdateContact(w http.ResponseWriter, r *http.Request, con
 
 // handleDeleteContact deletes a contact.
 func (s *Server) handleDeleteContact(w http.ResponseWriter, r *http.Request, contactID string) {
-	if s.handleDemoMode(w, ContactActionResponse{Success: true, Message: "Contact deleted (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, ContactActionResponse{Success: true, Message: "Contact deleted (demo mode)"})
+	if grantID == "" {
 		return
 	}
 

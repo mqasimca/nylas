@@ -136,17 +136,17 @@ type ColorCache struct {
 	Warn    string // WarnColor
 }
 
-// NewColorCache creates a ColorCache from styles, caching hex conversions.
+// NewColorCache creates a ColorCache from styles, using the cached Hex() method.
 func NewColorCache(styles *Styles) *ColorCache {
 	return &ColorCache{
-		Title:   colorToHex(styles.TitleFg),
-		Key:     colorToHex(styles.FgColor),
-		Value:   colorToHex(styles.InfoSectionFg),
-		Muted:   colorToHex(styles.BorderColor),
-		Info:    colorToHex(styles.InfoColor),
-		Hint:    colorToHex(styles.InfoColor),
-		Success: colorToHex(styles.SuccessColor),
-		Error:   colorToHex(styles.ErrorColor),
-		Warn:    colorToHex(styles.WarnColor),
+		Title:   styles.Hex(styles.TitleFg),
+		Key:     styles.Hex(styles.FgColor),
+		Value:   styles.Hex(styles.InfoSectionFg),
+		Muted:   styles.Hex(styles.BorderColor),
+		Info:    styles.Hex(styles.InfoColor),
+		Hint:    styles.Hex(styles.InfoColor),
+		Success: styles.Hex(styles.SuccessColor),
+		Error:   styles.Hex(styles.ErrorColor),
+		Warn:    styles.Hex(styles.WarnColor),
 	}
 }

@@ -26,6 +26,7 @@ func (s *Server) handleScheduledSend(w http.ResponseWriter, r *http.Request) {
 
 // listScheduledMessages returns all scheduled messages.
 func (s *Server) listScheduledMessages(w http.ResponseWriter, r *http.Request) {
+	// Special demo mode: return sample scheduled messages
 	if s.demoMode {
 		now := time.Now()
 		writeJSON(w, http.StatusOK, map[string]any{
@@ -48,13 +49,8 @@ func (s *Server) listScheduledMessages(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -136,6 +132,7 @@ func (s *Server) cancelScheduledMessage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Special demo mode: return success response
 	if s.demoMode {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"success":     true,
@@ -144,13 +141,8 @@ func (s *Server) cancelScheduledMessage(w http.ResponseWriter, r *http.Request) 
 		})
 		return
 	}
-
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 

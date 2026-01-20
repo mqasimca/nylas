@@ -145,11 +145,13 @@ func (v *EventsView) updateEventsList(date time.Time) {
 	v.eventsList.Clear()
 
 	events := v.calendar.GetEventsForDate(date)
-	title := colorToHex(v.app.styles.TitleFg)
-	info := colorToHex(v.app.styles.InfoColor)
-	muted := colorToHex(v.app.styles.BorderColor)
-	eventColor := colorToHex(v.app.styles.FgColor)
-	success := colorToHex(v.app.styles.SuccessColor)
+	// Use cached Hex() method
+	s := v.app.styles
+	title := s.Hex(s.TitleFg)
+	info := s.Hex(s.InfoColor)
+	muted := s.Hex(s.BorderColor)
+	eventColor := s.Hex(s.FgColor)
+	success := s.Hex(s.SuccessColor)
 
 	// Header with date
 	dateStr := date.Format(common.DisplayDateLong)

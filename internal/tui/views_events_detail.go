@@ -137,10 +137,12 @@ func (v *EventsView) showEventDetail(evt *domain.Event) {
 	detail.SetBorderPadding(1, 1, 2, 2)
 	detail.SetScrollable(true)
 
-	info := colorToHex(v.app.styles.InfoColor)
-	key := colorToHex(v.app.styles.FgColor)
-	value := colorToHex(v.app.styles.InfoSectionFg)
-	muted := colorToHex(v.app.styles.BorderColor)
+	// Use cached Hex() method
+	s := v.app.styles
+	info := s.Hex(s.InfoColor)
+	key := s.Hex(s.FgColor)
+	value := s.Hex(s.InfoSectionFg)
+	muted := s.Hex(s.BorderColor)
 
 	// Time
 	var timeStr string

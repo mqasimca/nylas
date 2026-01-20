@@ -82,12 +82,8 @@ func (s *Server) handleNotetakerByID(w http.ResponseWriter, r *http.Request) {
 
 // handleListNotetakers returns all notetakers from the Nylas API
 func (s *Server) handleListNotetakers(w http.ResponseWriter, r *http.Request) {
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil)
+	if grantID == "" {
 		return
 	}
 
@@ -169,12 +165,8 @@ func domainToNotetakerResponse(nt *domain.Notetaker) *NotetakerResponse {
 
 // handleCreateNotetaker creates a new notetaker via the Nylas API
 func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil)
+	if grantID == "" {
 		return
 	}
 
@@ -221,12 +213,8 @@ func (s *Server) handleCreateNotetaker(w http.ResponseWriter, r *http.Request) {
 
 // handleGetNotetaker returns a single notetaker from the Nylas API
 func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil)
+	if grantID == "" {
 		return
 	}
 
@@ -253,12 +241,8 @@ func (s *Server) handleGetNotetaker(w http.ResponseWriter, r *http.Request) {
 
 // handleGetNotetakerMedia returns media for a notetaker from the Nylas API
 func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request) {
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil)
+	if grantID == "" {
 		return
 	}
 
@@ -297,12 +281,8 @@ func (s *Server) handleGetNotetakerMedia(w http.ResponseWriter, r *http.Request)
 
 // handleDeleteNotetaker cancels a notetaker via the Nylas API
 func (s *Server) handleDeleteNotetaker(w http.ResponseWriter, r *http.Request) {
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil)
+	if grantID == "" {
 		return
 	}
 

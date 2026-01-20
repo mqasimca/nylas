@@ -48,8 +48,8 @@ func (p *Prompt) Activate(mode PromptMode) {
 	p.SetText("")
 
 	// k9s style: dodgerblue for command, filter indicator
-	cmdColor := colorToHex(p.styles.BorderColor)
-	filterColor := colorToHex(p.styles.FilterColor)
+	cmdColor := p.styles.Hex(p.styles.BorderColor)
+	filterColor := p.styles.Hex(p.styles.FilterColor)
 
 	if mode == PromptCommand {
 		p.SetLabel(fmt.Sprintf("[%s::b]:[-::-]", cmdColor))

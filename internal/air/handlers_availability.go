@@ -208,7 +208,7 @@ func (s *Server) handleFreeBusy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Demo mode: return mock free/busy data
+	// Special demo mode: return mock free/busy data
 	if s.demoMode {
 		now := time.Now()
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -226,14 +226,8 @@ func (s *Server) handleFreeBusy(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	// Check if configured
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -327,7 +321,7 @@ func (s *Server) handleConflicts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Demo mode: return sample conflicts
+	// Special demo mode: return sample conflicts
 	if s.demoMode {
 		now := time.Now()
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -354,14 +348,8 @@ func (s *Server) handleConflicts(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	// Check if configured
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 

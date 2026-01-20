@@ -40,15 +40,25 @@ func (d *DemoClient) CancelScheduledMessage(ctx context.Context, grantID, schedu
 // SmartCompose generates an AI-powered email draft based on a prompt.
 func (d *DemoClient) SmartCompose(ctx context.Context, grantID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
 	// Generate realistic demo response based on prompt
-	suggestion := "Dear Colleague,\n\nThank you for reaching out. "
+	// Use string concatenation at compile time (no runtime cost)
+	const baseSuggestion = "Dear Colleague,\n\nThank you for reaching out. " +
+		"I've reviewed your request and wanted to follow up with some thoughts.\n\n" +
+		"Based on our previous discussions, I believe we can move forward with this initiative. " +
+		"I'll coordinate with the team and get back to you with a detailed plan by the end of the week.\n\n" +
+		"Please let me know if you have any questions or need clarification on any points.\n\n" +
+		"Best regards"
+
+	suggestion := baseSuggestion
 	if req != nil && req.Prompt != "" {
-		suggestion += "I understand you'd like to " + req.Prompt + ". "
+		// Only allocate when we need to insert the prompt
+		suggestion = "Dear Colleague,\n\nThank you for reaching out. " +
+			"I understand you'd like to " + req.Prompt + ". " +
+			"I've reviewed your request and wanted to follow up with some thoughts.\n\n" +
+			"Based on our previous discussions, I believe we can move forward with this initiative. " +
+			"I'll coordinate with the team and get back to you with a detailed plan by the end of the week.\n\n" +
+			"Please let me know if you have any questions or need clarification on any points.\n\n" +
+			"Best regards"
 	}
-	suggestion += "I've reviewed your request and wanted to follow up with some thoughts.\n\n"
-	suggestion += "Based on our previous discussions, I believe we can move forward with this initiative. "
-	suggestion += "I'll coordinate with the team and get back to you with a detailed plan by the end of the week.\n\n"
-	suggestion += "Please let me know if you have any questions or need clarification on any points.\n\n"
-	suggestion += "Best regards"
 
 	return &domain.SmartComposeSuggestion{
 		Suggestion: suggestion,
@@ -58,16 +68,27 @@ func (d *DemoClient) SmartCompose(ctx context.Context, grantID string, req *doma
 // SmartComposeReply generates an AI-powered reply to a specific message.
 func (d *DemoClient) SmartComposeReply(ctx context.Context, grantID, messageID string, req *domain.SmartComposeRequest) (*domain.SmartComposeSuggestion, error) {
 	// Generate realistic demo reply based on prompt
-	suggestion := "Hi there,\n\nThank you for your message. "
+	// Use string concatenation at compile time (no runtime cost)
+	const baseSuggestion = "Hi there,\n\nThank you for your message. " +
+		"I've taken a look at what you sent and wanted to respond quickly. " +
+		"Your points are well-taken, and I agree with your assessment.\n\n" +
+		"I'll review the details more thoroughly and provide a comprehensive response shortly. " +
+		"In the meantime, please don't hesitate to reach out if you have any urgent concerns.\n\n" +
+		"Thanks again for bringing this to my attention.\n\n" +
+		"Best"
+
+	suggestion := baseSuggestion
 	if req != nil && req.Prompt != "" {
-		suggestion += req.Prompt + "\n\n"
+		// Only allocate when we need to insert the prompt
+		suggestion = "Hi there,\n\nThank you for your message. " +
+			req.Prompt + "\n\n" +
+			"I've taken a look at what you sent and wanted to respond quickly. " +
+			"Your points are well-taken, and I agree with your assessment.\n\n" +
+			"I'll review the details more thoroughly and provide a comprehensive response shortly. " +
+			"In the meantime, please don't hesitate to reach out if you have any urgent concerns.\n\n" +
+			"Thanks again for bringing this to my attention.\n\n" +
+			"Best"
 	}
-	suggestion += "I've taken a look at what you sent and wanted to respond quickly. "
-	suggestion += "Your points are well-taken, and I agree with your assessment.\n\n"
-	suggestion += "I'll review the details more thoroughly and provide a comprehensive response shortly. "
-	suggestion += "In the meantime, please don't hesitate to reach out if you have any urgent concerns.\n\n"
-	suggestion += "Thanks again for bringing this to my attention.\n\n"
-	suggestion += "Best"
 
 	return &domain.SmartComposeSuggestion{
 		Suggestion: suggestion,

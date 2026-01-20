@@ -135,11 +135,13 @@ func (v *WebhooksView) showWebhookDetail(webhook *domain.Webhook) {
 	detail.SetBorderPadding(1, 1, 2, 2)
 	detail.SetScrollable(true)
 
-	info := colorToHex(v.app.styles.InfoColor)
-	value := colorToHex(v.app.styles.InfoSectionFg)
-	muted := colorToHex(v.app.styles.BorderColor)
-	success := colorToHex(v.app.styles.SuccessColor)
-	errColor := colorToHex(v.app.styles.ErrorColor)
+	// Use cached Hex() method
+	st := v.app.styles
+	info := st.Hex(st.InfoColor)
+	value := st.Hex(st.InfoSectionFg)
+	muted := st.Hex(st.BorderColor)
+	success := st.Hex(st.SuccessColor)
+	errColor := st.Hex(st.ErrorColor)
 
 	// URL
 	_, _ = fmt.Fprintf(detail, "[%s::b]Webhook URL[-::-]\n", info)

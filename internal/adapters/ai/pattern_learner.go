@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mqasimca/nylas/internal/domain"
@@ -262,55 +263,60 @@ func (p *PatternLearner) generateRecommendations(ctx context.Context, events []d
 }
 
 // buildPatternContext builds context string for LLM.
+// Uses strings.Builder for efficient string concatenation.
 func (p *PatternLearner) buildPatternContext(events []domain.Event, acceptance []AcceptancePattern, duration []DurationPattern, timezone []TimezonePattern, productivity []ProductivityInsight) string {
-	patternContext := fmt.Sprintf("Calendar Analysis (%d events analyzed):\n\n", len(events))
+	var sb strings.Builder
+	// Pre-allocate estimated capacity (header + patterns)
+	sb.Grow(512)
+
+	fmt.Fprintf(&sb, "Calendar Analysis (%d events analyzed):\n\n", len(events))
 
 	// Acceptance patterns
 	if len(acceptance) > 0 {
-		patternContext += "Meeting Acceptance Patterns:\n"
+		sb.WriteString("Meeting Acceptance Patterns:\n")
 		for i, pattern := range acceptance {
 			if i >= 5 {
 				break // Top 5
 			}
-			patternContext += fmt.Sprintf("- %s: %.0f%% acceptance (%d events) - %s\n",
+			fmt.Fprintf(&sb, "- %s: %.0f%% acceptance (%d events) - %s\n",
 				pattern.TimeSlot, pattern.AcceptRate*100, pattern.EventCount, pattern.Description)
 		}
-		patternContext += "\n"
+		sb.WriteByte('\n')
 	}
 
 	// Duration patterns
 	if len(duration) > 0 {
-		patternContext += "Meeting Duration Patterns:\n"
+		sb.WriteString("Meeting Duration Patterns:\n")
 		for _, pattern := range duration {
-			patternContext += fmt.Sprintf("- %s: avg %d minutes (%d events)\n",
+			fmt.Fprintf(&sb, "- %s: avg %d minutes (%d events)\n",
 				pattern.MeetingType, pattern.ScheduledDuration, pattern.EventCount)
 		}
-		patternContext += "\n"
+		sb.WriteByte('\n')
 	}
 
 	// Timezone patterns
 	if len(timezone) > 0 {
-		patternContext += "Timezone Patterns:\n"
+		sb.WriteString("Timezone Patterns:\n")
 		for i, pattern := range timezone {
 			if i >= 3 {
 				break // Top 3
 			}
-			patternContext += fmt.Sprintf("- %s: %.0f%% of meetings (%d events)\n",
+			fmt.Fprintf(&sb, "- %s: %.0f%% of meetings (%d events)\n",
 				pattern.Timezone, pattern.Percentage*100, pattern.EventCount)
 		}
-		patternContext += "\n"
+		sb.WriteByte('\n')
 	}
 
 	// Productivity insights
 	if len(productivity) > 0 {
-		patternContext += "Productivity Insights:\n"
+		sb.WriteString("Productivity Insights:\n")
 		for _, insight := range productivity {
-			patternContext += fmt.Sprintf("- %s\n", insight.Description)
+			fmt.Fprintf(&sb, "- %s\n", insight.Description)
 		}
-		patternContext += "\n"
+		sb.WriteByte('\n')
 	}
 
-	return patternContext
+	return sb.String()
 }
 
 // SavePatterns saves learned patterns (stub for future storage implementation).

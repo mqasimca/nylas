@@ -280,26 +280,21 @@ func (c *HTTPClient) calculateBackoff(attempt int, resp *http.Response) time.Dur
 	return delay
 }
 
-// doJSONRequest performs a JSON API request with proper error handling.
-// This helper consolidates the common pattern of:
-//   - Marshaling the request body to JSON (with error handling)
-//   - Creating the HTTP request with context
-//   - Setting Content-Type and Authorization headers
-//   - Executing the request with rate limiting
-//   - Validating the response status code
-//
+// doJSONRequestInternal is the shared implementation for JSON API requests.
 // Parameters:
 //   - ctx: Context for cancellation and timeout
 //   - method: HTTP method (GET, POST, PUT, PATCH, DELETE)
 //   - url: Full URL for the request
 //   - body: Request body to marshal to JSON (can be nil for GET/DELETE)
+//   - withAuth: Whether to include the authorization header
 //   - acceptedStatuses: HTTP status codes considered successful (defaults to 200, 201)
 //
 // Returns the response (caller must close body) or an error.
-func (c *HTTPClient) doJSONRequest(
+func (c *HTTPClient) doJSONRequestInternal(
 	ctx context.Context,
 	method, url string,
 	body any,
+	withAuth bool,
 	acceptedStatuses ...int,
 ) (*http.Response, error) {
 	// Default accepted statuses
@@ -327,7 +322,9 @@ func (c *HTTPClient) doJSONRequest(
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	c.setAuthHeader(req)
+	if withAuth {
+		c.setAuthHeader(req)
+	}
 
 	// Execute request with rate limiting
 	resp, err := c.doRequest(ctx, req)
@@ -350,6 +347,31 @@ func (c *HTTPClient) doJSONRequest(
 	}
 
 	return resp, nil
+}
+
+// doJSONRequest performs a JSON API request with authentication.
+// This helper consolidates the common pattern of:
+//   - Marshaling the request body to JSON (with error handling)
+//   - Creating the HTTP request with context
+//   - Setting Content-Type and Authorization headers
+//   - Executing the request with rate limiting
+//   - Validating the response status code
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout
+//   - method: HTTP method (GET, POST, PUT, PATCH, DELETE)
+//   - url: Full URL for the request
+//   - body: Request body to marshal to JSON (can be nil for GET/DELETE)
+//   - acceptedStatuses: HTTP status codes considered successful (defaults to 200, 201)
+//
+// Returns the response (caller must close body) or an error.
+func (c *HTTPClient) doJSONRequest(
+	ctx context.Context,
+	method, url string,
+	body any,
+	acceptedStatuses ...int,
+) (*http.Response, error) {
+	return c.doJSONRequestInternal(ctx, method, url, body, true, acceptedStatuses...)
 }
 
 // decodeJSONResponse decodes a JSON response body into the provided struct.
@@ -381,53 +403,7 @@ func (c *HTTPClient) doJSONRequestNoAuth(
 	body any,
 	acceptedStatuses ...int,
 ) (*http.Response, error) {
-	// Default accepted statuses
-	if len(acceptedStatuses) == 0 {
-		acceptedStatuses = []int{http.StatusOK, http.StatusCreated}
-	}
-
-	// Marshal body if provided
-	var bodyReader io.Reader
-	if body != nil {
-		jsonBody, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request body: %w", err)
-		}
-		bodyReader = bytes.NewReader(jsonBody)
-	}
-
-	// Create request
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Set Content-Type header (no auth header)
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	// Execute request with rate limiting
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate status code
-	statusOK := false
-	for _, status := range acceptedStatuses {
-		if resp.StatusCode == status {
-			statusOK = true
-			break
-		}
-	}
-
-	if !statusOK {
-		defer func() { _ = resp.Body.Close() }()
-		return nil, c.parseError(resp)
-	}
-
-	return resp, nil
+	return c.doJSONRequestInternal(ctx, method, url, body, false, acceptedStatuses...)
 }
 
 // validateRequired validates that a required field is not empty.

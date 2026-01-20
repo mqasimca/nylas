@@ -94,11 +94,9 @@ func (h *HelpView) init() {
 	footer := tview.NewTextView()
 	footer.SetDynamicColors(true)
 	footer.SetBackgroundColor(styles.BgColor)
-	footerHex := colorToHex(styles.BorderColor)
-	keyHex := colorToHex(styles.MenuKeyFg)
+	keyHex := styles.Hex(styles.MenuKeyFg)
 	_, _ = fmt.Fprintf(footer, " [%s]j/k[-] navigate  [%s]/[-] search  [%s]Enter[-] execute  [%s]Esc[-] close",
 		keyHex, keyHex, keyHex, keyHex)
-	_ = footerHex
 
 	container.AddItem(footer, 1, 0, false)
 
@@ -141,10 +139,10 @@ func (h *HelpView) render() {
 		}
 	}
 
-	titleColor := colorToHex(styles.TitleFg)
-	cmdColor := colorToHex(styles.InfoColor)
-	aliasColor := colorToHex(styles.BorderColor)
-	descColor := colorToHex(styles.FgColor)
+	titleColor := styles.Hex(styles.TitleFg)
+	cmdColor := styles.Hex(styles.InfoColor)
+	aliasColor := styles.Hex(styles.BorderColor)
+	descColor := styles.Hex(styles.FgColor)
 
 	for _, group := range groups {
 		// Category header

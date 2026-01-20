@@ -81,8 +81,11 @@ func (v *AvailabilityView) renderTimeline() {
 	}
 
 	// Display busy times for each participant
+	titleHex := styles.Hex(styles.TitleFg)
+	infoHex := styles.Hex(styles.InfoColor)
+	borderHex := styles.Hex(styles.BorderColor)
 	for _, fb := range v.freeBusy {
-		fmt.Fprintf(&content, "[%s]%s[-]\n", colorToHex(styles.TitleFg), fb.Email)
+		fmt.Fprintf(&content, "[%s]%s[-]\n", titleHex, fb.Email)
 
 		if len(fb.TimeSlots) == 0 {
 			content.WriteString("  [green]All free[-]\n")
@@ -95,7 +98,7 @@ func (v *AvailabilityView) renderTimeline() {
 			}
 
 			for day, slots := range slotsByDay {
-				fmt.Fprintf(&content, "  [%s]%s:[-]", colorToHex(styles.InfoColor), day)
+				fmt.Fprintf(&content, "  [%s]%s:[-]", infoHex, day)
 				for _, slot := range slots {
 					start := time.Unix(slot.StartTime, 0).Local()
 					end := time.Unix(slot.EndTime, 0).Local()
@@ -108,7 +111,7 @@ func (v *AvailabilityView) renderTimeline() {
 	}
 
 	// Add legend
-	fmt.Fprintf(&content, "[%s]Legend: [-][red]Busy[-] [green]Free[-]\n", colorToHex(styles.BorderColor))
+	fmt.Fprintf(&content, "[%s]Legend: [-][red]Busy[-] [green]Free[-]\n", borderHex)
 
 	v.timeline.SetText(content.String())
 }

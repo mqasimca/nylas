@@ -48,10 +48,10 @@ func (m *Menu) render() {
 		return
 	}
 
-	keyColor := colorToHex(m.styles.MenuKeyFg)
-	numKeyColor := colorToHex(m.styles.MenuNumKeyFg)
-	descColor := colorToHex(m.styles.MenuDescFg)
-	muted := colorToHex(m.styles.BorderColor)
+	keyColor := m.styles.Hex(m.styles.MenuKeyFg)
+	numKeyColor := m.styles.Hex(m.styles.MenuNumKeyFg)
+	descColor := m.styles.Hex(m.styles.MenuDescFg)
+	muted := m.styles.Hex(m.styles.BorderColor)
 
 	var parts []string
 	for _, h := range m.hints {

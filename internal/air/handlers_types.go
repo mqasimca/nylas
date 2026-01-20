@@ -1,11 +1,11 @@
 package air
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 
 	"github.com/mqasimca/nylas/internal/domain"
+	"github.com/mqasimca/nylas/internal/httputil"
 )
 
 // Grant represents an authenticated account for API responses.
@@ -350,17 +350,12 @@ type ContactGroupsResponse struct {
 	Groups []ContactGroupResponse `json:"groups"`
 }
 
-// maxRequestBodySize is the maximum allowed request body size (1MB).
-const maxRequestBodySize = 1 << 20
-
 // limitedBody wraps a request body with a size limit.
 func limitedBody(w http.ResponseWriter, r *http.Request) io.ReadCloser {
-	return http.MaxBytesReader(w, r.Body, maxRequestBodySize)
+	return httputil.LimitedBody(w, r, httputil.MaxRequestBodySize)
 }
 
 // writeJSON writes a JSON response.
 func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(data)
+	httputil.WriteJSON(w, status, data)
 }

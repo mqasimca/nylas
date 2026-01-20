@@ -12,17 +12,8 @@ func (s *Server) handleContactGroups(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-	if s.handleDemoMode(w, ContactGroupsResponse{Groups: demoContactGroups()}) {
-		return
-	}
-
-	// Check if configured
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, ContactGroupsResponse{Groups: demoContactGroups()})
+	if grantID == "" {
 		return
 	}
 
@@ -62,7 +53,7 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 	query := NewQueryParams(r.URL.Query())
 	q := query.Get("q")
 
-	// Demo mode: filter mock contacts
+	// Special demo mode: filter mock contacts by query
 	if s.demoMode {
 		contacts := demoContacts()
 		if q != "" {
@@ -85,14 +76,8 @@ func (s *Server) handleContactSearch(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	// Check if configured
-	if !s.requireConfig(w) {
-		return
-	}
-
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 

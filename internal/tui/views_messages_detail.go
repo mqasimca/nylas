@@ -21,12 +21,13 @@ func (v *MessagesView) showDetail(thread *domain.Thread) {
 	detail.SetBorderPadding(1, 1, 2, 2)
 	detail.SetScrollable(true)
 
-	// k9s style colors
-	title := colorToHex(v.app.styles.TitleFg)
-	key := colorToHex(v.app.styles.FgColor)
-	value := colorToHex(v.app.styles.InfoSectionFg)
-	muted := colorToHex(v.app.styles.BorderColor)
-	hint := colorToHex(v.app.styles.InfoColor)
+	// k9s style colors - use cached Hex() method
+	s := v.app.styles
+	title := s.Hex(s.TitleFg)
+	key := s.Hex(s.FgColor)
+	value := s.Hex(s.InfoSectionFg)
+	muted := s.Hex(s.BorderColor)
+	hint := s.Hex(s.InfoColor)
 
 	// Format participants
 	var participants []string

@@ -68,3 +68,27 @@ func requireMethod(w http.ResponseWriter, r *http.Request, method string) bool {
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
+
+// withAuthGrant combines demo mode check, config check, and grant ID retrieval.
+// Returns the grant ID if all checks pass, or empty string if any check fails
+// (appropriate error response already written).
+//
+// Usage:
+//
+//	grantID := s.withAuthGrant(w, demoResponse)
+//	if grantID == "" {
+//	    return
+//	}
+func (s *Server) withAuthGrant(w http.ResponseWriter, demoResponse any) string {
+	if demoResponse != nil && s.handleDemoMode(w, demoResponse) {
+		return ""
+	}
+	if !s.requireConfig(w) {
+		return ""
+	}
+	grantID, ok := s.requireDefaultGrant(w)
+	if !ok {
+		return ""
+	}
+	return grantID
+}

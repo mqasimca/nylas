@@ -133,9 +133,11 @@ func (v *ContactsView) showContactDetail(contact *domain.Contact) {
 	detail.SetBorderPadding(1, 1, 2, 2)
 	detail.SetScrollable(true)
 
-	info := colorToHex(v.app.styles.InfoColor)
-	value := colorToHex(v.app.styles.InfoSectionFg)
-	muted := colorToHex(v.app.styles.BorderColor)
+	// Use cached Hex() method
+	s := v.app.styles
+	info := s.Hex(s.InfoColor)
+	value := s.Hex(s.InfoSectionFg)
+	muted := s.Hex(s.BorderColor)
 
 	// Name
 	if contact.GivenName != "" || contact.Surname != "" {

@@ -14,14 +14,8 @@ func (s *Server) handleListEmails(w http.ResponseWriter, r *http.Request) {
 	if !requireMethod(w, r, http.MethodGet) {
 		return
 	}
-	if s.handleDemoMode(w, EmailsResponse{Emails: demoEmails(), HasMore: false}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, EmailsResponse{Emails: demoEmails(), HasMore: false})
+	if grantID == "" {
 		return
 	}
 
@@ -170,7 +164,7 @@ func (s *Server) handleEmailByID(w http.ResponseWriter, r *http.Request) {
 
 // handleGetEmail retrieves a single email with full body.
 func (s *Server) handleGetEmail(w http.ResponseWriter, r *http.Request, emailID string) {
-	// Demo mode: return mock email
+	// Special demo mode: return specific email or 404
 	if s.demoMode {
 		for _, e := range demoEmails() {
 			if e.ID == emailID {
@@ -181,11 +175,8 @@ func (s *Server) handleGetEmail(w http.ResponseWriter, r *http.Request, emailID 
 		writeError(w, http.StatusNotFound, "Email not found")
 		return
 	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, nil) // Demo mode already handled above
+	if grantID == "" {
 		return
 	}
 
@@ -239,14 +230,8 @@ func (s *Server) handleGetEmail(w http.ResponseWriter, r *http.Request, emailID 
 
 // handleUpdateEmail updates an email (mark read/unread, star/unstar).
 func (s *Server) handleUpdateEmail(w http.ResponseWriter, r *http.Request, emailID string) {
-	if s.handleDemoMode(w, UpdateEmailResponse{Success: true, Message: "Email updated (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, UpdateEmailResponse{Success: true, Message: "Email updated (demo mode)"})
+	if grantID == "" {
 		return
 	}
 
@@ -281,14 +266,8 @@ func (s *Server) handleUpdateEmail(w http.ResponseWriter, r *http.Request, email
 
 // handleDeleteEmail moves an email to trash.
 func (s *Server) handleDeleteEmail(w http.ResponseWriter, r *http.Request, emailID string) {
-	if s.handleDemoMode(w, UpdateEmailResponse{Success: true, Message: "Email deleted (demo mode)"}) {
-		return
-	}
-	if !s.requireConfig(w) {
-		return
-	}
-	grantID, ok := s.requireDefaultGrant(w)
-	if !ok {
+	grantID := s.withAuthGrant(w, UpdateEmailResponse{Success: true, Message: "Email deleted (demo mode)"})
+	if grantID == "" {
 		return
 	}
 
