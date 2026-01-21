@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/mqasimca/nylas/internal/adapters/config"
@@ -203,12 +204,7 @@ func GetGrantID(args []string) (string, error) {
 
 // containsAt checks if a string contains "@" (for email detection).
 func containsAt(s string) bool {
-	for _, c := range s {
-		if c == '@' {
-			return true
-		}
-	}
-	return false
+	return strings.ContainsRune(s, '@')
 }
 
 // WithClient is a generic helper that handles client setup, context creation, and grant ID resolution.

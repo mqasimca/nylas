@@ -2,7 +2,6 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -71,27 +70,11 @@ func (c *HTTPClient) GetContactsWithCursor(ctx context.Context, grantID string, 
 	}
 	queryURL := qb.BuildURL(baseURL)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data       []contactResponse `json:"data"`
 		NextCursor string            `json:"next_cursor,omitempty"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
@@ -111,35 +94,13 @@ func (c *HTTPClient) GetContact(ctx context.Context, grantID, contactID string) 
 
 // GetContactWithPicture retrieves a single contact by ID with optional profile picture.
 func (c *HTTPClient) GetContactWithPicture(ctx context.Context, grantID, contactID string, includePicture bool) (*domain.Contact, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/%s", c.baseURL, grantID, contactID)
-
-	if includePicture {
-		queryURL += "?profile_picture=true"
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, domain.ErrContactNotFound
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/contacts/%s", c.baseURL, grantID, contactID)
+	queryURL := NewQueryBuilder().AddBool("profile_picture", includePicture).BuildURL(baseURL)
 
 	var result struct {
 		Data contactResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrContactNotFound); err != nil {
 		return nil, err
 	}
 
@@ -197,77 +158,28 @@ func (c *HTTPClient) DeleteContact(ctx context.Context, grantID, contactID strin
 func (c *HTTPClient) GetContactGroups(ctx context.Context, grantID string) ([]domain.ContactGroup, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/groups", c.baseURL, grantID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data []contactGroupResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
-	return util.Map(result.Data, func(g contactGroupResponse) domain.ContactGroup {
-		return domain.ContactGroup{
-			ID:      g.ID,
-			GrantID: g.GrantID,
-			Name:    g.Name,
-			Path:    g.Path,
-			Object:  g.Object,
-		}
-	}), nil
+	return util.Map(result.Data, convertContactGroup), nil
 }
 
 // GetContactGroup retrieves a single contact group by ID.
 func (c *HTTPClient) GetContactGroup(ctx context.Context, grantID, groupID string) (*domain.ContactGroup, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/contacts/groups/%s", c.baseURL, grantID, groupID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: contact group not found", domain.ErrAPIError)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data contactGroupResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, fmt.Errorf("%w: contact group not found", domain.ErrAPIError)); err != nil {
 		return nil, err
 	}
 
-	group := domain.ContactGroup{
-		ID:      result.Data.ID,
-		GrantID: result.Data.GrantID,
-		Name:    result.Data.Name,
-		Path:    result.Data.Path,
-		Object:  result.Data.Object,
-	}
+	group := convertContactGroup(result.Data)
 	return &group, nil
 }
 
@@ -287,13 +199,7 @@ func (c *HTTPClient) CreateContactGroup(ctx context.Context, grantID string, req
 		return nil, err
 	}
 
-	group := domain.ContactGroup{
-		ID:      result.Data.ID,
-		GrantID: result.Data.GrantID,
-		Name:    result.Data.Name,
-		Path:    result.Data.Path,
-		Object:  result.Data.Object,
-	}
+	group := convertContactGroup(result.Data)
 	return &group, nil
 }
 
@@ -313,13 +219,7 @@ func (c *HTTPClient) UpdateContactGroup(ctx context.Context, grantID, groupID st
 		return nil, err
 	}
 
-	group := domain.ContactGroup{
-		ID:      result.Data.ID,
-		GrantID: result.Data.GrantID,
-		Name:    result.Data.Name,
-		Path:    result.Data.Path,
-		Object:  result.Data.Object,
-	}
+	group := convertContactGroup(result.Data)
 	return &group, nil
 }
 
@@ -354,5 +254,16 @@ func convertContact(c contactResponse) domain.Contact {
 		PhysicalAddresses: c.PhysicalAddresses,
 		Groups:            c.Groups,
 		Source:            c.Source,
+	}
+}
+
+// convertContactGroup converts an API contact group response to domain model.
+func convertContactGroup(g contactGroupResponse) domain.ContactGroup {
+	return domain.ContactGroup{
+		ID:      g.ID,
+		GrantID: g.GrantID,
+		Name:    g.Name,
+		Path:    g.Path,
+		Object:  g.Object,
 	}
 }

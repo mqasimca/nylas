@@ -28,15 +28,10 @@ type webhookResponse struct {
 func (c *HTTPClient) ListWebhooks(ctx context.Context) ([]domain.Webhook, error) {
 	queryURL := fmt.Sprintf("%s/v3/webhooks", c.baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []webhookResponse `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 

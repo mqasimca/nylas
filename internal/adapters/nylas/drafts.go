@@ -96,15 +96,13 @@ func (c *HTTPClient) CreateDraft(ctx context.Context, grantID string, req *domai
 	return c.createDraftWithJSON(ctx, grantID, req)
 }
 
-// createDraftWithJSON creates a draft using JSON encoding (no attachments or small attachments).
-func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, req *domain.CreateDraftRequest) (*domain.Draft, error) {
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
-
+// buildDraftPayload builds the common payload for draft creation requests.
+// This consolidates the repeated payload building logic across draft creation methods.
+func buildDraftPayload(req *domain.CreateDraftRequest) map[string]any {
 	payload := map[string]any{
 		"subject": req.Subject,
 		"body":    req.Body,
 	}
-
 	if len(req.To) > 0 {
 		payload["to"] = convertContactsToAPI(req.To)
 	}
@@ -123,32 +121,22 @@ func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, re
 	if len(req.Metadata) > 0 {
 		payload["metadata"] = req.Metadata
 	}
+	return payload
+}
 
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", queryURL, bytes.NewReader(body))
+// createDraftWithJSON creates a draft using JSON encoding (no attachments or small attachments).
+func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, req *domain.CreateDraftRequest) (*domain.Draft, error) {
+	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
+
+	resp, err := c.doJSONRequest(ctx, "POST", queryURL, buildDraftPayload(req))
 	if err != nil {
 		return nil, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	c.setAuthHeader(httpReq)
-
-	resp, err := c.doRequest(ctx, httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", domain.ErrNetworkError, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, c.parseError(resp)
 	}
 
 	var result struct {
 		Data draftResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.decodeJSONResponse(resp, &result); err != nil {
 		return nil, err
 	}
 
@@ -160,36 +148,12 @@ func (c *HTTPClient) createDraftWithJSON(ctx context.Context, grantID string, re
 func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID string, req *domain.CreateDraftRequest) (*domain.Draft, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
 
-	// Build the message JSON
-	message := map[string]any{
-		"subject": req.Subject,
-		"body":    req.Body,
-	}
-	if len(req.To) > 0 {
-		message["to"] = convertContactsToAPI(req.To)
-	}
-	if len(req.Cc) > 0 {
-		message["cc"] = convertContactsToAPI(req.Cc)
-	}
-	if len(req.Bcc) > 0 {
-		message["bcc"] = convertContactsToAPI(req.Bcc)
-	}
-	if len(req.ReplyTo) > 0 {
-		message["reply_to"] = convertContactsToAPI(req.ReplyTo)
-	}
-	if req.ReplyToMsgID != "" {
-		message["reply_to_message_id"] = req.ReplyToMsgID
-	}
-	if len(req.Metadata) > 0 {
-		message["metadata"] = req.Metadata
-	}
-
 	// Create multipart form
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
 	// Add message as JSON field
-	messageJSON, err := json.Marshal(message)
+	messageJSON, err := json.Marshal(buildDraftPayload(req))
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
@@ -257,27 +221,7 @@ func (c *HTTPClient) createDraftWithMultipart(ctx context.Context, grantID strin
 // This is useful for large attachments or streaming file uploads.
 func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, grantID string, req *domain.CreateDraftRequest, filename string, contentType string, reader io.Reader) (*domain.Draft, error) {
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/drafts", c.baseURL, grantID)
-
-	// Build the message JSON
-	message := map[string]any{
-		"subject": req.Subject,
-		"body":    req.Body,
-	}
-	if len(req.To) > 0 {
-		message["to"] = convertContactsToAPI(req.To)
-	}
-	if len(req.Cc) > 0 {
-		message["cc"] = convertContactsToAPI(req.Cc)
-	}
-	if len(req.Bcc) > 0 {
-		message["bcc"] = convertContactsToAPI(req.Bcc)
-	}
-	if len(req.ReplyTo) > 0 {
-		message["reply_to"] = convertContactsToAPI(req.ReplyTo)
-	}
-	if req.ReplyToMsgID != "" {
-		message["reply_to_message_id"] = req.ReplyToMsgID
-	}
+	payload := buildDraftPayload(req)
 
 	// Use pipe to stream multipart data
 	pr, pw := io.Pipe()
@@ -290,7 +234,7 @@ func (c *HTTPClient) CreateDraftWithAttachmentFromReader(ctx context.Context, gr
 		defer func() { _ = writer.Close() }()
 
 		// Add message as JSON field
-		messageJSON, err := json.Marshal(message)
+		messageJSON, err := json.Marshal(payload)
 		if err != nil {
 			errCh <- fmt.Errorf("failed to marshal message: %w", err)
 			return
@@ -400,29 +344,21 @@ func convertDrafts(drafts []draftResponse) []domain.Draft {
 
 // convertDraft converts an API draft response to domain model.
 func convertDraft(d draftResponse) domain.Draft {
-	from := make([]domain.EmailParticipant, len(d.From))
-	for j, f := range d.From {
-		from[j] = domain.EmailParticipant{Name: f.Name, Email: f.Email}
+	// Helper to convert participant structs
+	convertParticipant := func(p struct {
+		Name  string `json:"name"`
+		Email string `json:"email"`
+	}) domain.EmailParticipant {
+		return domain.EmailParticipant{Name: p.Name, Email: p.Email}
 	}
-	to := make([]domain.EmailParticipant, len(d.To))
-	for j, t := range d.To {
-		to[j] = domain.EmailParticipant{Name: t.Name, Email: t.Email}
-	}
-	cc := make([]domain.EmailParticipant, len(d.Cc))
-	for j, c := range d.Cc {
-		cc[j] = domain.EmailParticipant{Name: c.Name, Email: c.Email}
-	}
-	bcc := make([]domain.EmailParticipant, len(d.Bcc))
-	for j, b := range d.Bcc {
-		bcc[j] = domain.EmailParticipant{Name: b.Name, Email: b.Email}
-	}
-	replyTo := make([]domain.EmailParticipant, len(d.ReplyTo))
-	for j, r := range d.ReplyTo {
-		replyTo[j] = domain.EmailParticipant{Name: r.Name, Email: r.Email}
-	}
-	attachments := make([]domain.Attachment, len(d.Attachments))
-	for j, a := range d.Attachments {
-		attachments[j] = domain.Attachment{
+	// Helper to convert attachment structs
+	convertAttachment := func(a struct {
+		ID          string `json:"id"`
+		Filename    string `json:"filename"`
+		ContentType string `json:"content_type"`
+		Size        int64  `json:"size"`
+	}) domain.Attachment {
+		return domain.Attachment{
 			ID:          a.ID,
 			Filename:    a.Filename,
 			ContentType: a.ContentType,
@@ -435,14 +371,14 @@ func convertDraft(d draftResponse) domain.Draft {
 		GrantID:      d.GrantID,
 		Subject:      d.Subject,
 		Body:         d.Body,
-		From:         from,
-		To:           to,
-		Cc:           cc,
-		Bcc:          bcc,
-		ReplyTo:      replyTo,
+		From:         util.Map(d.From, convertParticipant),
+		To:           util.Map(d.To, convertParticipant),
+		Cc:           util.Map(d.Cc, convertParticipant),
+		Bcc:          util.Map(d.Bcc, convertParticipant),
+		ReplyTo:      util.Map(d.ReplyTo, convertParticipant),
 		ReplyToMsgID: d.ReplyToMsgID,
 		ThreadID:     d.ThreadID,
-		Attachments:  attachments,
+		Attachments:  util.Map(d.Attachments, convertAttachment),
 		CreatedAt:    time.Unix(d.CreatedAt, 0),
 		UpdatedAt:    time.Unix(d.UpdatedAt, 0),
 	}

@@ -133,15 +133,10 @@ func (c *HTTPClient) DeleteApplication(ctx context.Context, appID string) error 
 func (c *HTTPClient) ListConnectors(ctx context.Context) ([]domain.Connector, error) {
 	queryURL := fmt.Sprintf("%s/v3/connectors", c.baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []domain.Connector `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -223,15 +218,10 @@ func (c *HTTPClient) ListCredentials(ctx context.Context, connectorID string) ([
 
 	queryURL := fmt.Sprintf("%s/v3/connectors/%s/credentials", c.baseURL, connectorID)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []domain.ConnectorCredential `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -322,15 +312,10 @@ func (c *HTTPClient) ListAllGrants(ctx context.Context, params *domain.GrantsQue
 	}
 	queryURL := qb.BuildURL(baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []domain.Grant `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil

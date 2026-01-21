@@ -15,15 +15,10 @@ import (
 func (c *HTTPClient) ListSchedulerConfigurations(ctx context.Context) ([]domain.SchedulerConfiguration, error) {
 	queryURL := fmt.Sprintf("%s/v3/scheduling/configurations", c.baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []domain.SchedulerConfiguration `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -139,15 +134,10 @@ func (c *HTTPClient) ListBookings(ctx context.Context, configID string) ([]domai
 	baseURL := fmt.Sprintf("%s/v3/scheduling/bookings", c.baseURL)
 	queryURL := NewQueryBuilder().Add("configuration_id", configID).BuildURL(baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []domain.Booking `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -238,15 +228,10 @@ func (c *HTTPClient) CancelBooking(ctx context.Context, bookingID string, reason
 func (c *HTTPClient) ListSchedulerPages(ctx context.Context) ([]domain.SchedulerPage, error) {
 	queryURL := fmt.Sprintf("%s/v3/scheduling/pages", c.baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []domain.SchedulerPage `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil

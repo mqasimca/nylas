@@ -2,9 +2,7 @@ package nylas
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/mqasimca/nylas/internal/domain"
 )
@@ -16,15 +14,10 @@ func (c *HTTPClient) GetCalendars(ctx context.Context, grantID string) ([]domain
 
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars", c.baseURL, grantID)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []calendarResponse `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
@@ -42,29 +35,10 @@ func (c *HTTPClient) GetCalendar(ctx context.Context, grantID, calendarID string
 
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/calendars/%s", c.baseURL, grantID, calendarID)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	c.setAuthHeader(req)
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, domain.ErrCalendarNotFound
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, c.parseError(resp)
-	}
-
 	var result struct {
 		Data calendarResponse `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := c.doGetWithNotFound(ctx, queryURL, &result, domain.ErrCalendarNotFound); err != nil {
 		return nil, err
 	}
 

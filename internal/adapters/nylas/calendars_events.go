@@ -46,16 +46,11 @@ func (c *HTTPClient) GetEventsWithCursor(ctx context.Context, grantID, calendarI
 		Add("order_by", params.OrderBy).
 		BuildURL(baseURL)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data       []eventResponse `json:"data"`
 		NextCursor string          `json:"next_cursor,omitempty"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 

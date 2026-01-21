@@ -31,15 +31,10 @@ func (c *HTTPClient) GetFolders(ctx context.Context, grantID string) ([]domain.F
 
 	queryURL := fmt.Sprintf("%s/v3/grants/%s/folders", c.baseURL, grantID)
 
-	resp, err := c.doJSONRequest(ctx, "GET", queryURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	var result struct {
 		Data []folderResponse `json:"data"`
 	}
-	if err := c.decodeJSONResponse(resp, &result); err != nil {
+	if err := c.doGet(ctx, queryURL, &result); err != nil {
 		return nil, err
 	}
 
