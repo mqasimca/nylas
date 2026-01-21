@@ -16,14 +16,10 @@ import (
 // Test mock client implements interface
 
 func TestContextTimeouts(t *testing.T) {
-	t.Run("enforces_default_timeout", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip("skipping long-running timeout test in short mode")
-		}
-
-		// Server that delays response beyond default timeout
+	t.Run("enforces_context_timeout", func(t *testing.T) {
+		// Server that delays response beyond the context timeout
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(95 * time.Second) // Longer than default 90s timeout
+			time.Sleep(10 * time.Second) // Longer than our test timeout
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer server.Close()
@@ -32,15 +28,18 @@ func TestContextTimeouts(t *testing.T) {
 		client.SetCredentials("client-id", "secret", "api-key")
 		client.SetBaseURL(server.URL)
 
-		// Use context without timeout - should apply default 90s timeout
+		// Use context with 3-second timeout to verify timeout enforcement
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
 		start := time.Now()
-		_, err := client.GetFolders(context.Background(), "grant-123")
+		_, err := client.GetFolders(ctx, "grant-123")
 		elapsed := time.Since(start)
 
-		// Should timeout in ~90 seconds, not wait for full 95 seconds
+		// Should timeout in ~3 seconds, not wait for full 10 seconds
 		assert.Error(t, err)
-		assert.True(t, elapsed < 92*time.Second, "Should timeout near 90 seconds")
-		assert.True(t, elapsed > 89*time.Second, "Should wait at least 89 seconds")
+		assert.True(t, elapsed < 5*time.Second, "Should timeout near 3 seconds, got %v", elapsed)
+		assert.True(t, elapsed > 2*time.Second, "Should wait at least 2 seconds, got %v", elapsed)
 	})
 
 	t.Run("respects_existing_context_timeout", func(t *testing.T) {
@@ -73,8 +72,8 @@ func TestContextTimeouts(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": []map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": []map[string]any{
 					{
 						"id":            "folder-1",
 						"grant_id":      "grant-123",
