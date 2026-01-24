@@ -19,6 +19,7 @@ func CopyToClipboard(text string) error {
 		if os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("XDG_SESSION_TYPE") == "wayland" {
 			// Try wl-copy (Wayland)
 			if path, err := exec.LookPath("wl-copy"); err == nil {
+				// #nosec G204 -- path is from exec.LookPath("wl-copy"), not user input
 				cmd := exec.Command(path)
 				cmd.Stdin = strings.NewReader(text)
 				if err := cmd.Run(); err == nil {
@@ -29,6 +30,7 @@ func CopyToClipboard(text string) error {
 
 		// Try xclip (X11)
 		if path, err := exec.LookPath("xclip"); err == nil {
+			// #nosec G204 -- path is from exec.LookPath("xclip"), not user input
 			cmd := exec.Command(path, "-selection", "clipboard")
 			cmd.Stdin = strings.NewReader(text)
 			if err := cmd.Run(); err == nil {
@@ -38,6 +40,7 @@ func CopyToClipboard(text string) error {
 
 		// Try xsel (X11)
 		if path, err := exec.LookPath("xsel"); err == nil {
+			// #nosec G204 -- path is from exec.LookPath("xsel"), not user input
 			cmd := exec.Command(path, "--clipboard", "--input")
 			cmd.Stdin = strings.NewReader(text)
 			if err := cmd.Run(); err == nil {
