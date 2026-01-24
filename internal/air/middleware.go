@@ -76,25 +76,26 @@ func CacheMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		// Static assets - cache for 1 year
-		if strings.HasPrefix(path, "/static/") {
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		} else if strings.HasSuffix(path, ".css") ||
-			strings.HasSuffix(path, ".js") ||
-			strings.HasSuffix(path, ".woff") ||
+		// For local development tools, minimal caching is better
+		// Only cache static images/fonts that rarely change
+		if strings.HasSuffix(path, ".woff") ||
 			strings.HasSuffix(path, ".woff2") ||
+			strings.HasSuffix(path, ".png") ||
+			strings.HasSuffix(path, ".jpg") ||
+			strings.HasSuffix(path, ".jpeg") ||
+			strings.HasSuffix(path, ".gif") ||
 			strings.HasSuffix(path, ".svg") ||
 			strings.HasSuffix(path, ".ico") {
-			// Other static files - cache for 1 hour
-			w.Header().Set("Cache-Control", "public, max-age=3600")
+			// Images and fonts - cache for 1 day
+			w.Header().Set("Cache-Control", "public, max-age=86400")
 		} else if strings.HasPrefix(path, "/api/") {
 			// API responses - no cache (always fresh)
 			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 			w.Header().Set("Pragma", "no-cache")
 			w.Header().Set("Expires", "0")
 		} else {
-			// HTML pages - cache for 5 minutes
-			w.Header().Set("Cache-Control", "public, max-age=300")
+			// Everything else (JS, CSS, HTML) - minimal cache for instant updates
+			w.Header().Set("Cache-Control", "no-cache, must-revalidate")
 		}
 
 		next.ServeHTTP(w, r)

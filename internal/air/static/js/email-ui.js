@@ -58,6 +58,32 @@ Object.assign(EmailListManager, {
     }
 },
 
+// Select a folder and load its emails
+selectFolder(folderId, folderName) {
+    // Update current folder and load emails
+    this.currentFolder = folderId;
+    this.loadEmails(folderId);
+
+    // Update folder UI to show active state
+    const folderItems = document.querySelectorAll('.folder-item');
+    folderItems.forEach(item => {
+        const itemFolderId = item.getAttribute('data-folder-id');
+        if (itemFolderId === folderId) {
+            item.classList.add('active');
+            item.setAttribute('aria-current', 'true');
+        } else {
+            item.classList.remove('active');
+            item.removeAttribute('aria-current');
+        }
+    });
+
+    // Update header title with folder name
+    const headerTitle = document.querySelector('.email-list-header h2');
+    if (headerTitle && folderName) {
+        headerTitle.textContent = folderName;
+    }
+},
+
 // Initialize virtual scroll container
 initVirtualScroll() {
     const container = this.virtualScroll.scrollContainer;
