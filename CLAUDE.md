@@ -65,8 +65,22 @@ make ci        # Runs: fmt → vet → lint → test-unit → test-race → secu
 - **API**: Nylas v3 ONLY (never use v1/v2)
 - **Timezone Support**: Offline utilities + calendar integration ✅
 - **Credential Storage**: System keyring (see below)
+- **Web UI**: Air - browser-based interface (localhost:7365)
 
 **Details:** See `docs/ARCHITECTURE.md`
+
+---
+
+## Environment Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `NYLAS_DISABLE_KEYRING` | Disable system keyring, use encrypted file | `false` |
+| `NYLAS_API_KEY` | Override API key from keyring (for testing) | - |
+| `NYLAS_CLIENT_ID` | Override client ID from keyring (for testing) | - |
+| `NYLAS_GRANT_ID` | Override grant ID (for testing) | - |
+
+**Integration test env vars:** See `.claude/commands/run-tests.md` for full list
 
 ---
 
@@ -177,6 +191,9 @@ Credentials from `nylas auth config` are stored in the system keyring under serv
 | `make ci-full` | Complete CI (quality + tests) - **run before commits** |
 | `make ci` | Quick quality checks (no integration) |
 | `make build` | Build binary |
+| `nylas air` | Start Air web UI (localhost:7365) |
+
+**Available targets:** Run `make help` or `make` to see all available commands
 
 **Debugging:** Check `ports/nylas.go` → `adapters/nylas/client.go` → `cli/<feature>/helpers.go`
 

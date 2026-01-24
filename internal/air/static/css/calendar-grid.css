@@ -168,6 +168,16 @@
             font-weight: 600;
         }
 
+        .calendar-day.selected {
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-day.selected .event-dot {
+            background: white;
+        }
+
         .today-dot {
             position: absolute;
             bottom: 8px;

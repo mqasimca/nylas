@@ -19,6 +19,10 @@ const CalendarManager = {
     // Set up event listeners first (UI is ready immediately)
     this.setupEventListeners();
 
+    // Update title and render calendar grid with current date
+    this.updateTitle();
+    this.renderCalendarGrid();
+
     // Load calendars first, then events (sequential to avoid rate limits)
     try {
         await this.loadCalendars();

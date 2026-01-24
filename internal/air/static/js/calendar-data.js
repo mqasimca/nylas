@@ -25,6 +25,7 @@ async loadEvents() {
         });
 
         this.events = data.events || [];
+        this.renderCalendarGrid(); // Re-render grid to show event dots
         this.renderEvents();
     } catch (error) {
         console.error('Failed to load events:', error);
@@ -38,32 +39,22 @@ async loadEvents() {
 
 getDateRange() {
     const now = this.currentDate;
-    let start, end;
 
-    switch (this.currentView) {
-        case 'today':
-            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            end = new Date(start);
-            end.setDate(end.getDate() + 1);
-            break;
-        case 'week':
-            start = new Date(now);
-            start.setDate(start.getDate() - start.getDay()); // Start of week (Sunday)
-            start.setHours(0, 0, 0, 0);
-            end = new Date(start);
-            end.setDate(end.getDate() + 7);
-            break;
-        case 'month':
-            start = new Date(now.getFullYear(), now.getMonth(), 1);
-            end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            break;
-        case 'agenda':
-        default:
-            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            end = new Date(start);
-            end.setDate(end.getDate() + 14); // 2 weeks
-            break;
-    }
+    // Always load events for the full visible month in the calendar grid
+    // This includes padding days from prev/next months that appear in the grid
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Start from the Sunday of the week containing the 1st
+    const start = new Date(firstOfMonth);
+    start.setDate(start.getDate() - firstOfMonth.getDay());
+    start.setHours(0, 0, 0, 0);
+
+    // End at the Saturday of the week containing the last day
+    const end = new Date(lastOfMonth);
+    const daysUntilSaturday = 6 - lastOfMonth.getDay();
+    end.setDate(end.getDate() + daysUntilSaturday + 1); // +1 to include the full day
+    end.setHours(23, 59, 59, 999);
 
     return { start, end };
 },
