@@ -72,6 +72,34 @@ func printMessageRaw(msg domain.Message) {
 	fmt.Println()
 }
 
+// printMessageMIME prints the raw RFC822/MIME format of a message.
+func printMessageMIME(msg domain.Message) {
+	if msg.RawMIME == "" {
+		fmt.Println(strings.Repeat("─", 60))
+		_, _ = common.Yellow.Println("No raw MIME data available")
+		fmt.Println(strings.Repeat("─", 60))
+		fmt.Println("This message does not have MIME data available.")
+		fmt.Println("The API may not support MIME retrieval for this message.")
+		return
+	}
+
+	// Print header
+	fmt.Println(strings.Repeat("─", 60))
+	_, _ = common.BoldWhite.Println("RAW RFC822/MIME FORMAT")
+	_, _ = common.Dim.Printf("Message ID: %s\n", msg.ID)
+	fmt.Println(strings.Repeat("─", 60))
+	fmt.Println()
+
+	// Print raw MIME content
+	fmt.Print(msg.RawMIME)
+
+	// Ensure trailing newline
+	if !strings.HasSuffix(msg.RawMIME, "\n") {
+		fmt.Println()
+	}
+	fmt.Println()
+}
+
 // printMessageSummary prints a single-line message summary.
 func printMessageSummary(msg domain.Message, index int) {
 	printMessageSummaryWithID(msg, index, false)

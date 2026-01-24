@@ -21,6 +21,7 @@ type Message struct {
 	Folders     []string           `json:"folders,omitempty"`
 	Attachments []Attachment       `json:"attachments,omitempty"`
 	Headers     []Header           `json:"headers,omitempty"`
+	RawMIME     string             `json:"raw_mime,omitempty"` // RFC822/MIME format
 	Metadata    map[string]string  `json:"metadata,omitempty"`
 	CreatedAt   time.Time          `json:"created_at"`
 	Object      string             `json:"object,omitempty"`

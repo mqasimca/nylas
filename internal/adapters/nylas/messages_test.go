@@ -381,3 +381,90 @@ func TestHTTPClient_GetMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestHTTPClient_GetMessageWithFields(t *testing.T) {
+	tests := []struct {
+		name        string
+		grantID     string
+		messageID   string
+		fields      string
+		wantFields  bool
+		wantRawMIME bool
+		wantErr     bool
+	}{
+		{
+			name:        "fetch with raw_mime field",
+			grantID:     "grant-123",
+			messageID:   "msg-456",
+			fields:      "raw_mime",
+			wantFields:  true,
+			wantRawMIME: true,
+			wantErr:     false,
+		},
+		{
+			name:        "fetch without fields",
+			grantID:     "grant-123",
+			messageID:   "msg-456",
+			fields:      "",
+			wantFields:  false,
+			wantRawMIME: false,
+			wantErr:     false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Verify the fields parameter
+				if tt.wantFields {
+					fields := r.URL.Query().Get("fields")
+					assert.Equal(t, tt.fields, fields, "Expected fields=%s, got %s", tt.fields, fields)
+				}
+
+				// Return mock response
+				resp := map[string]interface{}{
+					"data": map[string]interface{}{
+						"id":       tt.messageID,
+						"grant_id": tt.grantID,
+						"subject":  "Test",
+						"from":     []map[string]string{{"email": "test@example.com", "name": "Test"}},
+						"body":     "Test body",
+						"date":     1704067200,
+					},
+				}
+
+				// Add MIME data if requested (Base64url-encoded)
+				if tt.wantRawMIME {
+					// Base64url-encoded "From: test@example.com\r\nSubject: Test\r\n\r\nTest body"
+					resp["data"].(map[string]interface{})["raw_mime"] = "RnJvbTogdGVzdEBleGFtcGxlLmNvbQ0KU3ViamVjdDogVGVzdA0KDQpUZXN0IGJvZHk"
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(resp)
+			}))
+			defer server.Close()
+
+			client := nylas.NewHTTPClient()
+			client.SetCredentials("test-id", "test-secret", "test-key")
+			client.SetBaseURL(server.URL)
+
+			msg, err := client.GetMessageWithFields(context.Background(), tt.grantID, tt.messageID, tt.fields)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.messageID, msg.ID)
+
+			if tt.wantRawMIME {
+				assert.NotEmpty(t, msg.RawMIME, "Expected RawMIME to be populated")
+				// Verify the decoded content
+				assert.Contains(t, msg.RawMIME, "From: test@example.com")
+				assert.Contains(t, msg.RawMIME, "Subject: Test")
+			} else {
+				assert.Empty(t, msg.RawMIME, "Expected RawMIME to be empty")
+			}
+		})
+	}
+}

@@ -317,6 +317,40 @@ func TestCLI_EmailMark(t *testing.T) {
 	}
 }
 
+func TestCLI_EmailRead_MIME(t *testing.T) {
+	skipIfMissingCreds(t)
+	acquireRateLimit(t)
+
+	// Get a message ID first
+	client := getTestClient()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	messages, err := client.GetMessages(ctx, testGrantID, 1)
+	if err != nil {
+		t.Fatalf("Failed to get messages: %v", err)
+	}
+	if len(messages) == 0 {
+		t.Skip("No messages available for MIME test")
+	}
+
+	messageID := messages[0].ID
+
+	stdout, stderr, err := runCLI("email", "read", messageID, testGrantID, "--mime")
+
+	if err != nil {
+		t.Fatalf("email read --mime failed: %v\nstderr: %s", err, stderr)
+	}
+
+	// Should show MIME header or error message if MIME not available
+	if !strings.Contains(stdout, "RAW RFC822/MIME FORMAT") &&
+		!strings.Contains(stdout, "No raw MIME data available") {
+		t.Errorf("Expected MIME output or error message, got: %s", stdout)
+	}
+
+	t.Logf("email read --mime output:\n%s", stdout)
+}
+
 // =============================================================================
 // EMAIL SEND COMMAND TESTS
 // =============================================================================

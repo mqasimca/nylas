@@ -25,6 +25,9 @@ type MessageClient interface {
 	// GetMessage retrieves a specific message.
 	GetMessage(ctx context.Context, grantID, messageID string) (*domain.Message, error)
 
+	// GetMessageWithFields retrieves a message with optional field selection (e.g., "raw_mime").
+	GetMessageWithFields(ctx context.Context, grantID, messageID string, fields string) (*domain.Message, error)
+
 	// SendMessage sends a new message.
 	SendMessage(ctx context.Context, grantID string, req *domain.SendMessageRequest) (*domain.Message, error)
 

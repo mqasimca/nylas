@@ -2,6 +2,7 @@ package nylas
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
@@ -50,6 +51,7 @@ type messageResponse struct {
 		IsInline    bool   `json:"is_inline"`
 	} `json:"attachments"`
 	Metadata  map[string]string `json:"metadata"`
+	RawMIME   string            `json:"raw_mime,omitempty"` // Base64url-encoded
 	CreatedAt int64             `json:"created_at"`
 	Object    string            `json:"object"`
 }
@@ -127,13 +129,21 @@ func (c *HTTPClient) GetMessagesWithCursor(ctx context.Context, grantID string, 
 
 // GetMessage retrieves a single message by ID.
 func (c *HTTPClient) GetMessage(ctx context.Context, grantID, messageID string) (*domain.Message, error) {
+	return c.GetMessageWithFields(ctx, grantID, messageID, "")
+}
+
+// GetMessageWithFields retrieves a message with optional field selection.
+// Pass "raw_mime" to fields to retrieve the full RFC822/MIME message.
+func (c *HTTPClient) GetMessageWithFields(ctx context.Context, grantID, messageID string, fields string) (*domain.Message, error) {
 	if err := validateRequired("grant ID", grantID); err != nil {
 		return nil, err
 	}
 	if err := validateRequired("message ID", messageID); err != nil {
 		return nil, err
 	}
-	queryURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
+
+	baseURL := fmt.Sprintf("%s/v3/grants/%s/messages/%s", c.baseURL, grantID, messageID)
+	queryURL := NewQueryBuilder().Add("fields", fields).BuildURL(baseURL)
 
 	var result struct {
 		Data messageResponse `json:"data"`
@@ -221,6 +231,16 @@ func convertMessage(m messageResponse) domain.Message {
 	replyTo := util.Map(m.ReplyTo, convertParticipant)
 	attachments := util.Map(m.Attachments, convertAttachment)
 
+	// Decode raw MIME if present (Base64url-encoded by API)
+	rawMIME := ""
+	if m.RawMIME != "" {
+		decoded, err := base64.RawURLEncoding.DecodeString(m.RawMIME)
+		if err == nil {
+			rawMIME = string(decoded)
+		}
+		// If decode fails, rawMIME stays empty (graceful degradation)
+	}
+
 	return domain.Message{
 		ID:          m.ID,
 		GrantID:     m.GrantID,
@@ -238,6 +258,7 @@ func convertMessage(m messageResponse) domain.Message {
 		Starred:     m.Starred,
 		Folders:     m.Folders,
 		Attachments: attachments,
+		RawMIME:     rawMIME,
 		Metadata:    m.Metadata,
 		CreatedAt:   time.Unix(m.CreatedAt, 0),
 		Object:      m.Object,

@@ -137,6 +137,21 @@ func (d *DemoClient) GetMessage(ctx context.Context, grantID, messageID string) 
 	return &messages[0], nil
 }
 
+// GetMessageWithFields retrieves a demo message with optional field selection.
+func (d *DemoClient) GetMessageWithFields(ctx context.Context, grantID, messageID string, fields string) (*domain.Message, error) {
+	msg, err := d.GetMessage(ctx, grantID, messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add demo MIME data if raw_mime field requested
+	if fields == "raw_mime" {
+		msg.RawMIME = "From: demo@example.com\r\nTo: user@example.com\r\nSubject: Demo MIME Message\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nDate: " + msg.Date.Format(time.RFC1123Z) + "\r\n\r\n" + msg.Body
+	}
+
+	return msg, nil
+}
+
 // SendMessage simulates sending a message.
 func (d *DemoClient) SendMessage(ctx context.Context, grantID string, req *domain.SendMessageRequest) (*domain.Message, error) {
 	msg := &domain.Message{

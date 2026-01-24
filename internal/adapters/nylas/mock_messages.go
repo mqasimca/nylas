@@ -53,6 +53,21 @@ func (m *MockClient) GetMessage(ctx context.Context, grantID, messageID string) 
 	}, nil
 }
 
+// GetMessageWithFields retrieves a message with optional field selection.
+func (m *MockClient) GetMessageWithFields(ctx context.Context, grantID, messageID string, fields string) (*domain.Message, error) {
+	msg, err := m.GetMessage(ctx, grantID, messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add mock MIME data if raw_mime field requested
+	if fields == "raw_mime" || fields == "raw_mime," {
+		msg.RawMIME = "From: mock@example.com\r\nTo: user@example.com\r\nSubject: Mock MIME Message\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nThis is a mock MIME message body."
+	}
+
+	return msg, nil
+}
+
 // SendMessage sends an email.
 func (m *MockClient) SendMessage(ctx context.Context, grantID string, req *domain.SendMessageRequest) (*domain.Message, error) {
 	m.SendMessageCalled = true

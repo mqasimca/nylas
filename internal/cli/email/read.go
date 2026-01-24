@@ -14,6 +14,7 @@ import (
 func newReadCmd() *cobra.Command {
 	var markAsRead bool
 	var rawOutput bool
+	var mimeOutput bool
 
 	cmd := &cobra.Command{
 		Use:     "read <message-id> [grant-id]",
@@ -26,7 +27,14 @@ func newReadCmd() *cobra.Command {
 			remainingArgs := args[1:]
 
 			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
-				msg, err := client.GetMessage(ctx, grantID, messageID)
+				// Fetch message with raw_mime field if --mime flag is set
+				var msg *domain.Message
+				var err error
+				if mimeOutput {
+					msg, err = client.GetMessageWithFields(ctx, grantID, messageID, "raw_mime")
+				} else {
+					msg, err = client.GetMessage(ctx, grantID, messageID)
+				}
 				if err != nil {
 					return struct{}{}, common.WrapGetError("message", err)
 				}
@@ -42,8 +50,10 @@ func newReadCmd() *cobra.Command {
 					return struct{}{}, nil
 				}
 
-				// Handle raw output
-				if rawOutput {
+				// Display logic: --mime takes precedence over --raw
+				if mimeOutput {
+					printMessageMIME(*msg)
+				} else if rawOutput {
 					printMessageRaw(*msg)
 				} else {
 					printMessage(*msg, true)
@@ -70,6 +80,7 @@ func newReadCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&markAsRead, "mark-read", "r", false, "Mark the message as read after viewing")
 	cmd.Flags().BoolVar(&rawOutput, "raw", false, "Show raw email body without HTML processing")
+	cmd.Flags().BoolVar(&mimeOutput, "mime", false, "Show raw RFC822/MIME message format")
 
 	return cmd
 }

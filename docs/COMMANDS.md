@@ -112,6 +112,8 @@ All demo commands mirror real CLI structure: `nylas demo <feature> <command>`
 ```bash
 nylas email list [grant-id]                                    # List emails
 nylas email read <message-id>                                  # Read email
+nylas email read <message-id> --raw                            # Show raw body without HTML
+nylas email read <message-id> --mime                           # Show raw RFC822/MIME format
 nylas email send --to EMAIL --subject SUBJECT --body BODY      # Send email
 nylas email search --query "QUERY"                             # Search emails
 nylas email delete <message-id>                                # Delete email
