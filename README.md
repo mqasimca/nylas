@@ -3,7 +3,6 @@
 ![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Release](https://img.shields.io/github/v/release/mqasimca/nylas)
-![Build](https://img.shields.io/github/actions/workflow/status/mqasimca/nylas/ci.yml?branch=main)
 
 > **⚠️ DISCLAIMER**: This is NOT the official Nylas CLI from Nylas, Inc. This is a community-built, open-source project created independently. For the official Nylas tools and documentation, please visit [nylas.com](https://www.nylas.com) and [developer.nylas.com](https://developer.nylas.com).
 
