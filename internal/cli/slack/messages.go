@@ -143,6 +143,14 @@ Examples:
 				return nil
 			}
 
+			// Handle structured output (JSON/YAML/quiet) - before enrichment for performance
+			format, _ := cmd.Flags().GetString("format")
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			if common.IsJSON(cmd) || format == "yaml" || quiet {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(allMessages)
+			}
+
 			slackClient, isSlackClient := client.(*slack.Client)
 			if isSlackClient {
 				if err := slackClient.GetUsersForMessages(ctx, allMessages); err != nil {

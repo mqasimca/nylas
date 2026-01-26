@@ -162,6 +162,14 @@ Examples:
 				return nil
 			}
 
+			// Handle structured output (JSON/YAML/quiet)
+			format, _ := cmd.Flags().GetString("format")
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			if common.IsJSON(cmd) || format == "yaml" || quiet {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(allChannels)
+			}
+
 			printChannels(allChannels, showID)
 
 			return nil

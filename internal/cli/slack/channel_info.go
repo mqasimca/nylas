@@ -34,6 +34,14 @@ func newChannelInfoCmd() *cobra.Command {
 				return common.WrapGetError("channel", err)
 			}
 
+			// Handle structured output (JSON/YAML/quiet)
+			format, _ := cmd.Flags().GetString("format")
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			if common.IsJSON(cmd) || format == "yaml" || quiet {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(ch)
+			}
+
 			_, _ = common.Cyan.Printf("Channel: #%s\n", ch.Name)
 			fmt.Printf("  ID:           %s\n", ch.ID)
 			fmt.Printf("  Is Channel:   %v\n", ch.IsChannel)

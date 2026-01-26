@@ -123,6 +123,14 @@ Examples:
 				return nil
 			}
 
+			// Handle structured output (JSON/YAML/quiet)
+			format, _ := cmd.Flags().GetString("format")
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			if common.IsJSON(cmd) || format == "yaml" || quiet {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(resp.Files)
+			}
+
 			fmt.Printf("Found %d file(s):\n\n", len(resp.Files))
 			fmt.Println(strings.Repeat("─", 70))
 
@@ -199,6 +207,14 @@ func newFilesShowCmd() *cobra.Command {
 			file, err := client.GetFileInfo(ctx, fileID)
 			if err != nil {
 				return common.WrapGetError("file info", err)
+			}
+
+			// Handle structured output (JSON/YAML/quiet)
+			format, _ := cmd.Flags().GetString("format")
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			if common.IsJSON(cmd) || format == "yaml" || quiet {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(file)
 			}
 
 			fmt.Println(strings.Repeat("─", 60))

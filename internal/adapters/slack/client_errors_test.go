@@ -133,7 +133,7 @@ func TestNewClient_ConfigDefaults(t *testing.T) {
 				RateBurst:    5,
 				UserCacheTTL: 10 * time.Minute,
 			},
-			wantRateLimit:    1,
+			wantRateLimit:    20.0 / 60.0, // Default: 20 req/min
 			wantRateBurst:    5,
 			wantUserCacheTTL: 10 * time.Minute,
 		},
@@ -146,7 +146,7 @@ func TestNewClient_ConfigDefaults(t *testing.T) {
 				UserCacheTTL: 10 * time.Minute,
 			},
 			wantRateLimit:    2,
-			wantRateBurst:    1,
+			wantRateBurst:    3, // Default burst
 			wantUserCacheTTL: 10 * time.Minute,
 		},
 		{
@@ -334,8 +334,8 @@ func TestWaitForRateLimit_DeadlineExceeded(t *testing.T) {
 func TestDefaultConfig_Values(t *testing.T) {
 	config := DefaultConfig()
 
-	assert.Equal(t, float64(1), float64(config.RateLimit))
-	assert.Equal(t, 1, config.RateBurst)
+	assert.InDelta(t, 20.0/60.0, float64(config.RateLimit), 0.01) // 20 requests/minute
+	assert.Equal(t, 3, config.RateBurst)
 	assert.Equal(t, 5*time.Minute, config.UserCacheTTL)
 	assert.False(t, config.Debug)
 	assert.Empty(t, config.UserToken)
