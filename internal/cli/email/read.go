@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mqasimca/nylas/internal/adapters/config"
+	"github.com/mqasimca/nylas/internal/adapters/keyring"
 	"github.com/mqasimca/nylas/internal/cli/common"
 	"github.com/mqasimca/nylas/internal/domain"
 	"github.com/mqasimca/nylas/internal/ports"
@@ -15,6 +17,7 @@ func newReadCmd() *cobra.Command {
 	var markAsRead bool
 	var rawOutput bool
 	var mimeOutput bool
+	var headersOutput bool
 
 	cmd := &cobra.Command{
 		Use:     "read <message-id> [grant-id]",
@@ -27,11 +30,20 @@ func newReadCmd() *cobra.Command {
 			remainingArgs := args[1:]
 
 			_, err := common.WithClient(remainingArgs, func(ctx context.Context, client ports.NylasClient, grantID string) (struct{}, error) {
-				// Fetch message with raw_mime field if --mime flag is set
+				// Determine which fields to request
+				var fields string
+				switch {
+				case mimeOutput:
+					fields = "raw_mime"
+				case headersOutput:
+					fields = "include_headers"
+				}
+
+				// Fetch message with appropriate fields
 				var msg *domain.Message
 				var err error
-				if mimeOutput {
-					msg, err = client.GetMessageWithFields(ctx, grantID, messageID, "raw_mime")
+				if fields != "" {
+					msg, err = client.GetMessageWithFields(ctx, grantID, messageID, fields)
 				} else {
 					msg, err = client.GetMessage(ctx, grantID, messageID)
 				}
@@ -50,12 +62,17 @@ func newReadCmd() *cobra.Command {
 					return struct{}{}, nil
 				}
 
-				// Display logic: --mime takes precedence over --raw
-				if mimeOutput {
-					printMessageMIME(*msg)
-				} else if rawOutput {
+				// Display logic: --mime > --headers > --raw > default
+				switch {
+				case mimeOutput:
+					// Get provider info to show better error message for Microsoft
+					provider := getProviderForGrant(grantID)
+					printMessageMIMEWithProvider(*msg, provider)
+				case headersOutput:
+					printMessageHeaders(*msg)
+				case rawOutput:
 					printMessageRaw(*msg)
-				} else {
+				default:
 					printMessage(*msg, true)
 				}
 
@@ -81,6 +98,24 @@ func newReadCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&markAsRead, "mark-read", "r", false, "Mark the message as read after viewing")
 	cmd.Flags().BoolVar(&rawOutput, "raw", false, "Show raw email body without HTML processing")
 	cmd.Flags().BoolVar(&mimeOutput, "mime", false, "Show raw RFC822/MIME message format")
+	cmd.Flags().BoolVar(&headersOutput, "headers", false, "Show email headers (works with all providers)")
 
 	return cmd
+}
+
+// getProviderForGrant retrieves the provider type for a grant ID.
+// Returns empty string if provider cannot be determined.
+func getProviderForGrant(grantID string) domain.Provider {
+	secretStore, err := keyring.NewSecretStore(config.DefaultConfigDir())
+	if err != nil {
+		return ""
+	}
+
+	grantStore := keyring.NewGrantStore(secretStore)
+	grant, err := grantStore.GetGrant(grantID)
+	if err != nil || grant == nil {
+		return ""
+	}
+
+	return grant.Provider
 }

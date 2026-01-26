@@ -72,14 +72,30 @@ func printMessageRaw(msg domain.Message) {
 	fmt.Println()
 }
 
-// printMessageMIME prints the raw RFC822/MIME format of a message.
-func printMessageMIME(msg domain.Message) {
+// printMessageMIMEWithProvider prints the raw RFC822/MIME format with provider-aware error messages.
+func printMessageMIMEWithProvider(msg domain.Message, provider domain.Provider) {
 	if msg.RawMIME == "" {
 		fmt.Println(strings.Repeat("─", 60))
 		_, _ = common.Yellow.Println("No raw MIME data available")
 		fmt.Println(strings.Repeat("─", 60))
-		fmt.Println("This message does not have MIME data available.")
-		fmt.Println("The API may not support MIME retrieval for this message.")
+
+		// Show provider-specific message
+		switch provider {
+		case domain.ProviderMicrosoft:
+			fmt.Println("Microsoft/Outlook accounts do not support raw MIME retrieval.")
+			fmt.Println()
+			_, _ = common.Cyan.Println("Alternative: Use --headers to view email headers instead:")
+			fmt.Println("  nylas email read <message-id> --headers")
+		case "":
+			fmt.Println("This message does not have MIME data available.")
+			fmt.Println("The API may not support MIME retrieval for this provider.")
+			fmt.Println()
+			_, _ = common.Cyan.Println("Tip: Use --headers to view email headers (works with all providers):")
+			fmt.Println("  nylas email read <message-id> --headers")
+		default:
+			fmt.Println("This message does not have MIME data available.")
+			fmt.Println("The API may not support MIME retrieval for this message.")
+		}
 		return
 	}
 
@@ -96,6 +112,26 @@ func printMessageMIME(msg domain.Message) {
 	// Ensure trailing newline
 	if !strings.HasSuffix(msg.RawMIME, "\n") {
 		fmt.Println()
+	}
+	fmt.Println()
+}
+
+// printMessageHeaders prints the email headers in a formatted way.
+func printMessageHeaders(msg domain.Message) {
+	fmt.Println(strings.Repeat("─", 60))
+	_, _ = common.BoldWhite.Println("EMAIL HEADERS")
+	_, _ = common.Dim.Printf("Message ID: %s\n", msg.ID)
+	fmt.Println(strings.Repeat("─", 60))
+
+	if len(msg.Headers) == 0 {
+		_, _ = common.Yellow.Println("No headers available for this message.")
+		return
+	}
+
+	// Print headers in name: value format
+	for _, h := range msg.Headers {
+		_, _ = common.Cyan.Printf("%s: ", h.Name)
+		fmt.Println(h.Value)
 	}
 	fmt.Println()
 }

@@ -107,6 +107,7 @@ func TestCompressionMiddleware_SkipsPrecompressedFiles(t *testing.T) {
 }
 
 // TestCacheMiddleware_StaticAssets tests cache headers for static assets.
+// For development, CSS/JS use no-cache; only images/fonts get cached.
 func TestCacheMiddleware_StaticAssets(t *testing.T) {
 	t.Parallel()
 
@@ -114,15 +115,29 @@ func TestCacheMiddleware_StaticAssets(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest(http.MethodGet, "/static/css/main.css", nil)
-	w := httptest.NewRecorder()
+	// CSS files use no-cache for instant dev updates
+	t.Run("css_no_cache", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/static/css/main.css", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
 
-	handler.ServeHTTP(w, req)
+		cacheControl := w.Header().Get("Cache-Control")
+		if cacheControl != "no-cache, must-revalidate" {
+			t.Errorf("expected no-cache for CSS (dev mode), got %s", cacheControl)
+		}
+	})
 
-	cacheControl := w.Header().Get("Cache-Control")
-	if cacheControl != "public, max-age=31536000, immutable" {
-		t.Errorf("expected long-term cache for static assets, got %s", cacheControl)
-	}
+	// Images get cached
+	t.Run("images_cached", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/static/img/logo.png", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		cacheControl := w.Header().Get("Cache-Control")
+		if cacheControl != "public, max-age=86400" {
+			t.Errorf("expected 1-day cache for images, got %s", cacheControl)
+		}
+	})
 }
 
 // TestCacheMiddleware_APIResponses tests no-cache headers for API responses.
@@ -155,6 +170,7 @@ func TestCacheMiddleware_APIResponses(t *testing.T) {
 }
 
 // TestCacheMiddleware_HTMLPages tests cache headers for HTML pages.
+// For development, HTML uses no-cache for instant updates.
 func TestCacheMiddleware_HTMLPages(t *testing.T) {
 	t.Parallel()
 
@@ -168,8 +184,8 @@ func TestCacheMiddleware_HTMLPages(t *testing.T) {
 	handler.ServeHTTP(w, req)
 
 	cacheControl := w.Header().Get("Cache-Control")
-	if cacheControl != "public, max-age=300" {
-		t.Errorf("expected short-term cache for HTML, got %s", cacheControl)
+	if cacheControl != "no-cache, must-revalidate" {
+		t.Errorf("expected no-cache for HTML (dev mode), got %s", cacheControl)
 	}
 }
 

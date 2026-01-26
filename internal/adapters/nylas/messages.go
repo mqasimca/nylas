@@ -50,10 +50,14 @@ type messageResponse struct {
 		ContentID   string `json:"content_id"`
 		IsInline    bool   `json:"is_inline"`
 	} `json:"attachments"`
-	Metadata  map[string]string `json:"metadata"`
-	RawMIME   string            `json:"raw_mime,omitempty"` // Base64url-encoded
-	CreatedAt int64             `json:"created_at"`
-	Object    string            `json:"object"`
+	Metadata map[string]string `json:"metadata"`
+	RawMIME  string            `json:"raw_mime,omitempty"` // Base64url-encoded
+	Headers  []struct {
+		Name  string `json:"name"`
+		Value string `json:"value"`
+	} `json:"headers,omitempty"`
+	CreatedAt int64  `json:"created_at"`
+	Object    string `json:"object"`
 }
 
 // GetMessages retrieves recent messages for a grant (simple version).
@@ -231,6 +235,12 @@ func convertMessage(m messageResponse) domain.Message {
 	replyTo := util.Map(m.ReplyTo, convertParticipant)
 	attachments := util.Map(m.Attachments, convertAttachment)
 
+	// Convert headers
+	headers := make([]domain.Header, 0, len(m.Headers))
+	for _, h := range m.Headers {
+		headers = append(headers, domain.Header{Name: h.Name, Value: h.Value})
+	}
+
 	// Decode raw MIME if present (Base64url-encoded by API)
 	rawMIME := ""
 	if m.RawMIME != "" {
@@ -258,6 +268,7 @@ func convertMessage(m messageResponse) domain.Message {
 		Starred:     m.Starred,
 		Folders:     m.Folders,
 		Attachments: attachments,
+		Headers:     headers,
 		RawMIME:     rawMIME,
 		Metadata:    m.Metadata,
 		CreatedAt:   time.Unix(m.CreatedAt, 0),
