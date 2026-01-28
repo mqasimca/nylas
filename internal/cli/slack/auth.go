@@ -105,6 +105,14 @@ func newAuthStatusCmd() *cobra.Command {
 				return common.NewUserError("authentication failed", "Token may have expired or been revoked")
 			}
 
+			// Handle structured output (JSON/YAML/quiet)
+			format, _ := cmd.Flags().GetString("format")
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			if common.IsJSON(cmd) || format == "yaml" || quiet {
+				out := common.GetOutputWriter(cmd)
+				return out.Write(auth)
+			}
+
 			_, _ = common.Green.Println("✓ Authenticated with Slack")
 			fmt.Println()
 			fmt.Printf("  User:      %s\n", common.Cyan.Sprint(auth.UserName))

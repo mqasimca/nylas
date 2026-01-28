@@ -74,7 +74,7 @@ func (c *Client) ListUsers(ctx context.Context, limit int, cursor string) (*doma
 	}, nil
 }
 
-// GetUser returns a single user by ID.
+// GetUser returns a single user by ID with full profile including custom fields.
 func (c *Client) GetUser(ctx context.Context, userID string) (*domain.SlackUser, error) {
 	if cached, ok := c.getCachedUser(userID); ok {
 		return cached, nil
@@ -90,6 +90,36 @@ func (c *Client) GetUser(ctx context.Context, userID string) (*domain.SlackUser,
 	}
 
 	user := convertUser(*u)
+
+	// Fetch full profile with custom field labels (requires another rate limit wait)
+	if err := c.waitForRateLimit(ctx); err != nil {
+		// If rate limited, return user without custom fields
+		c.setCachedUser(&user)
+		return &user, nil
+	}
+
+	profile, err := c.api.GetUserProfileContext(ctx, &slack.GetUserProfileParameters{
+		UserID:        userID,
+		IncludeLabels: true,
+	})
+	if err == nil && profile != nil {
+		// Add custom fields from the full profile
+		if fields := profile.Fields.ToMap(); len(fields) > 0 {
+			user.CustomFields = make(map[string]string)
+			for _, field := range fields {
+				if field.Label == "" || field.Value == "" {
+					continue
+				}
+				// Skip fields that duplicate standard profile fields
+				if field.Label == "Title" && field.Value == user.Title {
+					continue
+				}
+				user.CustomFields[field.Label] = field.Value
+			}
+		}
+	}
+	// Ignore profile fetch errors - custom fields are optional
+
 	c.setCachedUser(&user)
 
 	return &user, nil

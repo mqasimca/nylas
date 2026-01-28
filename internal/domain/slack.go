@@ -42,16 +42,20 @@ type SlackChannel struct {
 
 // SlackUser represents a Slack workspace member.
 type SlackUser struct {
-	ID          string `json:"id"`                 // User ID (e.g., "U1234567890")
-	Name        string `json:"name"`               // Username handle (e.g., "jsmith")
-	RealName    string `json:"real_name"`          // Full name from profile (e.g., "John Smith")
-	DisplayName string `json:"display_name"`       // Custom display name set by user (may be empty)
-	Email       string `json:"email,omitempty"`    // User's email address (requires users:read.email scope)
-	Avatar      string `json:"avatar,omitempty"`   // URL to user's profile image (72x72 pixels)
-	IsBot       bool   `json:"is_bot"`             // True if this is a bot user
-	IsAdmin     bool   `json:"is_admin"`           // True if user has admin privileges
-	Status      string `json:"status,omitempty"`   // Custom status text (e.g., "In a meeting")
-	Timezone    string `json:"timezone,omitempty"` // User's timezone in IANA format (e.g., "America/New_York")
+	ID           string            `json:"id"`                     // User ID (e.g., "U1234567890")
+	Name         string            `json:"name"`                   // Username handle (e.g., "jsmith")
+	RealName     string            `json:"real_name"`              // Full name from profile (e.g., "John Smith")
+	DisplayName  string            `json:"display_name"`           // Custom display name set by user (may be empty)
+	Title        string            `json:"title,omitempty"`        // Job title (e.g., "Software Engineer")
+	Email        string            `json:"email,omitempty"`        // User's email address (requires users:read.email scope)
+	Phone        string            `json:"phone,omitempty"`        // Phone number
+	Avatar       string            `json:"avatar,omitempty"`       // URL to user's profile image (72x72 pixels)
+	IsBot        bool              `json:"is_bot"`                 // True if this is a bot user
+	IsAdmin      bool              `json:"is_admin"`               // True if user has admin privileges
+	Status       string            `json:"status,omitempty"`       // Custom status text (e.g., "In a meeting")
+	StatusEmoji  string            `json:"status_emoji,omitempty"` // Status emoji (e.g., ":calendar:")
+	Timezone     string            `json:"timezone,omitempty"`     // User's timezone in IANA format (e.g., "America/New_York")
+	CustomFields map[string]string `json:"custom_fields,omitempty"` // Custom profile fields (label -> value)
 }
 
 // SlackAttachment represents a file attached to a message.

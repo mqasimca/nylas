@@ -87,18 +87,33 @@ func convertChannel(ch slack.Channel) domain.SlackChannel {
 
 // convertUser converts slack-go User to domain.SlackUser.
 func convertUser(u slack.User) domain.SlackUser {
-	return domain.SlackUser{
+	user := domain.SlackUser{
 		ID:          u.ID,
 		Name:        u.Name,
 		RealName:    u.RealName,
 		DisplayName: u.Profile.DisplayName,
+		Title:       u.Profile.Title,
 		Email:       u.Profile.Email,
+		Phone:       u.Profile.Phone,
 		Avatar:      u.Profile.Image72,
 		IsBot:       u.IsBot,
 		IsAdmin:     u.IsAdmin,
 		Status:      u.Profile.StatusText,
+		StatusEmoji: u.Profile.StatusEmoji,
 		Timezone:    u.TZ,
 	}
+
+	// Extract custom profile fields (Department, Location, Start Date, etc.)
+	if fields := u.Profile.Fields.ToMap(); len(fields) > 0 {
+		user.CustomFields = make(map[string]string)
+		for _, field := range fields {
+			if field.Label != "" && field.Value != "" {
+				user.CustomFields[field.Label] = field.Value
+			}
+		}
+	}
+
+	return user
 }
 
 // convertReactions converts slack-go reactions to domain type.

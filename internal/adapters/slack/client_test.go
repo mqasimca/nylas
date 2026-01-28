@@ -19,8 +19,8 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 
-	assert.Equal(t, float64(1), float64(config.RateLimit))
-	assert.Equal(t, 1, config.RateBurst)
+	assert.InDelta(t, 20.0/60.0, float64(config.RateLimit), 0.01) // 20 requests/minute
+	assert.Equal(t, 3, config.RateBurst)
 	assert.Equal(t, 5*time.Minute, config.UserCacheTTL)
 	assert.False(t, config.Debug)
 	assert.Empty(t, config.UserToken)

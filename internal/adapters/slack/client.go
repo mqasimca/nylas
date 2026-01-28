@@ -45,10 +45,12 @@ type ClientConfig struct {
 }
 
 // DefaultConfig returns sensible defaults.
+// Rate limit is set to 20 requests/minute (Slack Tier 2 limit) with burst of 3.
+// See: https://docs.slack.dev/apis/web-api/rate-limits/
 func DefaultConfig() *ClientConfig {
 	return &ClientConfig{
-		RateLimit:    rate.Limit(1),
-		RateBurst:    1,
+		RateLimit:    rate.Limit(20.0 / 60.0), // 20 requests per minute = ~0.33/sec
+		RateBurst:    3,                        // Allow small burst for initial requests
 		UserCacheTTL: 5 * time.Minute,
 		Debug:        false,
 	}
