@@ -22,6 +22,7 @@ func newUpdateCmd() *cobra.Command {
 		notes       string
 		emails      []string
 		phones      []string
+		jsonOutput  bool
 	)
 
 	cmd := &cobra.Command{
@@ -104,6 +105,10 @@ Examples:
 				return common.WrapUpdateError("contact", err)
 			}
 
+			if jsonOutput {
+				return common.PrintJSON(contact)
+			}
+
 			fmt.Printf("%s Contact updated successfully!\n\n", common.Green.Sprint("✓"))
 			fmt.Printf("Name: %s\n", contact.DisplayName())
 			if len(contact.Emails) > 0 {
@@ -127,6 +132,7 @@ Examples:
 	cmd.Flags().StringVar(&notes, "notes", "", "Notes")
 	cmd.Flags().StringArrayVar(&emails, "email", nil, "Email address (can be used multiple times)")
 	cmd.Flags().StringArrayVar(&phones, "phone", nil, "Phone number (can be used multiple times)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }

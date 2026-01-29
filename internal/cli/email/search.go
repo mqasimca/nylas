@@ -23,6 +23,7 @@ func newSearchCmd() *cobra.Command {
 		unread        bool
 		starred       bool
 		inFolder      string
+		jsonOutput    bool
 	)
 
 	cmd := &cobra.Command{
@@ -106,6 +107,10 @@ Examples:
 					return struct{}{}, common.WrapSearchError("messages", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(messages)
+				}
+
 				if len(messages) == 0 {
 					common.PrintEmptyStateWithHint("messages", "try different search terms")
 					return struct{}{}, nil
@@ -132,6 +137,7 @@ Examples:
 	cmd.Flags().BoolVar(&unread, "unread", false, "Only unread messages")
 	cmd.Flags().BoolVar(&starred, "starred", false, "Only starred messages")
 	cmd.Flags().StringVar(&inFolder, "in", "", "Filter by folder (e.g., INBOX, SENT)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }

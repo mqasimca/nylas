@@ -27,6 +27,7 @@ func newEventsCreateCmd() *cobra.Command {
 		ignoreDSTWarning   bool
 		ignoreWorkingHours bool
 		lockTimezone       bool
+		jsonOutput         bool
 	)
 
 	cmd := &cobra.Command{
@@ -159,6 +160,10 @@ Examples:
 					return struct{}{}, common.WrapCreateError("event", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(event)
+				}
+
 				fmt.Printf("%s Event created successfully!\n\n", common.Green.Sprint("✓"))
 				fmt.Printf("Title: %s\n", event.Title)
 				fmt.Printf("When: %s\n", formatEventTime(event.When))
@@ -187,6 +192,7 @@ Examples:
 	cmd.Flags().BoolVar(&ignoreDSTWarning, "ignore-dst-warning", false, "Skip DST conflict warnings")
 	cmd.Flags().BoolVar(&ignoreWorkingHours, "ignore-working-hours", false, "Skip working hours validation")
 	cmd.Flags().BoolVar(&lockTimezone, "lock-timezone", false, "Lock event to its timezone (always display in this timezone)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	_ = cmd.MarkFlagRequired("title")
 	_ = cmd.MarkFlagRequired("start")
@@ -264,6 +270,7 @@ func newEventsUpdateCmd() *cobra.Command {
 		visibility     string
 		lockTimezone   bool
 		unlockTimezone bool
+		jsonOutput     bool
 	)
 
 	cmd := &cobra.Command{
@@ -360,6 +367,10 @@ Examples:
 					return struct{}{}, common.WrapUpdateError("event", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(event)
+				}
+
 				fmt.Printf("%s Event updated successfully!\n\n", common.Green.Sprint("✓"))
 				fmt.Printf("Title: %s\n", event.Title)
 				fmt.Printf("When: %s\n", formatEventTime(event.When))
@@ -389,6 +400,7 @@ Examples:
 	cmd.Flags().StringVar(&visibility, "visibility", "", "Event visibility (public, private, default)")
 	cmd.Flags().BoolVar(&lockTimezone, "lock-timezone", false, "Lock event to its timezone")
 	cmd.Flags().BoolVar(&unlockTimezone, "unlock-timezone", false, "Remove timezone lock from event")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }

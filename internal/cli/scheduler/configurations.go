@@ -137,6 +137,7 @@ func newConfigCreateCmd() *cobra.Command {
 		title        string
 		description  string
 		location     string
+		jsonOutput   bool
 	)
 
 	cmd := &cobra.Command{
@@ -184,6 +185,10 @@ func newConfigCreateCmd() *cobra.Command {
 					return struct{}{}, common.WrapCreateError("configuration", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(config)
+				}
+
 				_, _ = common.Green.Printf("✓ Created configuration: %s\n", config.Name)
 				fmt.Printf("  ID: %s\n", config.ID)
 				if config.Slug != "" {
@@ -207,6 +212,8 @@ func newConfigCreateCmd() *cobra.Command {
 	_ = cmd.MarkFlagRequired("participants")
 	_ = cmd.MarkFlagRequired("title")
 
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
+
 	return cmd
 }
 
@@ -216,6 +223,7 @@ func newConfigUpdateCmd() *cobra.Command {
 		duration    int
 		title       string
 		description string
+		jsonOutput  bool
 	)
 
 	cmd := &cobra.Command{
@@ -254,6 +262,10 @@ func newConfigUpdateCmd() *cobra.Command {
 					return struct{}{}, common.WrapUpdateError("configuration", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(config)
+				}
+
 				common.PrintUpdateSuccess("configuration", config.Name)
 
 				return struct{}{}, nil
@@ -266,6 +278,7 @@ func newConfigUpdateCmd() *cobra.Command {
 	cmd.Flags().IntVar(&duration, "duration", 0, "Meeting duration in minutes")
 	cmd.Flags().StringVar(&title, "title", "", "Event title")
 	cmd.Flags().StringVar(&description, "description", "", "Event description")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }

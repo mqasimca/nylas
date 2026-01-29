@@ -151,7 +151,10 @@ func newBookingShowCmd() *cobra.Command {
 }
 
 func newBookingConfirmCmd() *cobra.Command {
-	var reason string
+	var (
+		reason     string
+		jsonOutput bool
+	)
 
 	cmd := &cobra.Command{
 		Use:   "confirm <booking-id>",
@@ -171,6 +174,10 @@ func newBookingConfirmCmd() *cobra.Command {
 					return struct{}{}, common.WrapUpdateError("booking", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(booking)
+				}
+
 				_, _ = common.Green.Printf("✓ Confirmed booking: %s\n", booking.BookingID)
 				fmt.Printf("  Status: %s\n", booking.Status)
 
@@ -181,16 +188,18 @@ func newBookingConfirmCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&reason, "reason", "", "Reason for confirmation")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }
 
 func newBookingRescheduleCmd() *cobra.Command {
 	var (
-		startTime int64
-		endTime   int64
-		timezone  string
-		reason    string
+		startTime  int64
+		endTime    int64
+		timezone   string
+		reason     string
+		jsonOutput bool
 	)
 
 	cmd := &cobra.Command{
@@ -228,6 +237,10 @@ You must provide the new start and end times as Unix timestamps.`,
 					return struct{}{}, common.WrapUpdateError("booking", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(booking)
+				}
+
 				_, _ = common.Green.Printf("✓ Rescheduled booking: %s\n", booking.BookingID)
 				fmt.Printf("  New start: %s\n", booking.StartTime.Format(time.RFC1123))
 				fmt.Printf("  New end: %s\n", booking.EndTime.Format(time.RFC1123))
@@ -242,6 +255,7 @@ You must provide the new start and end times as Unix timestamps.`,
 	cmd.Flags().Int64Var(&endTime, "end-time", 0, "New end time (Unix timestamp, required)")
 	cmd.Flags().StringVar(&timezone, "timezone", "", "Timezone for the booking (e.g., America/New_York)")
 	cmd.Flags().StringVar(&reason, "reason", "", "Reason for rescheduling")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }

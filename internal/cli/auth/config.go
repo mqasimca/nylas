@@ -59,7 +59,7 @@ The CLI only requires your API Key - Client ID is auto-detected.`,
 					return common.WrapError(err)
 				}
 				fmt.Println()
-				apiKey = strings.TrimSpace(string(apiKeyBytes))
+				apiKey = sanitizeAPIKey(string(apiKeyBytes))
 			}
 
 			if apiKey == "" {
@@ -380,4 +380,22 @@ func getAppDisplayName(app domain.Application) string {
 	}
 
 	return fmt.Sprintf("%s (%s, %s)", displayID, env, region)
+}
+
+// sanitizeAPIKey removes all characters that are invalid in HTTP headers.
+// This handles cases where pasting API keys includes invisible characters
+// like carriage returns, newlines, or other control characters.
+func sanitizeAPIKey(key string) string {
+	var result strings.Builder
+	result.Grow(len(key))
+
+	for _, r := range key {
+		// Only keep printable ASCII characters (space through tilde)
+		// This excludes control characters, newlines, carriage returns, etc.
+		if r >= ' ' && r <= '~' {
+			result.WriteRune(r)
+		}
+	}
+
+	return strings.TrimSpace(result.String())
 }

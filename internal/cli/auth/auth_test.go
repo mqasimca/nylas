@@ -412,3 +412,77 @@ func TestAddCommandHelp(t *testing.T) {
 		t.Error("Help should mention auto-detection of email/provider")
 	}
 }
+
+// TestSanitizeAPIKey tests the API key sanitization function.
+func TestSanitizeAPIKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "clean key",
+			input:    "nyk_v0_abc123",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with trailing newline",
+			input:    "nyk_v0_abc123\n",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with carriage return",
+			input:    "nyk_v0_abc123\r",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with CRLF",
+			input:    "nyk_v0_abc123\r\n",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with embedded carriage return",
+			input:    "nyk_v0_\rabc123",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with leading/trailing spaces",
+			input:    "  nyk_v0_abc123  ",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with tab",
+			input:    "nyk_v0_abc123\t",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with null byte",
+			input:    "nyk_v0_abc123\x00",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "key with control characters",
+			input:    "nyk_v0_\x01\x02abc123",
+			expected: "nyk_v0_abc123",
+		},
+		{
+			name:     "empty key",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only whitespace",
+			input:    "  \n\r\t  ",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := sanitizeAPIKey(tt.input)
+			if result != tt.expected {
+				t.Errorf("sanitizeAPIKey(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}

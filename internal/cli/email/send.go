@@ -30,6 +30,7 @@ func newSendCmd() *cobra.Command {
 	var trackLinks bool
 	var trackLabel string
 	var metadata []string
+	var jsonOutput bool
 
 	cmd := &cobra.Command{
 		Use:   "send [grant-id]",
@@ -237,6 +238,10 @@ Supports custom metadata:
 					return struct{}{}, common.WrapSendError("email", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(msg)
+				}
+
 				if !scheduledTime.IsZero() {
 					printSuccess("Email scheduled successfully! Message ID: %s", msg.ID)
 					fmt.Printf("Scheduled to send: %s\n", scheduledTime.Format(common.DisplayWeekdayFullWithTZ))
@@ -262,6 +267,7 @@ Supports custom metadata:
 	cmd.Flags().BoolVar(&trackLinks, "track-links", false, "Track link clicks")
 	cmd.Flags().StringVar(&trackLabel, "track-label", "", "Label for tracking (used to group tracked emails)")
 	cmd.Flags().StringSliceVar(&metadata, "metadata", nil, "Custom metadata as key=value (can be repeated)")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	return cmd
 }

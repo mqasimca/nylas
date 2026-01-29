@@ -27,8 +27,9 @@ func newSessionsCmd() *cobra.Command {
 
 func newSessionCreateCmd() *cobra.Command {
 	var (
-		configID string
-		ttl      int
+		configID   string
+		ttl        int
+		jsonOutput bool
 	)
 
 	cmd := &cobra.Command{
@@ -47,6 +48,10 @@ func newSessionCreateCmd() *cobra.Command {
 					return struct{}{}, common.WrapCreateError("session", err)
 				}
 
+				if jsonOutput {
+					return struct{}{}, common.PrintJSON(session)
+				}
+
 				_, _ = common.Green.Println("✓ Created scheduler session")
 				fmt.Printf("  Session ID: %s\n", common.Cyan.Sprint(session.SessionID))
 				fmt.Printf("  Configuration ID: %s\n", session.ConfigurationID)
@@ -59,6 +64,7 @@ func newSessionCreateCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&configID, "config-id", "", "Configuration ID (required)")
 	cmd.Flags().IntVar(&ttl, "ttl", 30, "Time to live in minutes")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 
 	_ = cmd.MarkFlagRequired("config-id")
 

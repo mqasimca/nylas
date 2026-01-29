@@ -50,7 +50,7 @@ type ClientConfig struct {
 func DefaultConfig() *ClientConfig {
 	return &ClientConfig{
 		RateLimit:    rate.Limit(20.0 / 60.0), // 20 requests per minute = ~0.33/sec
-		RateBurst:    3,                        // Allow small burst for initial requests
+		RateBurst:    3,                       // Allow small burst for initial requests
 		UserCacheTTL: 5 * time.Minute,
 		Debug:        false,
 	}
