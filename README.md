@@ -1,5 +1,16 @@
 # Nylas CLI
 
+## This repository has moved to [github.com/nylas/cli](https://github.com/nylas/cli)
+
+**This repository is archived. All future development will happen at the new location.**
+
+Please update your bookmarks, forks, and clones to point to: **https://github.com/nylas/cli**
+
+---
+
+<details>
+<summary>Original README (archived)</summary>
+
 ![Go Version](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Release](https://img.shields.io/github/v/release/mqasimca/nylas)
@@ -296,3 +307,5 @@ This CLI uses the [Nylas v3 API](https://developer.nylas.com/docs/api/v3/).
 ## License
 
 MIT
+
+</details>
