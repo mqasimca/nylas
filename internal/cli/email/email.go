@@ -28,6 +28,7 @@ func NewEmailCmd() *cobra.Command {
 	cmd.AddCommand(newTrackingInfoCmd())
 	cmd.AddCommand(newMetadataCmd())
 	cmd.AddCommand(newAICmd())
+	cmd.AddCommand(newTemplatesCmd())
 
 	return cmd
 }

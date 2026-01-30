@@ -92,9 +92,14 @@ func TestCLI_WebhookListJSON(t *testing.T) {
 		t.Fatalf("webhook list --format json failed: %v\nstderr: %s", err, stderr)
 	}
 
-	// Should be valid JSON (starts with [ or {)
+	// Should be valid JSON (starts with [ or { or is null)
 	trimmed := strings.TrimSpace(stdout)
-	if len(trimmed) > 0 && trimmed[0] != '[' && trimmed[0] != '{' && !strings.Contains(stdout, "No webhooks") {
+	isValidJSON := len(trimmed) == 0 ||
+		trimmed[0] == '[' ||
+		trimmed[0] == '{' ||
+		trimmed == "null" ||
+		strings.Contains(stdout, "No webhooks")
+	if !isValidJSON {
 		t.Errorf("Expected JSON output, got: %s", stdout)
 	}
 

@@ -6,6 +6,7 @@ require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/fatih/color v1.18.0
 	github.com/gdamore/tcell/v2 v2.13.4
+	github.com/joho/godotenv v1.5.1
 	github.com/ncruces/go-sqlite3 v0.30.4
 	github.com/rivo/tview v0.42.0
 	github.com/slack-go/slack v0.17.3
@@ -21,7 +22,6 @@ require (
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0 // indirect
-	github.com/briandowns/spinner v1.23.2 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect

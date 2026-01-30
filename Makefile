@@ -4,6 +4,24 @@
 .NOTPARALLEL:
 
 # ============================================================================
+# Environment Configuration
+# ============================================================================
+# Load .env file if it exists (for NYLAS_API_KEY, NYLAS_GRANT_ID, etc.)
+# Uses simple KEY=value format, no 'export' prefix needed
+-include .env
+export
+
+# Strip quotes from env vars (Make doesn't handle quoted values like shell does)
+NYLAS_API_KEY := $(patsubst "%",%,$(patsubst '%',%,$(NYLAS_API_KEY)))
+NYLAS_GRANT_ID := $(patsubst "%",%,$(patsubst '%',%,$(NYLAS_GRANT_ID)))
+NYLAS_CLIENT_ID := $(patsubst "%",%,$(patsubst '%',%,$(NYLAS_CLIENT_ID)))
+NYLAS_INBOUND_GRANT_ID := $(patsubst "%",%,$(patsubst '%',%,$(NYLAS_INBOUND_GRANT_ID)))
+
+# Rate limit defaults (can be overridden in .env)
+NYLAS_TEST_RATE_LIMIT_RPS ?= 1.0
+NYLAS_TEST_RATE_LIMIT_BURST ?= 3
+
+# ============================================================================
 # Tool Versions (use @latest for automatic updates)
 # ============================================================================
 GOVULNCHECK_VERSION := latest
@@ -90,8 +108,8 @@ test-air-integration:
 	@echo "Note: Requires a Google account configured as default"
 	@echo ""
 	@go clean -testcache
-	NYLAS_TEST_RATE_LIMIT_RPS=1.0 \
-	NYLAS_TEST_RATE_LIMIT_BURST=3 \
+	NYLAS_TEST_RATE_LIMIT_RPS=$(NYLAS_TEST_RATE_LIMIT_RPS) \
+	NYLAS_TEST_RATE_LIMIT_BURST=$(NYLAS_TEST_RATE_LIMIT_BURST) \
 	go test -tags=integration ./internal/air/... -v -timeout 5m -p 1
 	@echo "✓ All Air integration tests passed"
 
@@ -108,8 +126,8 @@ test-air-integration:
 test-integration:
 	@go clean -testcache
 	NYLAS_DISABLE_KEYRING=true \
-	NYLAS_TEST_RATE_LIMIT_RPS=1.0 \
-	NYLAS_TEST_RATE_LIMIT_BURST=3 \
+	NYLAS_TEST_RATE_LIMIT_RPS=$(NYLAS_TEST_RATE_LIMIT_RPS) \
+	NYLAS_TEST_RATE_LIMIT_BURST=$(NYLAS_TEST_RATE_LIMIT_BURST) \
 	NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas \
 	go test ./... -tags=integration -v -timeout 10m -p 1 2>&1 | tee test-integration.txt
 
@@ -119,8 +137,8 @@ test-integration:
 # -p 1: Run test packages sequentially to prevent rate limit issues
 test-integration-fast:
 	@go clean -testcache
-	NYLAS_TEST_RATE_LIMIT_RPS=1.0 \
-	NYLAS_TEST_RATE_LIMIT_BURST=3 \
+	NYLAS_TEST_RATE_LIMIT_RPS=$(NYLAS_TEST_RATE_LIMIT_RPS) \
+	NYLAS_TEST_RATE_LIMIT_BURST=$(NYLAS_TEST_RATE_LIMIT_BURST) \
 	NYLAS_TEST_BINARY=$(CURDIR)/bin/nylas \
 	go test ./internal/cli/integration/... -tags=integration -v -timeout 2m -p 1 \
 		-run "TestCLI_Admin|TestCLI_Timezone|TestCLI_AIConfig|TestCLI_AIProvider|TestCLI_CalendarAI_Basic|TestCLI_CalendarAI_Adapt|TestCLI_CalendarAI_Analyze_Respects|TestCLI_CalendarAI_Analyze_Default|TestCLI_CalendarAI_Analyze_Disabled|TestCLI_CalendarAI_Analyze_Focus|TestCLI_CalendarAI_Analyze_With"
@@ -397,7 +415,7 @@ help:
 	@echo "  test-coverage              - Generate coverage report"
 	@echo "  test-air                   - Run Air web UI tests"
 	@echo ""
-	@echo "INTEGRATION TESTS (requires env vars):"
+	@echo "INTEGRATION TESTS (auto-loads .env file):"
 	@echo "  test-integration           - Run all integration tests"
 	@echo "                               (rate limited: 1 RPS, sequential)"
 	@echo "  test-integration-fast      - Run fast tests (skip LLM)"
@@ -405,6 +423,10 @@ help:
 	@echo "  test-air-integration       - Run Air integration tests"
 	@echo "                               (rate limited: 1 RPS, sequential)"
 	@echo "  test-cleanup               - Clean up test resources"
+	@echo ""
+	@echo "  Required .env variables:"
+	@echo "    NYLAS_API_KEY            - Your Nylas API key"
+	@echo "    NYLAS_GRANT_ID           - Your grant ID"
 	@echo ""
 	@echo "CI (Granular):"
 	@echo "  ci                         - All quality checks (no integration)"

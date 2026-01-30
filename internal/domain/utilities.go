@@ -115,15 +115,17 @@ type TemplateRequest struct {
 
 // EmailTemplate represents an email template.
 type EmailTemplate struct {
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	Subject   string            `json:"subject"`
-	HTMLBody  string            `json:"html_body"`
-	TextBody  string            `json:"text_body,omitempty"`
-	Variables []string          `json:"variables"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	Subject    string            `json:"subject"`
+	HTMLBody   string            `json:"html_body"`
+	TextBody   string            `json:"text_body,omitempty"`
+	Variables  []string          `json:"variables"`
+	Category   string            `json:"category,omitempty"`
+	UsageCount int               `json:"usage_count,omitempty"`
+	CreatedAt  time.Time         `json:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
 }
 
 // DeliverabilityReport contains email deliverability analysis.

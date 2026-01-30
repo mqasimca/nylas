@@ -140,6 +140,23 @@ nylas email smart-compose --prompt "..."  # AI-powered email generation
 
 ---
 
+## Email Templates
+
+```bash
+nylas email templates list                           # List all templates
+nylas email templates create --name NAME --subject SUBJECT --body BODY
+nylas email templates show <template-id>             # Show template details
+nylas email templates update <template-id> [flags]   # Update template
+nylas email templates delete <template-id>           # Delete template
+nylas email templates use <template-id> --to EMAIL   # Send using template
+```
+
+**Variable syntax:** Use `{{variable}}` in subject/body for placeholders.
+
+**Details:** `docs/commands/templates.md`
+
+---
+
 ## Folders & Threads
 
 ```bash

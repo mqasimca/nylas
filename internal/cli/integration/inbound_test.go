@@ -16,6 +16,7 @@ import (
 
 func TestCLI_InboundList(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	stdout, stderr, err := runCLI("inbound", "list")
 
@@ -37,6 +38,7 @@ func TestCLI_InboundList(t *testing.T) {
 
 func TestCLI_InboundList_JSON(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	stdout, stderr, err := runCLI("inbound", "list", "--json")
 
@@ -57,6 +59,7 @@ func TestCLI_InboundList_JSON(t *testing.T) {
 
 func TestCLI_InboundList_InboxAlias(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// Test the 'inbox' alias for 'inbound' command
 	stdout, stderr, err := runCLI("inbox", "list")
@@ -82,6 +85,7 @@ func TestCLI_InboundList_InboxAlias(t *testing.T) {
 
 func TestCLI_InboundShow(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// First get an inbox ID
 	client := getTestClient()
@@ -114,6 +118,7 @@ func TestCLI_InboundShow(t *testing.T) {
 
 func TestCLI_InboundShow_JSON(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// First get an inbox ID
 	client := getTestClient()
@@ -149,6 +154,7 @@ func TestCLI_InboundShow_JSON(t *testing.T) {
 
 func TestCLI_InboundShow_InvalidID(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	_, stderr, err := runCLI("inbound", "show", "invalid-inbox-id")
 
@@ -165,6 +171,7 @@ func TestCLI_InboundShow_InvalidID(t *testing.T) {
 
 func TestCLI_InboundMessages(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// First get an inbox ID
 	client := getTestClient()
@@ -197,6 +204,7 @@ func TestCLI_InboundMessages(t *testing.T) {
 
 func TestCLI_InboundMessages_WithLimit(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	client := getTestClient()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -223,6 +231,7 @@ func TestCLI_InboundMessages_WithLimit(t *testing.T) {
 
 func TestCLI_InboundMessages_UnreadOnly(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	client := getTestClient()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -249,6 +258,7 @@ func TestCLI_InboundMessages_UnreadOnly(t *testing.T) {
 
 func TestCLI_InboundMessages_JSON(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	client := getTestClient()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -287,6 +297,7 @@ func TestCLI_InboundCreate(t *testing.T) {
 		t.Skip("Skipping create test - set NYLAS_TEST_CREATE_INBOUND=true to enable")
 	}
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// Generate a unique email prefix
 	prefix := "test-" + time.Now().Format("20060102150405")
@@ -334,6 +345,7 @@ func TestCLI_InboundCreate_JSON(t *testing.T) {
 		t.Skip("Skipping create test - set NYLAS_TEST_CREATE_INBOUND=true to enable")
 	}
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// Generate a unique email prefix
 	prefix := "testjson-" + time.Now().Format("20060102150405")
@@ -380,6 +392,7 @@ func TestCLI_InboundCreate_JSON(t *testing.T) {
 
 func TestCLI_InboundCreate_NoPrefix(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	_, stderr, err := runCLI("inbound", "create")
 
@@ -402,6 +415,7 @@ func TestCLI_InboundDelete(t *testing.T) {
 		t.Skip("Skipping delete test - set NYLAS_TEST_DELETE_INBOUND=true to enable")
 	}
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// First create an inbox to delete
 	prefix := "todelete-" + time.Now().Format("20060102150405")
@@ -434,6 +448,7 @@ func TestCLI_InboundDelete(t *testing.T) {
 
 func TestCLI_InboundDelete_InvalidID(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	_, stderr, err := runCLI("inbound", "delete", "invalid-inbox-id", "--yes")
 
@@ -446,6 +461,7 @@ func TestCLI_InboundDelete_InvalidID(t *testing.T) {
 
 func TestCLI_InboundDelete_NoConfirm(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// Without --yes flag, should require confirmation
 	// Since we can't provide interactive input, this should fail or prompt
@@ -545,6 +561,7 @@ func TestCLI_InboundMonitorHelp(t *testing.T) {
 
 func TestCLI_InboundWithEnvVar(t *testing.T) {
 	skipIfMissingCreds(t)
+	skipIfMissingInboundCreds(t)
 
 	// First get an inbox ID
 	client := getTestClient()

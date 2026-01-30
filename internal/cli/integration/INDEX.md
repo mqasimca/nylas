@@ -61,13 +61,25 @@ go test -tags=integration -v ./internal/cli/integration/... -run "TestCLI_Email"
 go test -tags=integration -v ./internal/cli/integration/... -run "TestCLI_EmailSend"
 ```
 
-## Required Environment Variables
+## Environment Variables
+
+Environment variables can be set in a `.env` file at the project root. The file is automatically loaded when tests run.
+
+**Example `.env` file:**
+```bash
+NYLAS_API_KEY=nyk_v0_xxx
+NYLAS_GRANT_ID=abc123
+NYLAS_CLIENT_ID=xxx
+NYLAS_CLIENT_SECRET=xxx
+```
+
+### Required Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NYLAS_API_KEY` | Yes | Nylas API key |
 | `NYLAS_GRANT_ID` | Yes | Grant ID for testing |
-| `NYLAS_TEST_BINARY` | Yes | Path to CLI binary (`./bin/nylas`) |
+| `NYLAS_TEST_BINARY` | No | Path to CLI binary (auto-detected) |
 | `NYLAS_CLIENT_ID` | Some | OAuth client ID (auth tests) |
 | `NYLAS_CLIENT_SECRET` | Some | OAuth client secret (auth tests) |
 | `NYLAS_TEST_RATE_LIMIT_RPS` | No | Rate limit requests per second |

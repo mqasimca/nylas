@@ -82,7 +82,7 @@ Examples:
 		},
 	}
 
-	cmd.Flags().StringVarP(&query, "query", "q", "", "Search query")
+	cmd.Flags().StringVar(&query, "query", "", "Search query")
 	cmd.Flags().IntVarP(&limit, "limit", "l", 50, "Maximum number of results")
 	cmd.Flags().BoolVar(&showID, "id", false, "Show message IDs")
 

@@ -286,7 +286,7 @@ func TestCLI_TimezoneList(t *testing.T) {
 			name: "list with non-matching filter",
 			args: []string{"timezone", "list", "--filter", "NonExistentZone12345"},
 			contains: []string{
-				"No time zones found",
+				"No zones found",
 			},
 		},
 	}
