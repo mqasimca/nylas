@@ -68,12 +68,21 @@ func TestGetNylasClient_NoAPIKey(t *testing.T) {
 	// Save original env vars
 	origAPIKey := os.Getenv("NYLAS_API_KEY")
 	origDisableKeyring := os.Getenv("NYLAS_DISABLE_KEYRING")
+	origXDGConfigHome := os.Getenv("XDG_CONFIG_HOME")
+	origHome := os.Getenv("HOME")
 
 	// Restore after test
 	defer func() {
 		setEnvOrUnset("NYLAS_API_KEY", origAPIKey)
 		setEnvOrUnset("NYLAS_DISABLE_KEYRING", origDisableKeyring)
+		setEnvOrUnset("XDG_CONFIG_HOME", origXDGConfigHome)
+		setEnvOrUnset("HOME", origHome)
 	}()
+
+	// Use temp directory to isolate from real config/credentials
+	tempDir := t.TempDir()
+	_ = os.Setenv("XDG_CONFIG_HOME", tempDir)
+	_ = os.Setenv("HOME", tempDir)
 
 	// Clear API key and disable keyring
 	_ = os.Unsetenv("NYLAS_API_KEY")
@@ -109,15 +118,24 @@ func TestGetAPIKey_WithEnvVar(t *testing.T) {
 }
 
 func TestGetAPIKey_NoAPIKey(t *testing.T) {
-	// Save original env var
+	// Save original env vars
 	origAPIKey := os.Getenv("NYLAS_API_KEY")
 	origDisableKeyring := os.Getenv("NYLAS_DISABLE_KEYRING")
+	origXDGConfigHome := os.Getenv("XDG_CONFIG_HOME")
+	origHome := os.Getenv("HOME")
 
 	// Restore after test
 	defer func() {
 		setEnvOrUnset("NYLAS_API_KEY", origAPIKey)
 		setEnvOrUnset("NYLAS_DISABLE_KEYRING", origDisableKeyring)
+		setEnvOrUnset("XDG_CONFIG_HOME", origXDGConfigHome)
+		setEnvOrUnset("HOME", origHome)
 	}()
+
+	// Use temp directory to isolate from real config/credentials
+	tempDir := t.TempDir()
+	_ = os.Setenv("XDG_CONFIG_HOME", tempDir)
+	_ = os.Setenv("HOME", tempDir)
 
 	// Clear API key and disable keyring
 	_ = os.Unsetenv("NYLAS_API_KEY")

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -431,10 +432,21 @@ func TestClient_GetUser_HTTP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Contains(t, r.URL.Path, "users.info")
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.statusCode)
-				_ = json.NewEncoder(w).Encode(tt.serverResponse)
+				// GetUser calls both users.info and users.profile.get
+				if strings.Contains(r.URL.Path, "users.info") {
+					w.WriteHeader(tt.statusCode)
+					_ = json.NewEncoder(w).Encode(tt.serverResponse)
+				} else if strings.Contains(r.URL.Path, "users.profile.get") {
+					// Return empty profile for the profile fetch
+					_ = json.NewEncoder(w).Encode(map[string]interface{}{
+						"ok":      true,
+						"profile": map[string]interface{}{},
+					})
+				} else {
+					t.Errorf("unexpected endpoint: %s", r.URL.Path)
+					w.WriteHeader(http.StatusNotFound)
+				}
 			}))
 			defer server.Close()
 
